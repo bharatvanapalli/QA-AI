@@ -120,11 +120,15 @@ async function run({ apiKey, model, scenarios, onLog = async () => {}, signal, o
     resp = await provider.complete({
       apiKey,
       model,
-      maxTokens: 4000,
+      maxTokens: 8000,
       system: composeSystemPrompt(SYSTEM_PROMPT, extraGuidance),
       messages: [{ role: 'user', content: JSON.stringify(payload, null, 2) }],
       signal,
       onRateLimit,
+      // Forces Gemini's API-level JSON mode (responseMimeType: application/json).
+      // Without this, Gemini wraps output in ```json fences regardless of prompt
+      // instructions, breaking the parser when responses get truncated mid-fence.
+      responseFormat: 'json',
     });
   } catch (err) {
     if (err?.name === 'AbortError' || signal?.aborted) {
@@ -142,8 +146,17 @@ async function run({ apiKey, model, scenarios, onLog = async () => {}, signal, o
   // fences and truncated outputs.
   const parsed = parseJsonResponse(text, { type: 'object' });
   if (!parsed) {
-    console.error(`[planner] PARSE FAILED. First 500 chars: ${text.slice(0, 500)}`);
-    await onLog('error', `Could not parse plan JSON. First 200 chars: ${text.slice(0, 200)}`);
+    // Log head + tail of the response so we can tell at a glance whether it
+    // was truncated (no closing brace), wrapped in fences, or just garbage.
+    console.error(
+      `[planner] PARSE FAILED. length=${text.length} head=${text.slice(0, 400)} `
+      + `tail=${text.length > 800 ? text.slice(-400) : '(in head)'}`
+    );
+    await onLog(
+      'error',
+      `Could not parse plan JSON (${text.length} chars). Head: ${text.slice(0, 200)} `
+      + `Tail: ${text.length > 400 ? text.slice(-200) : '(short response)'}`
+    );
     const err = new Error(`${provider.name} returned non-JSON. Check the server log for the full output.`);
     err.code = 'INVALID_AI_OUTPUT';
     err.status = 502;

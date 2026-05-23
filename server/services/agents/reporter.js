@@ -84,6 +84,7 @@ async function run({ apiKey, model, failures, onLog = async () => {}, onRateLimi
     system: composeSystemPrompt(SYSTEM_PROMPT, extraGuidance),
     messages: [{ role: 'user', content: JSON.stringify(compactFailures, null, 2) }],
     onRateLimit,
+    responseFormat: 'json',
   });
 
   const text = (resp.content?.[0]?.text || '').trim();

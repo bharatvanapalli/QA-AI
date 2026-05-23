@@ -46,7 +46,7 @@ function loadGoogle() {
   }
 }
 
-async function complete({ apiKey, model, system, messages, tools, maxTokens, signal, onRateLimit }) {
+async function complete({ apiKey, model, system, messages, tools, maxTokens, signal, onRateLimit, responseFormat }) {
   if (!apiKey) {
     const err = new Error('Gemini API key missing. Configure it in Settings → Gemini API.');
     err.code = 'NO_API_KEY';
@@ -64,15 +64,31 @@ async function complete({ apiKey, model, system, messages, tools, maxTokens, sig
   const idToName = collectToolUseNames(messages);
   const contents = toGeminiMessages(messages, idToName);
 
-  const geminiTools = Array.isArray(tools) && tools.length
+  const hasTools = Array.isArray(tools) && tools.length > 0;
+  const geminiTools = hasTools
     ? [{ functionDeclarations: tools.map(anthropicToolToGemini) }]
     : undefined;
+
+  // JSON mode: Gemini guarantees a single raw JSON value with no markdown
+  // fences or preamble when responseMimeType is 'application/json'. This is
+  // the only reliable way to stop Gemini wrapping output in ```json fences —
+  // it ignores the prompt instruction "no markdown fences" often enough that
+  // we have to enforce it at the API level.
+  //
+  // The Gemini SDK rejects responseMimeType when functionDeclarations are
+  // present in the same request, so we skip JSON mode whenever tools are
+  // active (Architect, Conductor — those agents don't expect a JSON envelope
+  // anyway; they read tool_use blocks).
+  const generationConfig = { maxOutputTokens: maxTokens || 1500 };
+  if (responseFormat === 'json' && !hasTools) {
+    generationConfig.responseMimeType = 'application/json';
+  }
 
   const generativeModel = client.getGenerativeModel({
     model: model || 'gemini-2.5-pro',
     systemInstruction: system ? { role: 'system', parts: [{ text: system }] } : undefined,
     tools: geminiTools,
-    generationConfig: { maxOutputTokens: maxTokens || 1500 },
+    generationConfig,
     // Default safety filters on Gemini block legitimate QA content (form
     // errors, login pages, "invalid password" messages). The user owns the
     // SUT and the agent runs in a sandboxed automation context, so disable.
@@ -95,12 +111,89 @@ async function complete({ apiKey, model, system, messages, tools, maxTokens, sig
       aborted.status = 499;
       throw aborted;
     }
-    if (!err.code) err.code = 'GEMINI_FAILED';
-    if (!err.status) err.status = 502;
-    throw err;
+    // Translate the noisy `GoogleGenerativeAI Error: Error fetching from ...`
+    // blob into a short, user-readable line. The original message is kept on
+    // err.raw for debugging but the surfaced .message is clean.
+    throw cleanGeminiError(err, model);
   }
 
   return geminiResponseToAnthropic(resp);
+}
+
+/**
+ * Classify the noisy GoogleGenerativeAI error string into one of:
+ *   - RATE_LIMIT       (429: quota exhausted; includes retry seconds)
+ *   - MODEL_OVERLOADED (503: try again later)
+ *   - GEMINI_SCHEMA_REJECTED (400: tool-schema field Gemini doesn't accept)
+ *   - GEMINI_INVALID_KEY     (401/403: bad/missing key)
+ *   - GEMINI_FAILED          (everything else — fallback)
+ *
+ * The clean message is what the agent logger surfaces to the Theater UI.
+ */
+function cleanGeminiError(err, model) {
+  const raw = String(err?.message || err || '');
+  const statusMatch = raw.match(/\[(\d{3})\s/);
+  const status = statusMatch ? parseInt(statusMatch[1], 10) : (err?.status || 502);
+  const modelLabel = model || 'gemini';
+
+  if (status === 429) {
+    // "Please retry in 58.81s" OR "retryDelay":"58s"
+    let retrySec = null;
+    const m1 = raw.match(/retry in (\d+(?:\.\d+)?)s/i);
+    const m2 = raw.match(/"retryDelay"\s*:\s*"(\d+)s/);
+    if (m1) retrySec = Math.ceil(parseFloat(m1[1]));
+    else if (m2) retrySec = parseInt(m2[1], 10);
+    const wait = retrySec ? ` Retry in ${retrySec}s.` : '';
+    const tip = /free_tier/i.test(raw)
+      ? ` Free-tier ${modelLabel} is rate-limited (5 RPM); switch to gemini-2.5-pro or a paid key.`
+      : '';
+    const clean = new Error(`Gemini quota exceeded.${wait}${tip}`);
+    clean.code = 'RATE_LIMIT';
+    clean.status = 429;
+    if (retrySec != null) clean.retryAfter = retrySec;
+    clean.raw = raw;
+    return clean;
+  }
+
+  if (status === 503) {
+    const clean = new Error(`Gemini model "${modelLabel}" is overloaded. Try again in a moment or switch model.`);
+    clean.code = 'MODEL_OVERLOADED';
+    clean.status = 503;
+    clean.raw = raw;
+    return clean;
+  }
+
+  if (status === 400) {
+    const fieldMatch = raw.match(/Unknown name ["']([^"']+)["']/);
+    if (fieldMatch) {
+      const clean = new Error(`Gemini rejected tool-schema field "${fieldMatch[1]}". (Update sanitiseSchemaForGemini whitelist.)`);
+      clean.code = 'GEMINI_SCHEMA_REJECTED';
+      clean.status = 400;
+      clean.raw = raw;
+      return clean;
+    }
+    const clean = new Error(`Gemini rejected the request (400). Check the system prompt and tool schemas.`);
+    clean.code = 'GEMINI_BAD_REQUEST';
+    clean.status = 400;
+    clean.raw = raw;
+    return clean;
+  }
+
+  if (status === 401 || status === 403) {
+    const clean = new Error('Gemini API key was rejected. Re-enter it in Settings → Gemini API.');
+    clean.code = 'GEMINI_INVALID_KEY';
+    clean.status = status;
+    clean.raw = raw;
+    return clean;
+  }
+
+  // Fallback — strip the noisy prefix but keep the gist.
+  const tail = raw.replace(/^\[GoogleGenerativeAI Error\][:\s]+/, '').slice(0, 240);
+  const clean = new Error(tail || 'Gemini call failed.');
+  clean.code = err?.code || 'GEMINI_FAILED';
+  clean.status = status;
+  clean.raw = raw;
+  return clean;
 }
 
 function collectToolUseNames(messages) {
@@ -170,27 +263,54 @@ function anthropicToolToGemini(t) {
 }
 
 /**
- * Strip JSON-Schema keys Gemini's function-declaration validator rejects.
- * Walks recursively into `properties` and `items`. `additionalProperties` in
- * particular causes 400 errors on Gemini.
+ * Convert a JSON-Schema fragment into the subset Gemini's function-declaration
+ * validator accepts. WHITELIST approach — the previous blacklist kept missing
+ * keys (additionalProperties, then propertyNames, then patternProperties…).
+ * Each new key dropped from upstream MCP tools tripped a 400. Whitelisting
+ * fixes that class of bug at the root.
+ *
+ * Gemini supports an OpenAPI 3.0 schema subset. Per Google's docs, these are
+ * explicitly NOT supported and cause 400 Bad Request: propertyNames,
+ * patternProperties, additionalProperties, dependencies, dependentSchemas,
+ * dependentRequired, not, if, then, else, $schema, $id, $ref, $defs,
+ * definitions, examples, contentEncoding, contentMediaType.
+ *
+ * The Playwright MCP package ships tool schemas with several of these keys,
+ * so the function-declarations payload would always fail without this filter.
  */
+const GEMINI_SCHEMA_KEYS = new Set([
+  // Core type info
+  'type', 'description', 'nullable', 'title',
+  // Object shape
+  'properties', 'required',
+  // Array shape
+  'items', 'minItems', 'maxItems',
+  // Numeric constraints
+  'minimum', 'maximum',
+  // String constraints
+  'minLength', 'maxLength', 'format', 'pattern',
+  // Enumerations
+  'enum',
+  // Compositions (OpenAPI 3.0 supports these)
+  'oneOf', 'anyOf', 'allOf',
+]);
+
 function sanitiseSchemaForGemini(schema) {
   if (!schema || typeof schema !== 'object') return schema;
-  const REJECTED = new Set([
-    '$schema', '$id', '$ref', 'definitions', '$defs', 'examples', 'additionalProperties',
-  ]);
   if (Array.isArray(schema)) return schema.map(sanitiseSchemaForGemini);
   const out = {};
   for (const [k, v] of Object.entries(schema)) {
-    if (REJECTED.has(k)) continue;
-    if (k === 'properties' && v && typeof v === 'object') {
+    if (!GEMINI_SCHEMA_KEYS.has(k)) continue;
+    if (k === 'properties' && v && typeof v === 'object' && !Array.isArray(v)) {
       out.properties = {};
       for (const [pk, pv] of Object.entries(v)) {
         out.properties[pk] = sanitiseSchemaForGemini(pv);
       }
     } else if (k === 'items') {
       out.items = sanitiseSchemaForGemini(v);
-    } else if (v && typeof v === 'object') {
+    } else if ((k === 'oneOf' || k === 'anyOf' || k === 'allOf') && Array.isArray(v)) {
+      out[k] = v.map(sanitiseSchemaForGemini);
+    } else if (v && typeof v === 'object' && !Array.isArray(v)) {
       out[k] = sanitiseSchemaForGemini(v);
     } else {
       out[k] = v;

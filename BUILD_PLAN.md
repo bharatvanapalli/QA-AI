@@ -302,6 +302,130 @@ the local server's key.
 
 ---
 
+## Phase D — Conductor reasoning hardening ⏳ (NEXT SESSION)
+
+Real failure mode observed on a Gemini run against
+`practice.expandtesting.com`. The Conductor (Playwright MCP loop) entered
+a loop where it kept submitting login with fabricated credentials, never
+read the visible "Incorrect email address or password" banner, never
+pivoted to /register, and burned all 4 attempts (including the Supervisor
+escalation) without ever realising it had no valid credentials to use.
+
+A first cut already shipped in [server/services/agents/conductor.js](server/services/agents/conductor.js)
+`SYSTEM_PROMPT_LOOP` — anti-loop discipline + strict end-of-turn output
+format. This Phase D is the deeper structural fix that prompt rules alone
+can't enforce.
+
+### What the user said (verbatim, for context)
+
+> "playwright mcp never fails to fetch the right locators but in our
+> case it is failing … the real playwright mcp reads the DOM structure
+> scans inspect tools and understands the locators, but ours is not
+> doing that properly. … if it fails in reading DOM and understand the
+> locators then AI continues with guessing the locators and stuck in
+> loop, and also this is very critical that AI is not able to
+> understand that it is kept on trying with an mail id and password
+> that was registered by on its own, if the mcp fails as it takes
+> screenshot it should be read by AI what the page is telling to do —
+> it actually tells the user how to create the account but it failed to
+> read the content in the page and just kept on creating account and
+> logging in and the login failed"
+
+### Diagnosis — MCP itself is fine, the agent's *use* of it is broken
+
+QAAI is using the real `@playwright/mcp` subprocess. The agent calls
+`browser_snapshot`, `browser_click`, `browser_fill_form`, `browser_navigate`
+— all standard MCP tools. The snapshot Playwright MCP returns IS the full
+accessibility tree with refs, names, roles. **The locator data is correct
+in the response.** What the agent does with it is the issue.
+
+Three concrete failure modes, all agent-side:
+
+1. **Doesn't read error banners.** After a failed submit, the next
+   snapshot contains the alert (e.g. `alert "Incorrect email address or
+   password" [ref=eN]`). The current loop doesn't pre-process the
+   snapshot to surface this. The model glosses past it and tries the
+   same inputs again.
+
+2. **No "I've tried this and it failed" memory.** Each turn receives the
+   full history, but the agent doesn't reason "I just clicked Login with
+   these creds and got 401 — clicking it again will produce the same
+   result." No explicit anti-repetition guardrail at the loop level.
+
+3. **Fabricates credentials.** If a case requires "log in as a valid
+   user" but no fixture credentials are supplied, the agent invents
+   `practice@expandtesting.com / RKT32e92k1` and burns the whole budget
+   trying combinations. No "I need credentials and they weren't
+   provided → block this case" path exists.
+
+### Proposed fixes — concrete touchpoints
+
+**D1. Pre-action page-state read** (low risk, high impact)
+- In `runOneCase` of [server/services/agents/conductor.js](server/services/agents/conductor.js),
+  BEFORE each agent turn, walk the latest snapshot for any node with
+  `role=alert` / `role=status` / `aria-live` and prepend a synthetic user
+  message: `"Page error visible: <text>"`. Forces the model to react.
+- New helper: `extractPageErrors(snapshot)` returning `string[]`.
+
+**D2. Action repetition guard** (low risk)
+- Maintain `Map<string,count>` keyed on `${tool}:${JSON.stringify(args).slice(0,200)}`
+  per case alongside `actionTrail`.
+- Before each tool result, append `"You have called this tool with these
+  args N time(s) this case. If it failed before, do NOT retry — pivot or
+  end the turn."`
+- Hard-stop after 3 identical calls: emit `BLOCKED: retry-loop` and break
+  the loop server-side without burning more attempts.
+
+**D3. Credential discipline** (medium — touches data model)
+- New optional field on `Project` (Prisma): `testCredentials Json?` — a
+  list of `{ name, email, password, notes }` the user pastes in Project
+  Setup.
+- Conductor injects them into the system prompt prefix as
+  `## Available test users\n<JSON>`. The prompt explicitly says: "If a
+  case requires a logged-in user and none are listed here, end the turn
+  with `BLOCKED: no credentials provided` — do NOT register or fabricate."
+- UI: small "Test users" editor on Project Setup.
+
+**D4. Critic re-reads the final snapshot** (medium)
+- After the conductor loop ends, take ONE more `browser_snapshot` and
+  pass it to the Critic alongside the action trail. The Critic verifies
+  the agent's self-reported "all assertions verified ✓" against the
+  actual page (catches hallucinated success).
+
+**D5. Surface looping in the UI** (low)
+- New phase-event variant `agent.phase.warn` with messages like
+  "Conductor is repeating browser_click(login) — likely stuck." Surface
+  as an amber banner in the Live Pipeline. User can cancel before all
+  attempts burn.
+
+### Suggested order
+
+D1 + D2 together — cheap, high leverage. D3 unblocks the credentials
+class entirely. D4 makes the Critic catch hallucinated "all passed"
+claims. D5 is polish.
+
+### NOT in scope for Phase D
+
+- Switching MCP implementation — the real `@playwright/mcp` is fine.
+- Anything Gemini-specific — Claude shows the same failure mode on this
+  site, just less often.
+- A "smarter locator picker" — locators are correct; agent reasoning is
+  what's broken.
+
+### Files Phase D will touch (estimate)
+
+- [server/services/agents/conductor.js](server/services/agents/conductor.js)
+  — D1, D2, D5 hooks.
+- [server/services/agents/critic.js](server/services/agents/critic.js)
+  — D4 (accept final snapshot).
+- [prisma/schema.prisma](prisma/schema.prisma) + new migration — D3
+  (`Project.testCredentials Json?`).
+- [server/routes/projects.js](server/routes/projects.js) — D3 save endpoint.
+- [src/pages/ProjectSetup.jsx](src/pages/ProjectSetup.jsx) — D3 UI.
+- [src/pages/Theater.jsx](src/pages/Theater.jsx) — D5 banner.
+
+---
+
 ## How to consume this file
 
 - **You**: glance at it to see phase status at any time.

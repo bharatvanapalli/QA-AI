@@ -136,6 +136,7 @@ async function run({ apiKey, model, runOutcome, onLog = async () => {}, onRateLi
         },
       ],
       onRateLimit,
+      responseFormat: 'json',
     });
   } catch (err) {
     await onLog('error', `Critic call failed: ${err.message}`);
@@ -252,6 +253,7 @@ async function runInline({ apiKey, model, caseContext, trail, lastSnapshot, onLo
       system: composeSystemPrompt(INLINE_SYSTEM_PROMPT, extraGuidance),
       messages: [{ role: 'user', content: userContent }],
       onRateLimit,
+      responseFormat: 'json',
     });
   } catch (err) {
     await onLog('warn', `inline critic call failed: ${err.message}`);

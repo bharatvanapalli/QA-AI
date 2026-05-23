@@ -123,6 +123,7 @@ async function run({ apiKey, model, attempts, originalCase, requirement = '', on
       system: composeSystemPrompt(SYSTEM_PROMPT, extraGuidance),
       messages: [{ role: 'user', content: userMsg }],
       onRateLimit,
+      responseFormat: 'json',
     });
   } catch (err) {
     await onLog('error', `supervisor call failed: ${err.message}`);

@@ -113,6 +113,7 @@ async function detectDiscrepancies({ apiKey, model, documents, onLog = async () 
       messages: [{ role: 'user', content: userText }],
       signal,
       onRateLimit,
+      responseFormat: 'json',
     });
   } catch (err) {
     if (err?.name === 'AbortError' || signal?.aborted) {
@@ -173,6 +174,7 @@ async function selectImpactedScenarios({ apiKey, model, scenarios, releaseNotesT
       messages: [{ role: 'user', content: userText }],
       signal,
       onRateLimit,
+      responseFormat: 'json',
     });
   } catch (err) {
     if (err?.name === 'AbortError' || signal?.aborted) {

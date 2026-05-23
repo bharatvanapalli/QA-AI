@@ -16,13 +16,17 @@
 const Anthropic = require('@anthropic-ai/sdk').default || require('@anthropic-ai/sdk');
 const { callWithRateLimit } = require('../anthropicHeaders');
 
-async function complete({ apiKey, model, system, messages, tools, maxTokens, signal, onRateLimit }) {
+async function complete({ apiKey, model, system, messages, tools, maxTokens, signal, onRateLimit, responseFormat }) {
   if (!apiKey) {
     const err = new Error('Claude API key missing. Configure it in Settings → Claude API.');
     err.code = 'NO_API_KEY';
     err.status = 400;
     throw err;
   }
+  // Claude follows the "Output ONLY JSON" prompt instruction reliably enough
+  // that no API-level enforcement is needed. The parameter is accepted so
+  // callers can opt into JSON mode uniformly without branching on provider.
+  void responseFormat;
   const client = new Anthropic({ apiKey, timeout: 180_000, maxRetries: 1 });
   const params = {
     model: model || 'claude-sonnet-4-6',

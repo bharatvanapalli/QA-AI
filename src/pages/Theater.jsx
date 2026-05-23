@@ -98,7 +98,11 @@ export default function Theater() {
         setBrowserFrame(`data:image/jpeg;base64,${msg.frame}`);
       }
       if (msg.type === 'browser.action') {
-        setActionTrail((trail) => [...trail, { tool: msg.tool, args: msg.args, narration: msg.narration, ts: Date.now(), tcId: msg.tcId }].slice(-30));
+        // Keep up to 200 entries so users can scroll back through the run.
+        // Old cap of 30 silently dropped the earliest tool calls — combined
+        // with the section having no fixed height, the user lost the start
+        // of the run before they could read it.
+        setActionTrail((trail) => [...trail, { tool: msg.tool, args: msg.args, narration: msg.narration, ts: Date.now(), tcId: msg.tcId }].slice(-200));
       }
       if (msg.type === 'browser.session.end') {
         setBrowserFrame(null);
@@ -359,25 +363,26 @@ export default function Theater() {
           )}
 
           {/* Two-row execution view.
-              Row 1 (lg+): PhaseTimeline (compact left rail, 240px) + BrowserFrame
-                 taking the rest of the row — gives the live browser ~40% more
-                 width than the old three-pane layout and a true 16:9 frame.
-              Row 2: ActionTrail spans full width below, so tool calls and
-                 narration get room to breathe instead of being crammed into
-                 a 340px column.
+              Row 1: PhaseTimeline spans the full content width so each phase
+                 row gets room for its status + output summary, and the
+                 expanded dark log panel has breathing room to render full
+                 log lines instead of word-wrapping every few words.
+              Row 2: BrowserFrame (left, takes most of the row) + ActionTrail
+                 (right, ~380px). Both stretch to the same height so the trail
+                 doesn't end short below the 16:9 browser frame.
               Below lg the same components stack single-column. */}
           {showExecutionView && (
             <div className="space-y-4">
-              <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-4 items-start">
-                <PhaseTimeline
-                  phaseStatus={phaseStatus}
-                  phaseOutput={phaseOutput}
-                  phaseAttempt={phaseAttempt}
-                  logs={logs}
-                  logRefs={logRefs}
-                  expandedPhase={expandedPhase}
-                  onTogglePhase={(id) => setExpandedPhase((cur) => (cur === id ? null : id))}
-                />
+              <PhaseTimeline
+                phaseStatus={phaseStatus}
+                phaseOutput={phaseOutput}
+                phaseAttempt={phaseAttempt}
+                logs={logs}
+                logRefs={logRefs}
+                expandedPhase={expandedPhase}
+                onTogglePhase={(id) => setExpandedPhase((cur) => (cur === id ? null : id))}
+              />
+              <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-4">
                 <BrowserFrame
                   frame={browserFrame}
                   pickerArmed={pickerArmed}
@@ -385,14 +390,14 @@ export default function Theater() {
                   runSummary={runSummary}
                   onOpenReports={() => navigate('/reports')}
                 />
+                <ActionTrail
+                  actions={actionTrail}
+                  pickerCandidates={pickerCandidates}
+                  onCopyPick={(expr) => navigator.clipboard.writeText(expr).then(() => toast.success('Locator copied.'))}
+                  onClearPicks={() => setPickerCandidates(null)}
+                  conductorActive={phaseStatus.conductor === 'running' || phaseStatus.conductor === 'complete'}
+                />
               </div>
-              <ActionTrail
-                actions={actionTrail}
-                pickerCandidates={pickerCandidates}
-                onCopyPick={(expr) => navigator.clipboard.writeText(expr).then(() => toast.success('Locator copied.'))}
-                onClearPicks={() => setPickerCandidates(null)}
-                conductorActive={phaseStatus.conductor === 'running' || phaseStatus.conductor === 'complete'}
-              />
             </div>
           )}
 
@@ -444,20 +449,25 @@ function PhaseTimeline({ phaseStatus, phaseOutput, phaseAttempt, logs, logRefs, 
           const attempt = phaseAttempt[phase.id];
           const isLast = idx === PHASES.length - 1;
           return (
-            <li key={phase.id} className="relative">
-              {/* Connector line — between dots, only when not the last item */}
-              {!isLast && (
-                <span
-                  className={`absolute left-[28px] top-[44px] bottom-0 w-px ${status === 'complete' ? 'bg-success-200' : 'bg-ink-200'}`}
-                  aria-hidden="true"
-                />
-              )}
-              <button
-                onClick={() => onTogglePhase(phase.id)}
-                className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-ink-50 focus-visible:outline-none focus-visible:bg-ink-50 ${isExpanded ? 'bg-ink-50/60' : ''}`}
-                aria-expanded={isExpanded}
-                aria-controls={`phase-log-${phase.id}`}
-              >
+            <li key={phase.id}>
+              {/* Button row in its own relative container so the dot-to-dot
+                  connector is bounded by the button's height — without this,
+                  the line ran from this phase's button through the expanded
+                  dark log panel (left:28px landed inside it). */}
+              <div className="relative">
+                {/* Connector line — between dots, only when not the last item */}
+                {!isLast && (
+                  <span
+                    className={`absolute left-[28px] top-[44px] bottom-0 w-px ${status === 'complete' ? 'bg-success-200' : 'bg-ink-200'}`}
+                    aria-hidden="true"
+                  />
+                )}
+                <button
+                  onClick={() => onTogglePhase(phase.id)}
+                  className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-ink-50 focus-visible:outline-none focus-visible:bg-ink-50 ${isExpanded ? 'bg-ink-50/60' : ''}`}
+                  aria-expanded={isExpanded}
+                  aria-controls={`phase-log-${phase.id}`}
+                >
                 {/* Status dot — the visual focal point. Running phases pulse
                     with a soft ring to draw the eye. */}
                 <span
@@ -493,6 +503,7 @@ function PhaseTimeline({ phaseStatus, phaseOutput, phaseAttempt, logs, logRefs, 
                   className={`w-3.5 h-3.5 text-ink-400 shrink-0 mt-1 transition-transform ${isExpanded ? 'rotate-0' : '-rotate-90'}`}
                 />
               </button>
+              </div>
 
               {isExpanded && (
                 <div id={`phase-log-${phase.id}`} className="px-4 pb-4">
@@ -706,7 +717,7 @@ function ActionTrail({ actions, pickerCandidates, onCopyPick, onClearPicks, cond
 
   return (
     <section
-      className="rounded-card border border-ink-200 bg-white shadow-card overflow-hidden flex flex-col max-h-[420px]"
+      className="rounded-card border border-ink-200 bg-white shadow-card overflow-hidden flex flex-col h-[640px]"
       aria-label="Action trail"
     >
       <header className="px-4 py-3 border-b border-ink-100 flex items-center gap-2">

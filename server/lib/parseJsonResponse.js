@@ -39,18 +39,30 @@ function parseJsonResponse(raw, { type } = {}) {
   try { const v = JSON.parse(text); const c = check(v); if (c !== null) return c; } catch (_) {}
 
   // 2. Markdown fence ```json ... ```
+  //    a) Complete fence (both opener and closer present): parse content
+  //       inside; if invalid, fall through with the fence-stripped content
+  //       so strategies 3 + 4 can attempt repair.
+  //    b) Opening fence only (response truncated before the closer was
+  //       emitted, which Gemini does often with long plans): strip the
+  //       opening and pass the rest forward. Without this, strategy 3's
+  //       lastIndexOf('}') misses the case entirely.
+  let body = text;
   const fence = text.match(/```(?:json|JSON)?\s*\n?([\s\S]*?)\n?```/);
   if (fence) {
     try { const v = JSON.parse(fence[1].trim()); const c = check(v); if (c !== null) return c; } catch (_) {}
+    body = fence[1].trim();
+  } else {
+    const openOnly = text.match(/^\s*```(?:json|JSON)?\s*\n?/);
+    if (openOnly) body = text.slice(openOnly[0].length);
   }
 
   // 3. First-opener-to-last-closer extraction
   const tryRange = (opener, closer) => {
-    const first = text.indexOf(opener);
-    const last = text.lastIndexOf(closer);
+    const first = body.indexOf(opener);
+    const last = body.lastIndexOf(closer);
     if (first === -1 || last <= first) return null;
     try {
-      const v = JSON.parse(text.slice(first, last + 1));
+      const v = JSON.parse(body.slice(first, last + 1));
       return check(v);
     } catch (_) { return null; }
   };
@@ -59,9 +71,9 @@ function parseJsonResponse(raw, { type } = {}) {
   } else if (type === 'object') {
     const r = tryRange('{', '}'); if (r !== null) return r;
   } else {
-    // Try both; prefer whichever appears first in the text.
-    const objFirst = text.indexOf('{');
-    const arrFirst = text.indexOf('[');
+    // Try both; prefer whichever appears first in the body.
+    const objFirst = body.indexOf('{');
+    const arrFirst = body.indexOf('[');
     const order = arrFirst !== -1 && (arrFirst < objFirst || objFirst === -1)
       ? [['[', ']'], ['{', '}']]
       : [['{', '}'], ['[', ']']];
@@ -70,21 +82,30 @@ function parseJsonResponse(raw, { type } = {}) {
     }
   }
 
-  // 4. Truncation recovery for object/array (the model stopped mid-output,
-  //    or max_tokens cut it off). Walk forward tracking brace depth; when
-  //    we last returned to top-level (depth 1) on a closer, truncate there.
+  // 4. Stack-aware truncation recovery for object/array. Walk the body
+  //    tracking the brace/bracket stack. At every valid close (whose
+  //    closer matches the top of the stack), record the position AND the
+  //    closers still needed to terminate the remaining open scopes. After
+  //    the walk, try each recorded point from latest to earliest, slicing
+  //    the body up to that close and appending the remaining closers.
+  //
+  //    This handles arbitrarily-nested truncation — including the case
+  //    that broke the previous (depth-1-only) version: a top-level object
+  //    with an array of objects (e.g. the Planner's `{ "waves": [...] }`),
+  //    where Gemini ran out of tokens mid-wave-array. The previous code
+  //    only salvaged on `depth === 1 && c === '}'` (the ROOT close), which
+  //    never happens when the response is truncated.
   if (type === 'array' || type === 'object') {
-    const opener = type === 'array' ? '[' : '{';
-    const closer = type === 'array' ? ']' : '}';
-    const first = text.indexOf(opener);
+    const rootOpener = type === 'array' ? '[' : '{';
+    const first = body.indexOf(rootOpener);
     if (first !== -1) {
-      const body = text.slice(first);
-      let depth = 0;
+      const scanBody = body.slice(first);
+      const stack = [];
+      const safePoints = []; // [{ pos, remaining }]
       let inString = false;
       let escape = false;
-      let lastSafeEnd = -1;
-      for (let i = 0; i < body.length; i++) {
-        const c = body[i];
+      for (let i = 0; i < scanBody.length; i++) {
+        const c = scanBody[i];
         if (escape) { escape = false; continue; }
         if (inString) {
           if (c === '\\') { escape = true; continue; }
@@ -92,15 +113,33 @@ function parseJsonResponse(raw, { type } = {}) {
           continue;
         }
         if (c === '"') { inString = true; continue; }
-        if (c === '{' || c === '[') depth++;
+        if (c === '{') stack.push('}');
+        else if (c === '[') stack.push(']');
         else if (c === '}' || c === ']') {
-          depth--;
-          if (depth === 1 && c === '}') lastSafeEnd = i;
+          if (stack.length && stack[stack.length - 1] === c) {
+            stack.pop();
+            // Closers still needed = remaining stack in reverse order
+            // (innermost first).
+            safePoints.push({ pos: i, remaining: stack.slice().reverse().join('') });
+            if (!stack.length) break; // root closed; further chars are postamble
+          } else {
+            break; // unmatched closer — JSON corrupt past here
+          }
         }
       }
-      if (lastSafeEnd > 0) {
-        const salvaged = body.slice(0, lastSafeEnd + 1) + closer;
+      // Try latest to earliest. Latest = most data salvaged; if it has a
+      // dangling comma we'll fall back to the previous valid close.
+      for (let i = safePoints.length - 1; i >= 0; i--) {
+        const sp = safePoints[i];
+        const salvaged = scanBody.slice(0, sp.pos + 1) + sp.remaining;
         try { const v = JSON.parse(salvaged); const c = check(v); if (c !== null) return c; } catch (_) {}
+        // Trailing comma between this close and the next array/object
+        // element is the most common cause; try stripping any whitespace
+        // + comma immediately before the closer pos.
+        const trimmed = scanBody.slice(0, sp.pos + 1).replace(/,\s*$/, '') + sp.remaining;
+        if (trimmed !== salvaged) {
+          try { const v = JSON.parse(trimmed); const c = check(v); if (c !== null) return c; } catch (_) {}
+        }
       }
     }
   }
