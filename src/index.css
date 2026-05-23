@@ -1,0 +1,140 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body, #root {
+    height: 100%;
+  }
+  body {
+    @apply bg-ink-50 text-ink-900 antialiased font-sans text-base;
+    font-feature-settings: 'cv11', 'ss01', 'ss03', 'tnum';
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  * {
+    border-color: theme('colors.ink.200');
+  }
+  /* Premium scrollbars */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(15, 23, 42, 0.14); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.26); border: 2px solid transparent; background-clip: padding-box; }
+
+  /* Focus ring globally — replaces the default ugly browser ring */
+  *:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.16);
+    border-radius: 6px;
+  }
+
+  /* Typography */
+  h1 { @apply text-2xl font-semibold tracking-tight; }
+  h2 { @apply text-xl font-semibold tracking-tight; }
+  h3 { @apply text-lg font-semibold tracking-tight; }
+
+  /* Numeric stability */
+  .tnum { font-variant-numeric: tabular-nums; }
+
+  /* Code */
+  code, pre, kbd, samp { @apply font-mono; }
+}
+
+@layer components {
+  /* Soft card foundation */
+  .surface {
+    @apply bg-white border border-ink-200 rounded-card shadow-card;
+  }
+  .surface-hover {
+    @apply transition-shadow duration-200 ease-out-soft hover:shadow-card-hover;
+  }
+  /* Subtle inset for fields */
+  .field {
+    @apply rounded-md border border-ink-200 bg-white;
+  }
+
+  /* Toast arrival — small slide+fade. Respects prefers-reduced-motion: the
+     @media block below null-routes the animation entirely. */
+  .toast-enter {
+    animation: toastIn 180ms ease-out both;
+  }
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0)    scale(1); }
+  }
+
+  /* Skeleton shimmer — neutral gradient sweeping across a muted track.
+     Used by <Skeleton/> for loading placeholders. */
+  .skeleton {
+    @apply relative overflow-hidden bg-ink-100 rounded-md;
+  }
+  .skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(90deg, transparent, rgba(255,255,255,0.7), transparent);
+    transform: translateX(-100%);
+    animation: skeletonShimmer 1.4s ease-in-out infinite;
+  }
+  @keyframes skeletonShimmer {
+    100% { transform: translateX(100%); }
+  }
+
+  /* Sidebar slide-in (mobile drawer). */
+  .sidebar-drawer-enter { animation: drawerIn 220ms ease-out both; }
+  @keyframes drawerIn {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .toast-enter, .sidebar-drawer-enter { animation: none; }
+    .skeleton::after { animation: none; opacity: 0.6; }
+  }
+}
+
+/* ── Print stylesheet ────────────────────────────────────────────────
+ * When the user clicks the Print / PDF button on the Reports page
+ * (which fires `window.print()`), we want the rendered output to look
+ * like a clean report, not the running app. Strategy:
+ *   - Hide app chrome (sidebar, filter bar, run list pane, test list pane,
+ *     mobile nav, indicators, toasts).
+ *   - Force the layout to single-column so the detail pane fills the page.
+ *   - Drop hover effects, sticky positioning, scroll containers — they
+ *     interact badly with the print pagination engine.
+ *   - Force black-on-white type so the printed PDF is legible regardless of
+ *     theme. Coloured tone chips fall back to black borders.
+ *
+ * Mark elements you DON'T want to print with `class="print:hidden"` (the
+ * standard Tailwind print variant) or with the `data-no-print` attribute
+ * for things added in this stylesheet directly.
+ */
+@media print {
+  /* Reset page chrome. */
+  body, #root { background: white !important; }
+  aside, nav, [role="navigation"], .sidebar-drawer-enter { display: none !important; }
+  /* Hide elements with the standard escape hatch. */
+  [data-no-print="true"], .print\:hidden { display: none !important; }
+  /* Drop sticky positioning so the printed report flows naturally. */
+  .sticky { position: static !important; }
+  /* Drop scroll containers so content paginates properly. */
+  .overflow-y-auto, .overflow-y-scroll, .overflow-auto, .overflow-hidden {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+  /* Cards: drop shadow and border-radius so the print engine doesn't try to
+     paint them at every page break. Keep the border so sections are visually
+     separated on paper. */
+  .shadow-card, .shadow-card-hover, .shadow-xl, .shadow-pop {
+    box-shadow: none !important;
+  }
+  /* Force-readable type. */
+  body { color: #000 !important; font-size: 11pt; }
+  /* Tighter page margin. */
+  @page { margin: 14mm; }
+  /* Avoid orphaned section headers. */
+  h1, h2, h3, h4 { break-after: avoid; }
+  /* Keep RCA / error / trace sections together on a page when possible. */
+  section { break-inside: avoid; }
+}

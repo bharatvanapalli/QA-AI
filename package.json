@@ -1,0 +1,61 @@
+{
+  "name": "qaai-portal",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "server": "node server/index.js",
+    "server:dev": "nodemon --watch server --ext js,json server/index.js",
+    "dev:full": "concurrently \"npm run server:dev\" \"npm run dev\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "cd playwright && npx playwright test tests/qaai-ui/",
+    "db:up": "docker compose up -d postgres mailhog",
+    "db:down": "docker compose down",
+    "db:reset": "docker compose down -v && docker compose up -d postgres mailhog",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.97.0",
+    "@google/generative-ai": "^0.24.1",
+    "@prisma/client": "^5.22.0",
+    "bcryptjs": "^2.4.3",
+    "clsx": "^2.1.1",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "lucide-react": "^0.454.0",
+    "nodemailer": "^6.9.16",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.0.0",
+    "tailwind-merge": "^2.5.4",
+    "uuid": "^11.0.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "@testing-library/user-event": "^14.5.2",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.0.0",
+    "jsdom": "^25.0.1",
+    "nodemon": "^3.1.7",
+    "postcss": "^8.4.49",
+    "prisma": "^5.22.0",
+    "tailwindcss": "^3.4.14",
+    "vite": "^6.0.1",
+    "vitest": "^2.1.8"
+  },
+  "prisma": {
+    "schema": "prisma/schema.prisma"
+  }
+}

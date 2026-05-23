@@ -1,0 +1,31 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: qaai-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: qaai
+      POSTGRES_PASSWORD: qaai_dev_password
+      POSTGRES_DB: qaai
+    ports:
+      - "5432:5432"
+    volumes:
+      - qaai_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qaai -d qaai"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: qaai-mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+volumes:
+  qaai_pg_data:

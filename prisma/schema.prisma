@@ -1,0 +1,444 @@
+// QAAI Prisma schema — SQLite (development).
+//
+// To switch to PostgreSQL for production:
+//   1. Change provider below to "postgresql"
+//   2. Set DATABASE_URL to a postgres connection string
+//   3. Re-enable `String[]` types (currently stored as JSON-encoded String for
+//      SQLite compatibility — see WebhookConfig.events and RunResult.screenshots)
+//   4. Delete prisma/migrations and re-run `npx prisma migrate dev --name init`
+//
+// Generate client : npx prisma generate
+// Run migration   : npx prisma migrate dev
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ── Users & sessions ─────────────────────────────────────────
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  firstName    String?
+  lastName     String?
+  role         String   @default("user") // user | admin | lead
+  organisation String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  lastLoginAt  DateTime?
+
+  sessions          Session[]
+  projects          Project[]
+  secrets           Secret[]
+  integrations      Integration[]
+  webhookConfigs    WebhookConfig[]
+  notificationChans NotificationChannel[]
+  auditLogs         AuditLog[]
+  runs              Run[]
+  agentRuns         AgentRun[]
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  refreshHash  String   @unique
+  userAgent    String?
+  ipAddress    String?
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+}
+
+// ── Secrets (encrypted blobs, keyed by user + name) ──────────
+model Secret {
+  id         String   @id @default(uuid())
+  userId     String
+  name       String   // e.g. "claude.apiKey", "ado.pat", "jira.token", "webhook.secret"
+  ciphertext String   // hex-encoded AES-256-GCM
+  iv         String   // hex-encoded IV
+  authTag    String   // hex-encoded auth tag
+  lastFour   String?  // last 4 chars of plaintext for UI display
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([userId, name])
+}
+
+// ── Integration configs (Claude, ADO, Jira) ──────────────────
+model Integration {
+  id              String    @id @default(uuid())
+  userId          String
+  type            String    // 'claude' | 'ado' | 'jira'
+  config          String   @default("{}") // JSON-encoded — see jsonField helpers
+  status          String    @default("unconfigured") // unconfigured | valid | invalid
+  lastValidatedAt DateTime?
+  lastError       String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([userId, type])
+}
+
+// ── Webhook delivery target ─────────────────────────────────
+model WebhookConfig {
+  id          String   @id @default(uuid())
+  userId      String
+  url         String
+  events      String   // JSON-encoded string[] — see helpers in services. Postgres can use String[] directly.
+  enabled     Boolean  @default(true)
+  lastFourSecret String? // last 4 chars of signing secret for display
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries WebhookDelivery[]
+  @@index([userId])
+}
+
+model WebhookDelivery {
+  id          String   @id @default(uuid())
+  webhookId   String
+  event       String
+  payload     String   @default("{}") // JSON-encoded
+  statusCode  Int?
+  responseBody String?
+  latencyMs   Int?
+  attempts    Int      @default(1)
+  succeeded   Boolean  @default(false)
+  error       String?
+  createdAt   DateTime @default(now())
+
+  webhook WebhookConfig @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  @@index([webhookId, createdAt])
+}
+
+// ── Notification channels & routing ─────────────────────────
+model NotificationChannel {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String   // 'email' | 'slack' | 'webhook'
+  target    String   // email address, slack webhook URL, generic URL
+  verified  Boolean  @default(false)
+  lastTestAt DateTime?
+  lastTestSuccess Boolean?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  routes  NotificationRoute[]
+  @@index([userId])
+}
+
+model NotificationRoute {
+  id        String @id @default(uuid())
+  channelId String
+  event     String // 'run.completed', 'run.failed', 'locator.blocked', 'governance.pr_ready', ...
+
+  channel NotificationChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  @@unique([channelId, event])
+}
+
+// ── Project / Run / TestCase domain ─────────────────────────
+model Project {
+  id          String   @id @default(uuid())
+  userId      String
+  name        String
+  environment String   @default("staging")
+  framework   String   @default("playwright-pom")
+  targetUrl   String?
+  // Free-form notes the user wants every AI agent to honour on this project.
+  // Prepended to every agent's system prompt via server/lib/promptCompose.
+  // Example: "This app uses MUI date pickers — prefer aria-label='Choose date'".
+  aiGuidance  String?
+  // Which LLM provider runs the 7 agents for this project. Default 'claude'
+  // keeps existing projects working unchanged. 'gemini' routes via the
+  // Google Generative AI SDK with the same canonical message shape; see
+  // server/lib/providers/gemini.js for the Anthropic <-> Gemini translation.
+  aiProvider  String   @default("claude") // 'claude' | 'gemini'
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user         User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  requirements Requirement[]
+  testCases    TestCase[]
+  scenarios    TestScenario[]
+  runs         Run[]
+  documents    Document[]
+  locators     KnowledgeBaseLocator[]
+  prs          GovernancePR[]
+  blockers     BlockedItem[]
+  agentRuns    AgentRun[]
+  discrepancies Discrepancy[]
+  @@index([userId])
+}
+
+model Document {
+  id          String   @id @default(uuid())
+  projectId   String
+  name        String
+  mimeType    String?
+  sizeBytes   Int
+  content     String
+  category    String   @default("other") // 'brd' | 'user-stories' | 'release-notes' | 'api-spec' | 'other'
+  uploadedAt  DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  @@index([projectId])
+}
+
+model Requirement {
+  id               String   @id @default(uuid())
+  projectId        String
+  sourceType       String   // 'ado' | 'jira' | 'upload' | 'manual'
+  sourceIdentifier String?
+  title            String?
+  content          String
+  category         String   @default("other") // mirrors Document.category
+  pulledAt         DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  @@index([projectId])
+}
+
+model Discrepancy {
+  id          String   @id @default(uuid())
+  projectId   String
+  kind        String   // 'in_brd_not_in_release' | 'in_release_not_in_brd' | 'spec_mismatch'
+  summary     String
+  detail      String
+  severity    String   @default("info") // 'info' | 'warning' | 'critical'
+  resolved    Boolean  @default(false)
+  resolvedAt  DateTime?
+  createdAt   DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  @@index([projectId, resolved])
+}
+
+model TestScenario {
+  id           String   @id @default(uuid())
+  projectId    String
+  name         String
+  module       String
+  priority     String   // 'P0' | 'P1' | 'P2' | 'P3'
+  category     String   // 'positive' | 'negative' | 'edge' | 'boundary' | 'empty' | 'e2e'
+  rationale    String
+  dependencyOn String?  // JSON-encoded array of scenario IDs
+  source       String   @default("agent")  // 'agent' | 'manual'
+  impacted     Boolean  @default(false) // smart-selection: this scenario is affected by current release notes
+  impactReason String?  // why it was marked impacted
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  project Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  cases   TestCase[]
+  @@index([projectId, priority])
+}
+
+model TestCase {
+  id          String   @id @default(uuid())
+  projectId   String
+  scenarioId  String?
+  name        String
+  type        String   // 'smoke' | 'regression' | 'functional' | 'security' | 'boundary' | 'integration'
+  module      String
+  confidence  Int
+  // Approval/lifecycle state ONLY. Do NOT overload this with execution
+  // results — pass/fail/blocked/skipped belong on RunResult per-run. Derive
+  // execution status by reading the latest RunResult for this test case
+  // (see services/runs.js#withLatestResult).
+  status      String   @default("pending") // pending | approved | rejected | running
+  assertions  String
+  steps       String?  // JSON-encoded array of { order, action, target?, value?, expected? }
+  specCode    String?  // generated Playwright spec code
+  // Free-form notes from the user that the Conductor / Critic / Supervisor
+  // honour for this specific case on every future run. Example: "Always wait
+  // for the loading spinner to disappear before clicking submit."
+  userGuidance String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project  Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  scenario TestScenario? @relation(fields: [scenarioId], references: [id], onDelete: SetNull)
+  results  RunResult[]
+  // Back-relations for the SetNull FKs declared on GovernancePR / BlockedItem.
+  // Without these, deleting a TestCase orphaned PRs and blockers by leaving
+  // testCaseId pointing at a non-existent row, contaminating dashboard counts.
+  prs      GovernancePR[]
+  blockers BlockedItem[]
+  @@index([projectId, status])
+  @@index([scenarioId])
+}
+
+model Run {
+  id          String   @id @default(uuid())
+  userId      String
+  projectId   String
+  sprintName  String
+  status      String   @default("running") // running | completed | failed | cancelled
+  // Counters denormalised from RunResult for fast list rendering. Keep in
+  // sync via recomputeRunCounters() in services/runs.js — never mutate one
+  // of the four without recomputing all four from RunResult rows.
+  // `blocked` and `skipped` mean different things — `blocked` is an
+  // environmental/browser failure that prevented assertions from running,
+  // `skipped` is `test.skip()` / `--grep` deselection that the engineer
+  // intentionally excluded. Conflating them mis-leads release decisions.
+  passed      Int      @default(0)
+  failed      Int      @default(0)
+  blocked     Int      @default(0)
+  skipped     Int      @default(0)
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  config      String?  // JSON-encoded
+
+  user    User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  results RunResult[]
+  @@index([userId, projectId])
+}
+
+model RunResult {
+  id           String   @id @default(uuid())
+  runId        String
+  testCaseId   String
+  status       String   // pass | fail | blocked | skipped
+  durationMs   Int?
+  error        String?
+  screenshots  String   @default("[]") // JSON-encoded string[]. Postgres can use String[].
+  video        String?
+  trace        String?
+  networkLog   String?  // JSON-encoded array of {url, method, status, ms}
+  domSnapshots String?  // JSON-encoded array of {step, html}
+  // Reporter agent output
+  rcaWhat       String?
+  rcaWhy        String?
+  rcaFix        String?
+  rcaClass      String?  // 'locator' | 'data' | 'timing' | 'backend' | 'env' | 'unknown'
+  rcaConfidence Int?     // 0-100
+  ticketId      String?  // external Jira/ADO id, e.g. "ACME-123" or "9876"
+  ticketUrl     String?
+  // Conversational follow-ups on this failure. JSON-encoded array of
+  // { role: 'user' | 'assistant', content: string, ts: string-ISO }.
+  // Populated by POST /runs/:r/results/:res/chat. Lives on the result so
+  // every result gets its own thread (no cross-test bleed).
+  chatHistory  String?
+  createdAt    DateTime @default(now())
+
+  run      Run      @relation(fields: [runId], references: [id], onDelete: Cascade)
+  testCase TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  @@index([runId])
+}
+
+// ── Agent runs (Architect / Planner / Conductor) ────────────
+model AgentRun {
+  id          String    @id @default(uuid())
+  projectId   String
+  userId      String
+  phase       String    // 'architect' | 'planner' | 'conductor'
+  status      String    @default("running") // running | complete | failed | cancelled
+  input       String?   // JSON-encoded
+  output      String?   // JSON-encoded
+  log         String?   // JSON-encoded array of { ts, level, message }
+  error       String?
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([projectId, phase])
+}
+
+// ── Knowledge base locators ─────────────────────────────────
+model KnowledgeBaseLocator {
+  id           String   @id @default(uuid())
+  projectId    String
+  element      String   // human label
+  selector     String   // CSS / XPath / role
+  strategy     String?  // 'role' | 'testid' | 'css' | 'xpath'
+  occurrences  Int      @default(1)
+  healthScore  Int      @default(100)
+  lastHealedAt DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  @@unique([projectId, element])
+  @@index([projectId])
+}
+
+// ── Generated Playwright PRs awaiting human approval ────────
+model GovernancePR {
+  id           String   @id @default(uuid())
+  projectId    String
+  runId        String?
+  testCaseId   String?
+  number       String   // e.g. "#101"
+  filename     String
+  requirement  String
+  specCode     String   // @db.Text on Postgres
+  lintPassed   Boolean  @default(true)
+  lintFindings String?   // JSON-encoded [{ rule, severity, line, message }, ...]
+  status       String   @default("pending") // pending | approved | merged | rejected
+  reviewer     String?
+  reviewedAt   DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  project  Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  // SetNull keeps the PR row as historical audit even after the source TC
+  // is regenerated — dashboards filter `testCaseId != null` to count only
+  // PRs whose case still exists.
+  testCase TestCase? @relation(fields: [testCaseId], references: [id], onDelete: SetNull)
+  // Two different projects could otherwise produce PR #101 — make the
+  // human-facing number unique per project so cross-project references
+  // (links, audit logs) are unambiguous.
+  @@unique([projectId, number])
+  @@index([projectId, status])
+}
+
+// ── Blocked items (failed locators surfaced for human triage) ─
+model BlockedItem {
+  id          String   @id @default(uuid())
+  projectId   String
+  runId       String?
+  testCaseId  String?
+  reason      String   // 'locator_missing' | 'timeout' | 'assertion' | 'network'
+  locator     String?
+  message     String
+  resolved    Boolean  @default(false)
+  resolvedAt  DateTime?
+  createdAt   DateTime @default(now())
+
+  project  Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  // SetNull preserves the row for historical reporting after a regen, but
+  // dashboards filter testCaseId != null so stale blockers aren't surfaced
+  // as "still actionable".
+  testCase TestCase? @relation(fields: [testCaseId], references: [id], onDelete: SetNull)
+  @@index([projectId, resolved])
+}
+
+// ── Audit log ───────────────────────────────────────────────
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  action    String   // 'auth.login' | 'settings.claude.save' | 'secret.delete' | etc.
+  target    String?  // entity affected
+  metadata  String?  // JSON-encoded
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+}
