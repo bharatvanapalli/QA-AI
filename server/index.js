@@ -33,6 +33,8 @@ const governanceRoutes = require('./routes/governance');
 const blockedRoutes = require('./routes/blocked');
 const outputFilesRoutes = require('./routes/outputFiles');
 const dashboardRoutes = require('./routes/dashboard');
+const sprintsRoutes = require('./routes/sprints');
+const budgetRoutes = require('./routes/budget');
 
 const { PLAYWRIGHT_DIR } = require('./playwright-worker');
 
@@ -82,10 +84,12 @@ app.use('/api/projects/:projectId', analystRoutes);
 app.use('/api/projects/:projectId/knowledge-base', knowledgeBaseRoutes);
 app.use('/api/projects/:projectId/governance', governanceRoutes);
 app.use('/api/projects/:projectId/blocked', blockedRoutes);
+app.use('/api/projects/:projectId/sprints', sprintsRoutes);
 app.use('/api/projects/:projectId/output-files', outputFilesRoutes);
 app.use('/api/runs', runsRoutes);
 app.use('/api/runs', reporterRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/budget', budgetRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

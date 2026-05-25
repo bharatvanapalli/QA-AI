@@ -1,4 +1,4 @@
-import React, { memo, useEffect } from 'react';
+import React, { memo, useEffect, useState } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -19,10 +19,13 @@ import {
   X,
   ChevronsLeft,
   ChevronsRight,
+  Cpu,
 } from 'lucide-react';
 import { useAuth } from '../store/auth';
 import { useRunStream } from '../store/runStream';
+import { useProject } from '../store/project';
 import { useToast } from '../lib/useToast';
+import api from '../lib/apiClient';
 
 const PRIMARY = [
   { to: '/overview', label: 'Overview', icon: LayoutDashboard },
@@ -135,11 +138,13 @@ function Sidebar({
   collapsed = false,
   onToggleCollapse,
 }) {
-  const { profile, logout } = useAuth();
+  const { profile, logout, status } = useAuth();
   const { running } = useRunStream();
+  const { current } = useProject();
   const toast = useToast();
   const navigate = useNavigate();
   const location = useLocation();
+  const providerStatus = useProviderStatus(status, current?.aiProvider, location.pathname);
 
   const handleLogout = async () => {
     try {
@@ -230,6 +235,7 @@ function Sidebar({
 
             <SectionLabel id="sidebar-config" collapsed={collapsed}>Configuration</SectionLabel>
             <NavItem to="/settings" label="Settings" icon={SettingsIcon} collapsed={collapsed} />
+            <ProviderStatusRow status={providerStatus} collapsed={collapsed} />
             <NavItem to="/profile" label="Profile" icon={User} collapsed={collapsed} />
           </ul>
         </nav>
@@ -283,6 +289,106 @@ function Sidebar({
         </div>
       </aside>
     </>
+  );
+}
+
+// ── useProviderStatus ──────────────────────────────────────────────
+// Polls the configured-status of the active project's AI provider so the
+// sidebar can surface "Claude OK" / "Gemini missing key" without forcing
+// the user to navigate to Settings to find out. Re-fetches when:
+//   · the user authenticates,
+//   · the active provider changes,
+//   · the user leaves a /settings/* route (in case they just saved/deleted).
+// Cheap — one GET per transition, payload is tiny.
+function useProviderStatus(authStatus, aiProvider, pathname) {
+  const [state, setState] = useState({ loading: true, info: null, provider: null });
+  // Track the previous pathname so we re-fetch on exit-from-settings.
+  const wasInSettings = pathname.startsWith('/settings');
+  useEffect(() => {
+    if (authStatus !== 'authed' || !aiProvider) {
+      setState({ loading: false, info: null, provider: aiProvider || null });
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      setState((s) => ({ ...s, loading: true, provider: aiProvider }));
+      try {
+        const res = await api.get(`/settings/${aiProvider}`);
+        if (!cancelled) {
+          setState({ loading: false, info: res, provider: aiProvider });
+        }
+      } catch {
+        if (!cancelled) {
+          setState({ loading: false, info: null, provider: aiProvider });
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+    // pathname dep lets us refetch when user leaves a /settings/* route.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authStatus, aiProvider, wasInSettings]);
+  return state;
+}
+
+// ── ProviderStatusRow ──────────────────────────────────────────────
+// Compact provider-state line below the Settings nav item. Three states:
+//   · valid       → success-tinted "Claude · OK" (or "Gemini · OK")
+//   · unconfigured→ warn-tinted, links to Settings for the active provider
+//   · invalid     → danger-tinted, links to Settings with same affordance
+// Hidden when no project is active (nothing to bind status to).
+function ProviderStatusRow({ status, collapsed }) {
+  const { loading, info, provider } = status;
+  if (!provider) return null;
+  if (loading && !info) return null;
+
+  const configured = !!info?.configured;
+  const apiStatus = info?.status || (configured ? 'valid' : 'unconfigured');
+  const tone =
+    apiStatus === 'valid'
+      ? { dot: 'bg-success-400', text: 'text-success-300', label: 'OK' }
+      : apiStatus === 'invalid'
+      ? { dot: 'bg-danger-400', text: 'text-danger-300', label: 'Invalid' }
+      : { dot: 'bg-warn-400', text: 'text-warn-300', label: 'Missing key' };
+
+  const providerLabel = provider === 'gemini' ? 'Gemini' : 'Claude';
+  const settingsTo = `/settings/${provider}`;
+
+  // Collapsed mode: a single status dot under the Settings cog. Tooltip
+  // carries the human label so it's still discoverable.
+  if (collapsed) {
+    return (
+      <li>
+        <NavLink
+          to={settingsTo}
+          title={`${providerLabel} · ${tone.label}`}
+          className="relative flex items-center justify-center px-0 py-1 mx-2 rounded-md text-ink-400 hover:text-white"
+        >
+          <Cpu className="w-3.5 h-3.5" aria-hidden="true" />
+          <span
+            className={`absolute top-0.5 right-1 w-1.5 h-1.5 rounded-full ${tone.dot}`}
+            aria-hidden="true"
+          />
+          <span className="sr-only">{providerLabel} status: {tone.label}</span>
+        </NavLink>
+      </li>
+    );
+  }
+
+  return (
+    <li>
+      <NavLink
+        to={settingsTo}
+        className="flex items-center gap-2 px-3 py-1.5 mx-2 rounded-md text-2xs text-ink-400 hover:bg-white/5 hover:text-white"
+        title={`${providerLabel} provider: ${tone.label}`}
+      >
+        <Cpu className="w-3 h-3 shrink-0" aria-hidden="true" />
+        <span className="flex-1 truncate">{providerLabel}</span>
+        <span className={`inline-flex items-center gap-1 ${tone.text}`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${tone.dot}`} aria-hidden="true" />
+          <span className="font-semibold uppercase tracking-wider">{tone.label}</span>
+        </span>
+      </NavLink>
+    </li>
   );
 }
 

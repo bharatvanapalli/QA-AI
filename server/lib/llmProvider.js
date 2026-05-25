@@ -13,17 +13,75 @@
  *
  * The Gemini provider translates both directions internally so agent code
  * stays provider-agnostic and unchanged.
+ *
+ * Wrapping layer (E10): every complete() call passes through
+ *   1. circuitBreaker — fail-fast when an upstream is in a 5xx storm
+ *   2. budget         — block + record token usage when the user has
+ *                       hit their daily ceiling (only when ALS context
+ *                       carries a userId; non-request callers skip it)
+ * Wrapper logic lives here so the two underlying provider files stay
+ * single-purpose and the agents call complete() without knowing the
+ * protective infrastructure exists.
  */
 
 const anthropic = require('./providers/anthropic');
 const gemini = require('./providers/gemini');
+const breaker = require('./circuitBreaker');
+const userContext = require('./userContext');
+const budget = require('../services/budget');
 
-const PROVIDERS = {
+const RAW_PROVIDERS = {
   claude: anthropic,
   gemini,
 };
 
 const VALID_PROVIDERS = Object.freeze(['claude', 'gemini']);
+
+/**
+ * Wrap a provider so .complete() runs through the breaker + budget
+ * layers. The provider implementation itself stays oblivious — it just
+ * sees the regular options bag and returns the canonical response.
+ */
+function wrap(impl, providerName) {
+  return {
+    name: impl.name,
+    async complete(opts) {
+      const userId = userContext.getUserId();
+
+      // 1. Breaker pre-flight. Throws BREAKER_OPEN if the provider is
+      //    in cool-down. Returns a token when in half_open so we can
+      //    release the probe slot on completion.
+      const probeToken = breaker.check(providerName);
+
+      // 2. Budget pre-flight. Only enforced when we have a request-bound
+      //    userId (scripts/jobs without ALS context bypass — they're
+      //    operator-initiated, not end-user runs).
+      if (userId) await budget.assertWithinLimit(userId);
+
+      try {
+        const resp = await impl.complete(opts);
+        breaker.recordSuccess(providerName, probeToken);
+        // Record usage AFTER a successful call. On error we don't bill —
+        // the user shouldn't be charged for an upstream 5xx.
+        if (userId && resp?.usage) {
+          await budget.recordUsage(userId, providerName, resp.usage).catch((err) => {
+            // Budget bookkeeping must never break a successful AI call.
+            console.warn('[budget] record failed:', err.message);
+          });
+        }
+        return resp;
+      } catch (err) {
+        breaker.recordFailure(providerName, err, probeToken);
+        throw err;
+      }
+    },
+  };
+}
+
+const PROVIDERS = {
+  claude: wrap(anthropic, 'claude'),
+  gemini: wrap(gemini, 'gemini'),
+};
 
 function getProvider(name) {
   const key = String(name || 'claude').toLowerCase();
@@ -41,4 +99,23 @@ function isValidProvider(name) {
   return VALID_PROVIDERS.includes(String(name || '').toLowerCase());
 }
 
-module.exports = { getProvider, isValidProvider, VALID_PROVIDERS };
+/**
+ * Raw provider escape-hatch. Bypasses breaker + budget. Use only for:
+ *   - Connection-test routes (Settings → Test API key) — single-shot,
+ *     should still surface a real upstream failure even when the
+ *     breaker is open so the user can diagnose.
+ *   - Test scaffolding.
+ */
+function getRawProvider(name) {
+  const key = String(name || 'claude').toLowerCase();
+  const p = RAW_PROVIDERS[key];
+  if (!p) {
+    const err = new Error(`Unknown AI provider: ${name}. Valid: ${VALID_PROVIDERS.join(', ')}.`);
+    err.code = 'UNKNOWN_PROVIDER';
+    err.status = 400;
+    throw err;
+  }
+  return p;
+}
+
+module.exports = { getProvider, getRawProvider, isValidProvider, VALID_PROVIDERS };

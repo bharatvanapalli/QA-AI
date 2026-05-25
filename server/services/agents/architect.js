@@ -62,7 +62,18 @@ CRITICAL RULES:
 3. Surface EMPTY-state scenarios where data may legitimately be absent.
 4. E2E scenarios are reserved for genuine cross-module flows.
 5. First step of every case is typically a Navigate. Last step is typically a Verify/Expect.
-6. Be concise — every character costs tokens. Prefer short, behavioural language.`;
+6. Be concise — every character costs tokens. Prefer short, behavioural language.
+
+CATEGORY DIVERSITY (avoid happy-path-only output):
+7. When the requirements describe a form, login, search box, file upload, URL parameter, or any
+   user-supplied input, INCLUDE at least one scenario with category "negative" and type "security"
+   covering the relevant class — SQL injection / XSS / auth bypass / path traversal / oversized
+   payload — whichever applies. Skip ONLY when the feature genuinely has no user-supplied input.
+8. INCLUDE at least one UI-validation scenario (error message renders, loading state appears,
+   disabled state respected, success toast shown) per module that has interactive elements. Use
+   category "edge" or "negative" with explicit assertions on the visible UI feedback.
+9. Do NOT return a scenario list that is 100% category="positive". A real QA suite for any
+   non-trivial feature has at minimum 3 categories represented.`;
 
 /**
  * Robust JSON parser for the Architect's output.
@@ -192,7 +203,7 @@ function normaliseStep(s, fallbackOrder) {
  *                                     in-flight HTTP request mid-stream.
  * @returns {Promise<{ scenarios: Array, raw: string, tokens: object }>}
  */
-async function run({ apiKey, model, requirements, onLog = async () => {}, signal, onRateLimit, extraGuidance, provider: providerName }) {
+async function run({ apiKey, model, requirements, onLog = async () => {}, signal, onRateLimit, extraGuidance, provider: providerName, priorContext }) {
   if (!apiKey) {
     const err = new Error('AI provider API key missing. Configure it in Settings.');
     err.code = 'NO_API_KEY';
@@ -231,7 +242,14 @@ async function run({ apiKey, model, requirements, onLog = async () => {}, signal
       apiKey,
       model,
       maxTokens: 16_000,
-      system: composeSystemPrompt(SYSTEM_PROMPT, extraGuidance),
+      // Phase E1.7 — prepend prior-runs preamble when the project has been
+      // tested before. Signals to the Architect that the KB already holds
+      // learned locators and bias scenarios toward continuity with prior
+      // sprints. composeSystemPrompt then wraps in operator guidance.
+      system: composeSystemPrompt(
+        priorContext ? `${priorContext}\n\n${SYSTEM_PROMPT}` : SYSTEM_PROMPT,
+        extraGuidance,
+      ),
       messages: [{ role: 'user', content: userText }],
       signal,
       onRateLimit,

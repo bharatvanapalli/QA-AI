@@ -27,8 +27,26 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
+const mcpContextConfig = require('./mcpContextConfig');
+const downloadWatcher = require('./downloadWatcher');
+
 const ARTIFACT_DIR = path.join(__dirname, '..', '..', 'playwright', 'test-results', 'live');
 fs.mkdirSync(ARTIFACT_DIR, { recursive: true });
+
+/**
+ * Parse Project.contextViewport ("{width:1920,height:1080}" or
+ * '{"width":...}') into a {width, height} object. Returns null on
+ * garbage so the caller falls back to the default.
+ */
+function parseProjectViewport(raw) {
+  if (!raw || typeof raw !== 'string') return null;
+  try {
+    const v = JSON.parse(raw);
+    if (v && typeof v.width === 'number' && typeof v.height === 'number'
+        && v.width > 0 && v.height > 0) return { width: v.width, height: v.height };
+  } catch (_) {}
+  return null;
+}
 
 // Resolve the @playwright/mcp CLI path once at module load so spawn() can find it.
 // The package's `exports` field only allows '.' and './package.json' subpaths,
@@ -105,12 +123,39 @@ function buildMcpCliArgs({ viewport, headless, isolated, userDataDir, caps, noSa
  * @param {string} [opts.userDataDir]    Optional persistent profile path
  * @param {function} [opts.broadcast]    (msg) => void — for frame events and logs
  * @param {string[]} [opts.extraCaps]    Extra capabilities beyond core (vision, pdf, devtools)
+ * @param {object}  [opts.project]       Project row — drives browser context
+ *                                       configuration (Phase E10.5). When omitted,
+ *                                       the session boots with MCP defaults +
+ *                                       auto-accept dialogs.
  * @returns {Promise<object>} session
  */
-async function startMcpSession({ userId, targetUrl, viewport, userDataDir, broadcast, extraCaps } = {}) {
+async function startMcpSession({ userId, targetUrl, viewport, userDataDir, broadcast, extraCaps, project } = {}) {
   const cliPath = resolveMcpCliPath();
   const { Client, StdioClientTransport } = loadSdk();
-  const vp = viewport || { width: 1280, height: 720 };
+  const projectViewport = parseProjectViewport(project?.contextViewport);
+  const vp = projectViewport || viewport || { width: 1280, height: 720 };
+
+  // Generate a stable session id BEFORE the context-config call so the
+  // downloads dir + init-script paths are deterministic.
+  const sessionId = crypto.randomBytes(8).toString('hex');
+
+  // Phase E10.5 — browser context configuration. Adds CLI args + writes
+  // a per-session init-script with locale / geo / color-scheme / fetch
+  // header / dialog shims as needed. Always sets --output-dir so the
+  // downloads watcher has a known location to poll.
+  let contextExtras = { cliArgs: [], initScriptPath: null, downloadsDir: null };
+  try {
+    contextExtras = mcpContextConfig.buildContextArgs(project || {}, { id: sessionId });
+  } catch (err) {
+    // Bad project config shouldn't prevent the session — log and continue
+    // with MCP defaults.
+    try {
+      (broadcast || (() => {}))({
+        type: 'agent.phase.log', phase: 'conductor', level: 'warn',
+        message: `[mcp] browser context config failed: ${err.message} — booting with defaults`,
+      });
+    } catch (_) {}
+  }
 
   const args = [
     cliPath,
@@ -123,6 +168,7 @@ async function startMcpSession({ userId, targetUrl, viewport, userDataDir, broad
       // Safe in dev; do NOT enable for production multi-tenant scenarios.
       noSandbox: process.env.QAAI_MCP_NO_SANDBOX === '1' || process.env.QAAI_MCP_NO_SANDBOX === 'true',
     }),
+    ...contextExtras.cliArgs,
   ];
 
   // The MCP SDK's StdioClientTransport spawns the subprocess and pipes JSON-RPC
@@ -149,7 +195,7 @@ async function startMcpSession({ userId, targetUrl, viewport, userDataDir, broad
   const toolList = await client.listTools();
 
   const session = {
-    id: crypto.randomBytes(8).toString('hex'),
+    id: sessionId,
     userId,
     client,
     transport,
@@ -160,7 +206,28 @@ async function startMcpSession({ userId, targetUrl, viewport, userDataDir, broad
     framePollerPaused: false,
     closed: false,
     lastSnapshot: '',
+    // Phase E10.5 — context-config bookkeeping. The download watcher
+    // polls `downloadsDir`; init-script path is held so we can unlink
+    // it at session close.
+    downloadsDir: contextExtras.downloadsDir,
+    initScriptPath: contextExtras.initScriptPath,
+    projectId: project?.id || null,
   };
+
+  // Start the downloads watcher as soon as we have the session shell.
+  // Safe to start before initial navigate — no downloads can fire yet.
+  if (session.downloadsDir && session.projectId) {
+    try {
+      downloadWatcher.startWatcher(session, session.projectId);
+    } catch (err) {
+      try {
+        session.broadcast({
+          type: 'agent.phase.log', phase: 'conductor', level: 'warn',
+          message: `[mcp] downloadWatcher start failed: ${err.message}`,
+        });
+      } catch (_) {}
+    }
+  }
 
   // Capture subprocess stderr to the broadcast channel — these are the real
   // Playwright/Chromium errors. The Critic and the Theater log both consume them.
@@ -203,6 +270,19 @@ async function stopMcpSession(session) {
   if (!session || session.closed) return;
   session.closed = true;
   stopFramePoller(session);
+  // Phase E10.5 — stop the downloads watcher and unlink the init-script
+  // BEFORE killing the subprocess so we don't race on file handles.
+  try { downloadWatcher.stopWatcher(session); } catch (_) {}
+  try {
+    mcpContextConfig.cleanupContextArtifacts({
+      initScriptPath: session.initScriptPath,
+      downloadsDir: session.downloadsDir,
+      // Keep the downloads dir on disk — the Download rows reference it
+      // and Reports needs to serve the bytes. Periodic cleanup is a
+      // separate concern handled by the reaper.
+      keepDownloads: true,
+    });
+  } catch (_) {}
   try { await session.client.close(); } catch (_) {}
   // StdioClientTransport.close() kills the subprocess for us. Belt and braces:
   try { await session.transport?.close?.(); } catch (_) {}
@@ -222,6 +302,18 @@ async function callTool(session, name, args) {
     e.code = 'MCP_NO_SESSION';
     throw e;
   }
+  // Phase E2.1 — `assertion_check` is a SYNTHETIC tool. Instead of round-
+  // tripping to the MCP subprocess (which doesn't know about it), the
+  // server fabricates the response from the cached snapshot. Verifies a
+  // declared assertion against the live page accessibility tree. Used by
+  // the Conductor to ratify "RESULT: pass" claims BEFORE end_turn, so a
+  // hallucinated success can self-correct mid-run instead of being caught
+  // post-hoc by the Critic.
+  if (name === 'assertion_check') {
+    const result = await checkAssertion(session, args || {});
+    // Don't update lastSnapshot — this tool reads cache, doesn't refresh it.
+    return result;
+  }
   // Pause frame polling while a "real" tool is in flight — otherwise polled
   // screenshots compete with the tool call and we get flaky responses.
   session.framePollerPaused = true;
@@ -230,7 +322,25 @@ async function callTool(session, name, args) {
     // Cache the snapshot text on the session so the inline Critic (and the
     // picker) can read it without burning another tool call.
     const txt = textOfContent(result?.content);
-    if (txt) session.lastSnapshot = txt;
+    if (txt) {
+      session.lastSnapshot = txt;
+      // Phase E1.4 — broadcast a truncated preview of the accessibility tree
+      // so the Theater DOM-snapshot pane can render what the agent is
+      // actually looking at. 8 KB is enough for the visible viewport on
+      // typical SaaS pages; the picker / healer already operate on the
+      // (untruncated) `lastSnapshot`. Best-effort — never throws.
+      try {
+        session.broadcast({
+          type: 'mcp.snapshot.preview',
+          sessionId: session.id,
+          tool: name,
+          snapshot: txt.slice(0, 8_000),
+          truncated: txt.length > 8_000,
+          length: txt.length,
+          ts: Date.now(),
+        });
+      } catch (_) {}
+    }
     return result;
   } finally {
     session.framePollerPaused = false;
@@ -324,12 +434,165 @@ function stopFramePoller(session) {
   }
 }
 
+// ── Phase E2.1 — synthetic `assertion_check` tool ───────────────────────
+//
+// The Conductor calls this BEFORE emitting `RESULT: pass` for a test case.
+// We don't roundtrip MCP — instead, we read the cached accessibility-tree
+// snapshot and verify the declared assertion against it. Fast (sub-millisecond),
+// no extra browser cost.
+//
+// Schema:
+//   { assertion: string,            // human-readable claim being checked
+//     expectedRole?: string,         // e.g. "heading", "alert"
+//     expectedText?: string,         // case-insensitive substring match
+//     expectedUrlPattern?: string }  // RegExp pattern matched against any url=
+//
+// Response:
+//   { matched: bool, evidence: string, reason: string }
+//
+// At least one of expectedRole / expectedText / expectedUrlPattern must be
+// supplied — passing none returns matched=false with reason=missing_criteria.
+
+const ASSERTION_CHECK_TOOL = {
+  name: 'assertion_check',
+  description:
+    'Verify an assertion against the current page snapshot AND/OR the captured downloads for this case. Call this for EACH assertion BEFORE you emit RESULT: pass — any matched=false flips the test case to fail. Pass at least one of expectedRole, expectedText, expectedUrlPattern, or expectedDownload.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      assertion: { type: 'string', description: 'Human-readable claim being verified (e.g. "user lands on dashboard").' },
+      expectedRole: { type: 'string', description: 'ARIA role expected to appear (e.g. "heading", "alert", "main").' },
+      expectedText: { type: 'string', description: 'Case-insensitive substring expected on the page.' },
+      expectedUrlPattern: { type: 'string', description: 'JavaScript-regex pattern expected to match a URL on the page (e.g. "/dashboard").' },
+      expectedDownload: {
+        type: 'object',
+        description: 'Verify a file was actually downloaded during this case. The download watcher records every file the browser saves; provide a filenamePattern (regex) and/or minSize (bytes) and/or mimeType.',
+        properties: {
+          filenamePattern: { type: 'string', description: 'Case-insensitive regex against suggested filename (e.g. "report.*\\\\.pdf$").' },
+          minSize: { type: 'number', description: 'Minimum file size in bytes — guards against empty/0-byte downloads.' },
+          mimeType: { type: 'string', description: 'Exact MIME type (e.g. "application/pdf").' },
+        },
+      },
+    },
+    required: ['assertion'],
+  },
+};
+
+async function checkAssertion(session, args) {
+  const snap = session?.lastSnapshot || '';
+  const { assertion, expectedRole, expectedText, expectedUrlPattern, expectedDownload } = args || {};
+  // Guard: at least one criterion must be supplied — otherwise we can't
+  // verify anything and a naive matched=true would let hallucinated passes
+  // through. Reject explicitly so the agent learns to supply criteria.
+  if (!expectedRole && !expectedText && !expectedUrlPattern && !expectedDownload) {
+    return {
+      content: [{ type: 'text', text: JSON.stringify({
+        matched: false,
+        reason: 'missing_criteria',
+        evidence: 'No expectedRole / expectedText / expectedUrlPattern / expectedDownload supplied. Provide at least one so the assertion can actually be checked.',
+      }) }],
+      isError: false,
+    };
+  }
+  // Download-only assertion: no snapshot needed.
+  const isPageCriterion = !!(expectedRole || expectedText || expectedUrlPattern);
+  if (isPageCriterion && !snap) {
+    return {
+      content: [{ type: 'text', text: JSON.stringify({
+        matched: false,
+        reason: 'no_snapshot',
+        evidence: 'No page snapshot is cached. Call browser_snapshot first, then re-run assertion_check.',
+      }) }],
+      isError: false,
+    };
+  }
+
+  const reasons = [];
+  const evidenceBits = [];
+
+  if (expectedRole) {
+    // Snapshot lines look like: `- role "name" [ref=eN] ...`. Match the
+    // role token at the start of any line, optionally indented.
+    const roleRe = new RegExp(`^\\s*-?\\s*${expectedRole.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}\\b`, 'mi');
+    const m = snap.match(roleRe);
+    if (m) {
+      // Capture the line for evidence so the agent can see WHAT matched.
+      const line = snap.split(/\r?\n/).find((l) => roleRe.test(l));
+      evidenceBits.push(`role:OK (${(line || '').trim().slice(0, 120)})`);
+    } else {
+      reasons.push(`expectedRole "${expectedRole}" not found in snapshot`);
+    }
+  }
+
+  if (expectedText) {
+    const needle = String(expectedText).toLowerCase();
+    if (snap.toLowerCase().includes(needle)) {
+      // Pull the surrounding 60 chars so the agent sees the context, not
+      // just "matched".
+      const idx = snap.toLowerCase().indexOf(needle);
+      const start = Math.max(0, idx - 20);
+      const end = Math.min(snap.length, idx + needle.length + 40);
+      evidenceBits.push(`text:OK ("…${snap.slice(start, end).replace(/\s+/g, ' ').trim()}…")`);
+    } else {
+      reasons.push(`expectedText "${String(expectedText).slice(0, 80)}" not found in page text`);
+    }
+  }
+
+  if (expectedUrlPattern) {
+    let urlRe;
+    try { urlRe = new RegExp(expectedUrlPattern); } catch (_) { urlRe = null; }
+    if (!urlRe) {
+      reasons.push(`expectedUrlPattern "${expectedUrlPattern}" is not a valid regex`);
+    } else {
+      // MCP snapshots from @playwright/mcp include the current URL at the
+      // top as `Page URL: https://...`. Fall back to any URL-shaped string
+      // in the snapshot when that header isn't present.
+      const urlMatch = snap.match(/Page URL:\s*(\S+)/i) || snap.match(/https?:\/\/[^\s"'<>]+/);
+      const url = urlMatch?.[1] || urlMatch?.[0] || '';
+      if (url && urlRe.test(url)) {
+        evidenceBits.push(`url:OK (${url.slice(0, 120)})`);
+      } else {
+        reasons.push(`expectedUrlPattern "${expectedUrlPattern}" did not match current URL "${url || '(unknown)'}"`);
+      }
+    }
+  }
+
+  // E10.5 — Download verification. Reads the watcher's records for the
+  // active RunResult and matches against the spec. Async so the prisma
+  // query can complete before we shape the response.
+  if (expectedDownload) {
+    const activeRunResultId = session?._dlWatcher?.activeRunResultId;
+    if (!activeRunResultId) {
+      reasons.push('expectedDownload was set but no RunResult is active — the watcher cannot attribute downloads to a case');
+    } else {
+      try {
+        const dlCheck = await downloadWatcher.checkDownloadExpectation(activeRunResultId, expectedDownload);
+        if (dlCheck.matched) evidenceBits.push(`download:OK (${dlCheck.evidence})`);
+        else reasons.push(`expectedDownload not satisfied: ${dlCheck.evidence}`);
+      } catch (err) {
+        reasons.push(`download check threw: ${err.message}`);
+      }
+    }
+  }
+
+  const matched = reasons.length === 0;
+  const payload = matched
+    ? { matched: true, assertion: assertion || null, evidence: evidenceBits.join(' · ') || 'all criteria matched' }
+    : { matched: false, assertion: assertion || null, reason: 'criteria_failed', evidence: reasons.join(' · ') };
+  return {
+    content: [{ type: 'text', text: JSON.stringify(payload) }],
+    isError: false,
+  };
+}
+
 /**
  * Map MCP tools to Anthropic's tool-use schema. Strip keys Anthropic rejects.
+ * Phase E2.1 — also appends the synthetic `assertion_check` tool so the
+ * Conductor can call it like any other MCP tool.
  */
 function listAnthropicTools(session) {
   const REJECTED = new Set(['outputSchema', 'annotations', '_meta', 'execution', 'icons', 'title']);
-  return (session.mcpTools || []).map((t) => {
+  const real = (session.mcpTools || []).map((t) => {
     const inputSchema = sanitiseSchema(t.inputSchema) || { type: 'object', properties: {} };
     const tool = {
       name: t.name,
@@ -339,6 +602,8 @@ function listAnthropicTools(session) {
     for (const k of REJECTED) delete tool[k];
     return tool;
   });
+  // Append the synthetic assertion_check tool. Server-side handled in callTool.
+  return [...real, ASSERTION_CHECK_TOOL];
 }
 
 /**

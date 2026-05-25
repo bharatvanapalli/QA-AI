@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { FileCode, Folder, Copy, Check, Download } from 'lucide-react';
+import { FileCode, Folder, Copy, Check, Download, Trash2 } from 'lucide-react';
 import api from '../lib/apiClient';
 import { BASE_URL } from '../lib/apiClient';
 import { useProject } from '../store/project';
 import { useToast } from '../lib/useToast';
+import { useConfirm } from '../lib/useConfirm';
 import PageHeader from '../components/PageHeader';
 import EmptyState from '../components/EmptyState';
 import Button from '../components/ui/Button';
@@ -12,6 +13,7 @@ import { tokenizeTs, TOKEN_CLASSES } from '../lib/highlightTs';
 export default function OutputFiles() {
   const { current } = useProject();
   const toast = useToast();
+  const confirm = useConfirm();
   const [files, setFiles] = useState([]);
   const [persisted, setPersisted] = useState([]);
   const [activeName, setActiveName] = useState(null);
@@ -84,6 +86,30 @@ export default function OutputFiles() {
   };
 
   const [downloading, setDownloading] = useState(false);
+  const [clearing, setClearing] = useState(false);
+
+  const clearAll = useCallback(async () => {
+    if (!current) return;
+    const ok = await confirm({
+      title: 'Clear all output files?',
+      message: 'This wipes every generated spec file, page object, run screenshot/video/trace, and PR row for this project. Test scenarios and cases are kept so you can re-run. This cannot be undone.',
+      confirmLabel: 'Clear all',
+      destructive: true,
+    });
+    if (!ok) return;
+    setClearing(true);
+    try {
+      const res = await api.del(`/projects/${current.id}/output-files`);
+      setActiveName(null);
+      setActiveContent('');
+      await load();
+      toast.success(`Cleared ${res.filesDeleted ?? 0} file${res.filesDeleted === 1 ? '' : 's'} and ${res.prDeleted ?? 0} PR row${res.prDeleted === 1 ? '' : 's'}.`);
+    } catch (err) {
+      toast.error(err.message, { title: 'Clear failed' });
+    } finally {
+      setClearing(false);
+    }
+  }, [current, confirm, toast, load]);
   const downloadZip = useCallback(async () => {
     if (!current) return;
     setDownloading(true);
@@ -128,6 +154,10 @@ export default function OutputFiles() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <PageHeader title="Output Files" subtitle={`${totalFiles} generated spec file${totalFiles === 1 ? '' : 's'}`}>
+        <Button size="sm" variant="secondary" onClick={clearAll} disabled={!totalFiles || clearing} loading={clearing} className="text-danger-600">
+          <Trash2 className="w-3.5 h-3.5" />
+          Clear all
+        </Button>
         <Button size="sm" onClick={downloadZip} disabled={!totalFiles || downloading} loading={downloading}>
           <Download className="w-3.5 h-3.5" />
           Download project.zip

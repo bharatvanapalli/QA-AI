@@ -7,15 +7,17 @@ const { resolveAiCredentials } = require('../lib/resolveAiCredentials');
 const analyst = require('../services/agents/analyst');
 const cancelRegistry = require('../services/cancelRegistry');
 const { requireAuth } = require('../middleware/auth');
+const { requireOrg } = require('../middleware/org');
 const { requireCsrf } = require('../middleware/csrf');
 const { rateLimit } = require('../middleware/rateLimit');
 
 const router = express.Router({ mergeParams: true });
 router.use(requireAuth);
+router.use(requireOrg);
 
 async function ownProject(req) {
   return prisma.project.findFirst({
-    where: { id: req.params.projectId, userId: req.user.id },
+    where: { id: req.params.projectId, orgId: req.org.id },
   });
 }
 

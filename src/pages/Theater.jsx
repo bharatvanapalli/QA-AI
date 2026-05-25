@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Sparkles, GitBranch, Bot, Camera, Crosshair, Play, Loader2, CheckCircle2,
   XCircle, AlertCircle, ChevronDown, ChevronRight, Eye, Pause, X, RefreshCcw,
-  StopCircle, Maximize2, Minimize2, MousePointerClick, Copy, FileText,
+  StopCircle, Maximize2, Minimize2, MousePointerClick, Copy, FileText, Network,
 } from 'lucide-react';
 import api, { ApiError } from '../lib/apiClient';
 import { useProject } from '../store/project';
@@ -27,8 +27,8 @@ const PHASES = [
 export default function Theater() {
   const navigate = useNavigate();
   const toast = useToast();
-  const { current } = useProject();
-  const { subscribe } = useRunStream();
+  const { current, currentSprintId } = useProject();
+  const { subscribe, mcpSnapshot } = useRunStream();
 
   const [starting, setStarting] = useState(false);
   const [phaseStatus, setPhaseStatus] = useState({ architect: 'idle', planner: 'idle', conductor: 'idle', critic: 'idle', supervisor: 'idle' });
@@ -55,6 +55,11 @@ export default function Theater() {
   //   true  = pipeline is running on the server
   //   false = no pipeline running
   const [serverPipelineRunning, setServerPipelineRunning] = useState(null);
+  // D5 — most recent agent.phase.warn payload (e.g. Conductor stuck in a
+  // repetition loop). Surfaced as an amber banner so the user can cancel
+  // before the hard-stop burns more attempts. Cleared on phase.complete or
+  // a fresh phase.start.
+  const [agentWarning, setAgentWarning] = useState(null);
 
   // Auto-scroll the active phase log
   const logRefs = {
@@ -73,9 +78,13 @@ export default function Theater() {
         // log immediately. The previous expansion gets folded.
         setExpandedPhase(msg.phase);
         setServerPipelineRunning(true);
+        setAgentWarning(null);   // fresh phase → clear stale warning
         if (typeof msg.attempt === 'number') {
           setPhaseAttempt((a) => ({ ...a, [msg.phase]: msg.attempt }));
         }
+      }
+      if (msg.type === 'agent.phase.warn') {
+        setAgentWarning({ phase: msg.phase, message: msg.message, tcId: msg.tcId, ts: Date.now() });
       }
       if (msg.type === 'agent.phase.log') {
         setLogs((all) => ({
@@ -93,6 +102,7 @@ export default function Theater() {
       if (msg.type === 'agent.phase.complete') {
         setPhaseStatus((p) => ({ ...p, [msg.phase]: msg.error ? 'failed' : 'complete' }));
         if (msg.output) setPhaseOutput((o) => ({ ...o, [msg.phase]: msg.output }));
+        setAgentWarning((w) => (w && w.phase === msg.phase ? null : w));
       }
       if (msg.type === 'browser.frame') {
         setBrowserFrame(`data:image/jpeg;base64,${msg.frame}`);
@@ -204,7 +214,7 @@ export default function Theater() {
     setPickerCandidates(null);
     setPhaseStatus({ architect: 'complete', planner: 'complete', conductor: 'idle', critic: 'idle', supervisor: 'idle' });
     try {
-      const data = await api.post(`/projects/${current.id}/agents/rerun-failed`, {});
+      const data = await api.post(`/projects/${current.id}/agents/rerun-failed`, { sprintId: currentSprintId || null });
       toast.success(`Re-running ${data.caseCount} failed case(s). Watch below.`, { title: 'Re-run started' });
       setLastFailedSummary(null);
       setServerPipelineRunning(true);
@@ -229,7 +239,7 @@ export default function Theater() {
     // Mark Architect as already done (it ran on Run Suite). Planner + Conductor pick up from here.
     setPhaseStatus({ architect: 'complete', planner: 'idle', conductor: 'idle', critic: 'idle', supervisor: 'idle' });
     try {
-      await api.post(`/projects/${current.id}/agents/execute`, {});
+      await api.post(`/projects/${current.id}/agents/execute`, { sprintId: currentSprintId || null });
       toast.success('Planner + Conductor running. Watch below.', { title: 'Execution started' });
       setServerPipelineRunning(true);
     } catch (err) {
@@ -324,6 +334,27 @@ export default function Theater() {
 
       <main className="flex-1 overflow-y-auto bg-ink-50">
         <div className="max-w-7xl mx-auto px-page py-8 space-y-5">
+          {/* D5 — amber loop warning. Surfaces while a phase is running and
+              the Conductor has flagged a stuck pattern. User can cancel the
+              run before the hard-stop burns more attempts. */}
+          {agentWarning && pipelineLive && (
+            <section className="rounded-card border border-warn-200 bg-warn-50 shadow-card p-4 flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-warn-700 shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0 text-sm">
+                <div className="font-semibold text-warn-800 capitalize">
+                  {agentWarning.phase} stuck pattern detected
+                </div>
+                <div className="text-warn-700 mt-0.5">{agentWarning.message}</div>
+              </div>
+              <button
+                onClick={() => setAgentWarning(null)}
+                className="text-warn-700 hover:text-warn-900 p-1"
+                title="Dismiss"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </section>
+          )}
           {/* Failure banner — only when idle and the previous run has failures. */}
           {hasFailureBanner && (
             <RerunFailedBanner
@@ -398,6 +429,12 @@ export default function Theater() {
                   conductorActive={phaseStatus.conductor === 'running' || phaseStatus.conductor === 'complete'}
                 />
               </div>
+              {/* Phase E1.4 — DOM snapshot pane. Renders only when MCP has
+                  emitted at least one snapshot for this session. Collapsed
+                  by default; expand to see exactly what the agent is reading.
+                  This is the operator's proof that the agent sees the same
+                  DOM the human does. */}
+              <DomSnapshotPane snapshot={mcpSnapshot} />
             </div>
           )}
 
@@ -1172,6 +1209,76 @@ function RerunFailedBanner({ summary, loading, onRerun, onDismiss }) {
           </button>
         </div>
       </div>
+    </section>
+  );
+}
+
+// Phase E1.4 — DOM snapshot pane. Renders the most recent Playwright-MCP
+// accessibility-tree preview broadcast by the server. Collapsed by default
+// so the row doesn't dominate the layout; once expanded, the operator can
+// see exactly what the agent is reading and confirm the AI isn't hallucinating
+// elements that aren't actually on the page. Wraps long lines in a mono pane.
+function DomSnapshotPane({ snapshot }) {
+  const [expanded, setExpanded] = useState(false);
+  const [copied, setCopied] = useState(false);
+  if (!snapshot || !snapshot.snapshot) return null;
+
+  const lineCount = snapshot.snapshot.split('\n').length;
+  const lenLabel = snapshot.length >= 1024
+    ? `${(snapshot.length / 1024).toFixed(1)} KB`
+    : `${snapshot.length} chars`;
+  const ago = snapshot.ts ? timeAgo(new Date(snapshot.ts).toISOString()) : '';
+
+  const onCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(snapshot.snapshot);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch (_) { /* ignore */ }
+  };
+
+  return (
+    <section className="rounded-card border border-ink-200 bg-white shadow-card">
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-ink-50 transition-colors rounded-card"
+        aria-expanded={expanded}
+      >
+        {expanded ? <ChevronDown className="w-4 h-4 text-ink-500" /> : <ChevronRight className="w-4 h-4 text-ink-500" />}
+        <Network className="w-4 h-4 text-info-700" />
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-semibold text-ink-900">DOM snapshot · what the agent sees</div>
+          <div className="text-2xs text-ink-500 flex items-center gap-2 flex-wrap">
+            <span className="font-mono">{snapshot.tool || 'snapshot'}</span>
+            <span>·</span>
+            <span>{lineCount} lines</span>
+            <span>·</span>
+            <span>{lenLabel}{snapshot.truncated ? ' (preview truncated)' : ''}</span>
+            {ago && <><span>·</span><span>{ago}</span></>}
+          </div>
+        </div>
+        {expanded && (
+          <span
+            role="button"
+            tabIndex={0}
+            onClick={(e) => { e.stopPropagation(); onCopy(); }}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onCopy(); } }}
+            className="inline-flex items-center gap-1 px-2.5 h-7 rounded-md border border-ink-200 bg-white text-xs font-semibold text-ink-700 hover:border-ink-400 hover:bg-ink-50 cursor-pointer"
+            title="Copy the full snapshot to clipboard"
+          >
+            <Copy className="w-3 h-3" />
+            {copied ? 'Copied' : 'Copy'}
+          </span>
+        )}
+      </button>
+      {expanded && (
+        <div className="border-t border-ink-200 px-4 py-3">
+          <pre className="text-2xs font-mono text-ink-700 whitespace-pre-wrap break-all max-h-[420px] overflow-y-auto leading-relaxed">
+            {snapshot.snapshot}
+          </pre>
+        </div>
+      )}
     </section>
   );
 }

@@ -28,6 +28,12 @@
 
 const { getProvider } = require('../../lib/llmProvider');
 const { composeSystemPrompt, joinGuidance } = require('../../lib/promptCompose');
+const { resolveModelForTier } = require('../../lib/modelRouter');
+
+// Phase E5 — cost routing. RCA follow-up chat is question/answer over
+// already-analysed context; Haiku-class models keep up easily and the
+// chat is high-volume (one call per user message).
+const TIER = 'mid';
 
 const SYSTEM_PROMPT = `You are a senior QA engineer helping the user understand and resolve a specific Playwright test failure.
 
@@ -100,9 +106,10 @@ async function chat({ apiKey, model, context, history, userMessage, projectGuida
   const guidance = joinGuidance({ projectGuidance, caseGuidance });
   const system = composeSystemPrompt(SYSTEM_PROMPT, guidance);
 
+  const routedModel = resolveModelForTier({ provider: providerName, requestedModel: model, tier: TIER });
   const resp = await provider.complete({
     apiKey,
-    model,
+    model: routedModel,
     maxTokens: 800,
     system,
     messages,

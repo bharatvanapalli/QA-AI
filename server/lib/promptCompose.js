@@ -39,13 +39,20 @@ function composeSystemPrompt(basePrompt, guidance) {
 }
 
 /**
- * Convenience: join project-level + case-level guidance into one block,
- * labelled so Claude sees the source. Either can be null/empty.
+ * Convenience: join project-level + sprint-level + case-level guidance into
+ * one block, labelled so Claude sees the source. Any field can be null/empty.
+ *
+ * Order = broad → narrow (project → sprint → case). When two layers conflict
+ * the narrower one wins by virtue of appearing last; the model is also told
+ * (via the agent's base prompt) to honour operator guidance first.
  */
-function joinGuidance({ projectGuidance, caseGuidance } = {}) {
+function joinGuidance({ projectGuidance, sprintGuidance, caseGuidance } = {}) {
   const parts = [];
   if (projectGuidance && projectGuidance.trim()) {
     parts.push(`### Project-wide guidance\n${projectGuidance.trim()}`);
+  }
+  if (sprintGuidance && sprintGuidance.trim()) {
+    parts.push(`### Active sprint\n${sprintGuidance.trim()}`);
   }
   if (caseGuidance && caseGuidance.trim()) {
     parts.push(`### This test case\n${caseGuidance.trim()}`);

@@ -19,6 +19,7 @@ import ProjectSetup from './pages/ProjectSetup';
 import ExecutionLog from './pages/ExecutionLog';
 import Reports from './pages/Reports';
 import CompareView from './pages/reports/CompareView';
+import SprintCompare from './pages/SprintCompare';
 import BlockedItems from './pages/BlockedItems';
 import Governance from './pages/Governance';
 import KnowledgeBase from './pages/KnowledgeBase';
@@ -120,6 +121,7 @@ function MainLayout() {
             <Route path="execution-log" element={<ExecutionLog />} />
             <Route path="reports" element={<Reports />} />
             <Route path="reports/compare" element={<CompareView />} />
+            <Route path="sprints/compare" element={<SprintCompare />} />
             <Route path="blocked-items" element={<BlockedItems />} />
             <Route path="governance" element={<Governance />} />
             <Route path="knowledge-base" element={<KnowledgeBase />} />

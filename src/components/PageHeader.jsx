@@ -1,5 +1,7 @@
 import React from 'react';
 import ProjectPicker from './ProjectPicker';
+import SprintPicker from './SprintPicker';
+import BudgetChip from './BudgetChip';
 
 export default function PageHeader({ title, subtitle, showProject = true, children }) {
   return (
@@ -9,7 +11,9 @@ export default function PageHeader({ title, subtitle, showProject = true, childr
         {subtitle && <p className="text-sm text-ink-500 truncate mt-0.5">{subtitle}</p>}
       </div>
       <div className="flex items-center gap-3 shrink-0">
+        <BudgetChip />
         {showProject && <ProjectPicker />}
+        {showProject && <SprintPicker />}
         {children}
       </div>
     </header>

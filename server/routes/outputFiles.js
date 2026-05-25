@@ -6,6 +6,9 @@ const path = require('path');
 const prisma = require('../prisma');
 const audit = require('../services/audit');
 const { requireAuth } = require('../middleware/auth');
+const { requireOrg } = require('../middleware/org');
+const { requireCsrf } = require('../middleware/csrf');
+const { clearProjectFiles } = require('../services/outputFilesCleanup');
 
 // Lazy-load archiver — server still boots if it's missing.
 let _archiver = null;
@@ -21,12 +24,13 @@ function archiver() {
 
 const router = express.Router({ mergeParams: true });
 router.use(requireAuth);
+router.use(requireOrg);
 
 const PLAYWRIGHT_DIR = path.join(__dirname, '..', '..', 'playwright');
 
 async function ownProject(req) {
   return prisma.project.findFirst({
-    where: { id: req.params.projectId, userId: req.user.id },
+    where: { id: req.params.projectId, orgId: req.org.id },
   });
 }
 
@@ -214,6 +218,42 @@ router.get('/download.zip', async (req, res, next) => {
     });
 
     z.finalize();
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── DELETE all output files for a project ────────────────
+// Wipes disk artifacts (PR specs, run screenshots/video/trace) AND clears
+// every TestCase.specCode + GovernancePR row for this project. The
+// scenarios + test cases themselves are kept — only the generated/executed
+// artifacts get nuked, so the user can re-run from the same TC list.
+router.delete('/', requireCsrf, async (req, res, next) => {
+  try {
+    const project = await ownProject(req);
+    if (!project) return res.status(404).json({ success: false, code: 'NOT_FOUND' });
+
+    const { unlinked, attempted } = await clearProjectFiles(project.id);
+
+    // Also clear the persisted specCode + drop the PR rows that referenced
+    // the now-deleted disk files — otherwise the OutputFiles list will keep
+    // showing scaffolding (it triggers on prs.size > 0).
+    const [{ count: prCount }, { count: tcCount }] = await Promise.all([
+      prisma.governancePR.deleteMany({ where: { projectId: project.id } }),
+      prisma.testCase.updateMany({
+        where: { projectId: project.id, specCode: { not: null } },
+        data: { specCode: null },
+      }),
+    ]);
+
+    await audit.log({
+      userId: req.user.id,
+      action: 'output.clear-all',
+      target: project.id,
+      metadata: { filesDeleted: unlinked, filesAttempted: attempted, prDeleted: prCount, specCodeCleared: tcCount },
+      req,
+    });
+    res.json({ success: true, filesDeleted: unlinked, prDeleted: prCount, specCodeCleared: tcCount });
   } catch (err) {
     next(err);
   }

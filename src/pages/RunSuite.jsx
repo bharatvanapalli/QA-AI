@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Upload, GitBranch, KanbanSquare, FileText, Sparkles, X, Loader2,
   AlertTriangle, GitCompareArrows, CheckCircle2, Info, FileSearch,
-  ScrollText, BookOpen, Code2, ClipboardList, StopCircle,
+  ScrollText, BookOpen, Code2, ClipboardList, StopCircle, GitPullRequest,
 } from 'lucide-react';
 import api, { ApiError } from '../lib/apiClient';
 import { useProject } from '../store/project';
@@ -69,7 +69,7 @@ const CATEGORY_ORDER = ['brd', 'release-notes', 'user-stories', 'api-spec', 'oth
 export default function RunSuite() {
   const navigate = useNavigate();
   const toast = useToast();
-  const { current } = useProject();
+  const { current, currentSprintId } = useProject();
   const { subscribe } = useRunStream();
   const [requirements, setRequirements] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -98,8 +98,9 @@ export default function RunSuite() {
     }
     setLoading(true);
     try {
+      const sprintQs = currentSprintId ? `?sprintId=${encodeURIComponent(currentSprintId)}` : '';
       const [reqs, claude, ado, jira, disc] = await Promise.all([
-        api.get(`/projects/${current.id}/requirements`),
+        api.get(`/projects/${current.id}/requirements${sprintQs}`),
         api.get('/settings/claude').catch(() => null),
         api.get('/settings/ado').catch(() => null),
         api.get('/settings/jira').catch(() => null),
@@ -113,7 +114,7 @@ export default function RunSuite() {
     } finally {
       setLoading(false);
     }
-  }, [current, toast]);
+  }, [current, toast, currentSprintId]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -217,7 +218,12 @@ export default function RunSuite() {
             };
           })
         );
-        const res = await api.post(`/projects/${current.id}/requirements/upload`, { documents: docs });
+        // Pass current sprint so the new docs + requirements get tagged.
+        // Server treats missing/null sprintId as project-wide (legacy).
+        const res = await api.post(`/projects/${current.id}/requirements/upload`, {
+          documents: docs,
+          sprintId: currentSprintId || null,
+        });
         const cats = [...new Set((res.created || []).map((c) => CATEGORY_META[c.category]?.short || 'Other'))];
         toast.success(
           `${(res.created || []).length} doc(s) indexed${cats.length ? ` · ${cats.join(', ')}` : ''}.`,
@@ -242,7 +248,9 @@ export default function RunSuite() {
       if (!current) return;
       setPulling(source);
       try {
-        const res = await api.post(`/projects/${current.id}/requirements/pull/${source}`, {});
+        const res = await api.post(`/projects/${current.id}/requirements/pull/${source}`, {
+          sprintId: currentSprintId || null,
+        });
         toast.success(res.message);
         await load();
       } catch (err) {
@@ -454,6 +462,17 @@ export default function RunSuite() {
               : !hasBrd ? 'No BRD-category doc detected — Architect will use what is available, but a BRD gives the best result.'
               : null
             } />
+          )}
+
+          {/* Diff context (Phase E3). Lets the user feed a PR URL or branch
+              to the Diff Analyzer; the resulting summary + impacted modules
+              flow into the Architect's priorContext on the next Generate. */}
+          {current?.id && (
+            <DiffContextCard
+              projectId={current.id}
+              sprintId={currentSprintId || null}
+              claudeReady={claudeReady}
+            />
           )}
 
           {/* Source ingestion strip — ADO / Jira / Upload */}
@@ -805,6 +824,233 @@ function RequirementRow({ requirement, onCategoryChange, onRemove }) {
         <X className="w-3.5 h-3.5" />
       </button>
     </li>
+  );
+}
+
+// Phase E3 — code-diff awareness. Surfaces the most-recent fetched diff
+// for this project (sprint-scoped when a sprint is selected) and lets the
+// user feed a new PR URL or branch. The analyzed summary + impacted
+// modules flow into the Architect's priorContext on the next Generate.
+function DiffContextCard({ projectId, sprintId, claudeReady }) {
+  const toast = useToast();
+  const [latest, setLatest] = useState(null);
+  const [loaded, setLoaded] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({ ref: '', baseBranch: '' });
+  const [repo, setRepo] = useState(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const qs = sprintId ? `?sprintId=${encodeURIComponent(sprintId)}` : '';
+      const res = await api.get(`/projects/${projectId}/diff-context${qs}`);
+      setLatest(Array.isArray(res.diffContexts) && res.diffContexts.length ? res.diffContexts[0] : null);
+      // Also peek at repo config so we can show "Configure repo first" CTA.
+      const repoRes = await api.get(`/projects/${projectId}/repo`).catch(() => null);
+      setRepo(repoRes?.project || null);
+      setLoaded(true);
+    } catch (err) {
+      // Silent failure — this card is supplementary, not blocking.
+      setLoaded(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [projectId, sprintId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  // Parse a free-form input into either { prNumber } or { branch }. Accepts:
+  //   "https://github.com/org/repo/pull/42"  → { prNumber: 42 }
+  //   "#42" / "42"                          → { prNumber: 42 }
+  //   "feature/login-fix"                    → { branch: 'feature/login-fix' }
+  const parseRef = (raw) => {
+    const s = String(raw || '').trim();
+    if (!s) return null;
+    const m = s.match(/\/pull\/(\d+)/) || s.match(/^#?(\d+)$/);
+    if (m) return { prNumber: Number(m[1]) };
+    return { branch: s };
+  };
+
+  const submit = async () => {
+    const parsed = parseRef(form.ref);
+    if (!parsed) {
+      toast.error('Enter a PR URL, PR number, or branch name.');
+      return;
+    }
+    setFetching(true);
+    try {
+      const body = {
+        ...parsed,
+        baseBranch: form.baseBranch.trim() || undefined,
+        sprintId: sprintId || undefined,
+      };
+      const res = await api.post(`/projects/${projectId}/diff-context`, body);
+      setLatest({
+        id: res.diffContext.id,
+        ref: res.diffContext.ref,
+        baseRef: res.diffContext.baseRef,
+        summary: res.diffContext.summary,
+        fetchedAt: res.diffContext.fetchedAt,
+        sprintId: res.diffContext.sprintId,
+        changedFiles: res.diffContext.changedFiles || [],
+        changedModules: res.diffContext.changedModules || [],
+        suggestedScenarios: res.diffContext.suggestedScenarios || [],
+        headRef: res.diffContext.headRef || null,
+        title: res.diffContext.title || null,
+      });
+      setForm({ ref: '', baseBranch: '' });
+      toast.success(`Diff analyzed — ${res.diffContext.changedFiles?.length || 0} file(s).`);
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.payload?.message || err.message : err.message;
+      toast.error(msg, { title: 'Diff fetch failed' });
+    } finally {
+      setFetching(false);
+    }
+  };
+
+  const clear = async () => {
+    if (!latest?.id) return;
+    try {
+      await api.del(`/projects/${projectId}/diff-context/${latest.id}`);
+      setLatest(null);
+      toast.success('Diff context cleared.');
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
+  if (!loaded) return null;
+  const repoConfigured = !!repo?.repoUrl;
+
+  return (
+    <div className="rounded-card border border-ink-200 bg-white shadow-card p-5">
+      <div className="flex items-start gap-2.5 mb-3">
+        <div className="w-8 h-8 rounded-lg bg-accent-50 inline-flex items-center justify-center shrink-0">
+          <GitPullRequest className="w-4 h-4 text-accent-700" />
+        </div>
+        <div className="flex-1">
+          <h3 className="text-sm font-semibold text-ink-900 tracking-tight">Code-diff context</h3>
+          <p className="text-xs text-ink-500 mt-0.5">
+            Point the AI at a pull request or branch — the diff summary + impacted modules
+            flow into the next Generate so scenarios prioritise what actually changed.
+          </p>
+        </div>
+        {!loading && latest && (
+          <button
+            type="button"
+            onClick={clear}
+            className="text-2xs text-ink-500 hover:text-danger-600 underline"
+            title="Drop this diff context"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
+      {!repoConfigured && (
+        <div className="rounded border border-warn-200 bg-warn-50 text-warn-900 text-xs px-3 py-2 mb-3">
+          <span className="font-semibold">Connect a repo first.</span>{' '}
+          Open Project Setup → Git repository, add the repoUrl + PAT, then come back here.
+        </div>
+      )}
+
+      {latest && (
+        <div className="rounded border border-ink-200 bg-ink-50 p-3 mb-3 space-y-2">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="font-mono font-semibold text-ink-900">{latest.ref}</span>
+            <span className="text-ink-400">vs</span>
+            <span className="font-mono text-ink-700">{latest.baseRef}</span>
+            <span className="ml-auto text-2xs text-ink-500">
+              {latest.fetchedAt ? new Date(latest.fetchedAt).toLocaleString() : ''}
+            </span>
+          </div>
+          {latest.title && (
+            <div className="text-xs text-ink-700 italic">"{latest.title}"</div>
+          )}
+          {latest.summary && (
+            <div className="text-xs text-ink-700 leading-relaxed">{latest.summary}</div>
+          )}
+          <div className="flex flex-wrap gap-2 pt-1">
+            <span className="text-2xs bg-white border border-ink-200 px-2 py-0.5 rounded">
+              {latest.changedFiles?.length || 0} file{(latest.changedFiles?.length || 0) === 1 ? '' : 's'}
+            </span>
+            {(latest.changedModules || []).map((m) => (
+              <span key={m} className="text-2xs bg-accent-50 border border-accent-200 text-accent-800 px-2 py-0.5 rounded font-semibold">
+                {m}
+              </span>
+            ))}
+          </div>
+          {Array.isArray(latest.suggestedScenarios) && latest.suggestedScenarios.length > 0 && (
+            <div className="pt-2 border-t border-ink-200">
+              <div className="text-2xs uppercase tracking-wider font-bold text-ink-500 mb-1">
+                Suggested scenarios ({latest.suggestedScenarios.length})
+              </div>
+              <ul className="space-y-1">
+                {latest.suggestedScenarios.map((s, i) => (
+                  <li key={i} className="text-xs text-ink-700">
+                    <span className="font-semibold">{s.name}</span>
+                    <span className="text-ink-500"> — {s.module}</span>
+                    {s.why && <span className="text-ink-500 italic"> · {s.why}</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="text-xs font-semibold text-ink-700 hover:text-ink-900 flex items-center gap-1"
+        disabled={!repoConfigured}
+      >
+        {open ? 'Hide form' : (latest ? 'Replace diff' : 'Fetch diff')}
+      </button>
+
+      {open && repoConfigured && (
+        <div className="mt-3 grid sm:grid-cols-3 gap-2">
+          <div className="sm:col-span-2">
+            <label className="text-2xs uppercase tracking-wider font-bold text-ink-500 block mb-1">
+              PR URL, #number, or branch
+            </label>
+            <input
+              type="text"
+              value={form.ref}
+              onChange={(e) => setForm((f) => ({ ...f, ref: e.target.value }))}
+              placeholder="https://github.com/org/repo/pull/42  or  feature/login-fix"
+              className="w-full text-xs rounded border border-ink-300 px-2 py-1.5 focus-visible:outline-none focus-visible:shadow-ring"
+            />
+          </div>
+          <div>
+            <label className="text-2xs uppercase tracking-wider font-bold text-ink-500 block mb-1">
+              Base (for branch compare)
+            </label>
+            <input
+              type="text"
+              value={form.baseBranch}
+              onChange={(e) => setForm((f) => ({ ...f, baseBranch: e.target.value }))}
+              placeholder={repo?.defaultBranch || 'main'}
+              className="w-full text-xs rounded border border-ink-300 px-2 py-1.5 focus-visible:outline-none focus-visible:shadow-ring"
+            />
+          </div>
+          <div className="sm:col-span-3 flex justify-end">
+            <Button
+              size="sm"
+              onClick={submit}
+              loading={fetching}
+              disabled={fetching || !form.ref.trim() || !claudeReady}
+              title={!claudeReady ? 'Configure Claude API in Settings first' : null}
+            >
+              <GitPullRequest className="w-3.5 h-3.5" />
+              Fetch and analyse
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

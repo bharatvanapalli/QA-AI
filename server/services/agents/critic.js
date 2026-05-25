@@ -37,6 +37,13 @@ You will receive a JSON object describing what happened for each test case:
                     and a compact snippet of the page snapshot that was
                     visible when that action was attempted)
   - error          (the final error message if the test did not pass)
+  - finalSnapshot  (the FULL accessibility snapshot of the page taken AFTER
+                    the agent claimed to be done — your ground truth for
+                    verifying "all assertions passed" claims. If the Conductor
+                    said "pass" but the finalSnapshot contains an error banner
+                    or doesn't show the expected element/text, the pass is
+                    hallucinated. Emit a rewrite that flips the case to fail
+                    with reasoning quoting the snapshot.)
 
 Your job is to REWRITE the failing/blocked cases so they match what the page
 actually showed. Use ONLY element names, labels, placeholders, and refs that
@@ -112,6 +119,11 @@ async function run({ apiKey, model, runOutcome, onLog = async () => {}, onRateLi
       error: a.error ? String(a.error).slice(0, 400) : undefined,
       pageSnippet: a.pageSnippet ? String(a.pageSnippet).slice(0, 800) : undefined,
     })),
+    // D4 — final accessibility snapshot captured AFTER the agent finished.
+    // Lets the Critic verify "all assertions passed" against ground truth and
+    // catch hallucinated successes (e.g. agent emitted RESULT: pass but the
+    // page still shows "Incorrect email address or password").
+    finalSnapshot: h.finalSnapshot ? String(h.finalSnapshot).slice(0, 3000) : undefined,
   }));
 
   const failed = compactHistory.filter((h) => h.status !== 'pass').length;
@@ -201,11 +213,22 @@ Your job is to catch problems EARLY:
 If everything is on track, respond with exactly:
   {"ok": true}
 
-If you need to intervene, respond with:
+If you need to intervene with general guidance, respond with:
   {"hint": "<one short sentence using REAL element names/refs from the snapshot>", "severity": "info" | "warn" | "error"}
 
 The hint is injected verbatim as a user message into the agent's next turn.
 Keep it SHORT (under 200 chars), ACTIONABLE, and grounded in the snapshot.
+
+** Phase E2 — abort-pass-claim verdict **
+If the trail shows the agent is about to (or just did) emit "RESULT: pass"
+but the snapshot CONTRADICTS the claim (visible error banner, wrong page,
+required field still empty, no assertion_check call was made to verify it),
+respond with:
+  {"verdict": "abort_pass_claim", "reasoning": "<one sentence quoting what the page actually shows>"}
+
+This is the strongest verdict — Conductor will inject a synthetic user
+message forcing the agent to re-verify before ending its turn. Use it only
+when you have HARD evidence in the snapshot that the assertion failed.
 
 Output ONLY JSON. No markdown fences, no preamble.`;
 
@@ -264,6 +287,14 @@ async function runInline({ apiKey, model, caseContext, trail, lastSnapshot, onLo
   const parsed = parseJsonResponse(text, { type: 'object' });
   if (parsed) {
     if (parsed.ok === true) return { ok: true };
+    // Phase E2 — strongest verdict: agent's pass claim contradicted by the
+    // snapshot. Conductor will block end_turn and force re-verification.
+    if (parsed.verdict === 'abort_pass_claim' && typeof parsed.reasoning === 'string' && parsed.reasoning.trim()) {
+      return {
+        verdict: 'abort_pass_claim',
+        reasoning: parsed.reasoning.slice(0, 400).trim(),
+      };
+    }
     if (typeof parsed.hint === 'string' && parsed.hint.trim()) {
       const sev = ['info', 'warn', 'error'].includes(parsed.severity) ? parsed.severity : 'info';
       return { hint: parsed.hint.slice(0, 400).trim(), severity: sev };

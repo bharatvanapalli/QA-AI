@@ -57,6 +57,8 @@ server/scripts/*.output.json
 /tc*.png
 /screenshot-*.png
 /debug-*.png
+/register-*.png
+/registration-*.png
 
 # IDE / editor
 .vscode/

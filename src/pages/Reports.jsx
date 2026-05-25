@@ -4,7 +4,7 @@ import {
   CheckCircle2, XCircle, AlertCircle, FileText, Image as ImageIcon, Video,
   ChevronRight, ChevronDown, Clock, Activity, AlertOctagon, Camera, FileCode,
   Sparkles, Bug, ExternalLink, BrainCircuit, FolderTree, ShieldAlert,
-  Search, GitCompare, History, TrendingUp, X, Printer, Zap, Save,
+  Search, GitCompare, History, TrendingUp, X, Printer, Zap, Save, Eye, ScanSearch,
 } from 'lucide-react';
 import api, { ApiError } from '../lib/apiClient';
 import { BASE_URL } from '../lib/apiClient';
@@ -38,7 +38,7 @@ const STATUS_FILTERS = [
 export default function Reports() {
   const toast = useToast();
   const navigate = useNavigate();
-  const { current } = useProject();
+  const { current, currentSprintId } = useProject();
   const { claudeRateLimit } = useRunStream();
   const [searchParams, setSearchParams] = useSearchParams();
   const [runs, setRuns] = useState([]);
@@ -72,7 +72,8 @@ export default function Reports() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await api.get(`/runs?projectId=${current.id}&limit=50`);
+        const sprintQs = currentSprintId ? `&sprintId=${encodeURIComponent(currentSprintId)}` : '';
+        const res = await api.get(`/runs?projectId=${current.id}&limit=50${sprintQs}`);
         if (cancelled) return;
         const list = res.runs || [];
         setRuns(list);
@@ -95,11 +96,12 @@ export default function Reports() {
       }
     })();
     return () => { cancelled = true; };
-    // We intentionally fire only on project change. Including searchParams
-    // here would re-run the list fetch on every URL tweak (filters, runId
-    // navigations) which is wasteful and risks render loops.
+    // Project + sprint changes both invalidate the list. Other deps (filters,
+    // runId, etc.) intentionally don't refire — they'd be wasteful and risk
+    // render loops. Sprint is here because switching the header pill must
+    // re-narrow the run list to the new container.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current?.id]);
+  }, [current?.id, currentSprintId]);
 
   useEffect(() => {
     if (!runIdParam) { setActiveRun(null); setActiveResult(null); return; }
@@ -848,9 +850,20 @@ function DetailPane({ result, testCase, projectId }) {
       .map((line) => line.trim())
       .filter(Boolean)
       .map((line, i) => {
-        const isPass    = /^✓|^pass/i.test(line);
-        const isFail    = /^✗|fail|error/i.test(line);
-        return { order: i + 1, text: line, isPass, isFail };
+        // Phase E2 — assertion_check rows render as "ASSERTION: ✓/✗/… …".
+        // Pick them out so they can be visually distinguished from regular
+        // browser_ tool calls — they're the correctness gate, not the
+        // exploration trail.
+        const isAssertion = /^ASSERTION:/.test(line);
+        const assertionMatched = isAssertion && /^ASSERTION:\s*✓/.test(line);
+        const assertionFailed  = isAssertion && /^ASSERTION:\s*✗/.test(line);
+        const isPass    = !isAssertion && /^✓|^pass/i.test(line);
+        const isFail    = !isAssertion && /^✗|fail|error/i.test(line);
+        return {
+          order: i + 1, text: line,
+          isPass, isFail,
+          isAssertion, assertionMatched, assertionFailed,
+        };
       });
   }, [result.trace]);
 
@@ -978,6 +991,17 @@ function DetailPane({ result, testCase, projectId }) {
         </section>
       )}
 
+      {/* Visual diff (Phase E4). Renders only when there is something to
+          say — either a baseline + current to compare against, or a
+          verdict from a prior VisualCritic pass. Pass-verdict shows as a
+          one-line confirmation; fail/inconclusive opens the side-by-side. */}
+      {(result.baselineScreenshot || result.visualVerdict) && (
+        <VisualDiffSection
+          result={result}
+          currentScreenshot={screenshots.length ? screenshots[screenshots.length - 1] : null}
+        />
+      )}
+
       {/* Video */}
       {result.video && (
         <section className="rounded-card border border-ink-200 bg-white shadow-card overflow-hidden">
@@ -1042,6 +1066,166 @@ function ErrorBlock({ result }) {
   );
 }
 
+// Phase E4 — visual regression. Renders the visualCritic verdict + the
+// baseline-vs-current side-by-side. Designed to stay quiet when nothing
+// went wrong (no shouty banners on pass) and only reveal the side-by-side
+// when the verdict suggests a regression OR the user explicitly expands.
+const VISUAL_VERDICT_META = {
+  pass: {
+    label: 'No visual regression',
+    tone: 'success',
+    icon: CheckCircle2,
+    text: 'text-success-700', bg: 'bg-success-50', border: 'border-success-200',
+  },
+  fail: {
+    label: 'Visual regression',
+    tone: 'danger',
+    icon: AlertOctagon,
+    text: 'text-danger-700', bg: 'bg-danger-50', border: 'border-danger-200',
+  },
+  inconclusive: {
+    label: 'Inconclusive',
+    tone: 'warn',
+    icon: ScanSearch,
+    text: 'text-warn-700', bg: 'bg-warn-50', border: 'border-warn-200',
+  },
+};
+
+const SEVERITY_DOT = {
+  high:   'bg-danger-500',
+  medium: 'bg-warn-500',
+  low:    'bg-ink-300',
+};
+
+function VisualDiffSection({ result, currentScreenshot }) {
+  const verdict = result.visualVerdict || null;
+  const meta = verdict ? VISUAL_VERDICT_META[verdict] : null;
+  const diffs = Array.isArray(result.visualDiffs) ? result.visualDiffs : [];
+  // Auto-expand when something is worth showing: a non-pass verdict, or
+  // diffs to inspect. Pass-with-no-diffs stays collapsed by default.
+  const [open, setOpen] = useState(verdict === 'fail' || verdict === 'inconclusive');
+  const hasBaseline = !!result.baselineScreenshot;
+  const Icon = meta?.icon || Eye;
+
+  return (
+    <section className="rounded-card border border-ink-200 bg-white shadow-card overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full px-5 py-3 border-b border-ink-100 flex items-center gap-2 hover:bg-ink-50 transition-colors text-left"
+      >
+        <Eye className="w-4 h-4 text-ink-500" />
+        <h3 className="text-sm font-semibold text-ink-900">Visual</h3>
+        {meta && (
+          <span className={`text-2xs uppercase tracking-wider font-bold px-2 py-0.5 rounded-pill ${meta.bg} ${meta.text} border ${meta.border} inline-flex items-center gap-1`}>
+            <Icon className="w-3 h-3" />
+            {meta.label}
+          </span>
+        )}
+        {!meta && hasBaseline && (
+          <span className="text-2xs text-ink-500">
+            Baseline captured · awaiting next run for comparison
+          </span>
+        )}
+        {open ? <ChevronDown className="w-3.5 h-3.5 ml-auto text-ink-400" /> : <ChevronRight className="w-3.5 h-3.5 ml-auto text-ink-400" />}
+      </button>
+
+      {open && (
+        <div className="p-4 space-y-4 bg-ink-50">
+          {/* Narration */}
+          {result.visualDiffSummary && (
+            <div className={`rounded border ${meta?.border || 'border-ink-200'} ${meta?.bg || 'bg-white'} p-3`}>
+              <p className={`text-xs leading-relaxed ${meta?.text || 'text-ink-700'}`}>
+                {result.visualDiffSummary}
+              </p>
+            </div>
+          )}
+
+          {/* Diff list */}
+          {diffs.length > 0 && (
+            <ul className="space-y-1.5">
+              {diffs.map((d, i) => (
+                <li key={i} className="rounded border border-ink-200 bg-white p-3">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className={`w-1.5 h-1.5 rounded-full ${SEVERITY_DOT[d.severity] || SEVERITY_DOT.low}`} />
+                    <span className="text-xs font-semibold text-ink-800">{d.region || 'change'}</span>
+                    <span className="text-2xs uppercase tracking-wider text-ink-500 ml-auto">{d.severity || 'low'}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <div className="text-2xs uppercase tracking-wider text-ink-500 mb-0.5">Baseline</div>
+                      <div className="text-ink-700">{d.before || <span className="italic text-ink-400">—</span>}</div>
+                    </div>
+                    <div>
+                      <div className="text-2xs uppercase tracking-wider text-ink-500 mb-0.5">Current</div>
+                      <div className="text-ink-700">{d.after || <span className="italic text-ink-400">—</span>}</div>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {/* Side-by-side. Only when we have a baseline AND a current
+              screenshot to render; otherwise show the one we have alone. */}
+          {(result.baselineScreenshot || currentScreenshot) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {result.baselineScreenshot && (
+                <a
+                  href={absUrl(result.baselineScreenshot)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block rounded-md border border-ink-200 bg-white overflow-hidden hover:border-ink-400 hover:shadow-card-hover transition-all"
+                >
+                  <div className="bg-ink-100 px-3 py-1.5 border-b border-ink-200 flex items-center justify-between">
+                    <span className="text-2xs uppercase tracking-wider font-bold text-ink-600">Baseline</span>
+                    <ImageIcon className="w-3 h-3 text-ink-400" />
+                  </div>
+                  <img
+                    src={absUrl(result.baselineScreenshot)}
+                    alt="baseline"
+                    className="block w-full h-auto bg-white"
+                    loading="lazy"
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                  />
+                </a>
+              )}
+              {currentScreenshot && (
+                <a
+                  href={absUrl(currentScreenshot)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block rounded-md border border-ink-200 bg-white overflow-hidden hover:border-ink-400 hover:shadow-card-hover transition-all"
+                >
+                  <div className="bg-ink-100 px-3 py-1.5 border-b border-ink-200 flex items-center justify-between">
+                    <span className="text-2xs uppercase tracking-wider font-bold text-ink-600">Current</span>
+                    <ImageIcon className="w-3 h-3 text-ink-400" />
+                  </div>
+                  <img
+                    src={absUrl(currentScreenshot)}
+                    alt="current"
+                    className="block w-full h-auto bg-white"
+                    loading="lazy"
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                  />
+                </a>
+              )}
+            </div>
+          )}
+
+          {/* Empty-state hint when we have a baseline but no verdict yet —
+              happens on the very first pass that wrote it. */}
+          {!verdict && hasBaseline && (
+            <p className="text-2xs text-ink-500 italic">
+              The next pass of this case will compare against this baseline.
+            </p>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function TraceSection({ traceSteps }) {
   return (
     <section className="rounded-card border border-ink-200 bg-white shadow-card overflow-hidden">
@@ -1064,13 +1248,42 @@ function TraceSection({ traceSteps }) {
 function TraceStep({ step }) {
   const [expanded, setExpanded] = useState(false);
   const isLong = step.text.length > 120;
-  const toneRow = step.isFail ? 'bg-danger-50/60 hover:bg-danger-50' : step.isPass ? 'bg-success-50/30 hover:bg-success-50/60' : 'hover:bg-ink-50/60';
-  const toneText = step.isFail ? 'text-danger-700' : step.isPass ? 'text-success-700' : 'text-ink-700';
+  // Phase E2 — assertion_check rows get accent (success/danger by matched)
+  // and a distinguishable left-border so the eye picks them out as the
+  // correctness checkpoints among the browser_ exploration noise.
+  const toneRow = step.assertionFailed
+    ? 'bg-danger-100/60 hover:bg-danger-100 border-l-4 border-danger-500'
+    : step.assertionMatched
+      ? 'bg-success-100/50 hover:bg-success-100 border-l-4 border-success-500'
+      : step.isAssertion
+        ? 'bg-ink-100/60 hover:bg-ink-100 border-l-4 border-ink-300'
+        : step.isFail
+          ? 'bg-danger-50/60 hover:bg-danger-50'
+          : step.isPass
+            ? 'bg-success-50/30 hover:bg-success-50/60'
+            : 'hover:bg-ink-50/60';
+  const toneText = step.assertionFailed
+    ? 'text-danger-800 font-semibold'
+    : step.assertionMatched
+      ? 'text-success-800 font-semibold'
+      : step.isFail
+        ? 'text-danger-700'
+        : step.isPass
+          ? 'text-success-700'
+          : 'text-ink-700';
   return (
     <li className={`grid grid-cols-[36px_1fr_auto] items-start gap-3 px-5 py-2 ${toneRow} transition-colors`}>
       <div className="flex items-center justify-end pt-0.5">
         <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-2xs font-bold tabular-nums ${
-          step.isFail ? 'bg-danger-100 text-danger-700' : step.isPass ? 'bg-success-100 text-success-700' : 'bg-ink-100 text-ink-600'
+          step.assertionFailed
+            ? 'bg-danger-200 text-danger-800'
+            : step.assertionMatched
+              ? 'bg-success-200 text-success-800'
+              : step.isFail
+                ? 'bg-danger-100 text-danger-700'
+                : step.isPass
+                  ? 'bg-success-100 text-success-700'
+                  : 'bg-ink-100 text-ink-600'
         }`}>{step.order}</span>
       </div>
       <div className={`text-xs font-mono leading-relaxed ${toneText} min-w-0`}>

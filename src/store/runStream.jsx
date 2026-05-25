@@ -43,6 +43,11 @@ export function RunStreamProvider({ children }) {
   // page header to render a current-minute TPM-remaining chip. Null until
   // the first Claude call lands; resets to null on project switch (below).
   const [claudeRateLimit, setClaudeRateLimit] = useState(null);
+  // Phase E1.4 — last accessibility-tree preview from the MCP layer. Powers
+  // the Theater DOM snapshot pane so the operator can see exactly what the
+  // agent is looking at. Cleared on project switch; updated on every
+  // mcp.snapshot.preview broadcast (~once per tool call).
+  const [mcpSnapshot, setMcpSnapshot] = useState(null);
   const wsRef = useRef(null);
   const listenersRef = useRef(new Set());
 
@@ -59,6 +64,7 @@ export function RunStreamProvider({ children }) {
     // on project switch avoids stale "0 tokens remaining" frightening the
     // user when the project changes context. The next Claude call repopulates.
     setClaudeRateLimit(null);
+    setMcpSnapshot(null);
   }, [current?.id]);
 
   const subscribe = useCallback((fn) => {
@@ -118,6 +124,11 @@ export function RunStreamProvider({ children }) {
           const { type, ...rest } = msg;
           setClaudeRateLimit(rest);
         }
+        if (msg.type === 'mcp.snapshot.preview') {
+          // { sessionId, tool, snapshot, truncated, length, ts }
+          const { type, ...rest } = msg;
+          setMcpSnapshot(rest);
+        }
         for (const fn of listenersRef.current) {
           try {
             fn(msg);
@@ -144,11 +155,12 @@ export function RunStreamProvider({ children }) {
       latestSummary,
       running,
       claudeRateLimit,
+      mcpSnapshot,
       clearLog,
       subscribe,
       setRunning,
     }),
-    [connected, log, latestRunId, latestSummary, running, claudeRateLimit, clearLog, subscribe]
+    [connected, log, latestRunId, latestSummary, running, claudeRateLimit, mcpSnapshot, clearLog, subscribe]
   );
 
   return <RunStreamCtx.Provider value={value}>{children}</RunStreamCtx.Provider>;

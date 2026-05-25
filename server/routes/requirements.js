@@ -9,10 +9,12 @@ const jira = require('../services/jira');
 const integrations = require('../services/integrations');
 const { extractText } = require('../services/docs');
 const { requireAuth } = require('../middleware/auth');
+const { requireOrg } = require('../middleware/org');
 const { requireCsrf } = require('../middleware/csrf');
 
 const router = express.Router({ mergeParams: true });
 router.use(requireAuth);
+router.use(requireOrg);
 
 /**
  * Heuristic — guess document category from filename + first chunk of content.
@@ -29,17 +31,22 @@ function guessCategory(name, text) {
 
 async function getProject(req) {
   return prisma.project.findFirst({
-    where: { id: req.params.projectId, userId: req.user.id },
+    where: { id: req.params.projectId, orgId: req.org.id },
   });
 }
 
 // ── GET /api/projects/:projectId/requirements ─────────────
+// `?sprintId=<id>` narrows to a sprint container (Phase B / B3). Absent =
+// every requirement for the project (legacy behaviour).
 router.get('/', async (req, res, next) => {
   try {
     const project = await getProject(req);
     if (!project) return res.status(404).json({ success: false, code: 'NOT_FOUND' });
     const requirements = await prisma.requirement.findMany({
-      where: { projectId: project.id },
+      where: {
+        projectId: project.id,
+        ...(req.query.sprintId ? { sprintId: String(req.query.sprintId) } : {}),
+      },
       orderBy: { pulledAt: 'desc' },
     });
     res.json({ success: true, requirements });
@@ -58,6 +65,11 @@ router.post('/upload', requireCsrf, async (req, res, next) => {
     if (!docs.length)
       return res.status(400).json({ success: false, code: 'NO_DOCS', message: 'No documents provided' });
 
+    // Sprint tag: if the caller passed sprintId in the body, every doc + its
+    // synthesised requirement gets stamped with it. NULL stays NULL for
+    // legacy clients that don't send the field.
+    const sprintId = req.body?.sprintId ? String(req.body.sprintId) : null;
+
     const created = [];
     const warnings = [];
     for (const d of docs) {
@@ -71,6 +83,7 @@ router.post('/upload', requireCsrf, async (req, res, next) => {
       const doc = await prisma.document.create({
         data: {
           projectId: project.id,
+          sprintId,
           name: d.name || 'untitled',
           mimeType: d.mimeType || d.type || null,
           sizeBytes: typeof d.sizeBytes === 'number' ? d.sizeBytes : Buffer.byteLength(text, 'utf8'),
@@ -81,6 +94,7 @@ router.post('/upload', requireCsrf, async (req, res, next) => {
       const req_ = await prisma.requirement.create({
         data: {
           projectId: project.id,
+          sprintId,
           sourceType: 'upload',
           sourceIdentifier: doc.id,
           title: d.name || null,
@@ -178,6 +192,7 @@ router.post('/pull/:source', requireCsrf, async (req, res, next) => {
       });
     }
 
+    const sprintId = req.body?.sprintId ? String(req.body.sprintId) : null;
     const created = [];
     for (const i of items) {
       const existing = await prisma.requirement.findFirst({
@@ -191,11 +206,16 @@ router.post('/pull/:source', requireCsrf, async (req, res, next) => {
       const r = existing
         ? await prisma.requirement.update({
             where: { id: existing.id },
-            data: { content: i.content, title: i.title, pulledAt: new Date() },
+            // Re-pull DOES re-tag with the current sprint (if any) — the
+            // user's intent in re-pulling is "this is the latest state of
+            // this requirement for THIS release", which lines up with the
+            // currently-selected sprint.
+            data: { content: i.content, title: i.title, pulledAt: new Date(), sprintId },
           })
         : await prisma.requirement.create({
             data: {
               projectId: project.id,
+              sprintId,
               sourceType: source,
               sourceIdentifier: i.sourceIdentifier,
               title: i.title,

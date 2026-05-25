@@ -17,15 +17,20 @@ const rcaChat = require('../services/agents/rcaChat');
 const issueCreator = require('../services/issueCreator');
 const { decodeJson, encodeJson } = require('../services/jsonField');
 const { requireAuth } = require('../middleware/auth');
+const { requireOrg } = require('../middleware/org');
 const { requireCsrf } = require('../middleware/csrf');
 const { rateLimit } = require('../middleware/rateLimit');
 
 const router = express.Router();
 router.use(requireAuth);
+router.use(requireOrg);
 
+// Phase E8 — Run rows don't have their own orgId; they're scoped via the
+// parent Project. Any org member who can see the project can act on its
+// runs (matches the "Push to Git" / "Approve PR" pattern from E7).
 async function ownRun(req) {
   return prisma.run.findFirst({
-    where: { id: req.params.runId, userId: req.user.id },
+    where: { id: req.params.runId, project: { orgId: req.org.id } },
   });
 }
 

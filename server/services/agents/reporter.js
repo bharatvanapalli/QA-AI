@@ -16,6 +16,11 @@
 const { getProvider } = require('../../lib/llmProvider');
 const { composeSystemPrompt } = require('../../lib/promptCompose');
 const { parseJsonResponse } = require('../../lib/parseJsonResponse');
+const { resolveModelForTier } = require('../../lib/modelRouter');
+
+// Phase E5 — cost routing. Reporter prose ("what / why / fix") is a
+// well-defined transformation that doesn't need flagship intelligence.
+const TIER = 'mid';
 
 const SYSTEM_PROMPT = `You are a senior QA engineer doing root-cause analysis on Playwright test failures.
 
@@ -77,9 +82,10 @@ async function run({ apiKey, model, failures, onLog = async () => {}, onRateLimi
     networkLog: Array.isArray(f.networkLog) ? f.networkLog.slice(-10) : null,
   }));
 
+  const routedModel = resolveModelForTier({ provider: providerName, requestedModel: model, tier: TIER });
   const resp = await provider.complete({
     apiKey,
-    model,
+    model: routedModel,
     maxTokens: 4000,
     system: composeSystemPrompt(SYSTEM_PROMPT, extraGuidance),
     messages: [{ role: 'user', content: JSON.stringify(compactFailures, null, 2) }],

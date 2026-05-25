@@ -2,7 +2,8 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   AlertTriangle, Check, RefreshCw, Trash2, SkipForward, Crosshair,
   Bot, Globe, ShieldAlert, Lock, Network, Clock, AlertOctagon,
-  HelpCircle, FolderTree, History,
+  HelpCircle, FolderTree, History, Sparkles, UserPlus, Link2, Wrench,
+  Wand2, Loader2,
 } from 'lucide-react';
 import api, { ApiError } from '../lib/apiClient';
 import { BASE_URL } from '../lib/apiClient';
@@ -12,6 +13,7 @@ import PageHeader from '../components/PageHeader';
 import EmptyState from '../components/EmptyState';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
+import Select from '../components/ui/Select';
 
 const API_ORIGIN = (BASE_URL || 'http://localhost:5000/api').replace(/\/api$/, '');
 const absUrl = (u) => (u?.startsWith('http') ? u : u ? API_ORIGIN + u : null);
@@ -148,12 +150,37 @@ function reasonMeta(reason) {
   return REASON_META[reason] || REASON_META.unknown;
 }
 
+// Severity badge tokens (Phase 7). 'high' = release-critical, surface in danger
+// palette; 'normal' = default, ink-grey; 'low' = de-emphasised noise.
+const SEVERITY_META = {
+  high:   { label: 'High',   cls: 'bg-danger-50 text-danger-700 border-danger-200' },
+  normal: { label: 'Normal', cls: 'bg-ink-100 text-ink-700 border-ink-200' },
+  low:    { label: 'Low',    cls: 'bg-ink-50 text-ink-500 border-ink-200' },
+};
+const SEVERITY_OPTIONS = [
+  { value: 'high', label: 'High' },
+  { value: 'normal', label: 'Normal' },
+  { value: 'low', label: 'Low' },
+];
+
+// AI category metadata. Drives the chip in the "Why blocked?" panel.
+const AI_CATEGORY_META = {
+  dependency_failure: { label: 'Dependency failure', cls: 'bg-info-50 text-info-700 border-info-100' },
+  environment:        { label: 'Environment',         cls: 'bg-ink-100 text-ink-700 border-ink-200' },
+  data_unavailable:   { label: 'Data unavailable',    cls: 'bg-warn-50 text-warn-700 border-warn-200' },
+  selector_drift:     { label: 'Selector drift',      cls: 'bg-warn-50 text-warn-700 border-warn-200' },
+  flake:              { label: 'Flake',               cls: 'bg-info-50 text-info-700 border-info-100' },
+  unknown:            { label: 'Unclassified',        cls: 'bg-ink-100 text-ink-500 border-ink-200' },
+};
+function aiCategoryMeta(cat) { return AI_CATEGORY_META[cat] || AI_CATEGORY_META.unknown; }
+
 export default function BlockedItems() {
-  const { current } = useProject();
+  const { current, currentSprintId } = useProject();
   const toast = useToast();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [scope, setScope] = useState('latest'); // 'latest' | 'all'
+  const [analyzing, setAnalyzing] = useState(false);
 
   const load = useCallback(async () => {
     if (!current) {
@@ -162,23 +189,25 @@ export default function BlockedItems() {
     }
     setLoading(true);
     try {
-      const res = await api.get(`/projects/${current.id}/blocked?scope=${scope}`);
+      const sprintQs = currentSprintId ? `&sprintId=${encodeURIComponent(currentSprintId)}` : '';
+      const res = await api.get(`/projects/${current.id}/blocked?scope=${scope}${sprintQs}`);
       setItems(res.items || []);
     } catch (err) {
       toast.error(err.message);
     } finally {
       setLoading(false);
     }
-  }, [current, toast, scope]);
+  }, [current, toast, scope, currentSprintId]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  const resolve = async (item, newSelector) => {
+  const resolve = async (item, newSelector, note) => {
     try {
       await api.post(`/projects/${current.id}/blocked/${item.id}/resolve`, {
         newSelector: newSelector || null,
+        note: note || null,
       });
       setItems((all) => all.filter((x) => x.id !== item.id));
       toast.success(newSelector ? 'Resolved + locator stored in Knowledge Base.' : 'Marked resolved.');
@@ -188,9 +217,9 @@ export default function BlockedItems() {
     }
   };
 
-  const skip = async (item) => {
+  const skip = async (item, note) => {
     try {
-      await api.post(`/projects/${current.id}/blocked/${item.id}/skip`, {});
+      await api.post(`/projects/${current.id}/blocked/${item.id}/skip`, { note: note || null });
       setItems((all) => all.filter((x) => x.id !== item.id));
       toast.success('Skipped. The blocker is hidden from the queue.', { title: 'Skipped' });
     } catch (err) {
@@ -207,6 +236,37 @@ export default function BlockedItems() {
     } catch (err) {
       const msg = err instanceof ApiError ? err.payload?.message || err.message : err.message;
       toast.error(msg, { title: 'Could not delete' });
+    }
+  };
+
+  // PATCH severity or assignee in place. Optimistic — the UI commits before
+  // the server confirms; on failure we reload to resync.
+  const patch = async (item, fields) => {
+    setItems((all) => all.map((x) => (x.id === item.id ? { ...x, ...fields } : x)));
+    try {
+      await api.patch(`/projects/${current.id}/blocked/${item.id}`, fields);
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.payload?.message || err.message : err.message;
+      toast.error(msg, { title: 'Could not save' });
+      await load(); // resync on failure so the UI doesn't lie
+    }
+  };
+
+  // Run the Blockage Analyzer over this scope's unresolved blockers.
+  // Re-fetches afterward to pick up the AI fields.
+  const analyse = async () => {
+    if (!current || analyzing) return;
+    setAnalyzing(true);
+    try {
+      const qs = scope === 'all' ? '?all=true' : '';
+      const res = await api.post(`/projects/${current.id}/blocked/analyze${qs}`, {});
+      await load();
+      toast.success(`Analysed ${res.analyses?.length ?? 0} blocker${res.analyses?.length === 1 ? '' : 's'}.`);
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.payload?.message || err.message : err.message;
+      toast.error(msg, { title: 'Re-analyse failed' });
+    } finally {
+      setAnalyzing(false);
     }
   };
 
@@ -258,6 +318,10 @@ export default function BlockedItems() {
           <RefreshCw className="w-3.5 h-3.5" />
           Refresh
         </Button>
+        <Button size="sm" variant="secondary" onClick={analyse} loading={analyzing} disabled={analyzing || items.length === 0}>
+          <Sparkles className="w-3.5 h-3.5" />
+          {analyzing ? 'Re-analysing…' : 'Re-analyse'}
+        </Button>
       </PageHeader>
 
       <main className="flex-1 overflow-y-auto bg-ink-50">
@@ -282,6 +346,9 @@ export default function BlockedItems() {
                 onResolve={resolve}
                 onSkip={skip}
                 onDelete={remove}
+                onPatch={patch}
+                projectId={current?.id}
+                onLocatorHealed={load}
               />
             ))
           )}
@@ -291,16 +358,57 @@ export default function BlockedItems() {
   );
 }
 
-function BlockedRow({ item, onResolve, onSkip, onDelete }) {
+function BlockedRow({ item, onResolve, onSkip, onDelete, onPatch, projectId, onLocatorHealed }) {
+  const toast = useToast();
   const [selector, setSelector] = useState('');
+  const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [assigneeDraft, setAssigneeDraft] = useState(item.assignee || '');
+  // Phase E1.4 — heal-from-current-DOM CTA state. Only relevant when the
+  // blocker is selector_drift AND the server resolved a matching KB row.
+  const [healing, setHealing] = useState(false);
+  const [healResult, setHealResult] = useState(null);
+
+  const healFromCurrentDom = async () => {
+    if (!item.kbLocator?.id || !projectId) return;
+    setHealing(true);
+    setHealResult(null);
+    try {
+      const res = await api.post(`/projects/${projectId}/knowledge-base/${item.kbLocator.id}/heal-now`, {});
+      setHealResult(res);
+      if (res.healed) {
+        const conf = res.healed.confidence;
+        if (conf >= 70) {
+          toast.success(`Healed (${conf}% confidence). KB locator updated.`, { title: 'Heal succeeded' });
+        } else {
+          toast.info(`Healer proposal had low confidence (${conf}%). KB stayed unchanged; review below.`, { title: 'Low confidence' });
+        }
+      } else {
+        toast.info('Healer found no replacement in the current DOM. The element may be genuinely missing.', { title: 'No proposal' });
+      }
+      onLocatorHealed?.();
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.payload?.message || err.message : err.message;
+      toast.error(msg, { title: 'Heal failed' });
+    } finally {
+      setHealing(false);
+    }
+  };
+  // Keep the assignee input in sync if a parent reload changes the value
+  // (e.g. after Re-analyse) — but don't clobber what the user is typing.
+  useEffect(() => {
+    setAssigneeDraft(item.assignee || '');
+  }, [item.assignee]);
+
   const meta = reasonMeta(item.reason);
   const Icon = meta.icon;
+  const sevMeta = SEVERITY_META[item.severity] || SEVERITY_META.normal;
+  const aiMeta = item.aiCategory ? aiCategoryMeta(item.aiCategory) : null;
 
   const submit = async () => {
     setBusy(true);
-    await onResolve(item, selector.trim() || null);
+    await onResolve(item, selector.trim() || null, note.trim() || null);
     setBusy(false);
   };
 
@@ -308,6 +416,13 @@ function BlockedRow({ item, onResolve, onSkip, onDelete }) {
   const scenarioName = item.scenario?.name;
   const moduleName = item.testCase?.module;
   const shotUrl = item.screenshot ? absUrl(item.screenshot) : null;
+
+  const commitAssignee = () => {
+    const next = assigneeDraft.trim();
+    const prev = item.assignee || '';
+    if (next === prev) return;
+    onPatch(item, { assignee: next || null });
+  };
 
   return (
     <article className="rounded-card border border-ink-200 bg-white shadow-card hover:shadow-card-hover transition-shadow duration-200 ease-out-soft overflow-hidden">
@@ -322,6 +437,9 @@ function BlockedRow({ item, onResolve, onSkip, onDelete }) {
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span className={`px-2 py-0.5 rounded-pill text-2xs font-bold uppercase tracking-wider border ${meta.cls}`}>
                 {meta.label}
+              </span>
+              <span className={`px-2 py-0.5 rounded-pill text-2xs font-bold uppercase tracking-wider border ${sevMeta.cls}`}>
+                {sevMeta.label}
               </span>
               {moduleName && (
                 <span className="text-2xs uppercase tracking-wider text-ink-500 font-semibold">{moduleName}</span>
@@ -340,6 +458,128 @@ function BlockedRow({ item, onResolve, onSkip, onDelete }) {
               {title}
             </h3>
             <p className="text-sm text-ink-600 mt-1 leading-relaxed">{meta.blurb}</p>
+          </div>
+        </div>
+
+        {/* AI "Why blocked?" panel — only renders when the analyzer has touched
+            this row. Shows category, narrative, optional root-cause link, and
+            a suggested fix. The most decision-useful surface on the page. */}
+        {item.aiSummary && (
+          <div className="mt-4 rounded-lg border border-accent-100 bg-accent-50/40 p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles className="w-3.5 h-3.5 text-accent-700" aria-hidden="true" />
+              <span className="text-2xs uppercase tracking-wider font-bold text-accent-700">Why blocked?</span>
+              {aiMeta && (
+                <span className={`px-2 py-0.5 rounded-pill text-2xs font-bold uppercase tracking-wider border ${aiMeta.cls}`}>
+                  {aiMeta.label}
+                </span>
+              )}
+              {item.aiAnalyzedAt && (
+                <span className="ml-auto text-2xs text-ink-400 tabular-nums">
+                  Analysed {new Date(item.aiAnalyzedAt).toLocaleString()}
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-ink-800 leading-relaxed">{item.aiSummary}</p>
+            {item.aiRootCauseTc && (
+              <div className="mt-2 inline-flex items-center gap-1 text-2xs text-info-700 bg-info-50 border border-info-100 rounded-pill px-2 py-0.5">
+                <Link2 className="w-3 h-3" aria-hidden="true" />
+                <span className="font-semibold">Root cause:</span>
+                <span>{item.aiRootCauseTc.name || item.aiRootCauseTc.id}</span>
+              </div>
+            )}
+            {item.aiSuggestedFix && (
+              <div className="mt-2 flex items-start gap-2 text-sm text-ink-700">
+                <Wrench className="w-3.5 h-3.5 text-ink-500 shrink-0 mt-0.5" aria-hidden="true" />
+                <span><span className="font-semibold">Suggested fix: </span>{item.aiSuggestedFix}</span>
+              </div>
+            )}
+            {/* Phase E1.4 — Heal from current DOM CTA. Only shows when the
+                blocker is selector_drift AND the server matched the failing
+                locator to a known KB row. Launches a fresh MCP session
+                server-side, takes a snapshot, and asks the healer for a new
+                selector. Low-confidence proposals don't auto-promote — the
+                operator sees them inline and decides. */}
+            {item.aiCategory === 'selector_drift' && item.kbLocator?.id && (
+              <div className="mt-3 pt-3 border-t border-accent-100 space-y-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={healFromCurrentDom}
+                    disabled={healing}
+                    loading={healing}
+                    title="Open a fresh browser to this page and ask the AI to find the element in the live DOM"
+                  >
+                    {healing
+                      ? <Loader2 className="w-3 h-3 animate-spin" />
+                      : <Wand2 className="w-3 h-3" />}
+                    Heal locator from current DOM
+                  </Button>
+                  <span className="text-2xs text-ink-500">
+                    KB health: <span className="tabular-nums font-semibold">{item.kbLocator.healthScore ?? '—'}</span>
+                  </span>
+                </div>
+                {healResult && (
+                  <div className="rounded-md border border-ink-200 bg-white p-3 text-xs space-y-1">
+                    {healResult.healed ? (
+                      <>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-2xs uppercase tracking-wider font-bold text-accent-700">Healer proposal</span>
+                          <span className="font-mono text-2xs text-ink-600">{healResult.healed.strategy}</span>
+                          <span className={`text-2xs font-bold tabular-nums ${healResult.healed.confidence >= 70 ? 'text-success-700' : 'text-warn-700'}`}>
+                            {healResult.healed.confidence}% confidence
+                          </span>
+                        </div>
+                        <div className="font-mono text-2xs text-ink-800 bg-ink-50 rounded p-2 break-all">
+                          {healResult.healed.selector}
+                        </div>
+                        {healResult.healed.reasoning && (
+                          <div className="text-2xs text-ink-600 italic">{healResult.healed.reasoning}</div>
+                        )}
+                        {healResult.healed.confidence >= 70 ? (
+                          <div className="text-2xs text-success-700">
+                            ✓ KB selector updated. The next run will use this locator.
+                          </div>
+                        ) : (
+                          <div className="text-2xs text-warn-700">
+                            Low confidence — KB unchanged. Inspect the page or refine the test case before relying on this.
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-2xs text-ink-600 italic">
+                        Healer found no matching element in the current DOM snapshot. The element may have been removed.
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Triage metadata strip — severity override + assignee. Inline edits
+            commit on change/blur via PATCH. Visible regardless of AI status. */}
+        <div className="mt-3 flex items-end gap-3 flex-wrap">
+          <div className="min-w-[140px]">
+            <Select
+              label="Severity"
+              value={item.severity || 'normal'}
+              onChange={(e) => onPatch(item, { severity: e.target.value })}
+              options={SEVERITY_OPTIONS}
+            />
+          </div>
+          <div className="flex-1 min-w-[200px]">
+            <Input
+              label="Assignee"
+              value={assigneeDraft}
+              onChange={(e) => setAssigneeDraft(e.target.value)}
+              onBlur={commitAssignee}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); commitAssignee(); } }}
+              placeholder="engineer@example.com"
+              hint="Press Enter or blur to save."
+            />
           </div>
         </div>
 
@@ -388,51 +628,67 @@ function BlockedRow({ item, onResolve, onSkip, onDelete }) {
         </div>
 
         {meta.needsLocator ? (
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto] gap-2 items-end">
+          <div className="space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto] gap-2 items-end">
+              <Input
+                label="Replacement selector (optional)"
+                value={selector}
+                onChange={(e) => setSelector(e.target.value)}
+                placeholder='[data-testid="submit-cta"]'
+                hint="Stored in the Knowledge Base so future runs use it automatically."
+              />
+              <Button size="md" variant="secondary" onClick={() => onSkip(item, note.trim() || null)} title="Hide this blocker from the queue without storing a fix">
+                <SkipForward className="w-3.5 h-3.5" />
+                Skip
+              </Button>
+              <Button
+                size="md"
+                variant="secondary"
+                onClick={() => { if (confirmDelete) onDelete(item); else setConfirmDelete(true); }}
+                title="Delete this blocker permanently"
+                className={confirmDelete ? '!text-danger-700 !border-danger-200 !bg-danger-50' : ''}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                {confirmDelete ? 'Confirm delete' : 'Delete'}
+              </Button>
+              <Button size="md" onClick={submit} loading={busy} disabled={busy}>
+                <Check className="w-3.5 h-3.5" />
+                Save fix
+              </Button>
+            </div>
             <Input
-              label="Replacement selector (optional)"
-              value={selector}
-              onChange={(e) => setSelector(e.target.value)}
-              placeholder='[data-testid="submit-cta"]'
-              hint="Stored in the Knowledge Base so future runs use it automatically."
+              label="Resolve note (optional)"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="What did you do to fix it? Captured for triage history."
             />
-            <Button size="md" variant="secondary" onClick={() => onSkip(item)} title="Hide this blocker from the queue without storing a fix">
-              <SkipForward className="w-3.5 h-3.5" />
-              Skip
-            </Button>
-            <Button
-              size="md"
-              variant="secondary"
-              onClick={() => { if (confirmDelete) onDelete(item); else setConfirmDelete(true); }}
-              title="Delete this blocker permanently"
-              className={confirmDelete ? '!text-danger-700 !border-danger-200 !bg-danger-50' : ''}
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              {confirmDelete ? 'Confirm delete' : 'Delete'}
-            </Button>
-            <Button size="md" onClick={submit} loading={busy} disabled={busy}>
-              <Check className="w-3.5 h-3.5" />
-              Save fix
-            </Button>
           </div>
         ) : (
           // For non-locator reasons (agent loop, browser crash, captcha, etc.)
           // the locator input would be misleading — hide it entirely and
           // only offer Skip + Delete (+ a contextual one-liner above).
-          <div className="flex flex-wrap items-center gap-2">
-            <Button size="md" variant="secondary" onClick={() => onSkip(item)}>
-              <SkipForward className="w-3.5 h-3.5" />
-              Skip
-            </Button>
-            <Button
-              size="md"
-              variant="secondary"
-              onClick={() => { if (confirmDelete) onDelete(item); else setConfirmDelete(true); }}
-              className={confirmDelete ? '!text-danger-700 !border-danger-200 !bg-danger-50' : ''}
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              {confirmDelete ? 'Confirm delete' : 'Delete'}
-            </Button>
+          <div className="space-y-2">
+            <Input
+              label="Resolve note (optional)"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Why are you skipping this? Captured for triage history."
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              <Button size="md" variant="secondary" onClick={() => onSkip(item, note.trim() || null)}>
+                <SkipForward className="w-3.5 h-3.5" />
+                Skip
+              </Button>
+              <Button
+                size="md"
+                variant="secondary"
+                onClick={() => { if (confirmDelete) onDelete(item); else setConfirmDelete(true); }}
+                className={confirmDelete ? '!text-danger-700 !border-danger-200 !bg-danger-50' : ''}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                {confirmDelete ? 'Confirm delete' : 'Delete'}
+              </Button>
+            </div>
           </div>
         )}
       </div>

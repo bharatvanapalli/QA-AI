@@ -43,7 +43,7 @@ export default function TestCases() {
   // ready to approve and run. Read-once on mount and on URL change.
   const moduleParam = searchParams.get('module') || null;
   const toast = useToast();
-  const { current } = useProject();
+  const { current, currentSprintId } = useProject();
   const { running, subscribe } = useRunStream();
   const [scenarios, setScenarios] = useState([]);
   const [loading, setLoading] = useState(true);

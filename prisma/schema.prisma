@@ -26,8 +26,17 @@ model User {
   passwordHash String
   firstName    String?
   lastName     String?
-  role         String   @default("user") // user | admin | lead
+  role         String   @default("user") // user | admin | lead (platform role)
   organisation String?
+  // Phase E8 — multi-tenancy. currentOrgId pins the org the user is
+  // actively working in. New rows (projects, secrets, etc.) get this
+  // orgId stamped on them. Switching orgs (when E8 invites land) flips
+  // this field via PUT /api/org/switch.
+  currentOrgId String?
+  // Phase E10.3 — per-user daily token ceiling. null = use system
+  // default (BUDGET_DEFAULT_DAILY_TOKENS env). Override per user in
+  // Settings → AI Provider when a heavy user wants more headroom.
+  dailyTokenLimit Int?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   lastLoginAt  DateTime?
@@ -41,6 +50,66 @@ model User {
   auditLogs         AuditLog[]
   runs              Run[]
   agentRuns         AgentRun[]
+  dailyUsage        UserDailyUsage[]
+  // E8 — org memberships + ownership + sent invites
+  ownedOrgs       Organization[]   @relation("OrgOwner")
+  orgMemberships  OrgMembership[]
+  sentInvites     OrgInvite[]      @relation("OrgInviteSender")
+}
+
+// ── Phase E8 — Multi-tenancy substrate ──────────────────────
+//
+// An Organization is the tenancy boundary. Every Project, Secret,
+// Integration, WebhookConfig, NotificationChannel, and AuditLog row is
+// scoped to one Org. Users belong to one or more Orgs via OrgMembership;
+// `User.currentOrgId` pins the active org for the session.
+//
+// Owner is the user who created the org. Owner has full control
+// (rename, invite, remove members, transfer ownership in a future
+// phase). Members and admins are added via OrgInvite → OrgMembership.
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique          // url-safe identifier; auto-derived from name
+  ownerId   String
+  plan      String   @default("solo") // 'solo' | 'team' | 'enterprise'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner       User             @relation("OrgOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  memberships OrgMembership[]
+  invites     OrgInvite[]
+  @@index([ownerId])
+}
+
+model OrgMembership {
+  id        String   @id @default(uuid())
+  orgId     String
+  userId    String
+  role      String   @default("member") // 'owner' | 'admin' | 'member'
+  createdAt DateTime @default(now())
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([orgId, userId])
+  @@index([userId])
+}
+
+model OrgInvite {
+  id        String   @id @default(uuid())
+  orgId     String
+  email     String   // who we're inviting (case-insensitive match at accept time)
+  role      String   @default("member")
+  token     String   @unique             // random hex; emailed to invitee
+  invitedBy String                       // userId who sent the invite
+  expiresAt DateTime
+  acceptedAt DateTime?
+  createdAt DateTime @default(now())
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  sender       User         @relation("OrgInviteSender", fields: [invitedBy], references: [id], onDelete: Cascade)
+  @@index([orgId])
+  @@index([email])
 }
 
 model Session {
@@ -61,6 +130,9 @@ model Session {
 model Secret {
   id         String   @id @default(uuid())
   userId     String
+  // Phase E8 — org tenancy. Nullable in the schema to keep legacy rows
+  // valid; new rows are required to set this via the requireOrg middleware.
+  orgId      String?
   name       String   // e.g. "claude.apiKey", "ado.pat", "jira.token", "webhook.secret"
   ciphertext String   // hex-encoded AES-256-GCM
   iv         String   // hex-encoded IV
@@ -71,12 +143,15 @@ model Secret {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@unique([userId, name])
+  @@index([orgId])
 }
 
 // ── Integration configs (Claude, ADO, Jira) ──────────────────
 model Integration {
   id              String    @id @default(uuid())
   userId          String
+  // Phase E8 — see Secret.orgId note. Backfilled to the user's Solo org.
+  orgId           String?
   type            String    // 'claude' | 'ado' | 'jira'
   config          String   @default("{}") // JSON-encoded — see jsonField helpers
   status          String    @default("unconfigured") // unconfigured | valid | invalid
@@ -87,12 +162,15 @@ model Integration {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@unique([userId, type])
+  @@index([orgId])
 }
 
 // ── Webhook delivery target ─────────────────────────────────
 model WebhookConfig {
   id          String   @id @default(uuid())
   userId      String
+  // Phase E8 — see Secret.orgId note.
+  orgId       String?
   url         String
   events      String   // JSON-encoded string[] — see helpers in services. Postgres can use String[] directly.
   enabled     Boolean  @default(true)
@@ -103,6 +181,7 @@ model WebhookConfig {
   user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   deliveries WebhookDelivery[]
   @@index([userId])
+  @@index([orgId])
 }
 
 model WebhookDelivery {
@@ -126,6 +205,8 @@ model WebhookDelivery {
 model NotificationChannel {
   id        String   @id @default(uuid())
   userId    String
+  // Phase E8 — see Secret.orgId note.
+  orgId     String?
   type      String   // 'email' | 'slack' | 'webhook'
   target    String   // email address, slack webhook URL, generic URL
   verified  Boolean  @default(false)
@@ -137,6 +218,7 @@ model NotificationChannel {
   user    User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   routes  NotificationRoute[]
   @@index([userId])
+  @@index([orgId])
 }
 
 model NotificationRoute {
@@ -152,6 +234,10 @@ model NotificationRoute {
 model Project {
   id          String   @id @default(uuid())
   userId      String
+  // Phase E8 — multi-tenancy. The org this project belongs to.
+  // Nullable in the schema for backfill compatibility; the requireOrg
+  // middleware refuses creates/reads that don't carry an orgId.
+  orgId       String?
   name        String
   environment String   @default("staging")
   framework   String   @default("playwright-pom")
@@ -165,6 +251,45 @@ model Project {
   // Google Generative AI SDK with the same canonical message shape; see
   // server/lib/providers/gemini.js for the Anthropic <-> Gemini translation.
   aiProvider  String   @default("claude") // 'claude' | 'gemini'
+  // Test users the QA team has authorised the agent to use for this project.
+  // JSON-encoded array of { name, email, password, notes? }. Injected into
+  // the Conductor's system prompt as "## Available test users". If a case
+  // requires a logged-in user and this list is empty, the agent must end the
+  // turn with "BLOCKED: no credentials provided" — fabricating credentials
+  // is a known failure mode (Phase D).
+  testCredentials String?
+  // Phase E3 — code-diff awareness. The repo + branch + provider let the
+  // codeDiffAnalyzer agent fetch the actual code change ahead of test
+  // generation, so the Architect can bias scenarios toward the surfaces
+  // a PR touches. PAT lives in the Secret vault keyed `<provider>.pat`.
+  // All three are nullable — diff-context is opt-in.
+  repoUrl        String?
+  defaultBranch  String?  // 'main' typically
+  gitProvider    String?  // 'github' | 'gitlab' | 'azure'
+  // Phase E10.5 — Browser context configuration. Threaded into
+  // @playwright/mcp at session boot so the agent's browser matches the
+  // SUT's real-world conditions (auth, locale, geo, device, proxy).
+  // All nullable; absent fields fall back to MCP defaults.
+  // Sensitive bits (httpCredentials.password, extraHTTPHeaders) live here
+  // for v1 simplicity; future hardening moves them to the Secret vault.
+  contextViewport       String?  // JSON {width, height} — overrides MCP default 1280x720
+  contextDevice         String?  // e.g. 'iPhone 15' — Playwright device-emulation preset
+  contextLocale         String?  // BCP-47 e.g. 'en-US', 'fr-FR' — injected via init-script
+  contextUserAgent      String?  // override default UA string
+  contextColorScheme    String?  // 'light' | 'dark' | 'no-preference' — via init-script matchMedia override
+  contextPermissions    String?  // JSON string[] e.g. ['geolocation','clipboard-read','clipboard-write']
+  contextGeolocation    String?  // JSON {latitude, longitude, accuracy?} — geo permission must be granted too
+  contextHttpCredentials String? // JSON {username, password} for Basic/Digest auth via init-script Authorization header
+  contextExtraHeaders   String?  // JSON {header: value} — injected via init-script fetch interceptor
+  contextIgnoreHttpsErrors Boolean @default(false)
+  contextProxyServer    String?  // 'http://host:port' or 'socks5://host:port'
+  contextProxyBypass    String?  // comma-separated domains
+  // Phase E10.5 — Pre-registered dialog handler default. When true
+  // (default), the session boot script auto-accepts any window.alert /
+  // confirm / prompt that fires unexpectedly so the agent doesn't hang.
+  // Set to false on projects where a test explicitly validates dialog
+  // copy and needs to handle them manually.
+  autoAcceptDialogs     Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -179,12 +304,112 @@ model Project {
   blockers     BlockedItem[]
   agentRuns    AgentRun[]
   discrepancies Discrepancy[]
+  sprints      Sprint[]
+  diffContexts DiffContext[]
+  downloads    Download[]
   @@index([userId])
+  @@index([orgId])
+}
+
+// ── Download (Phase E10.5) ──────────────────────────────────
+// Captured by the downloadWatcher service. One row per file the
+// browser downloaded during a run. The Conductor's `assertion_check`
+// can verify downloads via the linked RunResult, and Reports surfaces
+// them in the run detail pane.
+//
+// `path` is the on-disk location under playwright/test-results/downloads/.
+// We keep paths absolute so artifact-serving routes don't have to
+// reconstruct them; the deleter on Run cleanup removes both row + file.
+model Download {
+  id                 String   @id @default(uuid())
+  projectId          String
+  runResultId        String?
+  suggestedFilename  String   // filename the page suggested (Content-Disposition)
+  storedFilename     String   // actual on-disk name (uuid-prefixed to avoid clobbering)
+  path               String   // absolute path on the QAAI server
+  sizeBytes          Int      @default(0)
+  mimeType           String?
+  capturedAt         DateTime @default(now())
+
+  project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  runResult RunResult? @relation(fields: [runResultId], references: [id], onDelete: SetNull)
+  @@index([projectId, capturedAt])
+  @@index([runResultId])
+}
+
+// ── DiffContext (Phase E3) ──────────────────────────────────
+// One row per fetched PR/branch/commit diff. The Architect reads the most
+// recent DiffContext for a project (filtered by sprint when set) and uses
+// it to bias scenario generation. Stale rows accumulate by design — they
+// double as a history of "which changes the team tested against".
+model DiffContext {
+  id            String   @id @default(uuid())
+  projectId     String
+  sprintId      String?  // when fetched in a sprint, scoped to it
+  // Free-form identifier: PR number ("#123"), branch name, commit SHA, or
+  // human label. Used in the UI; not a unique key.
+  ref           String
+  baseRef       String   // the comparison base — usually defaultBranch
+  // JSON-encoded array of { path, additions, deletions, status }.
+  changedFiles  String
+  // JSON-encoded array of derived module names (path-segment + fuzzy).
+  changedModules String
+  // Optional Claude-generated 2-sentence narrative.
+  summary       String?
+  fetchedAt     DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  @@index([projectId, sprintId])
+  @@index([projectId, fetchedAt])
+}
+
+// ── Sprint (B3 hybrid: per-project release cycle container) ──
+// Holds Docs/Requirements/Runs/Blockers/PRs for one release. TestCases
+// stay PROJECT-level (smoke tests reused across sprints) and reference
+// the sprints they ran in via the SprintTestCase join. See BUILD_PLAN.md
+// "Phase B" for the three options considered; B3 is what shipped.
+model Sprint {
+  id        String   @id @default(uuid())
+  projectId String
+  name      String
+  // 'planning' | 'in_progress' | 'completed' | 'archived'. Completed sprints
+  // are read-only at the route layer (writes refuse with SPRINT_LOCKED).
+  lifecycle String   @default("in_progress")
+  // Phase B+: sprint-scoped operator guidance, stacked on top of
+  // Project.aiGuidance via promptCompose.joinGuidance. Example:
+  // "this sprint focuses on checkout — bias scenarios toward payments flows".
+  aiGuidance    String?
+  // Planned end date for the sprint — drives the "days-to-cut" indicator
+  // on the Overview sprint-health tile and the comparison view summary.
+  // Nullable: legacy sprints + sprints without a planned end keep working.
+  expectedEndAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  cases   SprintTestCase[]
+  @@index([projectId])
+}
+
+// Join: which TestCases were RUN inside which sprints. Populated when a
+// Run starts (one row per scenario.case in the run). Used by the Sprint
+// comparison view + carry-forward features in Phase B+.
+model SprintTestCase {
+  id         String   @id @default(uuid())
+  sprintId   String
+  testCaseId String
+  createdAt  DateTime @default(now())
+
+  sprint   Sprint   @relation(fields: [sprintId], references: [id], onDelete: Cascade)
+  testCase TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  @@unique([sprintId, testCaseId])
+  @@index([testCaseId])
 }
 
 model Document {
   id          String   @id @default(uuid())
   projectId   String
+  sprintId    String?
   name        String
   mimeType    String?
   sizeBytes   Int
@@ -194,11 +419,13 @@ model Document {
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   @@index([projectId])
+  @@index([sprintId])
 }
 
 model Requirement {
   id               String   @id @default(uuid())
   projectId        String
+  sprintId         String?
   sourceType       String   // 'ado' | 'jira' | 'upload' | 'manual'
   sourceIdentifier String?
   title            String?
@@ -208,6 +435,7 @@ model Requirement {
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   @@index([projectId])
+  @@index([sprintId])
 }
 
 model Discrepancy {
@@ -249,6 +477,8 @@ model TestCase {
   id          String   @id @default(uuid())
   projectId   String
   scenarioId  String?
+  // Back-relation for the SprintTestCase join. No own FK; this is just so
+  // Prisma can navigate `testCase.sprintTestCases`.
   name        String
   type        String   // 'smoke' | 'regression' | 'functional' | 'security' | 'boundary' | 'integration'
   module      String
@@ -276,6 +506,7 @@ model TestCase {
   // testCaseId pointing at a non-existent row, contaminating dashboard counts.
   prs      GovernancePR[]
   blockers BlockedItem[]
+  sprintTestCases SprintTestCase[]
   @@index([projectId, status])
   @@index([scenarioId])
 }
@@ -284,6 +515,9 @@ model Run {
   id          String   @id @default(uuid())
   userId      String
   projectId   String
+  // FK to Sprint when the run was tagged at start (B3). Stays NULL for
+  // legacy runs (pre-Sprint) and runs started without a current sprint.
+  sprintId    String?
   sprintName  String
   status      String   @default("running") // running | completed | failed | cancelled
   // Counters denormalised from RunResult for fast list rendering. Keep in
@@ -305,6 +539,7 @@ model Run {
   project Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
   results RunResult[]
   @@index([userId, projectId])
+  @@index([sprintId])
 }
 
 model RunResult {
@@ -332,10 +567,19 @@ model RunResult {
   // Populated by POST /runs/:r/results/:res/chat. Lives on the result so
   // every result gets its own thread (no cross-test bleed).
   chatHistory  String?
+  // Phase E4 — visual regression. baselineScreenshot is the served URL
+  // ('/artifacts/...') of the first-pass screenshot kept as the canonical
+  // look. visualVerdict / visualDiffSummary record the last visualCritic
+  // pass when one ran for this result.
+  baselineScreenshot String?
+  visualVerdict      String?  // 'pass' | 'fail' | 'inconclusive'
+  visualDiffSummary  String?  // free-form 1-3 sentence narration
+  visualDiffs        String?  // JSON array of {region, before, after, severity}
   createdAt    DateTime @default(now())
 
-  run      Run      @relation(fields: [runId], references: [id], onDelete: Cascade)
-  testCase TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  run      Run        @relation(fields: [runId], references: [id], onDelete: Cascade)
+  testCase TestCase   @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  downloads Download[]
   @@index([runId])
 }
 
@@ -359,27 +603,50 @@ model AgentRun {
 }
 
 // ── Knowledge base locators ─────────────────────────────────
+// Phase E1 (BUILD_PLAN_V2): self-healing intent model. The added columns are
+// nullable so legacy rows (which exist only because they were upserted from
+// the Conductor's first sighting) keep working. The healer agent consumes
+// `intent` / `accessibleName` / `role` / `pageUrl` / `domAnchor` when a
+// locator fails; on a successful heal it appends to `healHistory` and bumps
+// `healthScore`. A locator that drops to `healthScore < 30` is quarantined
+// (Conductor refuses to use it and emits a BlockedItem instead).
 model KnowledgeBaseLocator {
-  id           String   @id @default(uuid())
-  projectId    String
-  element      String   // human label
-  selector     String   // CSS / XPath / role
-  strategy     String?  // 'role' | 'testid' | 'css' | 'xpath'
-  occurrences  Int      @default(1)
-  healthScore  Int      @default(100)
-  lastHealedAt DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String   @id @default(uuid())
+  projectId       String
+  element         String   // human label
+  selector        String   // CSS / XPath / role
+  strategy        String?  // 'role' | 'testid' | 'css' | 'xpath'
+  occurrences     Int      @default(1)
+  healthScore     Int      @default(100)
+  lastHealedAt    DateTime?
+  // E1 intent model
+  intent          String?  // semantic description: "primary login submit button"
+  accessibleName  String?  // captured from MCP accessibility tree at first sighting
+  role            String?  // ARIA role at first sighting
+  pageUrl         String?  // URL pattern where this locator lives
+  domAnchor       String?  // JSON-encoded short snippet of nearby accessibility tree
+  failureCount    Int      @default(0)
+  lastFailedAt    DateTime?
+  // JSON array of {ts, oldSelector, newSelector, reason, confidence}.
+  // Append-only; the healer adds one entry per heal attempt.
+  healHistory     String?
+  // Reserved for cross-project locator lineage when healed selectors are
+  // promoted to a shared library. Stays NULL on a single-project install.
+  parentProjectId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   @@unique([projectId, element])
   @@index([projectId])
+  @@index([projectId, healthScore])
 }
 
 // ── Generated Playwright PRs awaiting human approval ────────
 model GovernancePR {
   id           String   @id @default(uuid())
   projectId    String
+  sprintId     String?
   runId        String?
   testCaseId   String?
   number       String   // e.g. "#101"
@@ -391,6 +658,14 @@ model GovernancePR {
   status       String   @default("pending") // pending | approved | merged | rejected
   reviewer     String?
   reviewedAt   DateTime?
+  // Phase E7 — external Git provider state. All nullable; set only when an
+  // operator clicks "Push to Git" and the API call succeeds.
+  providerPrNumber String?    // GitHub PR number ("1234")
+  providerPrUrl    String?    // Full URL of the external PR
+  providerStatus   String?    // 'open' | 'merged' | 'closed' | 'error'
+  providerBranch   String?    // Branch the spec was committed onto
+  pushedAt         DateTime?
+  pushedBy         String?    // Email of the user who triggered the push
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -399,24 +674,60 @@ model GovernancePR {
   // is regenerated — dashboards filter `testCaseId != null` to count only
   // PRs whose case still exists.
   testCase TestCase? @relation(fields: [testCaseId], references: [id], onDelete: SetNull)
+  comments PRComment[]
   // Two different projects could otherwise produce PR #101 — make the
   // human-facing number unique per project so cross-project references
   // (links, audit logs) are unambiguous.
   @@unique([projectId, number])
   @@index([projectId, status])
+  @@index([sprintId])
+}
+
+// ── PR comments (Phase 8 governance UX) ────────────────────
+// Free-form review threads on a GovernancePR. Cascades on PR delete so
+// stale threads don't linger after a TC regen wipes the parent row.
+model PRComment {
+  id        String   @id @default(uuid())
+  prId      String
+  // Email of the comment author. We don't FK to User here because PRs are
+  // referenced cross-project and the comment surface is intentionally
+  // lightweight — author is for display only.
+  author    String
+  body      String
+  createdAt DateTime @default(now())
+
+  pr GovernancePR @relation(fields: [prId], references: [id], onDelete: Cascade)
+  @@index([prId, createdAt])
 }
 
 // ── Blocked items (failed locators surfaced for human triage) ─
 model BlockedItem {
   id          String   @id @default(uuid())
   projectId   String
+  sprintId    String?
   runId       String?
   testCaseId  String?
-  reason      String   // 'locator_missing' | 'timeout' | 'assertion' | 'network'
+  reason      String   // 'locator_missing' | 'timeout' | 'assertion' | 'network' | 'agent_loop' | ...
   locator     String?
   message     String
+  // Severity for triage sort. Defaults to 'normal' for legacy rows. The
+  // blockageAnalyzer agent may upgrade this to 'high' for blockers it judges
+  // release-critical, or downgrade to 'low' for noise.
+  severity    String   @default("normal") // 'low' | 'normal' | 'high'
+  // Optional engineer assignment + free-text resolve note for triage.
+  assignee    String?  // free-form name/email — not joined to User to keep this lightweight
+  resolveNote String?  // human note captured at resolve/skip time
   resolved    Boolean  @default(false)
   resolvedAt  DateTime?
+  // ── Phase 7 / M2: AI blockage reasoning ──────────────────
+  // Populated by `services/agents/blockageAnalyzer.js`. All nullable so
+  // legacy rows stay valid; analysis is opt-in (auto on run.complete when
+  // blockedCount > 0, plus the Re-analyse button).
+  aiSummary       String?   // 1-2 sentence narrative explaining the blocker
+  aiCategory      String?   // 'dependency_failure' | 'environment' | 'data_unavailable' | 'selector_drift' | 'flake' | 'unknown'
+  aiRootCauseTcId String?   // upstream TestCase id when this blocker is downstream of another failure
+  aiSuggestedFix  String?   // one-line actionable next step
+  aiAnalyzedAt    DateTime? // when the analyzer last touched this row
   createdAt   DateTime @default(now())
 
   project  Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -425,12 +736,16 @@ model BlockedItem {
   // as "still actionable".
   testCase TestCase? @relation(fields: [testCaseId], references: [id], onDelete: SetNull)
   @@index([projectId, resolved])
+  @@index([sprintId])
 }
 
 // ── Audit log ───────────────────────────────────────────────
 model AuditLog {
   id        String   @id @default(uuid())
   userId    String?
+  // Phase E8 — tenant tag. Nullable for legacy rows; new entries written
+  // by audit.log() always set it from the request's resolved org.
+  orgId     String?
   action    String   // 'auth.login' | 'settings.claude.save' | 'secret.delete' | etc.
   target    String?  // entity affected
   metadata  String?  // JSON-encoded
@@ -441,4 +756,31 @@ model AuditLog {
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
   @@index([userId, createdAt])
   @@index([action, createdAt])
+  @@index([orgId, createdAt])
+}
+
+// ── Phase E10.3 — Per-user daily token budget ────────────────
+//
+// One row per (user, UTC date, provider). The budget service
+// upserts on every successful provider.complete() call to tally
+// input + output tokens. The header chip reads "today's total
+// across providers" via GET /api/budget/status.
+//
+// `date` is stored as a YYYY-MM-DD string (UTC) so the unique
+// index keys don't depend on TZ math at write time — every server
+// is in agreement about "what day this is".
+model UserDailyUsage {
+  id           String   @id @default(uuid())
+  userId       String
+  date         String   // YYYY-MM-DD (UTC)
+  provider     String   // 'claude' | 'gemini'
+  inputTokens  Int      @default(0)
+  outputTokens Int      @default(0)
+  callCount    Int      @default(0)
+  blockedCount Int      @default(0) // calls that were refused for exceeding limit
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([userId, date, provider])
+  @@index([userId, date])
 }

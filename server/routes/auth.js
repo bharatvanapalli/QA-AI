@@ -69,7 +69,31 @@ router.post(
         },
       });
 
-      await audit.log({ userId: user.id, action: 'auth.signup', req });
+      // Phase E8 — every new user gets a Solo org so they have a tenancy
+      // boundary from the moment they sign up. Owner membership stored;
+      // currentOrgId pinned. Future "accept an invite" path may switch
+      // them to a different org but the Solo one stays so they always
+      // have a fallback workspace they own.
+      const orgName = organisation && organisation.trim()
+        ? organisation.trim()
+        : `${(firstName || email.split('@')[0])}'s Workspace`;
+      const orgSlug = (() => {
+        const base = orgName.toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 32);
+        return `${base || 'workspace'}-${user.id.slice(0, 8)}`;
+      })();
+      const org = await prisma.organization.create({
+        data: { name: orgName, slug: orgSlug, ownerId: user.id, plan: 'solo' },
+      });
+      await prisma.orgMembership.create({
+        data: { orgId: org.id, userId: user.id, role: 'owner' },
+      });
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { currentOrgId: org.id },
+      });
+
+      await audit.log({ userId: user.id, orgId: org.id, action: 'auth.signup', req });
 
       // Auto-login
       const accessToken = jwt.sign(

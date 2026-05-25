@@ -21,13 +21,96 @@ const supervisor = require('../services/agents/supervisor');
 const mcp = require('../services/mcp');
 const sessionRegistry = require('../services/sessionRegistry');
 const cancelRegistry = require('../services/cancelRegistry');
+const blockageAnalyzer = require('../services/agents/blockageAnalyzer');
 
 const MAX_CONDUCTOR_ATTEMPTS = Number(process.env.QAAI_MAX_CONDUCTOR_ATTEMPTS) || 3;
 const { encodeJson, decodeJson, encodeArray } = require('../services/jsonField');
 const { requireAuth } = require('../middleware/auth');
+const { requireOrg } = require('../middleware/org');
 const { requireCsrf } = require('../middleware/csrf');
 const { rateLimit } = require('../middleware/rateLimit');
 const { joinGuidance } = require('../lib/promptCompose');
+
+// Format Project.testCredentials (JSON string) into a system-prompt block the
+// Conductor can inject. Returns null when the field is empty so the prompt
+// stays clean. Passwords ARE included — they're already user-authorised for
+// the agent's use; the alternative (forcing the user to re-paste per run) is
+// worse UX without adding security since the agent runs server-side.
+function buildTestCredentialsBlock(rawJson) {
+  if (!rawJson || typeof rawJson !== 'string') return null;
+  let arr;
+  try { arr = JSON.parse(rawJson); } catch (_) { return null; }
+  if (!Array.isArray(arr) || arr.length === 0) return null;
+  const lines = ['## Available test users (use ONLY these — do not invent credentials)'];
+  for (const u of arr) {
+    if (!u || !u.email || !u.password) continue;
+    const label = u.name ? `"${u.name}"` : `<unnamed>`;
+    const notes = u.notes ? ` — notes: ${u.notes}` : '';
+    lines.push(`- ${label} → email: ${u.email} / password: ${u.password}${notes}`);
+  }
+  return lines.length > 1 ? lines.join('\n') : null;
+}
+
+// Resolve the active sprint's aiGuidance for the given sprintId. Returns null
+// when no sprint is in scope, or when the sprint has no guidance set. Phase B+
+// stacks this between project-wide guidance and per-case guidance via
+// promptCompose.joinGuidance. Look-up is one row; cached per run is fine.
+async function loadSprintGuidance(sprintId) {
+  if (!sprintId) return null;
+  try {
+    const row = await prisma.sprint.findUnique({
+      where: { id: sprintId },
+      select: { aiGuidance: true },
+    });
+    return row?.aiGuidance || null;
+  } catch (_) {
+    return null;
+  }
+}
+
+// Phase E1.7 — proactive KB priming. At the start of every run, load the
+// project's non-quarantined `KnowledgeBaseLocator` rows so the Conductor's
+// system prompt can prepend a "Known locators on this site" block. The
+// agent uses these on FIRST attempt (not just on failure via the healer),
+// which is what makes Sprint 2 genuinely faster than Sprint 1.
+//
+// Filter:  healthScore >= 30 (quarantine threshold) AND occurrences >= 1.
+// Order:   healthScore desc, occurrences desc — best-known locators first.
+// Cap:     50 rows. More than that and the prompt budget loses signal.
+//
+// Returns formatted markdown block or null when KB is empty / brand-new.
+async function loadKnownLocatorsBlock(projectId) {
+  if (!projectId) return null;
+  try {
+    const rows = await prisma.knowledgeBaseLocator.findMany({
+      where: { projectId, healthScore: { gte: 30 } },
+      orderBy: [{ healthScore: 'desc' }, { occurrences: 'desc' }],
+      take: 50,
+      select: {
+        element: true, selector: true, strategy: true, role: true,
+        accessibleName: true, intent: true, healthScore: true, pageUrl: true,
+      },
+    });
+    if (!rows.length) return null;
+    const lines = ['## Known locators on this site (from prior runs — prefer these on first try)'];
+    for (const r of rows) {
+      const intent = (r.intent || r.element || '').trim();
+      if (!intent) continue;
+      const parts = [];
+      if (r.role) parts.push(`role=${r.role}`);
+      if (r.accessibleName) parts.push(`name="${r.accessibleName.slice(0, 60)}"`);
+      const meta = parts.length ? ` (${parts.join(', ')})` : '';
+      const sel = r.selector && r.selector !== '(captured)' && r.selector !== '(unknown)'
+        ? ` — last selector: ${String(r.selector).slice(0, 100)}`
+        : '';
+      lines.push(`- "${intent.slice(0, 60)}"${meta}${sel} — health ${r.healthScore}`);
+    }
+    lines.push(`If a known locator no longer matches the page, the healer will refresh it on failure — you don't need to be cautious about trying them.`);
+    return lines.length > 2 ? lines.join('\n') : null;
+  } catch (_) {
+    return null;
+  }
+}
 
 // Build a per-test-case guidance block for the scenarios about to run.
 // Each TC with a non-empty `userGuidance` becomes a bullet. Returns null
@@ -43,12 +126,13 @@ function buildCaseGuidanceBlock(scenarios) {
 
 const router = express.Router({ mergeParams: true });
 router.use(requireAuth);
+router.use(requireOrg);
 
 // Live browser sessions are kept in sessionRegistry (singleton module).
 
 async function ownProject(req) {
   return prisma.project.findFirst({
-    where: { id: req.params.projectId, userId: req.user.id },
+    where: { id: req.params.projectId, orgId: req.org.id },
   });
 }
 
@@ -65,8 +149,11 @@ async function ownProject(req) {
  *   run is in progress, otherwise null.
  */
 async function blockIfRunInProgress(req, project) {
+  // Phase E8 — scope to the project (which is already org-gated via the
+  // ownProject helper). Drops the userId filter so a teammate's running
+  // pipeline correctly blocks a second user in the same org.
   const activeRun = await prisma.run.findFirst({
-    where: { userId: req.user.id, projectId: project.id, status: 'running' },
+    where: { projectId: project.id, status: 'running' },
     select: { id: true },
   });
   const liveToken = cancelRegistry.get(req.user.id);
@@ -172,7 +259,7 @@ function singleWavePlan(scenarios) {
  * @param {function} opts.onLog
  */
 async function runConductorWithRetries({
-  project, scenarios, plan, apiKey, model, provider, send, userId, requirements, onLog, cancelToken,
+  project, sprintId, sprintGuidance, scenarios, plan, apiKey, model, provider, send, userId, requirements, onLog, cancelToken,
 }) {
   // Forwards Anthropic rate-limit headers to the client over WS so the
   // Reports page can render a live TPM-remaining chip. Defined once and
@@ -188,8 +275,22 @@ async function runConductorWithRetries({
   // userGuidance field isn't touched). Refreshed via the reload step below.
   let extraGuidance = joinGuidance({
     projectGuidance: project.aiGuidance,
+    sprintGuidance,
     caseGuidance: buildCaseGuidanceBlock(scenarios),
   });
+  // Project's authorised test users — injected into the Conductor's system
+  // prompt as "## Available test users". Stable for the lifetime of this run.
+  const testCredentialsBlock = buildTestCredentialsBlock(project.testCredentials);
+  // Phase E1.7 — proactive KB priming. Loaded once at the top of the retry
+  // loop because the KB grows during the run (via first-sighting capture)
+  // but the prompt block reflects the snapshot at run START — refreshing
+  // mid-run would churn the prompt cache for marginal benefit. The healer
+  // continues to consult the live KB on every failure.
+  const knownLocatorsBlock = await loadKnownLocatorsBlock(project.id);
+  if (knownLocatorsBlock) {
+    send({ type: 'agent.phase.log', phase: 'conductor', level: 'info',
+           message: `🧠 KB primed: injecting ${knownLocatorsBlock.split('\n').filter((l) => l.startsWith('- ')).length} known locator(s) into the agent prompt.` });
+  }
   const inlineCritic = (input) => critic.runInline({ apiKey, model, provider, ...input, onLog: onLog('critic'), onRateLimit, extraGuidance });
 
   let attempt = 1;
@@ -216,6 +317,7 @@ async function runConductorWithRetries({
         userId,
         provider,
         projectId: project.id,
+        sprintId: sprintId || null,
         plan: runningPlan,
         scenarios: scenariosToRun,
         apiKey, model,
@@ -227,6 +329,8 @@ async function runConductorWithRetries({
         cancelToken,
         onRateLimit,
         extraGuidance,
+        testCredentialsBlock,
+        knownLocatorsBlock,
       });
       await prisma.agentRun.update({
         where: { id: conductorRun.id },
@@ -356,6 +460,7 @@ async function runConductorWithRetries({
         await prisma.blockedItem.create({
           data: {
             projectId: project.id,
+            sprintId: sprintId || null,
             runId: lastOutcome.runId,
             testCaseId: h.testCaseId,
             reason: 'supervisor_giveup',
@@ -421,12 +526,14 @@ async function runConductorWithRetries({
     // final scenario set so any per-case notes still apply.
     const finalGuidance = joinGuidance({
       projectGuidance: project.aiGuidance,
+      sprintGuidance,
       caseGuidance: buildCaseGuidanceBlock(finalScenarios),
     });
     const outcome = await conductor.run({
       userId,
       provider,
       projectId: project.id,
+      sprintId: sprintId || null,
       plan: singleWavePlan(finalScenarios),
       scenarios: finalScenarios,
       apiKey, model,
@@ -439,6 +546,8 @@ async function runConductorWithRetries({
       attempt: MAX_CONDUCTOR_ATTEMPTS + 1,
       guidanceByTcId,
       cancelToken,
+      testCredentialsBlock,
+      knownLocatorsBlock,
     });
     await prisma.agentRun.update({
       where: { id: finalRun.id },
@@ -451,6 +560,132 @@ async function runConductorWithRetries({
       data: { status: 'failed', error: err.message, completedAt: new Date() },
     });
     send({ type: 'agent.phase.complete', phase: 'conductor', attempt: MAX_CONDUCTOR_ATTEMPTS + 1, error: err.message });
+  }
+
+  // ── M2 / Phase 7: auto-analyse blockers from this run ──────────
+  // After the Supervisor's final attempt the run is "done". If any blockers
+  // were created (this run produced BlockedItem rows with the final runId),
+  // fire the Blockage Analyzer so the UI doesn't show stale "Not analysed
+  // yet" panels. Cancellation is honoured — a user-cancelled run skips the
+  // analysis since they likely don't want extra Claude calls.
+  await autoAnalyseBlockersForRun({
+    projectId: project.id,
+    runId: lastOutcome?.runId,
+    apiKey, model, provider,
+    aiGuidance: project.aiGuidance || null,
+    send, cancelToken,
+  });
+}
+
+/**
+ * Best-effort post-run blockage analysis. Mirrors the POST /blocked/analyze
+ * route's logic but inline so the pipeline doesn't have to do an HTTP
+ * round-trip. Failures are swallowed and logged — the run already finished
+ * successfully, a bad analysis shouldn't surface to the user as a failed
+ * pipeline.
+ */
+async function autoAnalyseBlockersForRun({ projectId, runId, apiKey, model, provider, aiGuidance, send, cancelToken }) {
+  if (!runId || cancelToken?.cancelled) return;
+  try {
+    const blockerRows = await prisma.blockedItem.findMany({
+      where: { projectId, runId, resolved: false },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (blockerRows.length === 0) return;
+
+    send({ type: 'agent.phase.start', phase: 'analyst', label: 'Blockage Analyzer (auto)' });
+
+    const tcIds = Array.from(new Set(blockerRows.map((b) => b.testCaseId).filter(Boolean)));
+    const tcs = tcIds.length
+      ? await prisma.testCase.findMany({
+          where: { id: { in: tcIds } },
+          select: { id: true, name: true, module: true, scenarioId: true },
+        })
+      : [];
+    const tcById = new Map(tcs.map((t) => [t.id, t]));
+
+    const runResults = await prisma.runResult.findMany({
+      where: { runId },
+      select: { testCaseId: true, status: true, error: true },
+    });
+    const runTcIds = Array.from(new Set(runResults.map((r) => r.testCaseId)));
+    const runTcRows = runTcIds.length
+      ? await prisma.testCase.findMany({
+          where: { id: { in: runTcIds } },
+          select: { id: true, name: true, module: true, assertions: true, scenarioId: true },
+        })
+      : [];
+    const runTcById = new Map(runTcRows.map((t) => [t.id, t]));
+
+    const runCases = runResults.map((r) => {
+      const tc = runTcById.get(r.testCaseId);
+      return tc ? { id: tc.id, name: tc.name, module: tc.module, assertions: tc.assertions, status: r.status } : null;
+    }).filter(Boolean);
+
+    const scenarioIds = Array.from(new Set([
+      ...tcs.map((t) => t.scenarioId).filter(Boolean),
+      ...runTcRows.map((t) => t.scenarioId).filter(Boolean),
+    ]));
+    const scenarios = scenarioIds.length
+      ? await prisma.testScenario.findMany({
+          where: { id: { in: scenarioIds } },
+          select: { id: true, dependencyOn: true, cases: { select: { id: true } } },
+        })
+      : [];
+    const casesByScenarioId = new Map(scenarios.map((s) => [s.id, (s.cases || []).map((c) => c.id)]));
+    const upstreamScenariosById = new Map(scenarios.map((s) => [s.id, decodeJson(s.dependencyOn, []) || []]));
+    const dependencies = {};
+    for (const c of runTcRows) {
+      if (!c.scenarioId) continue;
+      const upstreamScenarios = upstreamScenariosById.get(c.scenarioId) || [];
+      const upstreamTcIds = upstreamScenarios.flatMap((sid) => casesByScenarioId.get(sid) || []);
+      if (upstreamTcIds.length) dependencies[c.id] = upstreamTcIds;
+    }
+
+    const blockers = blockerRows.map((b) => {
+      const tc = b.testCaseId ? tcById.get(b.testCaseId) : null;
+      const r = runResults.find((rr) => rr.testCaseId === b.testCaseId);
+      return {
+        id: b.id,
+        testCaseId: b.testCaseId,
+        testCaseName: tc?.name || null,
+        module: tc?.module || null,
+        reason: b.reason,
+        locator: b.locator,
+        message: b.message,
+        severity: b.severity || 'normal',
+        errorPreview: r?.error || null,
+      };
+    });
+
+    const result = await blockageAnalyzer.run({
+      apiKey, model, provider,
+      blockers, runCases, dependencies,
+      onLog: async (level, message) => send({ type: 'agent.phase.log', phase: 'analyst', level, message }),
+      onRateLimit: (info) => send({ type: 'claude.rate-limit', ...info }),
+      extraGuidance: aiGuidance,
+      signal: cancelToken?.signal,
+    });
+    const now = new Date();
+    await Promise.all(result.analyses.map((a) =>
+      prisma.blockedItem.update({
+        where: { id: a.id },
+        data: {
+          aiSummary: a.summary,
+          aiCategory: a.category,
+          aiSuggestedFix: a.suggestedFix,
+          aiRootCauseTcId: a.rootCauseTcId,
+          severity: a.severity,
+          aiAnalyzedAt: now,
+        },
+      })
+    ));
+    send({ type: 'agent.phase.complete', phase: 'analyst', output: { analysed: result.analyses.length } });
+    send({ type: 'blocked.analyzed', runId, count: result.analyses.length });
+  } catch (err) {
+    if (err.code !== 'CANCELLED') {
+      send({ type: 'agent.phase.complete', phase: 'analyst', error: err.message });
+    }
   }
 }
 
@@ -494,6 +729,11 @@ router.post(
       // Cancel token created up-front (BEFORE architect) so Terminate works
       // during the entire pipeline, not only after planner completes.
       const cancelToken = cancelRegistry.create(req.user.id);
+      // Phase B+: sprint-scoped operator guidance flows down with the
+      // sprintId. Resolved once up-front so each agent call uses the same
+      // value, even if the user edits Sprint.aiGuidance mid-pipeline.
+      const startSprintId = (req.body && req.body.sprintId) || null;
+      const startSprintGuidance = await loadSprintGuidance(startSprintId);
       (async () => {
         try {
           // ── Phase 1: Architect ────────────────────────────
@@ -508,9 +748,43 @@ router.post(
             data: { projectId: project.id, userId: req.user.id, phase: 'architect', input: encodeJson({ requirementCount: requirements.length }) },
           });
 
+          // Phase E1.7 — count prior completed runs to tell the Architect
+          // "this project has been tested before". Cheap COUNT query.
+          const priorRunCount = await prisma.run.count({
+            where: { projectId: project.id, status: 'completed' },
+          });
+          const priorContextBlocks = [];
+          if (priorRunCount > 0) {
+            priorContextBlocks.push(
+              `## Prior testing context\nThis project has ${priorRunCount} completed run(s) against this site. The Knowledge Base holds locators the agent has already learned. Bias scenarios toward modules and surfaces the team has covered before so existing locators get re-exercised; only generate fresh-exploratory scenarios for surfaces the prior runs didn't touch.`,
+            );
+          }
+          // Phase E3 — fold in the most recent diff context so the Architect
+          // can lean into the changed surface. Prefer a sprint-scoped diff
+          // when this run is tagged to a sprint; otherwise the most-recent
+          // project-wide diff.
+          const diffWhere = { projectId: project.id };
+          if (startSprintId) diffWhere.sprintId = startSprintId;
+          const latestDiff = await prisma.diffContext.findFirst({
+            where: diffWhere,
+            orderBy: { fetchedAt: 'desc' },
+          });
+          if (latestDiff) {
+            let changedModules = [];
+            try { changedModules = JSON.parse(latestDiff.changedModules || '[]'); } catch (_) {}
+            const moduleLine = Array.isArray(changedModules) && changedModules.length
+              ? `\nImpacted modules: ${changedModules.join(', ')}.`
+              : '';
+            const summary = (latestDiff.summary || '').trim();
+            priorContextBlocks.push(
+              `## Recent code changes (${latestDiff.ref} vs ${latestDiff.baseRef})\n${summary || 'No summary recorded.'}${moduleLine}\n\nWhen generating scenarios, prioritise coverage of these impacted modules and the behaviour the diff describes.`,
+            );
+          }
+          const priorContext = priorContextBlocks.length ? priorContextBlocks.join('\n\n') : null;
+
           let architectResult;
           try {
-            architectResult = await architect.run({ apiKey, model, provider, requirements, onLog: onLog('architect'), signal: cancelToken.signal, onRateLimit, extraGuidance: project.aiGuidance || null });
+            architectResult = await architect.run({ apiKey, model, provider, requirements, onLog: onLog('architect'), signal: cancelToken.signal, onRateLimit, extraGuidance: joinGuidance({ projectGuidance: project.aiGuidance, sprintGuidance: startSprintGuidance }), priorContext });
           } catch (err) {
             const cancelled = err.code === 'CANCELLED' || cancelToken.cancelled;
             await prisma.agentRun.update({ where: { id: architectRun.id }, data: { status: cancelled ? 'cancelled' : 'failed', error: cancelled ? 'cancelled' : err.message, completedAt: new Date() } });
@@ -572,7 +846,7 @@ router.post(
               rationale: s.rationale,
               dependencyOn: (s.dependencyOn || []).map((depName) => persistedScenarios.find((x) => x.name === depName)?.id).filter(Boolean),
             }));
-            planResult = await planner.run({ apiKey, model, provider, scenarios: scenariosForPlanner, onLog: onLog('planner'), signal: cancelToken.signal, onRateLimit, extraGuidance: project.aiGuidance || null });
+            planResult = await planner.run({ apiKey, model, provider, scenarios: scenariosForPlanner, onLog: onLog('planner'), signal: cancelToken.signal, onRateLimit, extraGuidance: joinGuidance({ projectGuidance: project.aiGuidance, sprintGuidance: startSprintGuidance }) });
           } catch (err) {
             const cancelled = err.code === 'CANCELLED' || cancelToken.cancelled;
             await prisma.agentRun.update({ where: { id: plannerRun.id }, data: { status: cancelled ? 'cancelled' : 'failed', error: cancelled ? 'cancelled' : err.message, completedAt: new Date() } });
@@ -590,6 +864,8 @@ router.post(
           // ── Phase 3+: Conductor (with retry loop) + Critic + Supervisor ──
           await runConductorWithRetries({
             project,
+            sprintId: startSprintId,
+            sprintGuidance: startSprintGuidance,
             scenarios: persistedScenarios,
             plan: planResult.plan,
             apiKey, model, provider,
@@ -669,6 +945,8 @@ router.post(
       });
 
       const cancelToken = cancelRegistry.create(req.user.id);
+      const executeSprintId = (req.body && req.body.sprintId) || null;
+      const executeSprintGuidance = await loadSprintGuidance(executeSprintId);
       (async () => {
         try {
           // ── Phase 2: Planner ─────────────────────────────
@@ -682,7 +960,7 @@ router.post(
               id: s.id, name: s.name, module: s.module, priority: s.priority, category: s.category,
               rationale: s.rationale, dependencyOn: s.dependencyOn || [],
             }));
-            planResult = await planner.run({ apiKey, model, provider, scenarios: scenariosForPlanner, onLog: onLog('planner'), signal: cancelToken.signal, onRateLimit, extraGuidance: project.aiGuidance || null });
+            planResult = await planner.run({ apiKey, model, provider, scenarios: scenariosForPlanner, onLog: onLog('planner'), signal: cancelToken.signal, onRateLimit, extraGuidance: joinGuidance({ projectGuidance: project.aiGuidance, sprintGuidance: executeSprintGuidance }) });
           } catch (err) {
             const cancelled = err.code === 'CANCELLED' || cancelToken.cancelled;
             await prisma.agentRun.update({ where: { id: plannerRun.id }, data: { status: cancelled ? 'cancelled' : 'failed', error: cancelled ? 'cancelled' : err.message, completedAt: new Date() } });
@@ -701,6 +979,8 @@ router.post(
           const allRequirements = await prisma.requirement.findMany({ where: { projectId: project.id } });
           await runConductorWithRetries({
             project,
+            sprintId: executeSprintId,
+            sprintGuidance: executeSprintGuidance,
             scenarios: scenariosWithApproved,
             plan: planResult.plan,
             apiKey, model, provider,
@@ -734,7 +1014,7 @@ router.get('/failed-cases', async (req, res, next) => {
     const project = await ownProject(req);
     if (!project) return res.status(404).json({ success: false, code: 'NOT_FOUND' });
     const lastRun = await prisma.run.findFirst({
-      where: { projectId: project.id, userId: req.user.id },
+      where: { projectId: project.id },
       orderBy: { startedAt: 'desc' },
     });
     if (!lastRun) {
@@ -801,7 +1081,7 @@ router.post(
       }
 
       const lastRun = await prisma.run.findFirst({
-        where: { projectId: project.id, userId: req.user.id },
+        where: { projectId: project.id },
         orderBy: { startedAt: 'desc' },
       });
       if (!lastRun) {
@@ -840,6 +1120,9 @@ router.post(
       });
 
       const cancelToken = cancelRegistry.create(req.user.id);
+      // Inherit the failing run's sprint so the rerun lands in the same release container.
+      const rerunSprintId = lastRun.sprintId || (req.body && req.body.sprintId) || null;
+      const rerunSprintGuidance = await loadSprintGuidance(rerunSprintId);
       (async () => {
         try {
           const allRequirements = await prisma.requirement.findMany({ where: { projectId: project.id } });
@@ -848,6 +1131,8 @@ router.post(
           // Supervisor loop kicks in immediately.
           await runConductorWithRetries({
             project,
+            sprintId: rerunSprintId,
+            sprintGuidance: rerunSprintGuidance,
             scenarios: scenariosForRerun,
             plan: singleWavePlan(scenariosForRerun),
             apiKey, model, provider,

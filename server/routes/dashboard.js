@@ -3,9 +3,11 @@
 const express = require('express');
 const prisma = require('../prisma');
 const { requireAuth } = require('../middleware/auth');
+const { requireOrg } = require('../middleware/org');
 
 const router = express.Router();
 router.use(requireAuth);
+router.use(requireOrg);
 
 /**
  * GET /api/dashboard/:projectId
@@ -26,7 +28,7 @@ router.get('/:projectId', async (req, res, next) => {
   try {
     const projectId = req.params.projectId;
     const project = await prisma.project.findFirst({
-      where: { id: projectId, userId: req.user.id },
+      where: { id: projectId, orgId: req.org.id },
     });
     if (!project) return res.status(404).json({ success: false, code: 'NOT_FOUND' });
 

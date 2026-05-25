@@ -74,6 +74,49 @@ router.post(
   }
 );
 
+// ── POST /api/settings/claude/test ─────────────────────────
+// Validates the *stored* key against the Anthropic API without forcing the
+// user to retype it. Updates the integration's `lastValidatedAt` /
+// `lastError` so the page reflects the live result. Shares the same rate
+// limit as /validate to keep an attacker who steals a session cookie from
+// using this as an oracle.
+router.post(
+  '/test',
+  requireCsrf,
+  rateLimit({ windowMs: 60_000, max: 10 }),
+  async (req, res, next) => {
+    try {
+      const apiKey = await vault.get(req.user.id, SECRET_NAME);
+      if (!apiKey) {
+        return res.status(404).json({
+          success: false,
+          valid: false,
+          code: 'NOT_CONFIGURED',
+          message: 'No Claude API key is configured for this account.',
+        });
+      }
+      const result = await validateApiKey(apiKey);
+      await integrations.upsert(req.user.id, INT_TYPE, {
+        status: result.valid ? 'valid' : 'invalid',
+        lastValidatedAt: new Date(),
+        lastError: result.valid ? null : result.message || result.code || null,
+      });
+      await audit.log({
+        userId: req.user.id,
+        action: 'settings.claude.test',
+        metadata: { valid: result.valid, code: result.code || null },
+        req,
+      });
+      if (!result.valid) {
+        return res.status(400).json({ success: false, ...result });
+      }
+      res.json({ success: true, ...result });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 // ── POST /api/settings/claude/save ─────────────────────────
 router.post('/save', requireCsrf, async (req, res, next) => {
   try {

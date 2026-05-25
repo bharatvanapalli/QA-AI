@@ -14,6 +14,8 @@ import {
   TrendingDown,
   ArrowUpRight,
   FolderTree,
+  Calendar,
+  GitCompare,
 } from 'lucide-react';
 import api from '../lib/apiClient';
 import { useProject } from '../store/project';
@@ -28,11 +30,30 @@ import Sparkline from '../components/charts/Sparkline';
 
 export default function Overview() {
   const navigate = useNavigate();
-  const { current } = useProject();
+  const { current, currentSprint, sprints } = useProject();
   const toast = useToast();
   const { latestSummary } = useRunStream();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [sprintHealth, setSprintHealth] = useState(null);
+
+  // Sprint health tile (Phase B+). Renders only when a sprint is active.
+  useEffect(() => {
+    let cancelled = false;
+    if (!current || !currentSprint?.id) {
+      setSprintHealth(null);
+      return;
+    }
+    (async () => {
+      try {
+        const res = await api.get(`/projects/${current.id}/sprints/${currentSprint.id}/health`);
+        if (!cancelled) setSprintHealth(res);
+      } catch (_) {
+        if (!cancelled) setSprintHealth(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [current, currentSprint?.id, latestSummary]);
 
   const load = useCallback(async () => {
     if (!current) {
@@ -149,6 +170,17 @@ export default function Overview() {
             <OverviewSkeleton />
           ) : (
             <>
+              {/* Sprint health tile (Phase B+). Only renders when a sprint is
+                  active — without one, the rest of the dashboard already
+                  shows the project-wide picture. */}
+              {sprintHealth && (
+                <SprintHealthTile
+                  data={sprintHealth}
+                  canCompare={sprints.length >= 2}
+                  onCompare={(prevId) => navigate(`/sprints/compare?a=${prevId}&b=${currentSprint.id}`)}
+                />
+              )}
+
               {/* Hero row: recommendation + sparkline */}
               <section className="grid lg:grid-cols-[1.4fr_1fr] gap-5">
                 <div className={`relative overflow-hidden rounded-card border bg-gradient-to-br p-6 ${recommendationColors}`}>
@@ -504,6 +536,111 @@ function OverviewSkeleton() {
         </div>
       </section>
     </div>
+  );
+}
+
+// Sprint health tile (Phase B+). Renders pass-rate, regressions, and
+// days-open/days-to-cut for the active sprint with optional compare CTA.
+function SprintHealthTile({ data, canCompare, onCompare }) {
+  const s = data?.stats || {};
+  const prev = data?.previous;
+  const sprint = data?.sprint;
+  if (!sprint) return null;
+
+  const passRate = s.passRate;
+  const passTone = passRate == null
+    ? 'text-ink-700'
+    : passRate >= 85 ? 'text-success-700' : passRate >= 60 ? 'text-warn-700' : 'text-danger-700';
+  const lifecycleTone = {
+    planning: 'bg-info-50 text-info-700 border-info-200',
+    in_progress: 'bg-info-50 text-info-700 border-info-200',
+    completed: 'bg-success-50 text-success-700 border-success-200',
+    archived: 'bg-ink-100 text-ink-600 border-ink-200',
+  }[sprint.lifecycle] || 'bg-ink-100 text-ink-600 border-ink-200';
+
+  const daysToCut = s.daysToCut;
+  const daysToCutText = daysToCut == null
+    ? null
+    : daysToCut < 0
+      ? `${-daysToCut}d past planned end`
+      : daysToCut === 0
+        ? 'cuts today'
+        : `${daysToCut}d to cut`;
+  const daysToCutTone = daysToCut == null
+    ? 'text-ink-500'
+    : daysToCut < 0 ? 'text-danger-600' : daysToCut <= 2 ? 'text-warn-700' : 'text-ink-600';
+
+  return (
+    <section className="rounded-card border border-ink-200 bg-white shadow-card p-5">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="min-w-0">
+          <div className="text-2xs uppercase tracking-[0.18em] font-bold text-ink-500 mb-1 flex items-center gap-1.5">
+            <Calendar className="w-3 h-3" />
+            Sprint health
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="text-lg font-bold text-ink-900 truncate" title={sprint.name}>{sprint.name}</div>
+            <span className={`text-2xs uppercase tracking-wider font-bold border rounded-full px-2 py-0.5 ${lifecycleTone}`}>
+              {sprint.lifecycle.replace('_', ' ')}
+            </span>
+          </div>
+        </div>
+        {canCompare && prev && (
+          <button
+            type="button"
+            onClick={() => onCompare(prev.id)}
+            className="inline-flex items-center gap-1.5 px-2.5 h-8 rounded-md border border-ink-200 bg-white text-xs font-semibold text-ink-700 hover:border-ink-400 hover:bg-ink-50 focus-visible:outline-none focus-visible:shadow-ring transition-colors"
+            title={`Compare with "${prev.name}"`}
+          >
+            <GitCompare className="w-3 h-3" />
+            vs {prev.name}
+          </button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+        <div>
+          <div className={`text-2xl font-extrabold tabular-nums ${passTone}`}>
+            {passRate == null ? '—' : `${passRate}%`}
+          </div>
+          <div className="text-2xs text-ink-500 mt-0.5">
+            pass rate · {s.executed ?? 0} executed
+          </div>
+        </div>
+        <div>
+          <div className={`text-2xl font-extrabold tabular-nums ${s.regressions > 0 ? 'text-danger-700' : 'text-ink-900'}`}>
+            {s.regressions ?? 0}
+          </div>
+          <div className="text-2xs text-ink-500 mt-0.5">
+            regressions {prev ? `vs ${prev.name}` : ''}
+          </div>
+        </div>
+        <div>
+          <div className={`text-2xl font-extrabold tabular-nums ${s.recoveries > 0 ? 'text-success-700' : 'text-ink-900'}`}>
+            {s.recoveries ?? 0}
+          </div>
+          <div className="text-2xs text-ink-500 mt-0.5">
+            recoveries {prev ? `vs ${prev.name}` : ''}
+          </div>
+        </div>
+        <div>
+          <div className={`text-2xl font-extrabold tabular-nums ${daysToCutTone}`}>
+            {s.daysOpen ?? 0}<span className="text-sm text-ink-400 font-medium">d open</span>
+          </div>
+          <div className={`text-2xs mt-0.5 ${daysToCutTone}`}>
+            {daysToCutText || 'no end date set'}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3 text-2xs text-ink-500 flex items-center gap-3 flex-wrap">
+        <span>{s.runCount ?? 0} run{(s.runCount ?? 0) === 1 ? '' : 's'}</span>
+        <span>·</span>
+        <span>{s.caseCount ?? 0} case{(s.caseCount ?? 0) === 1 ? '' : 's'} carried</span>
+        {s.openBlockers > 0 && <><span>·</span><span className="text-warn-700 font-semibold">{s.openBlockers} open blocker{s.openBlockers === 1 ? '' : 's'}</span></>}
+        {!prev && <><span>·</span><span className="italic">no previous sprint to compare</span></>}
+      </div>
+    </section>
   );
 }
 

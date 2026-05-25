@@ -72,6 +72,46 @@ router.post(
   },
 );
 
+// Validates the *stored* key so the user can confirm it still works without
+// re-pasting. Mirror of settings.claude.js#/test. Shares the validate rate
+// limit (10/min/user) to limit oracle abuse on a session-jacked cookie.
+router.post(
+  '/test',
+  requireCsrf,
+  rateLimit({ windowMs: 60_000, max: 10 }),
+  async (req, res, next) => {
+    try {
+      const apiKey = await vault.get(req.user.id, SECRET_NAME);
+      if (!apiKey) {
+        return res.status(404).json({
+          success: false,
+          valid: false,
+          code: 'NOT_CONFIGURED',
+          message: 'No Gemini API key is configured for this account.',
+        });
+      }
+      const result = await validateApiKey(apiKey);
+      await integrations.upsert(req.user.id, INT_TYPE, {
+        status: result.valid ? 'valid' : 'invalid',
+        lastValidatedAt: new Date(),
+        lastError: result.valid ? null : result.message || result.code || null,
+      });
+      await audit.log({
+        userId: req.user.id,
+        action: 'settings.gemini.test',
+        metadata: { valid: result.valid, code: result.code || null },
+        req,
+      });
+      if (!result.valid) {
+        return res.status(400).json({ success: false, ...result });
+      }
+      res.json({ success: true, ...result });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 router.post('/save', requireCsrf, async (req, res, next) => {
   try {
     const { apiKey, model } = req.body || {};

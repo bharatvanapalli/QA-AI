@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Save, ShieldCheck, Trash2, BadgeCheck, Sparkles, Loader2 } from 'lucide-react';
+import { Save, ShieldCheck, Trash2, BadgeCheck, Sparkles, Loader2, Zap } from 'lucide-react';
 import api, { ApiError } from '../../lib/apiClient';
 import useDirtyForm, { useUnsavedChangesWarning } from '../../lib/useDirtyForm';
 import { useToast } from '../../lib/useToast';
 import { useConfirm } from '../../lib/useConfirm';
 import { useProject } from '../../store/project';
+import { useRunStream } from '../../store/runStream';
 import Button from '../../components/ui/Button';
 import SecretInput from '../../components/ui/SecretInput';
 import Select from '../../components/ui/Select';
@@ -58,10 +59,11 @@ export default function ClaudeSettings() {
   // Normalised key (whitespace stripped) — used for both the format hint and the request.
   const cleanedKey = (f.values.apiKey || '').trim();
   const formatLooksValid = cleanedKey.startsWith(KEY_PREFIX) && cleanedKey.length >= 27;
-  // Be lenient: enable the button as long as SOMETHING is typed. The backend
-  // will reject with INVALID_FORMAT if the format is wrong — much better UX than
-  // a silently disabled button.
-  const canValidate = !validating && cleanedKey.length > 0;
+  // Validate path is enabled when either (a) a key is typed (validate against
+  // input) or (b) a key is stored (validate the stored vault entry). Without
+  // both paths this button is useless on a clean-load page.
+  const canValidate =
+    !validating && (cleanedKey.length > 0 || serverInfo.configured);
   const canSave =
     !saving &&
     f.isDirty &&
@@ -74,28 +76,59 @@ export default function ClaudeSettings() {
     setValidating(true);
     setValidation(null);
     f.clearErrors();
+    // When a key is typed: validate the typed string (lets the user check it
+    // BEFORE saving). When nothing is typed and a key is already stored:
+    // call /test which pulls from the vault server-side and reports back —
+    // this is what the "Test connection" primary CTA does.
+    const useStored = !cleanedKey && serverInfo.configured;
     try {
-      const res = await api.post('/settings/claude/validate', { apiKey: cleanedKey });
+      const res = useStored
+        ? await api.post('/settings/claude/test', {})
+        : await api.post('/settings/claude/validate', { apiKey: cleanedKey });
       setValidation(res);
-      toast.success('API key is valid.', { title: 'Validation passed' });
-      // Reflect trimmed value in the input
-      if (cleanedKey !== f.values.apiKey) f.set('apiKey', cleanedKey);
-      // Update model dropdown if backend reports newer models
+      toast.success(
+        useStored ? 'Stored key still works.' : 'API key is valid.',
+        { title: useStored ? 'Connection OK' : 'Validation passed' },
+      );
+      if (cleanedKey && cleanedKey !== f.values.apiKey) f.set('apiKey', cleanedKey);
       if (Array.isArray(res.modelsAvailable) && res.modelsAvailable.length) {
-        setServerInfo((s) => ({ ...s, modelsAvailable: res.modelsAvailable }));
+        setServerInfo((s) => ({
+          ...s,
+          modelsAvailable: res.modelsAvailable,
+          status: 'valid',
+          lastValidatedAt: new Date().toISOString(),
+          lastError: null,
+        }));
+      } else if (useStored) {
+        setServerInfo((s) => ({
+          ...s,
+          status: 'valid',
+          lastValidatedAt: new Date().toISOString(),
+          lastError: null,
+        }));
       }
     } catch (err) {
       if (err instanceof ApiError) {
         setValidation({ valid: false, ...err.payload });
-        f.setError('apiKey', err.payload?.message || err.message);
-        toast.error(err.payload?.message || err.message, { title: 'Validation failed' });
+        if (!useStored) {
+          f.setError('apiKey', err.payload?.message || err.message);
+        } else {
+          setServerInfo((s) => ({
+            ...s,
+            status: 'invalid',
+            lastError: err.payload?.message || err.message,
+          }));
+        }
+        toast.error(err.payload?.message || err.message, {
+          title: useStored ? 'Connection failed' : 'Validation failed',
+        });
       } else {
         toast.error(err.message);
       }
     } finally {
       setValidating(false);
     }
-  }, [canValidate, f, toast]);
+  }, [canValidate, cleanedKey, serverInfo.configured, f, toast]);
 
   const handleSave = useCallback(async () => {
     if (!canSave) return;
@@ -243,18 +276,28 @@ export default function ClaudeSettings() {
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-2 border-t border-ink-200">
+        {/* Action row.
+            Two layouts:
+              · Configured + clean → primary CTA is "Test connection". The user has
+                no changes to save, so promoting validate to the primary slot turns
+                the page from a no-op into a useful one ("is my key still good?").
+              · Dirty or unconfigured → primary CTA is "Save changes". Validate
+                stays on the left as a secondary action against the typed key.
+            Either way, Remove sits in the ghost slot when there's a stored key. */}
+        <div className="flex items-center justify-between pt-2 border-t border-ink-200 gap-3 flex-wrap">
           <div className="flex items-center gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleValidate}
-              disabled={!canValidate}
-              loading={validating}
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              Validate
-            </Button>
+            {(f.isDirty || !serverInfo.configured) && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleValidate}
+                disabled={!canValidate}
+                loading={validating}
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                Validate
+              </Button>
+            )}
             {serverInfo.configured && (
               <Button
                 variant="ghost"
@@ -267,10 +310,17 @@ export default function ClaudeSettings() {
               </Button>
             )}
           </div>
-          <Button onClick={handleSave} disabled={!canSave} loading={saving}>
-            <Save className="w-3.5 h-3.5" />
-            {f.isDirty ? 'Save changes' : 'No changes'}
-          </Button>
+          {serverInfo.configured && !f.isDirty ? (
+            <Button onClick={handleValidate} disabled={validating} loading={validating}>
+              <ShieldCheck className="w-3.5 h-3.5" />
+              Test connection
+            </Button>
+          ) : (
+            <Button onClick={handleSave} disabled={!canSave} loading={saving}>
+              <Save className="w-3.5 h-3.5" />
+              {f.isDirty ? 'Save changes' : 'No changes'}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -288,9 +338,148 @@ export default function ClaudeSettings() {
         </div>
       )}
 
+      <ClaudeUsageTile configured={serverInfo.configured} />
+
       <ProjectGuidanceSection />
     </div>
   );
+}
+
+// ── ClaudeUsageTile ─────────────────────────────────────────────────
+// Live current-minute Anthropic rate-limit indicator on the Settings page.
+// Reuses the same `claude.rate-limit` WS payload as Reports' chip — no
+// dedicated endpoint needed, no additional load on the user's API key.
+//
+// Renders nothing when the key is not configured (no usage to show), and an
+// idle placeholder when configured but no agent calls have landed yet so
+// the user understands what they're waiting on.
+function ClaudeUsageTile({ configured }) {
+  const { claudeRateLimit } = useRunStream();
+  if (!configured) return null;
+
+  const tokens = claudeRateLimit?.tokens;
+  const requests = claudeRateLimit?.requests;
+  const capturedAt = claudeRateLimit?.capturedAt;
+
+  // Idle: we have a key but no rate-limit snapshot yet. Surface what the
+  // tile will become so the user doesn't read it as "broken".
+  if (!tokens?.limit) {
+    return (
+      <div className="rounded-lg border border-ink-200 bg-white p-5 space-y-2">
+        <div className="flex items-center gap-2">
+          <Zap className="w-4 h-4 text-accent-600" aria-hidden="true" />
+          <h3 className="text-md font-semibold text-ink-900">Live Claude usage</h3>
+        </div>
+        <p className="text-xs text-ink-500">
+          Anthropic returns per-minute token + request budgets on every API
+          call. The first agent call will populate this tile with live
+          headroom; resets automatically each minute.
+        </p>
+      </div>
+    );
+  }
+
+  const used = Math.max(0, (tokens.limit || 0) - (tokens.remaining || 0));
+  const tokensPct = tokens.limit
+    ? Math.min(100, Math.round((used / tokens.limit) * 100))
+    : 0;
+  const tokensTone =
+    tokensPct >= 90
+      ? { bar: 'bg-danger-500', text: 'text-danger-700', label: 'Approaching limit' }
+      : tokensPct >= 60
+      ? { bar: 'bg-warn-500', text: 'text-warn-700', label: 'Moderate usage' }
+      : { bar: 'bg-success-500', text: 'text-success-700', label: 'Plenty of headroom' };
+
+  const reqUsed = requests?.limit
+    ? Math.max(0, (requests.limit || 0) - (requests.remaining || 0))
+    : 0;
+  const reqPct = requests?.limit
+    ? Math.min(100, Math.round((reqUsed / requests.limit) * 100))
+    : 0;
+
+  const resetCountdown = resetIso(tokens.resetAt);
+  const capturedAgo = capturedAt ? sinceIso(capturedAt) : null;
+
+  return (
+    <div className="rounded-lg border border-ink-200 bg-white p-5 space-y-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Zap className="w-4 h-4 text-accent-600" aria-hidden="true" />
+          <div>
+            <h3 className="text-md font-semibold text-ink-900">Live Claude usage</h3>
+            <p className="text-xs text-ink-500 mt-0.5">
+              Read from the <code className="font-mono">anthropic-ratelimit-*</code> response
+              headers on every agent call.
+            </p>
+          </div>
+        </div>
+        <span className={`text-2xs font-semibold ${tokensTone.text}`}>{tokensTone.label}</span>
+      </div>
+
+      <UsageRow
+        label="Tokens (per minute)"
+        used={used}
+        limit={tokens.limit}
+        pct={tokensPct}
+        barTone={tokensTone.bar}
+        suffix={tokens.resetAt ? `resets in ~${resetCountdown}` : null}
+      />
+
+      {requests?.limit ? (
+        <UsageRow
+          label="Requests (per minute)"
+          used={reqUsed}
+          limit={requests.limit}
+          pct={reqPct}
+          barTone={reqPct >= 90 ? 'bg-danger-500' : reqPct >= 60 ? 'bg-warn-500' : 'bg-success-500'}
+          suffix={requests.resetAt ? `resets in ~${resetIso(requests.resetAt)}` : null}
+        />
+      ) : null}
+
+      {capturedAgo && (
+        <div className="text-2xs text-ink-400">Last sampled {capturedAgo} ago.</div>
+      )}
+    </div>
+  );
+}
+
+function UsageRow({ label, used, limit, pct, barTone, suffix }) {
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-3 mb-1">
+        <span className="text-xs font-semibold text-ink-700">{label}</span>
+        <span className="text-xs text-ink-500 tabular-nums">
+          {used.toLocaleString()} / {limit.toLocaleString()}{' '}
+          <span className="font-semibold text-ink-700">({pct}%)</span>
+          {suffix ? <span className="text-ink-400"> · {suffix}</span> : null}
+        </span>
+      </div>
+      <div className="w-full h-2 bg-ink-100 rounded-full overflow-hidden" aria-hidden="true">
+        <span
+          className={`block h-full ${barTone} transition-all`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function resetIso(iso) {
+  if (!iso) return '';
+  const ms = new Date(iso).getTime() - Date.now();
+  if (!Number.isFinite(ms) || ms <= 0) return 'now';
+  const s = Math.round(ms / 1000);
+  if (s < 60) return `${s}s`;
+  return `${Math.round(s / 60)}m`;
+}
+
+function sinceIso(iso) {
+  const ms = Date.now() - new Date(iso).getTime();
+  if (!Number.isFinite(ms) || ms < 0) return null;
+  const s = Math.round(ms / 1000);
+  if (s < 60) return `${s}s`;
+  if (s < 3600) return `${Math.round(s / 60)}m`;
+  return `${Math.round(s / 3600)}h`;
 }
 
 // ── ProjectGuidanceSection ─────────────────────────────────────────

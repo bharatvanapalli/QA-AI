@@ -65,7 +65,10 @@ export default function GeminiSettings() {
   // only flag obviously-wrong pastes (e.g. an Anthropic sk-ant-* key) and let
   // the server's /v1beta/models call decide whether the key actually works.
   const formatLooksValid = cleanedKey.startsWith(KEY_PREFIX) && cleanedKey.length >= 20;
-  const canValidate = !validating && cleanedKey.length > 0;
+  // Validate path covers BOTH "test typed key" and "test stored key" — the
+  // latter lets the configured + clean state expose a useful primary CTA.
+  const canValidate =
+    !validating && (cleanedKey.length > 0 || serverInfo.configured);
   const canSave =
     !saving &&
     f.isDirty &&
@@ -77,26 +80,55 @@ export default function GeminiSettings() {
     setValidating(true);
     setValidation(null);
     f.clearErrors();
+    const useStored = !cleanedKey && serverInfo.configured;
     try {
-      const res = await api.post('/settings/gemini/validate', { apiKey: cleanedKey });
+      const res = useStored
+        ? await api.post('/settings/gemini/test', {})
+        : await api.post('/settings/gemini/validate', { apiKey: cleanedKey });
       setValidation(res);
-      toast.success('Gemini API key is valid.', { title: 'Validation passed' });
-      if (cleanedKey !== f.values.apiKey) f.set('apiKey', cleanedKey);
+      toast.success(
+        useStored ? 'Stored Gemini key still works.' : 'Gemini API key is valid.',
+        { title: useStored ? 'Connection OK' : 'Validation passed' },
+      );
+      if (cleanedKey && cleanedKey !== f.values.apiKey) f.set('apiKey', cleanedKey);
       if (Array.isArray(res.modelsAvailable) && res.modelsAvailable.length) {
-        setServerInfo((s) => ({ ...s, modelsAvailable: res.modelsAvailable }));
+        setServerInfo((s) => ({
+          ...s,
+          modelsAvailable: res.modelsAvailable,
+          status: 'valid',
+          lastValidatedAt: new Date().toISOString(),
+          lastError: null,
+        }));
+      } else if (useStored) {
+        setServerInfo((s) => ({
+          ...s,
+          status: 'valid',
+          lastValidatedAt: new Date().toISOString(),
+          lastError: null,
+        }));
       }
     } catch (err) {
       if (err instanceof ApiError) {
         setValidation({ valid: false, ...err.payload });
-        f.setError('apiKey', err.payload?.message || err.message);
-        toast.error(err.payload?.message || err.message, { title: 'Validation failed' });
+        if (!useStored) {
+          f.setError('apiKey', err.payload?.message || err.message);
+        } else {
+          setServerInfo((s) => ({
+            ...s,
+            status: 'invalid',
+            lastError: err.payload?.message || err.message,
+          }));
+        }
+        toast.error(err.payload?.message || err.message, {
+          title: useStored ? 'Connection failed' : 'Validation failed',
+        });
       } else {
         toast.error(err.message);
       }
     } finally {
       setValidating(false);
     }
-  }, [canValidate, f, toast]);
+  }, [canValidate, cleanedKey, serverInfo.configured, f, toast]);
 
   const handleSave = useCallback(async () => {
     if (!canSave) return;
@@ -241,18 +273,22 @@ export default function GeminiSettings() {
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-2 border-t border-ink-200">
+        {/* Configured + clean → primary becomes "Test connection" so the page
+            has something useful to do on visit. Dirty → primary is Save. */}
+        <div className="flex items-center justify-between pt-2 border-t border-ink-200 gap-3 flex-wrap">
           <div className="flex items-center gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleValidate}
-              disabled={!canValidate}
-              loading={validating}
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              Validate
-            </Button>
+            {(f.isDirty || !serverInfo.configured) && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleValidate}
+                disabled={!canValidate}
+                loading={validating}
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                Validate
+              </Button>
+            )}
             {serverInfo.configured && (
               <Button variant="ghost" size="sm" onClick={handleDelete} loading={deleting}>
                 <Trash2 className="w-3.5 h-3.5" />
@@ -260,10 +296,17 @@ export default function GeminiSettings() {
               </Button>
             )}
           </div>
-          <Button onClick={handleSave} disabled={!canSave} loading={saving}>
-            <Save className="w-3.5 h-3.5" />
-            {f.isDirty ? 'Save changes' : 'No changes'}
-          </Button>
+          {serverInfo.configured && !f.isDirty ? (
+            <Button onClick={handleValidate} disabled={validating} loading={validating}>
+              <ShieldCheck className="w-3.5 h-3.5" />
+              Test connection
+            </Button>
+          ) : (
+            <Button onClick={handleSave} disabled={!canSave} loading={saving}>
+              <Save className="w-3.5 h-3.5" />
+              {f.isDirty ? 'Save changes' : 'No changes'}
+            </Button>
+          )}
         </div>
       </div>
 

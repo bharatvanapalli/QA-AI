@@ -8,15 +8,17 @@ const architect = require('../services/agents/architect');
 const cancelRegistry = require('../services/cancelRegistry');
 const { encodeJson, decodeJson } = require('../services/jsonField');
 const { requireAuth } = require('../middleware/auth');
+const { requireOrg } = require('../middleware/org');
 const { requireCsrf } = require('../middleware/csrf');
 const { rateLimit } = require('../middleware/rateLimit');
 
 const router = express.Router({ mergeParams: true });
 router.use(requireAuth);
+router.use(requireOrg);
 
 async function getProject(req) {
   return prisma.project.findFirst({
-    where: { id: req.params.projectId, userId: req.user.id },
+    where: { id: req.params.projectId, orgId: req.org.id },
   });
 }
 
@@ -184,8 +186,17 @@ router.post(
         // are cleaned up by cascade / SetNull declared in schema.prisma, so
         // the Run row (with its denormalised counters) survives as history
         // but no orphan results are left dangling.
+        //
+        // Phase 6 — also wipe the on-disk artifacts those rows pointed at.
+        // Without this, OutputFiles kept surfacing specs/screenshots from a
+        // wiped DB ("DB wiped but disk survived" desync). Collect paths
+        // BEFORE the deleteMany so the GovernancePR/RunResult rows still
+        // reference them, unlink AFTER the DB delete succeeds.
+        const { collectProjectFiles, unlinkAndReap } = require('../services/outputFilesCleanup');
+        const filesToWipe = await collectProjectFiles(project.id);
         await prisma.testScenario.deleteMany({ where: { projectId: project.id } });
         await prisma.testCase.deleteMany({ where: { projectId: project.id } });
+        unlinkAndReap(filesToWipe);
       }
 
       const created = [];

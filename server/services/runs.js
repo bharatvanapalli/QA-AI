@@ -38,9 +38,13 @@ function toArtifactUrl(absPath) {
  * @param {function} opts.send - (msg) => void: streams to the owning user
  * @returns {Promise<{run, testCases}>}
  */
-async function startRun({ userId, projectId, testCaseIds, sprintName, send }) {
+// Phase E8 — `orgId` is the new tenancy gate. `userId` is still recorded
+// on the resulting Run row (who triggered it) but is NOT the auth boundary
+// anymore — any member of the org that owns the project can start runs
+// on it.
+async function startRun({ userId, orgId, projectId, testCaseIds, sprintName, sprintId, send }) {
   const project = await prisma.project.findFirst({
-    where: { id: projectId, userId },
+    where: orgId ? { id: projectId, orgId } : { id: projectId, userId },
   });
   if (!project) {
     const err = new Error('Project not found');
@@ -79,6 +83,7 @@ async function startRun({ userId, projectId, testCaseIds, sprintName, send }) {
     data: {
       userId,
       projectId,
+      sprintId: sprintId || null,
       sprintName: sprintName || `Sprint ${new Date().toLocaleDateString()}`,
       status: 'running',
       config: encodeJson({ targetUrl, testCaseIds: testCaseIds || [] }),
@@ -90,6 +95,16 @@ async function startRun({ userId, projectId, testCaseIds, sprintName, send }) {
     where: { id: { in: testCases.map((t) => t.id) } },
     data: { status: 'running' },
   });
+
+  // Phase B / B3: record which TCs ran in which sprint (sprint-comparison
+  // queries + carry-forward use this). Upsert via createMany skipDuplicates
+  // so re-running the same case in the same sprint doesn't error.
+  if (sprintId) {
+    await prisma.sprintTestCase.createMany({
+      data: testCases.map((tc) => ({ sprintId, testCaseId: tc.id })),
+      skipDuplicates: true,
+    });
+  }
 
   await audit.log({
     userId,
@@ -342,9 +357,19 @@ function extractLocator(msg) {
   return m ? m[1] || m[2] : null;
 }
 
-async function listRuns(userId, projectId, limit = 50) {
+// Phase E8 — orgId is the new tenancy gate. When supplied, lists runs
+// across all org members for the given project (or all org projects when
+// projectId is omitted). userId is kept as a backwards-compatible fallback
+// for callers that haven't migrated to the org context yet.
+async function listRuns(userId, projectId, limit = 50, sprintId = null, orgId = null) {
   const rows = await prisma.run.findMany({
-    where: { userId, ...(projectId ? { projectId } : {}) },
+    where: {
+      ...(orgId
+        ? { project: { orgId } }
+        : { userId }),
+      ...(projectId ? { projectId } : {}),
+      ...(sprintId ? { sprintId } : {}),
+    },
     orderBy: { startedAt: 'desc' },
     take: limit,
     select: {
@@ -436,9 +461,10 @@ async function recomputeRunCounters(runId) {
   });
 }
 
-async function getRun(userId, runId) {
+// Phase E8 — orgId is the auth gate; userId fallback for legacy callers.
+async function getRun(userId, runId, orgId = null) {
   const run = await prisma.run.findFirst({
-    where: { id: runId, userId },
+    where: orgId ? { id: runId, project: { orgId } } : { id: runId, userId },
     include: {
       results: {
         include: {
@@ -475,6 +501,8 @@ async function getRun(userId, runId) {
     networkLog: decodeJson(r.networkLog, []),
     domSnapshots: decodeJson(r.domSnapshots, []),
     chatHistory: decodeJson(r.chatHistory, []),
+    // Phase E4 — visualDiffs is a JSON string on disk; decode for clients.
+    visualDiffs: decodeJson(r.visualDiffs, []),
     blocked: blockedByTc.get(r.testCaseId) || null,
   }));
   return run;
@@ -495,14 +523,17 @@ async function getRun(userId, runId) {
  * `testCaseId`; the union is keyed on TC id so a TC that exists in one but
  * not the other lands in the right bucket.
  */
-async function compareRuns(userId, runIdA, runIdB) {
+// Phase E8 — orgId supplants userId as the auth gate. Either side of the
+// compare must belong to the requesting org.
+async function compareRuns(userId, runIdA, runIdB, orgId = null) {
+  const gate = orgId ? { project: { orgId } } : { userId };
   const [runA, runB] = await Promise.all([
     prisma.run.findFirst({
-      where: { id: runIdA, userId },
+      where: { id: runIdA, ...gate },
       select: { id: true, sprintName: true, status: true, passed: true, failed: true, blocked: true, skipped: true, startedAt: true, completedAt: true },
     }),
     prisma.run.findFirst({
-      where: { id: runIdB, userId },
+      where: { id: runIdB, ...gate },
       select: { id: true, sprintName: true, status: true, passed: true, failed: true, blocked: true, skipped: true, startedAt: true, completedAt: true },
     }),
   ]);
@@ -593,13 +624,14 @@ async function compareRuns(userId, runIdA, runIdB) {
  * Returns rows ordered oldest → newest (so a sparkline reads left-to-right
  * chronologically) with just the fields the UI needs.
  */
-async function getTestCaseHistory(userId, projectId, testCaseId, limit = 20) {
+async function getTestCaseHistory(userId, projectId, testCaseId, limit = 20, orgId = null) {
   // Cap limit defensively so a runaway query string can't pull thousands.
   const take = Math.max(1, Math.min(Number(limit) || 20, 100));
 
-  // Authorise via the project before touching results.
+  // Authorise via the project before touching results. Phase E8 — prefer
+  // orgId gate when supplied; fall back to userId for legacy callers.
   const project = await prisma.project.findFirst({
-    where: { id: projectId, userId },
+    where: orgId ? { id: projectId, orgId } : { id: projectId, userId },
     select: { id: true },
   });
   if (!project) {

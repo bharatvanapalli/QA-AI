@@ -116,51 +116,50 @@ See [PHASE_LOG.md](PHASE_LOG.md#phase-a--multi-provider-ai-completed-2026-05-23)
 - ✓ **Robust JSON extraction for all agents that parse model output** — new [server/lib/parseJsonResponse.js](server/lib/parseJsonResponse.js) with 4 recovery strategies (direct, markdown-fence, opener-to-closer, truncation). Used by Planner/Critic (run+runInline)/Supervisor/Reporter/Analyst (×2). Fixes Gemini Planner failures where the model adds preamble prose to its JSON.
 - ✓ **Live Pipeline (Theater) layout rebalance** — two-row layout: `[PhaseTimeline 240px | BrowserFrame flex]` on top, full-width `ActionTrail` below. Browser frame is `aspect-[16/9] min-h-[520px]` — roughly 40% wider and significantly taller than the prior three-pane layout.
 
-## Phase 6 — Output Files (richness) ⏳
+## Phase 6 — Output Files (richness) 🔄 (partial — 2026-05-25)
 - (Content viewer fix lands in Phase 0; this phase polishes.)
-- Syntax highlighting refinement.
-- Per-file actions (copy / download / open in PR).
-- File-tree count badges.
-- **Clear all output files** action (button + confirm + server endpoint that wipes disk + matching TestCase.specCode).
-- **Auto-clear on regenerate**: when a fresh scenario generation runs, also clear disk specs so the Output Files list always matches current state. Prevents the "DB wiped but disk files survive" desync seen after Phase 0.
+- Syntax highlighting refinement. ⏳
+- Per-file actions (copy / download / open in PR). ⏳
+- File-tree count badges. ⏳
+- ✓ **Clear all output files** action (button + confirm + `DELETE /api/projects/:id/output-files` endpoint that wipes disk + matching TestCase.specCode + GovernancePR rows).
+- ✓ **Auto-clear on regenerate**: scenarios `POST` with `replace:true` now collects PR/RunResult paths before deleteMany, then unlinks them. Prevents the "DB wiped but disk files survive" desync.
 
-## Phase 7 — Blocked Items ⏳
-- **AI blockage reasoning** — per blocker, an Analyst-class agent produces a structured explanation:
-  - **Category** enum: `dependency_failure | environment | data_unavailable | selector_drift | flake | unknown`.
-  - **Root-cause TC link** (nullable) — when the blocker is downstream of another failure, link to the upstream TC.
-  - **Narrative** (1-2 sentences) — e.g. *"TC-15 'Place order' blocked because TC-12 'Login as admin' failed → cart session never initialised."*
-  - **Suggested fix** (one line) — actionable next step.
-  - Schema additions on `BlockedItem`: `aiSummary | aiCategory | aiRootCauseTcId | aiSuggestedFix | aiAnalyzedAt`.
-  - New service: [server/services/agents/blockageAnalyzer.js](server/services/agents/blockageAnalyzer.js) — cancel-token pattern, structured JSON output schema, dependency-graph aware via `scenario.dependencyOn` and upstream `RunResult.error`.
-  - New endpoint: `POST /api/projects/:projectId/blocked/analyze` — rate-limited, CSRF, broadcasts `agent.phase.{start,log,complete}` so global indicator + inline banner reflect progress.
-  - Trigger: auto-runs when a Run completes with `blockedCount > 0`; also "Re-analyse" button in the page for manual rerun.
-  - UI in [src/pages/BlockedItems.jsx](src/pages/BlockedItems.jsx) — per-row "Why blocked?" panel: category chip + narrative + clickable root-cause TC link + suggested fix.
-- Severity sort.
-- Assign to engineer dropdown.
-- Resolve with note.
+## Phase 7 — Blocked Items ✓ (2026-05-25)
+- ✓ **AI blockage reasoning** — `blockageAnalyzer` agent emits structured `{category, summary, rootCauseTcId, suggestedFix, severity}` per blocker. Dependency-graph aware via scenario.dependencyOn projected to per-TC upstream lists at the route layer. Schema columns + migration `20260525130000_add_blocker_ai_fields`. New `POST /api/projects/:projectId/blocked/analyze` endpoint (rate-limited 6/min, CSRF). Auto-runs at the end of `runConductorWithRetries` when blockedCount > 0; manual "Re-analyse" button in the UI for ad-hoc rerun. "Why blocked?" panel in BlockedItems renders category chip + narrative + clickable root-cause TC pill + suggested fix.
+- ✓ Severity sort (server-side: high > normal > low, then createdAt desc).
+- ✓ Assign to engineer (inline `Input`, PATCH on Enter/blur).
+- ✓ Resolve with note (optional textarea on the resolve/skip footer, stored on `BlockedItem.resolveNote`).
 
-## Phase 8 — Governance PR ⏳
-- Side-by-side diff (vs main).
-- Approve + merge confirm flow.
-- Comments thread.
-- Lint findings clickable → highlight spec line.
+See [PHASE_LOG.md](PHASE_LOG.md#phase-7--m2-triage-gets-smart-completed-2026-05-25) for details.
 
-## Phase 9 — Knowledge Base ⏳
-- Locator health timeline (line chart).
-- Top flaky locators (top 10).
-- Heal-now button per locator.
-- Search by element / selector.
+## Phase 8 — Governance PR ✓ (2026-05-25)
+- ✓ Side-by-side diff via new `server/lib/lineDiff.js` (LCS) + `GET /:id/diff` route. Base = most recent merged PR for the same testCaseId; greenfield = empty base (100% adds).
+- ✓ Approve / Reject / Merge confirm flow via `useConfirm`. Merge dialog calls out "this becomes the new baseline".
+- ✓ Comments thread via new `PRComment` model + migration + 3 routes; flat list, author = email, only author can delete.
+- ✓ Lint findings have a clickable "Line N" pill that scrolls + pulse-highlights the line in both Code and Diff views.
+- ✓ Token-palette pass over the page (warn/info/success/danger replace raw amber/sky/emerald/rose).
 
-## Phase 10 — Execution Log ⏳
-- Phase filter (architect / planner / conductor / critic / supervisor).
-- Level filter (info / warn / error).
-- Search.
-- Copy log button.
+See [PHASE_LOG.md](PHASE_LOG.md#phase-8--m4-governance-gets-real-completed-2026-05-25) for details.
 
-## Phase 11 — Settings ⏳
-- Claude usage tile (this-month spend).
-- Test connection primary CTA.
-- Provider status badge in sidebar.
+## Phase 9 — Knowledge Base ✓ (delivered via [BUILD_PLAN_V2.md](BUILD_PLAN_V2.md) E1, 2026-05-25)
+- ✓ Locator health timeline — SVG `HealthLine` reconstructed from `healHistory`, dashed quarantine threshold marker.
+- ✓ Top flaky locators (top 10) — sorted by `failureCount desc`, side panel on the KB page.
+- ✓ Heal-now button per locator — both on `selector_drift` BlockedItems and inline on each KB row. Routes through `POST /api/projects/:p/knowledge-base/:id/heal-now`.
+- ✓ Search by element / selector / accessibleName / role / intent / pageUrl.
+
+See [PHASE_LOG.md](PHASE_LOG.md#phase-e15--knowledgebase-page-upgrade-completed-2026-05-25) for the V2 delivery details. Phase 9 closes via the E1 self-healing engine.
+
+## Phase 10 — Execution Log ✓ (M5, 2026-05-25)
+- ✓ Level filter chips (phase / pass / warn / error) with live counts; multi-select; clears on project switch.
+- ✓ Search (case-insensitive `includes` over the filtered view).
+- ✓ Copy log button — copies the filtered subset when filters are active, otherwise the whole log.
+- ✓ Smart auto-scroll: pauses on manual scroll-up; "Jump to latest" floating button to resume.
+- Deferred: per-agent (architect / planner / conductor) phase filter — current heuristic groups them under "Phases"; if needed later add `[agent]` tagging on the server and a second filter row.
+
+## Phase 11 — Settings ✓ (M5, 2026-05-25)
+- ✓ Live Claude usage tile (TPM bar + reset countdown + RPM row + last-sampled stamp) sourcing from the `claude.rate-limit` WS feed.
+- ✓ "Test connection" promoted to right-side primary CTA on both Claude and Gemini settings when a key is stored and the form is clean; backed by new `POST /settings/{claude,gemini}/test` (vault-pull + validate).
+- ✓ Provider status row in the sidebar under Settings — Claude / Gemini, color-coded (success/warn/danger), refetches on auth + leaving `/settings/*`. Collapses to a status dot in icon-only sidebar mode.
 
 ## Phase 12 — Enterprise hardening ⏳
 - Audit log page.
@@ -170,51 +169,37 @@ See [PHASE_LOG.md](PHASE_LOG.md#phase-a--multi-provider-ai-completed-2026-05-23)
 
 ---
 
-## Phase B — Sprint isolation ⏳ (proposed 2026-05-23)
+## Phase B — Sprint isolation ✓ (B3 hybrid shipped 2026-05-25)
 
-Real QA teams work per-sprint: regenerate scenarios from new release notes,
-run them, decide GO/NO_GO, start fresh next cycle. Currently QAAI conflates
-"project lifetime" with "release lifecycle" — data piles up forever. Sprint
-as a first-class concept fixes that.
+Sprint is now a first-class per-project container for Docs / Requirements / Runs / Blockers / PRs. TestCases stay project-level; `SprintTestCase` join captures which cases ran in each sprint. Header pill switches the active sprint, ProjectSetup has full CRUD, every artifact list endpoint accepts `?sprintId=` and every artifact-creating endpoint accepts a sprintId in the body. Archived sprints reject writes with `SPRINT_LOCKED`.
 
-**Three implementation paths (pick one — user has not committed yet):**
+See [PHASE_LOG.md](PHASE_LOG.md#phase-b--b3--m3-sprint-isolation-hybrid-completed-2026-05-25) for details.
 
-- **B1 — Light (~1 day)**: Use existing `Run.sprintName`. Add a Sprint dropdown
-  in Project Setup. Every page filters by `{projectId, sprintName}`. "New
-  Sprint" = label change. TestCases stay project-scoped (shared). Quick to
-  ship, no migration. Doesn't truly "wipe" between sprints.
+**Paths considered (B3 chosen):**
 
-- **B2 — Full container (~3-5 days)**: New `Sprint` Prisma table. `TestScenario`,
-  `TestCase`, `Run`, `Document`, `Requirement`, `BlockedItem`, `GovernancePR`
-  all gain `sprintId`. Delete sprint = wipe its data cleanly. Highest
-  isolation, most invasive migration with backfill.
+- **B1 — Light (~1 day)**: reuse `Run.sprintName` only. ❌ Rejected — too thin to support sprint comparison or carry-forward.
+- **B2 — Full container (~3-5 days)**: sprintId on every model including TestCase. ❌ Rejected — invasive migration; doesn't match how smoke tests get reused across sprints.
+- **B3 — Hybrid ✓**: Sprint container for Docs/Requirements/Runs/Blockers/PRs; TestCases stay project-level via `SprintTestCase` join. Best match to QA-team practice.
 
-- **B3 — Hybrid (recommended)**: Sprint container for Docs/Requirements/Runs/
-  Blockers/PRs. TestCases stay project-level (smoke tests reused across
-  sprints). New `SprintTestCase` join table records which cases run in each
-  sprint. Best match to how QA teams actually work — tests evolve over time,
-  each release runs a specific cut.
+## Phase B+ — Sprint enhancements ✓ (M6, 2026-05-25)
 
-**Recommendation**: Ship B1 first (validate ergonomics), graduate to B3
-once the user has run a sprint or two on B1.
+- ✓ **Sprint lifecycle gate**: `planning|in_progress → completed` refuses with `409 SPRINT_INCOMPLETE` + the unrun P0 case list when any approved P0 case has no `RunResult` in any run of this sprint. `?force=1` is the operator escape hatch; ProjectSetup surfaces the missing-case preview in a confirm dialog before forcing.
+- ✓ **Sprint comparison view** — new `/sprints/compare?a=&b=` page diffs two sprints by per-case outcome (new failures, new passes, still-failing, still-passing, only-in-A, only-in-B). Backed by `GET /api/projects/:p/sprints/compare` which builds the latest-RunResult-per-case map for both sprints.
+- ✓ **Carry-forward failures**: `POST /api/projects/:p/sprints/:id/carry-forward-failures` copies the latest failing cases from the most recent completed sprint into this sprint's `SprintTestCase` join. Idempotent (existing rows skipped). Triggered by a "Carry forward failures" button on each sprint card.
+- ✓ **Sprint-scoped AI guidance**: new `Sprint.aiGuidance` column, threaded through `promptCompose.joinGuidance` as a third layer between project-wide and per-case guidance. Every Architect / Planner / Conductor / Critic / Supervisor call in a sprint-tagged run sees it.
+- ✓ **Sprint health tile on Overview**: pass rate, regressions vs prev sprint, recoveries, days-open / days-to-cut, open blockers, run + case counts. Renders only when a sprint is active. Backed by `GET /api/projects/:p/sprints/:id/health` with a single round-trip.
+- ✓ **Planned end date** on Sprint — `expectedEndAt` column drives the "days to cut" indicator on the health tile.
 
-## Phase B+ — Sprint enhancements ⏳ (proposed 2026-05-23)
+Files touched:
+- [prisma/schema.prisma](prisma/schema.prisma) + migration `20260525160000_sprint_guidance_and_endat`
+- [server/lib/promptCompose.js](server/lib/promptCompose.js) — `joinGuidance` accepts `sprintGuidance`
+- [server/routes/agents.js](server/routes/agents.js) — `loadSprintGuidance` helper + threaded into /start, /execute, /rerun-failed
+- [server/routes/sprints.js](server/routes/sprints.js) — lifecycle gate, new fields, carry-forward, health, compare
+- [src/pages/ProjectSetup.jsx](src/pages/ProjectSetup.jsx) — `SprintCard` component (guidance, end date, mark-complete, carry-forward, compare)
+- [src/pages/Overview.jsx](src/pages/Overview.jsx) — `SprintHealthTile`
+- [src/pages/SprintCompare.jsx](src/pages/SprintCompare.jsx) (new) + [src/App.jsx](src/App.jsx) route
 
-Layer on top of whichever sprint model is shipped:
-
-- **Sprint lifecycle**: `planning → in_progress → completed → archived`.
-  Completed sprints are read-only — protects historical data.
-- **Sprint comparison view**: side-by-side "Sprint 5 vs Sprint 4 — 3 new
-  failures, 2 newly passing, 1 regression in checkout module." **Killer
-  feature** for QA leads making release decisions.
-- **Sprint completion gate**: can't mark sprint complete until all P0 cases
-  have a result. Forces accountability.
-- **Carry-forward failures**: starting a new sprint auto-inherits the
-  previous sprint's failing cases until they pass.
-- **Sprint-scoped AI guidance**: layers on top of project guidance ("this
-  sprint focuses on payments; bias scenarios toward checkout").
-- **Sprint health tile on Overview**: pass rate, regression count,
-  days-to-cut, at a glance.
+See [PHASE_LOG.md](PHASE_LOG.md#phase-b--m6-sprint-enhancements-completed-2026-05-25) for details.
 
 ## Phase C — Claude ↔ Gemini auto-failover ⏳ (proposed in Phase A discussion)
 
@@ -302,7 +287,15 @@ the local server's key.
 
 ---
 
-## Phase D — Conductor reasoning hardening ⏳ (NEXT SESSION)
+## Phase D — Conductor reasoning hardening ✓ (2026-05-25)
+
+D1 + D2 + D3 + D4 + D5 all shipped — see [PHASE_LOG.md](PHASE_LOG.md#phase-d--phase-6--m1-honest-runs-work-completed-2026-05-25). Pending exit-criteria smoke: an honest end-to-end run on a login-required site (e.g. practice.expandtesting.com) either succeeds with configured creds or stops cleanly with `BLOCKED: no credentials provided`.
+
+Original Phase D spec is preserved below for historical reference; what landed differs only in that the existing hard-stop at MAX_IDENTICAL_TOOL_CALLS was already present, so D2 added only the soft-warn that fires earlier.
+
+---
+
+## Phase D — Conductor reasoning hardening (original spec, 2026-05-23)
 
 Real failure mode observed on a Gemini run against
 `practice.expandtesting.com`. The Conductor (Playwright MCP loop) entered

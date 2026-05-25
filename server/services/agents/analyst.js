@@ -15,6 +15,12 @@
 const { getProvider } = require('../../lib/llmProvider');
 const { composeSystemPrompt } = require('../../lib/promptCompose');
 const { parseJsonResponse } = require('../../lib/parseJsonResponse');
+const { resolveModelForTier } = require('../../lib/modelRouter');
+
+// Phase E5 — cost routing. The Analyst doesn't need flagship intelligence
+// for document comparison / impact selection; routing to Haiku-class cuts
+// the per-call bill ~70% with no quality loss noticed in testing.
+const TIER = 'mid';
 
 const DISCREPANCY_SYSTEM = `You are a senior QA business analyst.
 
@@ -85,6 +91,7 @@ async function detectDiscrepancies({ apiKey, model, documents, onLog = async () 
     throw err;
   }
   const provider = getProvider(providerName);
+  const routedModel = resolveModelForTier({ provider: providerName, requestedModel: model, tier: TIER });
   // Bucket by category
   const buckets = { brd: [], 'user-stories': [], 'release-notes': [], 'api-spec': [], other: [] };
   for (const d of documents) {
@@ -107,7 +114,7 @@ async function detectDiscrepancies({ apiKey, model, documents, onLog = async () 
   try {
     resp = await provider.complete({
       apiKey,
-      model,
+      model: routedModel,
       maxTokens: 4000,
       system: composeSystemPrompt(DISCREPANCY_SYSTEM, extraGuidance),
       messages: [{ role: 'user', content: userText }],
@@ -146,6 +153,7 @@ async function selectImpactedScenarios({ apiKey, model, scenarios, releaseNotesT
     throw err;
   }
   const provider = getProvider(providerName);
+  const routedModel = resolveModelForTier({ provider: providerName, requestedModel: model, tier: TIER });
   if (!scenarios?.length) return { impacted: [], code: 'NO_SCENARIOS' };
   if (!releaseNotesText || releaseNotesText.length < 20) {
     // Previously fell back to "mark ALL scenarios as impacted" — that was a
@@ -168,7 +176,7 @@ async function selectImpactedScenarios({ apiKey, model, scenarios, releaseNotesT
   try {
     resp = await provider.complete({
       apiKey,
-      model,
+      model: routedModel,
       maxTokens: 3000,
       system: composeSystemPrompt(IMPACT_SYSTEM, extraGuidance),
       messages: [{ role: 'user', content: userText }],
