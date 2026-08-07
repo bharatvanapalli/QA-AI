@@ -99,7 +99,14 @@ function controllerAssertionContract(operation = {}) {
     ...operation,
     action: operation.type,
     target,
-    expected: operation.expected,
+    // Compiled assertion operations carry their expected value in `.value`
+    // (the same field convention action operations use for plannedText) —
+    // not `.expected`. Falling back to it here is what compareTypedAssertion
+    // actually reads as `payload.expected`; without it, every flat-authored
+    // AssertValue/AssertText step (e.g. LetCode's) compared against
+    // `undefined` and came back "exact_proof_unavailable" regardless of the
+    // real field value.
+    expected: operation.expected ?? operation.value,
     verify: operation.verify,
     comparator: operation.comparator,
   });
@@ -461,7 +468,9 @@ function evaluateControllerAssertionSnapshot({
       });
     }
   }
-  return assertionResult(compareTypedAssertion(contract, observedValue), {
+  const comparison = compareTypedAssertion(contract, observedValue);
+  console.error(`[assert-value-trace] target=${targetName} contractExpected=${JSON.stringify(contract.expected)} observedValue=${JSON.stringify(observedValue)} comparisonOutcome=${comparison.outcome} comparisonExpected=${JSON.stringify(comparison.expected)} comparisonActual=${JSON.stringify(comparison.actual)}`);
+  return assertionResult(comparison, {
     assertionType: type,
     target: targetName,
     observedKind: 'exact-owner-value',
@@ -3049,7 +3058,15 @@ function createControllerMcpRuntimeAdapter({
     );
 
     const sdkToolName = (toolName === 'browser_fill' && !isClearOp) ? 'browser_type' : toolName;
-    const normalized = mcp.normaliseToolArgs(sdkToolName, args || {}, session).args || {};
+    // controllerTypedAdapterRegistry.js freezes mutation.args (Object.freeze),
+    // and normaliseToolArgs() returns that same frozen reference untouched
+    // whenever no target rewrite is needed (e.g. every browser_navigate call,
+    // and any click/type whose target already needs no rewriting). Mutating
+    // it in place below threw "Cannot add property target, object is not
+    // extensible" on every such call, silently swallowed by the outer gateway
+    // catch into a generic "delivery uncertain" — no operation ever reached
+    // the browser. Spread into a fresh, always-extensible object first.
+    const normalized = { ...(mcp.normaliseToolArgs(sdkToolName, args || {}, session).args || {}) };
 
     // Restore normalized properties based on our computations
     normalized.target = normalized.target || targetRef;
@@ -3104,7 +3121,31 @@ function createControllerMcpRuntimeAdapter({
       } catch (_) {}
     }
 
-    const result = await rawCall(sdkToolName, normalized, remainingMs);
+    let result;
+    if (sdkToolName === 'browser_navigate' && session.liveCdp?.context && normalized.url) {
+      // browser_navigate's own MCP tool call can hang indefinitely waiting on its
+      // post-navigation snapshot response (see the session-bootstrap comment in
+      // server/services/mcp.js) — every later MCP call on this same stdio channel
+      // then queues behind it and comes back with an empty accessibility tree,
+      // reproduced live on 2026-08-07 for an authored Navigate step (every
+      // subsequent step failed with snapshot_interaction_tree_empty). Bypass it
+      // here the same way the initial session-bootstrap navigation already does:
+      // drive the live-CDP Playwright page directly instead of going through MCP.
+      try {
+        let page = session.liveCdp.context.pages()[0] || null;
+        if (!page) page = await session.liveCdp.context.newPage();
+        await page.goto(normalized.url, {
+          waitUntil: 'domcontentloaded',
+          timeout: Math.max(1_000, Math.min(60_000, Number(remainingMs) || 30_000)),
+        });
+        session.currentUrl = page.url() || normalized.url;
+        result = { isError: false, content: [{ type: 'text', text: `Navigated to ${session.currentUrl}` }] };
+      } catch (error) {
+        result = { isError: true, content: [{ type: 'text', text: `Direct navigation failed: ${error?.message || error}` }] };
+      }
+    } else {
+      result = await rawCall(sdkToolName, normalized, remainingMs);
+    }
     browserEpoch += 1;
     snapshots.invalidate({ browserEpoch: String(browserEpoch), reason: `mutation:${sdkToolName}` });
 

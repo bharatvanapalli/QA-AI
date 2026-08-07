@@ -150,6 +150,19 @@ function createBrowserTransactionRuntime({
         try {
           result = await controller.execute(activeOperation, recoveryContext);
         } catch (error) {
+          // This is the outermost wrapper around the entire controller
+          // execution (dispatch + observe + proof) for every operation type.
+          // Any unhandled exception anywhere in that path lands here and was
+          // previously reduced to a bare error.name (e.g. a generic
+          // "TypeError" with no stack, no line, no clue which of the many
+          // possible causes it was) — reproduced live on 2026-08-07 for a
+          // Clear-action step where the real defect was invisible without
+          // manually adding instrumentation. Logging it here means any
+          // future occurrence is immediately diagnosable from server.err.log.
+          console.error(
+            `[browserTransactionRuntime] controller.execute threw for ${activeOperation.operationId} (kind=${activeOperation.kind}, type=${activeOperation.type}):`,
+            error,
+          );
           const controllerErrorDecision = createTerminalDecision({
             operationId: activeOperation.operationId,
             actionOccurrenceId: activeOperation.actionOccurrenceId,

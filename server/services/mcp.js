@@ -3220,6 +3220,7 @@ async function startMcpSession({
       broadcast: broadcast || (() => {}),
     });
   } catch (err) {
+    console.error(`[mcp] launchLiveCdpBrowser failed for session ${sessionId}:`, err);
     try {
       (broadcast || (() => {}))({
         type: 'agent.phase.log',

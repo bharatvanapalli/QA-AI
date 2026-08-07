@@ -162,7 +162,12 @@ function createControllerActionExecutionGateway({
         },
       );
     }
-    assertControllerMutationTool(toolName, args);
+    try {
+      assertControllerMutationTool(toolName, args);
+    } catch (error) {
+      console.error(`[controllerActionExecutionGateway] assertControllerMutationTool rejected tool=${toolName} for ${operationId}:`, error);
+      throw error;
+    }
 
     const occurrenceKey = `${actionOccurrenceId}::${phaseId}`;
     const argsDigest = digest(args);
@@ -205,18 +210,25 @@ function createControllerActionExecutionGateway({
       dispatchAttemptId,
     });
 
-    const permit = issueTransportPermit({
-      occurrenceKey,
-      operationId,
-      toolName,
-      argsDigest,
-    });
-    const authorization = consumeTransportPermit({
-      permit,
-      operationId,
-      toolName,
-      args,
-    });
+    let permit;
+    let authorization;
+    try {
+      permit = issueTransportPermit({
+        occurrenceKey,
+        operationId,
+        toolName,
+        argsDigest,
+      });
+      authorization = consumeTransportPermit({
+        permit,
+        operationId,
+        toolName,
+        args,
+      });
+    } catch (error) {
+      console.error(`[controllerActionExecutionGateway] permit issue/consume threw for ${operationId} (tool=${toolName}):`, error);
+      throw error;
+    }
 
     let result = null;
     let deliveryStatus = DELIVERY_STATUS.DELIVERY_UNCERTAIN;
@@ -270,6 +282,12 @@ function createControllerActionExecutionGateway({
           .filter(Boolean);
       }
     } catch (error) {
+      // The transport boundary to the browser (MCP tool call / live-CDP direct
+      // dispatch) — any exception here previously vanished into a generic
+      // "delivery uncertain" reason with no trace, which is how a frozen-args
+      // TypeError silently blocked every mutation from ever reaching the
+      // browser (reproduced live on 2026-08-07; see controllerMcpRuntimeAdapter.js).
+      console.error(`[controllerActionExecutionGateway] transport() threw for ${operationId} (tool=${toolName}):`, error);
       const positivelyNotDelivered = error?.positivelyNotDelivered === true
         || error?.delivered === false && error?.proven === true;
       deliveryStatus = positivelyNotDelivered

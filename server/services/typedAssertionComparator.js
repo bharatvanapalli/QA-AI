@@ -333,7 +333,16 @@ function countValue(actual) {
 }
 
 function compareTypedAssertion(assertion = {}, actualInput) {
-  const type = String(assertion.type || assertion.kind || '').toUpperCase();
+  // Authored/compiled operation types carry an "Assert" prefix (AssertValue,
+  // AssertText, AssertDisabled...) but every branch below matches the bare
+  // form (VALUE, TEXT, DISABLED...). Without stripping the prefix, VALUE/TEXT/
+  // NUMBER/etc. assertions never matched any branch and fell through to the
+  // assertion_type_unsupported fallback below — which then leaked the raw
+  // payload object as `expected`, surfacing as a JSON blob in the live
+  // execution transcript (reproduced live on 2026-08-07 for LetCode's
+  // AssertValue steps).
+  const rawType = String(assertion.type || assertion.kind || '').toUpperCase();
+  const type = rawType.startsWith('ASSERT') ? rawType.slice('ASSERT'.length) : rawType;
   const payload = isObject(assertion.payload) ? assertion.payload : assertion;
   if (assertion.parseFailed === true) {
     return result(OUTCOMES.UNCHECKABLE, payload, actualInput, null, assertion.parseFailedReason || assertion.parseIssue || 'declared_assertion_unparseable');
@@ -372,7 +381,7 @@ function compareTypedAssertion(assertion = {}, actualInput) {
     const expected = firstDefined(payload.expectedMember, payload.expectedItems, payload.expectedValue, payload.expected);
     return compareCollectionMembership(expected, actualInput, payload.comparator || (Array.isArray(expected) ? 'contains_all' : 'contains'), payload);
   }
-  return result(OUTCOMES.UNCHECKABLE, payload, actualInput, null, 'assertion_type_unsupported');
+  return result(OUTCOMES.UNCHECKABLE, undefined, actualInput, null, 'assertion_type_unsupported');
 }
 
 module.exports = {
