@@ -1,0 +1,44 @@
+# Cloud Agent Sync
+
+## From: Claude Code (local), 2026-08-07
+
+Hi Jules — this file is our shared sync point. I'm on `main` locally (repo `bharatvanapalli/QA-AI`). You mentioned working on branch `jules-7767003858173825286-a3549d43` with no commits pushed yet — I can't see that branch from here until you push it, so I'm writing our current state and open problems here on `main` for you to pull in.
+
+## Live execution path — read this first
+
+Any test run goes through:
+`server/services/agents/controllerConductor.js` → `server/services/browserTransactionController.js` → `server/services/controllerActionExecutionGateway.js` → `server/services/controllerMcpRuntimeAdapter.js` → `server/services/controllerTypedAdapterRegistry.js` → MCP/Playwright.
+
+**Before editing anything**, confirm the file you're touching is actually required (directly or transitively) from `controllerConductor.js`. `server/services/controlActionAdapter.js`, `universalActionKernel.js`, and `conductorUniversalRuntime.js` are **not** in this path — a prior agent (Antigravity) spent multiple cycles editing `controlActionAdapter.js` for an Append-handling bug with zero effect on real runs, because that file is dead code for live execution.
+
+## Already fixed and verified this session (don't redo — but sanity-check they're intact after you pull)
+
+1. **`controllerMcpRuntimeAdapter.js`, `transport()` function**: was mutating a frozen object (`Object.freeze()`'d in `controllerTypedAdapterRegistry.js`'s `mutation()` helper) — threw `TypeError: Cannot add property target, object is not extensible` on nearly every dispatch. The exception was silently swallowed into a generic "delivery uncertain" status with no log anywhere — this is why NO browser action ever reached the browser for a long time, across every project. Fixed by cloning (`{ ...args }`) before mutating.
+2. **`typedAssertionComparator.js`, `compareTypedAssertion`**: never stripped the `"Assert"` prefix from operation types (compiled type is `AssertValue`, branches check for bare `VALUE`) — always fell through to the `assertion_type_unsupported` fallback, which leaked the raw payload object as `expected`. That's what caused a raw JSON blob to appear in the live execution transcript instead of a real value.
+3. **`controllerMcpRuntimeAdapter.js`, `controllerAssertionContract`**: added `expected: operation.expected ?? operation.value` fallback (turned out to be redundant since the compiler in `operationContractV2.js` already resolves this, but harmless).
+4. **`controllerMcpRuntimeAdapter.js`, `snapshotOwnerValue`**: only checked for a same-line `[ref=eXX]: value` suffix in the accessibility snapshot text. Some fields render their value as a nested child line (`- text: ortonikc`) instead of inline — confirmed via raw snapshot line for LetCode's "What is inside the text box" field. Fixed by falling back to the existing `extractCandidateValue()` helper in the same file, which already handles that shape correctly (reused, not reinvented).
+
+## Open problems — please solve these
+
+1. **Step 5, LetCode's "Clear the text" field fails**: `reason: text_input_owner_value_not_committed`. The mutation dispatches (a real browser interaction happens), but reading the field back afterward shows the old value unchanged — the clear never actually took effect on the page. Likely this field needs an actual Clear button/icon clicked, not `fill('')`. Investigate `planTextInput` in `controllerTypedAdapterRegistry.js`.
+2. **Step 3, "Append" regressed**: immediately after fix #4 above, in the very next run, this step changed from passing to the same `text_input_owner_value_not_committed` failure it had before Append was fixed. Unknown whether fix #4 caused this or it's an unrelated flake. Needs investigation before trusting Append as solid. The correct Append implementation lives in `planTextInput` in `controllerTypedAdapterRegistry.js` — it reads the field's current value from `resolution.target.candidate.value` and concatenates, branching on `operation.type === 'Append'` (a real compiler-declared type, not a label-sniffed guess).
+3. **Repeated identical narration**: the live execution transcript prints the exact same `Action failed · ...` line up to 7 times for one failing step (once per observation-retry cycle inside the autonomous recovery loop). Real UX bug — dedupe consecutive identical narration lines for the same operation so the transcript doesn't look broken/spammy.
+
+## How to reproduce and verify
+
+- Project: `letcode` (id `c6a3a436-1c10-4462-9b61-f8b2ab71ebb0`)
+- Test case: "Edit Fields End-to-End Flow" (id `af1b13ee-ca6d-4070-a4a1-efd8f1b93309`), generation id `2f51f751-7684-40ac-a70c-533302f6695a`
+- Trigger endpoint: `POST /api/projects/<projectId>/agents/run-smoke` with body `{ "testCaseIds": ["<testCaseId>"], "generationId": "<generationId>" }`
+- Auth: `requireAuth` reads a JWT from a cookie named `token` (fields: `sub`, `email`, `role`, signed with `process.env.JWT_SECRET`) — not an `Authorization` header. `requireCsrf` is double-submit: send the same random value as both the `XSRF-TOKEN` cookie and the `x-xsrf-token` header. The project's `orgId` must match the signed-in user's org (multi-tenant scoping) — look up the project's `orgId` and pick a `User` row whose `currentOrgId` matches, or you'll get a 404, not a 401/403.
+- After triggering, poll `Run` (by `projectId`, most recent `startedAt`) then `RunResult.stepResults` (JSON array, one entry per step, each with `index`, `action`, `status`, `reason`) — that's the ground truth. Don't trust the live WebSocket transcript alone; it can show stale state after a backend restart.
+- Run all 8 steps end-to-end after any fix, not just the step you changed — steps 1-8 are the full regression check for this test case.
+
+## Request
+
+Please:
+1. Pull this file / sync with `main` to see the above.
+2. Investigate and fix problems 1-3.
+3. Boot the server yourself, trigger the run via the endpoint above, and confirm via `RunResult.stepResults` that all 8 steps pass (or explain exactly which ones don't and why, with the real `reason` string — not a guess).
+4. Track your findings for each step as you go (what you tried, what the DB showed).
+5. Re-run the full 8-step case again after your fix to confirm it's stable, not a one-off pass.
+6. Update this file with what you found/fixed before handing back.

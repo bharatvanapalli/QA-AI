@@ -199,6 +199,15 @@ function snapshotOwnerValue(snapshotText, candidate, targetName = '') {
   const line = lineForRef(snapshotText, candidate.ref);
   const suffix = snapshotScalar(line.match(/\]\s*:\s*(.+)$/)?.[1]);
   if (suffix) return suffix;
+  // Some elements (e.g. LetCode's read-only "What is inside the text box")
+  // render their value as a nested child line ("- text: ortonikc") instead
+  // of inline after the ref's colon — reproduced live on 2026-08-07, where
+  // this always returned null despite the value being visibly present on
+  // the page. extractCandidateValue() already walks child lines for exactly
+  // this shape (used by the Append/Clear detection above); reuse it instead
+  // of re-deriving the same parsing logic here.
+  const childValue = clean(extractCandidateValue(snapshotText, candidate.ref, candidate));
+  if (childValue) return childValue;
   const observedName = clean(candidate.accessibleName || candidate.name);
   if (!observedName) return null;
   const targetLexical = lexicalMatchScore(targetName, observedName);
@@ -469,7 +478,6 @@ function evaluateControllerAssertionSnapshot({
     }
   }
   const comparison = compareTypedAssertion(contract, observedValue);
-  console.error(`[assert-value-trace] target=${targetName} contractExpected=${JSON.stringify(contract.expected)} observedValue=${JSON.stringify(observedValue)} comparisonOutcome=${comparison.outcome} comparisonExpected=${JSON.stringify(comparison.expected)} comparisonActual=${JSON.stringify(comparison.actual)}`);
   return assertionResult(comparison, {
     assertionType: type,
     target: targetName,
