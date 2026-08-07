@@ -3,10 +3,15 @@
 const crypto = require('crypto');
 const executionAuthoringCompiler = require('./executionAuthoringCompiler');
 const actionLocatorResolver = require('./actionLocatorResolver');
+const browserActionRegistry = require('./browserActionRegistry');
 const { encodeJson } = require('./jsonField');
 const featureFlags = require('./generationFeatureFlags');
 const liveScriptRecorder = require('./liveScriptRecorder');
 const authSessionManager = require('./universalAuthSessionManager');
+const {
+  isPresenceConditionalAction,
+  conditionalActionRequiredByContract,
+} = require('./conditionalActionIntent');
 
 const SCHEMA_VERSION = 'qaai-action-evidence-v1';
 const CHOKEPOINT_SCHEMA_VERSION = 'qaai-action-evidence-chokepoint-v1';
@@ -21,6 +26,12 @@ const EXPORTABLE_TOOLS = new Set([
   'browser_fill',
   'browser_fill_form',
   'browser_select_option',
+  'browser_select',
+  'browser_hover',
+  'browser_drag',
+  'browser_file_upload',
+  'browser_mouse_click',
+  'browser_click_xy',
   'browser_check',
   'browser_uncheck',
   'browser_upload_file',
@@ -123,7 +134,17 @@ function redactArgs(args = {}) {
   return out;
 }
 
-function actionKindFor(toolName) {
+function deterministicDomActionKind(toolName, entry = {}) {
+  const tool = textOf(toolName);
+  const direct = tool.match(/^deterministic_dom_(fill|click|select|check|upload)(?:_recovery)?$/i);
+  if (direct) return direct[1].toLowerCase();
+  if (tool !== 'browser_evaluate') return null;
+  const source = textOf(entry.source || entry.qaaiSource || entry.args?.source);
+  const legacy = source.match(/deterministic_dom_(fill|click|select|check|upload)/i);
+  return legacy ? legacy[1].toLowerCase() : null;
+}
+
+function actionKindFor(toolName, entry = {}) {
   const tool = textOf(toolName);
   if (tool === 'browser_navigate') return 'navigate';
   if (tool === 'browser_fill_form') return 'fill_form';
@@ -134,20 +155,29 @@ function actionKindFor(toolName) {
   if (tool === 'browser_upload_file') return 'upload';
   if (tool === 'assertion_check') return 'assert';
   if (tool.includes('click')) return 'click';
+  const deterministicKind = deterministicDomActionKind(tool, entry);
+  if (deterministicKind) return deterministicKind;
+  const registered = browserActionRegistry.getActionEntry(tool);
+  if (registered && registered.kind !== 'utility') {
+    return textOf(registered.canonicalAction) || tool.replace(/^browser_/, '') || 'unknown';
+  }
   return tool.replace(/^browser_/, '') || 'unknown';
 }
 
 function isExportableTool(toolName, entry = {}) {
   if (EXPORTABLE_TOOLS.has(toolName)) return true;
-  if (toolName === 'browser_evaluate') {
-    const source = textOf(entry.source || entry.qaaiSource || entry.args?.source);
-    return /deterministic_dom_(fill|click|select|check|upload)/i.test(source);
-  }
-  return false;
+  if (deterministicDomActionKind(toolName, entry)) return true;
+  const registered = browserActionRegistry.getActionEntry(toolName);
+  return !!(registered && registered.kind !== 'utility' && registered.exportable !== false);
 }
 
 function isUtilityTool(toolName) {
   return UTILITY_TOOLS.has(toolName);
+}
+
+function isLocatorBearingTool(toolName, entry = {}) {
+  return actionLocatorResolver.MUTATING_ELEMENT_TOOLS.has(textOf(toolName))
+    || !!deterministicDomActionKind(toolName, entry);
 }
 
 function copyIfPresent(target, source, targetKey, sourceKeys) {
@@ -171,6 +201,8 @@ function propagateActionEvidenceFields(entry = {}, result = {}) {
       codegenLocator: false,
       locatorDiagnostic: false,
       actionLocatorGap: false,
+      actionLocatorKernel: false,
+      captureRuntime: false,
     };
   }
   const propagated = {
@@ -179,9 +211,34 @@ function propagateActionEvidenceFields(entry = {}, result = {}) {
     codegenLocator: copyIfPresent(entry, result, 'codegenLocator', ['codegenLocator']),
     locatorDiagnostic: copyIfPresent(entry, result, 'locatorDiagnostic', ['locatorDiagnostic', 'diagnostic']),
     actionLocatorGap: copyIfPresent(entry, result, 'actionLocatorGap', ['actionLocatorGap', 'gap']),
+    actionLocatorKernel: copyIfPresent(entry, result, 'actionLocatorKernel', ['actionLocatorKernel', 'qaaiActionEvidence', 'actionEvidence']),
+    captureRuntime: copyIfPresent(entry, result, 'captureRuntime', ['qaaiCaptureRuntime', 'captureRuntime']),
   };
   if (entry.qaaiActionLocator && !entry.actionLocator) entry.actionLocator = entry.qaaiActionLocator;
   if (entry.qaaiActionEvidence?.gap && !entry.actionLocatorGap) entry.actionLocatorGap = entry.qaaiActionEvidence.gap;
+  const toolName = entry.tool || entry.toolName;
+  if (isLocatorBearingTool(toolName, entry)
+      && !entry.actionLocator
+      && !entry.qaaiActionLocator
+      && !entry.codegenLocator
+      && !entry.locatorDiagnostic
+      && !entry.actionLocatorGap) {
+    entry.actionLocatorGap = {
+      code: 'action_locator_evidence_missing_at_recording_chokepoint',
+      where: toolName || 'locator_bearing_action',
+      detail: 'The locator-bearing action reached the evidence recorder without an authoritative locator or an upstream capture-gap explanation.',
+      source: entry.source || entry.qaaiSource || result.qaaiCaptureRuntime?.status || null,
+      captureBuildFingerprint: result.qaaiCaptureRuntime?.buildFingerprint || null,
+      captureRuntimeInstanceId: result.qaaiCaptureRuntime?.runtimeInstanceId || null,
+    };
+    if (!entry.actionLocatorKernel) {
+      entry.actionLocatorKernel = {
+        status: 'locator_capture_gap',
+        gap: entry.actionLocatorGap,
+        captureRuntime: entry.captureRuntime || result.qaaiCaptureRuntime || null,
+      };
+    }
+  }
   return propagated;
 }
 
@@ -197,7 +254,13 @@ function isManualGate(entry = {}) {
 }
 
 function contractStepIdFor(entry = {}) {
-  return entry.contractStepId || entry.contractNodeId || entry.stepAuthoring?.contractStepId || entry.stepAuthoring?.plannedStepId || null;
+  return entry.contractStepId
+    || entry.contractNodeId
+    || entry.stepAuthoring?.contractStepId
+    || entry.stepAuthoring?.plannedStepId
+    || entry.actionLocator?.contractStepId
+    || entry.qaaiActionLocator?.contractStepId
+    || null;
 }
 
 function snapshotRefFrom(value, fallback = null) {
@@ -227,54 +290,269 @@ function locatorFromEntry(entry = {}, field = null, fieldIndex = null) {
   return entry.actionLocator || entry.codegenLocator || entry.locatorDiagnostic || entry.qaaiActionLocator || null;
 }
 
+function firstIdentityValue(sources, field) {
+  for (const source of sources) {
+    if (!source || typeof source !== 'object') continue;
+    const value = source[field];
+    if (value !== undefined && value !== null && value !== '') return value;
+  }
+  return null;
+}
+
+function integerIdentityValue(sources, field, minimum = 0) {
+  const raw = firstIdentityValue(sources, field);
+  const numeric = Number(raw);
+  return Number.isFinite(numeric) && numeric >= minimum
+    ? Math.floor(numeric)
+    : null;
+}
+
+function occurrenceIdentityFor({ entry = {}, locator = null, contractStepId = null } = {}) {
+  const primary = actionLocatorResolver.primaryActionLocator(locator);
+  const context = primary?.context && typeof primary.context === 'object' ? primary.context : {};
+  const contextEvidence = primary?.contextEvidence && typeof primary.contextEvidence === 'object'
+    ? primary.contextEvidence
+    : {};
+  const captureBinding = context.captureBinding
+    || context.authoritativeCdp?.pre?.captureBinding
+    || primary?.authoritativeCdp?.pre?.captureBinding
+    || null;
+  const sources = [
+    entry,
+    entry.stepAuthoring,
+    entry.actionIdentity,
+    entry.stepAuthoring?.actionIdentity,
+    primary,
+    primary?.actionIdentity,
+    contextEvidence,
+    contextEvidence.actionIdentity,
+    captureBinding,
+  ];
+  const sequenceIndex = integerIdentityValue(sources, 'sequenceIndex');
+  const occurrenceOrdinal = integerIdentityValue(sources, 'occurrenceOrdinal', 1);
+  const stableContractStepId = contractStepId || firstIdentityValue(sources, 'contractStepId');
+  return {
+    status: stableContractStepId ? 'bound' : 'missing',
+    ...(stableContractStepId
+      ? { contractStepId: stableContractStepId }
+      : { reason: 'missing_contract_step_id' }),
+    caseId: firstIdentityValue(sources, 'caseId'),
+    sourceContractStepId: firstIdentityValue(sources, 'sourceContractStepId'),
+    actionOccurrenceId: firstIdentityValue(sources, 'actionOccurrenceId'),
+    sourceActionOccurrenceId: firstIdentityValue(sources, 'sourceActionOccurrenceId'),
+    authoredActionId: firstIdentityValue(sources, 'authoredActionId'),
+    sequenceIndex,
+    occurrenceOrdinal,
+    occurrenceKey: firstIdentityValue(sources, 'occurrenceKey'),
+    runtimeActionId: firstIdentityValue(sources, 'runtimeActionId'),
+    toolUseId: firstIdentityValue(sources, 'toolUseId'),
+  };
+}
+
+function captureIdentitySummary(capture, fallbackCaptureBinding = null) {
+  if (!capture || typeof capture !== 'object') return null;
+  return {
+    schema: capture.schema || null,
+    captured: capture.captured === true,
+    authoritative: capture.authoritative === true,
+    source: capture.source || null,
+    phase: capture.phase || null,
+    reason: capture.reason || null,
+    capturedAt: capture.capturedAt || null,
+    identity: capture.identity ? { ...capture.identity } : null,
+    backendNodeId: capture.identity?.backendNodeId || capture.backendNodeId || null,
+    captureBinding: capture.captureBinding
+      ? { ...capture.captureBinding }
+      : fallbackCaptureBinding
+        ? { ...fallbackCaptureBinding }
+        : null,
+    pageIdentity: capture.pageIdentity ? { ...capture.pageIdentity } : null,
+    frameIdentity: capture.frameIdentity ? { ...capture.frameIdentity } : null,
+    framePath: Array.isArray(capture.framePath) ? capture.framePath.slice() : [],
+    framePathSelectors: Array.isArray(capture.framePathSelectors) ? capture.framePathSelectors.slice() : [],
+    shadowPath: Array.isArray(capture.shadowPath) ? capture.shadowPath.slice() : [],
+    accessibility: capture.accessibility ? { ...capture.accessibility } : null,
+    node: capture.node ? { ...capture.node } : null,
+  };
+}
+
+function captureEvidenceForLocator(locator) {
+  const primary = actionLocatorResolver.primaryActionLocator(locator);
+  if (!primary) return null;
+  const context = primary.context && typeof primary.context === 'object' ? primary.context : {};
+  const authoritative = context.authoritativeCdp || primary.authoritativeCdp || null;
+  const pre = captureIdentitySummary(authoritative?.pre);
+  const captureBinding = context.captureBinding || pre?.captureBinding || null;
+  const post = captureIdentitySummary(authoritative?.post, captureBinding);
+  const backendNodeId = pre?.backendNodeId
+    || primary.targetFacts?.cdpBackendNodeId
+    || primary.proof?.targetIdentity?.backendNodeId
+    || null;
+  if (!pre && !post && !backendNodeId) return null;
+  return {
+    backendNodeId,
+    pre,
+    post,
+    framePath: context.framePath || pre?.framePathSelectors || pre?.framePath || [],
+    shadowPath: context.shadowPath || pre?.shadowPath || [],
+    popupIdentity: context.popupIdentity || primary.popupIdentity || null,
+    pageAlias: context.pageAlias || null,
+    tabAlias: context.tabAlias || null,
+    pageIdentity: context.pageIdentity || pre?.pageIdentity || null,
+    frameIdentity: context.frameIdentity || pre?.frameIdentity || null,
+    captureBinding,
+  };
+}
+
 function buildLocatorRecord({ runResultId, testCaseId, sequenceIndex, contractStepId, locator }) {
+  const authoredContractStepId = textOf(contractStepId);
+  if (!authoredContractStepId) return null;
   const recipe = executionAuthoringCompiler.buildLocatorRecipe(locator);
   if (!recipe) return null;
+  if (recipe.persistable === false || recipe.verificationStatus === 'unbound') return null;
   const primaryExpression = recipe.primaryExpression || recipe.frameworkExpressions?.playwright || null;
+  const captureEvidence = captureEvidenceForLocator(locator);
+  const occurrenceIdentity = occurrenceIdentityFor({ locator, contractStepId: authoredContractStepId });
+  const hasOccurrenceIdentity = !!(
+    occurrenceIdentity.actionOccurrenceId
+    || occurrenceIdentity.sourceActionOccurrenceId
+    || occurrenceIdentity.authoredActionId
+    || occurrenceIdentity.sequenceIndex != null
+    || occurrenceIdentity.occurrenceOrdinal != null
+    || occurrenceIdentity.occurrenceKey
+    || occurrenceIdentity.sourceContractStepId
+  );
+  const persistedRecipe = {
+    ...recipe,
+    ...(hasOccurrenceIdentity ? { actionIdentity: occurrenceIdentity } : {}),
+    ...(captureEvidence ? { captureEvidence } : {}),
+  };
+  const framePath = recipe.context?.framePath?.length ? recipe.context.framePath : captureEvidence?.framePath;
+  const shadowPath = recipe.context?.shadowPath?.length ? recipe.context.shadowPath : captureEvidence?.shadowPath;
   return {
     id: makeId('locrec', `${runResultId}:${sequenceIndex}:${primaryExpression || recipe.id}`),
     runResultId,
     testCaseId,
     sequenceIndex,
-    contractStepId,
+    contractStepId: authoredContractStepId,
+    sourceContractStepId: occurrenceIdentity.sourceContractStepId || null,
+    actionOccurrenceId: occurrenceIdentity.actionOccurrenceId || null,
+    sourceActionOccurrenceId: occurrenceIdentity.sourceActionOccurrenceId || null,
+    authoredActionId: occurrenceIdentity.authoredActionId || null,
+    authoredSequenceIndex: occurrenceIdentity.sequenceIndex,
+    occurrenceOrdinal: occurrenceIdentity.occurrenceOrdinal,
+    occurrenceKey: occurrenceIdentity.occurrenceKey || null,
     source: recipe.source || recipe.proof?.source || null,
     expressionByFramework: encodeJson(recipe.frameworkExpressions || {}),
     primaryExpression,
     strategy: recipe.strategy || null,
-    countBefore: Number.isFinite(recipe.proof?.count) ? recipe.proof.count : null,
-    countAfter: Number.isFinite(recipe.proof?.count) ? recipe.proof.count : null,
+    countBefore: Number.isFinite(recipe.proof?.countBefore) ? recipe.proof.countBefore : (Number.isFinite(recipe.proof?.count) ? recipe.proof.count : null),
+    countAfter: Number.isFinite(recipe.proof?.countAfter) ? recipe.proof.countAfter : (Number.isFinite(recipe.proof?.count) ? recipe.proof.count : null),
     sameElementProof: recipe.proof?.sameElement === true,
     visible: recipe.proof?.visible == null ? null : !!recipe.proof.visible,
     enabled: recipe.proof?.enabled == null ? null : !!recipe.proof.enabled,
     editableWhenRequired: null,
-    framePathJson: recipe.context?.framePath ? encodeJson(recipe.context.framePath) : null,
-    shadowPathJson: recipe.context?.shadowPath ? encodeJson(recipe.context.shadowPath) : null,
-    locatorRecipeJson: encodeJson(recipe),
-    _recipe: recipe,
+    framePathJson: framePath ? encodeJson(framePath) : null,
+    shadowPathJson: shadowPath ? encodeJson(shadowPath) : null,
+    locatorRecipeJson: encodeJson(persistedRecipe),
+    _recipe: persistedRecipe,
   };
+}
+
+function locatorRecordIsVerified(record) {
+  const recipe = record && record._recipe;
+  const proof = recipe && recipe.proof || {};
+  const target = proof.targetIdentity;
+  const matched = proof.matchedIdentity;
+  const common = recipe?.verified === true
+    && proof.verified === true
+    && proof.actionTimeResolved === true
+    && proof.count === 1
+    && proof.sameElement === true
+    && proof.identityVerified === true;
+  if (!common) return false;
+  if (proof.resolutionMode === 'authoritative_cdp_backend_node') {
+    return proof.backendNodeVerified !== false
+      && target?.scheme === 'qaai-cdp-backend-node-v1'
+      && matched?.scheme === target.scheme
+      && Number(target.backendNodeId) > 0
+      && Number(target.backendNodeId) === Number(matched.backendNodeId);
+  }
+  return !!target?.documentId
+    && !!target?.documentId
+    && !!target?.nodeId
+    && target.documentId === matched?.documentId
+    && target.nodeId === matched?.nodeId;
+}
+
+function locatorRecordIsGuess(record) {
+  const recipe = record && record._recipe;
+  return recipe?.guess?.isGuess === true || !locatorRecordIsVerified(record);
 }
 
 function replayActionCount(replayEnvelope) {
   const steps = replayEnvelope?.ir?.steps || replayEnvelope?.steps || [];
   if (!Array.isArray(steps)) return 0;
-  return steps.filter((step) => step && (step.op === 'act' || step.op === 'assert')).length;
+  return steps.filter((step) => step && step.op === 'act' && nodeRequiresActionEvidence(step)).length;
+}
+
+function nodeRequiresActionEvidence(node) {
+  if (!node || typeof node !== 'object') return false;
+  if (node.exportable === false || node.manualGate === true || node.automatability === 'manual') {
+    return false;
+  }
+
+  const contract = isObject(node.contract) ? node.contract : {};
+  const payload = isObject(node.payload) ? node.payload : {};
+  const requiredByContract =
+    conditionalActionRequiredByContract(node) ||
+    contract.required === true ||
+    contract.flowCritical === true ||
+    payload.required === true ||
+    payload.flowCritical === true;
+  const optional =
+    isPresenceConditionalAction(node, contract, payload) ||
+    node.optional === true ||
+    node.ifVisible === true ||
+    node.ifPresent === true ||
+    node.required === false ||
+    contract.optional === true ||
+    contract.ifVisible === true ||
+    contract.ifPresent === true ||
+    payload.optional === true ||
+    payload.ifVisible === true ||
+    payload.ifPresent === true;
+  if (optional && !requiredByContract) return false;
+
+  const classification = [
+    node.kind,
+    node.type,
+    node.nodeType,
+    node.action,
+    node.actionType,
+    node.operation,
+    node.toolName,
+    node.category,
+  ]
+    .map(textOf)
+    .filter(Boolean)
+    .join(' ');
+  if (!classification) return false;
+  return !/(?:assert(?:ion)?|oracle|verif(?:y|ication)|readback|snapshot|wait|utility|manual)/i.test(
+    classification,
+  );
 }
 
 function compiledActionCount(actionGraph) {
   const nodes = actionGraph?.nodes || actionGraph?.actions || [];
   if (!Array.isArray(nodes)) return 0;
-  return nodes.filter((node) => node && node.exportable !== false && !/utility|readback/i.test(textOf(node.kind || node.type))).length;
+  return nodes.filter(nodeRequiresActionEvidence).length;
 }
 
 function plannedExecutableCount(executionContract, fallbackCount) {
   const nodes = executionContract?.nodes || [];
   if (!Array.isArray(nodes) || !nodes.length) return fallbackCount;
-  return nodes.filter((node) => {
-    if (!node) return false;
-    if (node.exportable === false || node.manualGate === true) return false;
-    const kind = textOf(node.kind || node.type || node.action || node.toolName);
-    return kind && !/utility|snapshot|wait|readback/i.test(kind);
-  }).length;
+  return nodes.filter(nodeRequiresActionEvidence).length;
 }
 
 function plannedAssertionCount(testCase, executionContract) {
@@ -394,21 +672,34 @@ function navigationEvidenceIsComplete(row) {
   );
 }
 
-function actionEvidenceFor({ runResultId, testCaseId, entry, sequenceIndex, locatorRecipeId = null, valueRef = null, field = null, fieldIndex = null }) {
+function actionEvidenceFor({ runResultId, testCaseId, entry, sequenceIndex, locatorRecipeId = null, valueRef = null, field = null, fieldIndex = null, contractStepIdOverride = null }) {
   const args = entry.args || {};
   const toolName = entry.tool || 'unknown';
   const fieldLabel = field && (field.element || field.label || field.name || field.placeholder || field.type);
+  const contractStepId = contractStepIdOverride || field?.actionLocator?.contractStepId || contractStepIdFor(entry);
+  const authoredIdentity = occurrenceIdentityFor({
+    entry,
+    locator: locatorFromEntry(entry, field, fieldIndex),
+    contractStepId,
+  });
   return {
     id: makeId('actev', `${runResultId}:${sequenceIndex}:${toolName}:${fieldIndex == null ? '' : fieldIndex}`),
     runResultId,
     testCaseId,
     sequenceIndex,
-    contractStepId: contractStepIdFor(entry),
+    contractStepId,
+    sourceContractStepId: authoredIdentity.sourceContractStepId || null,
+    actionOccurrenceId: authoredIdentity.actionOccurrenceId || null,
+    sourceActionOccurrenceId: authoredIdentity.sourceActionOccurrenceId || null,
+    authoredActionId: authoredIdentity.authoredActionId || null,
+    authoredSequenceIndex: authoredIdentity.sequenceIndex,
+    occurrenceOrdinal: authoredIdentity.occurrenceOrdinal,
+    occurrenceKey: authoredIdentity.occurrenceKey || null,
     actionAttemptId: entry.toolUseId || entry.id || `${runResultId}:${sequenceIndex}`,
     retryOfActionEvidenceId: entry.retryOfActionEvidenceId || null,
     stepId: entry.stepId || entry.contractStepId || entry.stepAuthoring?.id || null,
     toolName,
-    actionKind: field ? 'fill' : actionKindFor(toolName),
+    actionKind: field ? 'fill' : actionKindFor(toolName, entry),
     locatorRecipeId,
     valueRef,
     beforeSnapshotRef: snapshotRefFrom(entry.beforeSnapshot || entry.snapshotBefore || entry.pageSnippetBefore, null),
@@ -418,7 +709,7 @@ function actionEvidenceFor({ runResultId, testCaseId, entry, sequenceIndex, loca
     transitionProofJson: transitionProofFor(entry) ? encodeJson(transitionProofFor(entry)) : null,
     assertionEvidenceId: null,
     authSetupEvidenceId: null,
-    exportable: true,
+    exportable: !!contractStepId,
     evidenceJson: encodeJson({
       schemaVersion: SCHEMA_VERSION,
       ok: entry.ok !== false,
@@ -429,6 +720,8 @@ function actionEvidenceFor({ runResultId, testCaseId, entry, sequenceIndex, loca
       args: redactArgs(field ? { ...field, value: field.value ?? field.text ?? field.input } : args),
       actionLocatorKernel: entry.actionLocatorKernel || entry.qaaiActionEvidence || null,
       actionLocatorGap: entry.actionLocatorGap || null,
+      captureRuntime: entry.captureRuntime || entry.qaaiCaptureRuntime || entry.qaaiActionEvidence?.captureRuntime || null,
+      authoredIdentity,
       source: entry.source || entry.qaaiSource || null,
     }),
   };
@@ -563,11 +856,12 @@ function buildEvidenceFromTrail({
     if (toolName === 'browser_fill_form' && Array.isArray(entry.args?.fields)) {
       entry.args.fields.forEach((field, fieldIndex) => {
         const locator = locatorFromEntry(entry, field, fieldIndex);
+        const fieldContractStepId = locator?.contractStepId || contractStepIdFor(entry);
         const locatorRecord = buildLocatorRecord({
           runResultId,
           testCaseId: testCase?.id || null,
           sequenceIndex,
-          contractStepId: contractStepIdFor(entry),
+          contractStepId: fieldContractStepId,
           locator,
         });
         if (locatorRecord) locatorRecipes.push(locatorRecord);
@@ -580,6 +874,7 @@ function buildEvidenceFromTrail({
           valueRef: valueRefFor({ value: field.value ?? field.text ?? field.input, label: field.element || field.label || field.name || field.type, index: fieldIndex, source: 'field' }),
           field,
           fieldIndex,
+          contractStepIdOverride: fieldContractStepId,
         }));
         sequenceIndex += 1;
       });
@@ -613,13 +908,15 @@ function buildEvidenceFromTrail({
   const authSetupEvidences = inferAuthSetupEvidence({ runResultId, testCase, actionEvidences, trail, assertionOutcomes });
   const traceArtifacts = [];
   if (Array.isArray(screenshots)) {
-    screenshots.filter(Boolean).slice(0, 50).forEach((path, index) => {
+    screenshots.filter(Boolean).slice(0, 50).forEach((screenshot, index) => {
+      const path = screenshotPath(screenshot);
+      if (!path) return;
       traceArtifacts.push({
         id: makeId('trace', `${runResultId}:screenshot:${index}:${path}`),
         runResultId,
         testCaseId: testCase?.id || null,
         artifactType: 'screenshot',
-        path: String(path),
+        path,
         contentHash: null,
         redactionJson: null,
         expiresAt: null,
@@ -630,6 +927,17 @@ function buildEvidenceFromTrail({
 
   const locatorRequiredActions = actionEvidences.filter((item) => !['navigate', 'assert'].includes(item.actionKind));
   const missingLocatorCount = locatorRequiredActions.filter((item) => !item.locatorRecipeId).length;
+  const locatorRecipeById = new Map(locatorRecipes.map((record) => [record.id, record]));
+  const verifiedLocatorCount = locatorRequiredActions.filter((item) => locatorRecordIsVerified(locatorRecipeById.get(item.locatorRecipeId))).length;
+  const guessedLocatorCount = locatorRequiredActions.filter((item) => {
+    const record = locatorRecipeById.get(item.locatorRecipeId);
+    return !!record && locatorRecordIsGuess(record);
+  }).length;
+  const missingVerifiedLocatorCount = Math.max(0, locatorRequiredActions.length - verifiedLocatorCount);
+  const verifiedLocatorCoverage = locatorRequiredActions.length
+    ? Number((verifiedLocatorCount / locatorRequiredActions.length).toFixed(4))
+    : 1;
+  const countableActionEvidences = actionEvidences.filter((item) => item.actionKind !== 'assert');
   const plannedAssertions = plannedAssertionCount(testCase, executionContract);
   const completeAssertionEvidences = assertionEvidences.filter(assertionEvidenceIsComplete);
   const parseFailedAssertionCount = assertionEvidences.filter((item) => {
@@ -639,8 +947,8 @@ function buildEvidenceFromTrail({
   const finalAssertions = completeAssertionEvidences.filter((item) => item.matched || /final|must|oracle/i.test(item.evidenceJson || '')).length;
   const replayCount = replayActionCount(replayEnvelope);
   const graphCount = compiledActionCount(actionGraph);
-  const plannedCount = plannedExecutableCount(executionContract, actionEvidences.length);
-  const missingActionEvidenceCount = Math.max(0, plannedCount - actionEvidences.length);
+  const plannedCount = plannedExecutableCount(executionContract, countableActionEvidences.length);
+  const missingActionEvidenceCount = Math.max(0, plannedCount - countableActionEvidences.length);
   const assertionEvidenceRequired = featureFlags.enabled('assertionEvidenceRequired', true);
   const missingAssertionCount = assertionEvidenceRequired
     ? Math.max(Math.max(0, plannedAssertions - completeAssertionEvidences.length), parseFailedAssertionCount)
@@ -654,12 +962,17 @@ function buildEvidenceFromTrail({
   const executionStatus = status === 'pass' ? 'passed' : status === 'fail' ? 'failed' : status === 'skipped' ? 'blocked' : 'blocked';
   const overallRunStatus = evidenceStatus === 'complete' ? 'complete' : 'evidence_capture_failed';
   const scriptStatus = replayEnvelope?.complete === true && missingEvidenceCount === 0 ? 'generated' : 'validation_failed';
+  const captureRuntimes = (Array.isArray(trail) ? trail : [])
+    .map((entry) => entry?.captureRuntime || entry?.qaaiCaptureRuntime || entry?.qaaiActionEvidence?.captureRuntime || null)
+    .filter(Boolean);
+  const captureRuntimeFingerprints = Array.from(new Set(captureRuntimes.map((runtime) => runtime.buildFingerprint).filter(Boolean)));
   const ledger = {
     schemaVersion: 'qaai-evidence-completeness-ledger-v1',
     runResultId,
     testCaseId: testCase?.id || null,
     plannedExecutableStepCount: plannedCount,
-    actionEvidenceCount: actionEvidences.length,
+    actionEvidenceCount: countableActionEvidences.length,
+    rawActionEvidenceCount: actionEvidences.length,
     replayIrActionCount: replayCount,
     compiledActionCount: graphCount,
     generatedMethodCount: 0,
@@ -675,6 +988,10 @@ function buildEvidenceFromTrail({
     overallRunStatus,
     scriptStatus,
     missingLocatorCount,
+    verifiedLocatorCount,
+    guessedLocatorCount,
+    missingVerifiedLocatorCount,
+    verifiedLocatorCoverage,
     missingActionEvidenceCount,
     missingAssertionCount,
     parseFailedAssertionCount,
@@ -686,6 +1003,9 @@ function buildEvidenceFromTrail({
     scriptHealth: scriptLedger.health?.scriptHealth || null,
     scriptConfidence: scriptLedger.health?.scriptConfidence || null,
     locatorStability: scriptLedger.health?.locatorStability || null,
+    captureRuntimeFingerprints,
+    captureRuntimeEvidenceCount: captureRuntimes.length,
+    staleCaptureRuntimeCount: captureRuntimes.filter((runtime) => runtime.stale === true || runtime.current === false).length,
     weakLocatorCount: scriptLedger.health?.weakLocatorCount || 0,
     nonRunnableLineCount: scriptLedger.health?.nonRunnableLineCount || 0,
     liveScriptLedger: scriptLedger,
@@ -948,6 +1268,31 @@ function assertNoDirectExecutableTrailAppend(trail = [], options = {}) {
   return true;
 }
 
+function normalizeTraceArtifactPath(value) {
+  if (typeof value === 'string') {
+    const candidate = value.trim();
+    if (!candidate || /^\[object\s+[^\]]+\]$/i.test(candidate)) return '';
+    if ((candidate.startsWith('{') && candidate.endsWith('}'))
+      || (candidate.startsWith('[') && candidate.endsWith(']'))) {
+      try {
+        const decoded = JSON.parse(candidate);
+        if (decoded && typeof decoded === 'object') return '';
+      } catch (_) {
+        // A normal path may contain brackets; only parsed object/array strings
+        // are invalid trace paths.
+      }
+    }
+    return candidate;
+  }
+  if (!value || typeof value !== 'object') return '';
+  const candidate = value.path || value.file || value.filePath || value.screenshotPath || value.artifactPath;
+  return normalizeTraceArtifactPath(candidate);
+}
+
+function screenshotPath(value) {
+  return normalizeTraceArtifactPath(value);
+}
+
 function normalizeRunEvidenceStatus(runResult = {}) {
   if (!runResult || typeof runResult !== 'object') {
     return {
@@ -997,6 +1342,7 @@ module.exports = {
   getLiveScriptLedgerForTrail,
   assertNoDirectExecutableTrailAppend,
   propagateActionEvidenceFields,
+  normalizeTraceArtifactPath,
   normalizeRunEvidenceStatus,
   isExportableTool,
 };

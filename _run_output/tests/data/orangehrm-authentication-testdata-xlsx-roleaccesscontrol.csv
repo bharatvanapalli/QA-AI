@@ -1,0 +1,5 @@
+testCaseID,role,loginUsername,menuItemShouldExist,menuItemShouldBeHidden,dashboardWidget,expectedAdminControls,notes
+TC-RBAC-01,admin,Admin,"Admin,PIM,Leave,Time,Recruitment,Performance,Directory,Maintenance",None,"System Stats, User Count, Recent Activities","Add User, View Configuration",Admin dashboard specific widgets
+TC-RBAC-02,ess,ess_user_01,"Leave,Time,My Info,Directory","Admin,PIM,Recruitment,Maintenance","My Leave Balance, My Info, Attendance",None (no admin features),ESS dashboard specific widgets
+TC-RBAC-03,admin_profile,Admin,Admin,None,User name/avatar in top-right,Admin profile dropdown,Admin user profile visibility
+TC-RBAC-04,ess_profile,ess_user_01,"Leave,Time,My Info","Admin,PIM",User name/avatar in top-right,ESS profile dropdown,ESS user profile visibility

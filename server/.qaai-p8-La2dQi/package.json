@@ -1,0 +1,13 @@
+{
+  "name": "qaai-replayir-export",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "test": "playwright test",
+    "list": "playwright test --list"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "@axe-core/playwright": "^4.10.0"
+  }
+}

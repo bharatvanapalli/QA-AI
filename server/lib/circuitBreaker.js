@@ -27,13 +27,25 @@
  *                failure → open with exponentially-longer cool-down
  *                (capped at MAX_COOLDOWN_MS)
  *
- * Failure streak window: failures must occur within `windowMs` of the
- * prior failure to extend the streak. A successful gap longer than the
- * window resets the counter — a single 5xx hours apart doesn't trip.
+ * Failure streak semantics (CORRECTED): the streak counts CONSECUTIVE upstream
+ * failures with no intervening SUCCESS — it is reset by a success, NOT by
+ * elapsed time. The previous time-window reset (failures had to cluster within
+ * 60s) was fundamentally broken for this workload: a single LLM generation call
+ * legitimately takes 360–600s, so two real timeout failures are ALWAYS spaced
+ * further apart than the 60s window. The streak was therefore reset to 0 before
+ * the second failure could extend it, and the breaker NEVER tripped during a
+ * genuine sustained outage — exactly when it is needed most. Because only one
+ * call per provider is typically in flight at a time, "consecutive failures
+ * with no success between" is the correct, latency-independent trip condition.
+ *
+ * Additionally, pure NETWORK failures (status == null: DNS / connection refused
+ * / socket reset) FAST-TRIP after 2 in a row — these are unambiguous upstream-
+ * unreachable signals and don't warrant waiting for the full threshold. The
+ * 429 / 4xx / CANCELLED / config exclusions are unchanged (see isUpstreamFailure).
  */
 
 const FAILURE_THRESHOLD = 5;
-const WINDOW_MS = 60_000;          // failures must cluster within 60s
+const NETWORK_FAST_TRIP = 2;       // 2 consecutive status==null network errors → trip
 const INITIAL_COOLDOWN_MS = 30_000; // 30s after first trip
 const MAX_COOLDOWN_MS = 5 * 60_000; // 5min ceiling
 const COOLDOWN_BACKOFF = 1.5;       // 30 → 45 → 67 → 101 → 152 → 228 → 300 cap
@@ -45,7 +57,8 @@ const state = new Map();
 function init(provider) {
   return {
     status: 'closed',     // 'closed' | 'open' | 'half_open'
-    failureCount: 0,
+    failureCount: 0,        // consecutive upstream failures (reset by SUCCESS, not time)
+    networkFailureCount: 0, // consecutive status==null network failures (fast-trip)
     lastFailureAt: 0,
     openedAt: 0,
     coolDownMs: INITIAL_COOLDOWN_MS,
@@ -137,7 +150,11 @@ function check(provider) {
 
 function recordSuccess(provider, token) {
   const s = get(provider);
+  // Success is what resets the streak — NOT elapsed time. This is the core of
+  // the window fix: as long as no success lands between failures, the streak
+  // grows regardless of how far apart (slow) the failing calls are spaced.
   s.failureCount = 0;
+  s.networkFailureCount = 0;
   s.lastFailureAt = 0;
   s.lastError = null;
   if (s.status === 'half_open' || s.status === 'open') {
@@ -153,19 +170,27 @@ function recordFailure(provider, err, token) {
 
   // Non-upstream errors don't move the breaker but still release the
   // probe slot so a recovery probe isn't permanently held by a CANCELLED.
+  // They also DON'T reset the streak: a 429 between two 5xx timeouts is not a
+  // success and shouldn't paper over a real outage.
   if (!isUpstreamFailure(err)) {
     if (token?.probe) s.halfOpenInFlight = false;
     return;
   }
 
   const now = Date.now();
-  // Window check: if last failure was > WINDOW_MS ago, reset the streak.
-  if (s.lastFailureAt && now - s.lastFailureAt > WINDOW_MS) {
-    s.failureCount = 0;
-  }
+  // Streak is reset ONLY by recordSuccess (see module docs) — never by elapsed
+  // time. Consecutive upstream failures with no success between them extend it,
+  // however far apart the slow calls land.
   s.failureCount += 1;
   s.lastFailureAt = now;
   s.lastError = String(err.message || err).slice(0, 200);
+
+  // Pure network failures (no HTTP status: DNS / refused / reset) get their own
+  // consecutive counter for a faster trip — these are unambiguous "upstream
+  // unreachable" signals. Any failure that DID carry a status breaks the
+  // network streak (it reached the server) but still counts toward failureCount.
+  if (err && err.status == null) s.networkFailureCount += 1;
+  else s.networkFailureCount = 0;
 
   if (s.status === 'half_open') {
     // Probe failed → re-open with longer cool-down.
@@ -176,7 +201,7 @@ function recordFailure(provider, err, token) {
     return;
   }
 
-  if (s.failureCount >= FAILURE_THRESHOLD) {
+  if (s.failureCount >= FAILURE_THRESHOLD || s.networkFailureCount >= NETWORK_FAST_TRIP) {
     s.status = 'open';
     s.openedAt = now;
     s.coolDownMs = INITIAL_COOLDOWN_MS;

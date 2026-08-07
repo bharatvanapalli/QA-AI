@@ -1,0 +1,65 @@
+{
+  "_doc": "RECORDED-EVIDENCE replay corpus (NOT raw-snapshot replay). Every pageState field is transcribed from the case's stored assertionCheckResults evidence string in prisma/dev.db, run 90002e1c. The run was CANCELLED so raw accessibility snapshots were not persisted; the stored evidence documents PAGE IDENTITY only (login page, /auth/login, form fields present) and is SILENT on whether a field-level validation error rendered. Per the honesty rule we therefore set fieldErrors/pageErrors to null (= NOT captured = unobservable) rather than fabricate a 'Required' message. Inputs are inferred from the poisoned pageName (the substituted error string names the blank field); a4db8be0's pageName '(none)' gives no reliable input basis, so it is recorded as provenance only and NOT modeled for the contract proof.",
+  "runId": "90002e1c-9323-40b5-8685-75d2a00fc566",
+  "assertionIdShared": "ASN-6f70269f",
+  "cases": [
+    {
+      "caseId": "f2e9e7a4",
+      "testCaseName": "Data-driven form validation matrix",
+      "assertionId": "ASN-6f70269f",
+      "recordedStatus": "fail",
+      "recordedReason": "assertion_not_matched / semantic_not_matched",
+      "poisonedPageName": "username_is_required",
+      "storedEvidenceExcerpt": "PAGE-level semantic rescue rejected: Snapshot shows OrangeHRM login page (URL: /auth/login), not a 'username_is_required' page; assertion's identifier doesn't match actual page content or URL.",
+      "row": { "username": "", "password": "admin123" },
+      "modelForContractProof": true,
+      "reconstructedPageState": { "url": "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login", "entryUrlPattern": "auth/login", "authedUrlPattern": "dashboard", "fieldErrors": null, "pageErrors": null }
+    },
+    {
+      "caseId": "c8916b12",
+      "testCaseName": "Data-driven form validation matrix",
+      "assertionId": "ASN-6f70269f",
+      "recordedStatus": "fail",
+      "recordedReason": "assertion_not_matched / semantic_not_matched",
+      "poisonedPageName": "password_is_required",
+      "storedEvidenceExcerpt": "PAGE-level semantic rescue rejected: Snapshot shows OrangeHRM login page (URL: /auth/login) with username/password fields, not a 'password_is_required' page. The assertion expects a specific error/validation page that is not present.",
+      "row": { "username": "Admin", "password": "" },
+      "modelForContractProof": true,
+      "reconstructedPageState": { "url": "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login", "entryUrlPattern": "auth/login", "authedUrlPattern": "dashboard", "fieldErrors": null, "pageErrors": null }
+    },
+    {
+      "caseId": "b5887a4c",
+      "testCaseName": "Data-driven form validation matrix",
+      "assertionId": "ASN-6f70269f",
+      "recordedStatus": "fail",
+      "recordedReason": "assertion_not_matched / semantic_not_matched",
+      "poisonedPageName": "Username is required; Password is required",
+      "storedEvidenceExcerpt": "PAGE-level semantic rescue rejected: Assertion expects URL containing 'Username is required; Password is required', but actual URL is the login page (https://opensource-demo.orangehrmlive.com/web/index.php/auth/login) with empty form fields, not an error state page.",
+      "row": { "username": "", "password": "" },
+      "modelForContractProof": true,
+      "reconstructedPageState": { "url": "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login", "entryUrlPattern": "auth/login", "authedUrlPattern": "dashboard", "fieldErrors": null, "pageErrors": null }
+    },
+    {
+      "caseId": "a4db8be0",
+      "testCaseName": "Data-driven form validation matrix",
+      "assertionId": "ASN-6f70269f",
+      "recordedStatus": "fail",
+      "recordedReason": "assertion_not_matched / semantic_not_matched",
+      "poisonedPageName": "(none)",
+      "storedEvidenceExcerpt": "PAGE-level semantic rescue rejected: Assertion requires URL matching '(none)' pattern, but snapshot shows actual URL https://opensource-demo.orangehrmlive.com/web/index.php/auth/login (login page, not a '(none)' page).",
+      "row": null,
+      "modelForContractProof": false,
+      "reconstructedPageState": null
+    }
+  ],
+  "freshShapedPassCase": {
+    "_doc": "NOT from 90002e1c. An explicitly-labeled checker-logic fixture proving the PASS path: when the field validation error IS observed, the same required_validation contract evaluates to works->pass. This is what the 'fresh later' live capture must reproduce.",
+    "row": { "username": "", "password": "admin123" },
+    "pageState": { "url": "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login", "entryUrlPattern": "auth/login", "authedUrlPattern": "dashboard", "fieldErrors": [{ "fieldRole": "username", "messageClass": "required", "text": "Required" }], "pageErrors": [] }
+  },
+  "syntheticNegativeControl": {
+    "_doc": "NOT from 90002e1c. A negative (required_validation) row whose page REACHED the dashboard — the inverse bug. Must yield bug->fail (no fake-pass).",
+    "row": { "username": "", "password": "" },
+    "pageState": { "url": "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index", "entryUrlPattern": "auth/login", "authedUrlPattern": "dashboard", "fieldErrors": null, "pageErrors": null }
+  }
+}

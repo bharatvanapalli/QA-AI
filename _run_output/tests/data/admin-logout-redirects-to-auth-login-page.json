@@ -1,0 +1,14 @@
+[
+  {
+    "index": 0,
+    "label": "Row 1 · admin",
+    "fields": {
+      "role": "admin",
+      "username": "Admin",
+      "password": "admin123",
+      "sensitivitylevel": "MASKED",
+      "expected": "/web/index.php/dashboard/index",
+      "expectedLandingPage": "/web/index.php/dashboard/index"
+    }
+  }
+]

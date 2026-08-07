@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "qaai.reliability.benchmark.v1",
+  "id": "orangehrm-data-binding",
+  "items": [
+    {
+      "coverageRef": "pim-employee-lifecycle",
+      "requiredFields": ["first name", "middle name", "last name", "employee id"],
+      "requiredOracles": [
+        { "kind": "text", "target": "Personal Details" }
+      ],
+      "dataRowIntents": ["positive"]
+    }
+  ]
+}

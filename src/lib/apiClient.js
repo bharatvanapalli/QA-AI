@@ -17,21 +17,31 @@
  *      pattern that was previously duplicated across every page.
  */
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+import { sanitizeUiMessage } from './userFacingMessages';
+import { alignLoopbackUrlWithPage } from './localDevOrigin';
+
+const BASE_URL = alignLoopbackUrlWithPage(import.meta.env.VITE_API_URL, 'http://localhost:5000/api');
 
 export class ApiError extends Error {
   constructor(status, payload, opts = {}) {
+    const safePayload = payload && typeof payload === 'object'
+      ? {
+          ...payload,
+          ...(payload.message ? { message: sanitizeUiMessage(payload.message) } : {}),
+          ...(payload.error ? { error: sanitizeUiMessage(payload.error) } : {}),
+        }
+      : payload;
     const message =
       // Prefer the server's friendly message, then the network-level message
       // (`opts.cause?.message`), then a generic fallback. Never expose `[object Object]`.
-      payload?.message ||
-      opts.cause?.message ||
+      safePayload?.message ||
+      (opts.cause?.message ? sanitizeUiMessage(opts.cause.message) : '') ||
       (status ? `HTTP ${status}` : 'Network error');
     super(message);
     this.name = 'ApiError';
     this.status = status || 0;
-    this.code = payload?.code || opts.code || 'UNKNOWN';
-    this.payload = payload || {};
+    this.code = safePayload?.code || opts.code || 'UNKNOWN';
+    this.payload = safePayload || {};
     if (opts.cause) this.cause = opts.cause;
   }
 
@@ -56,6 +66,36 @@ export class ApiError extends Error {
   get isServer() { return this.status >= 500 && this.status < 600; }
 }
 
+// Raw browser network-error strings that must never reach the user as-is.
+// Each browser words them differently; all map to the same friendly copy.
+const NETWORK_ERROR_SIGNATURES = [
+  'failed to fetch',          // Chrome / Edge
+  'load failed',              // Safari
+  'networkerror',             // Firefox (NetworkError when attempting to fetch resource)
+  'network request failed',   // React Native / polyfills
+  'err_internet_disconnected',
+  'err_network',
+  'err_connection_refused',
+  'err_empty_response',
+  'err_name_not_resolved',
+];
+
+function isRawNetworkMessage(msg) {
+  const lower = String(msg || '').toLowerCase();
+  return NETWORK_ERROR_SIGNATURES.some((sig) => lower.includes(sig));
+}
+
+// Broadcast a single window-level event so the ConnectivityBanner can show
+// one persistent banner instead of N toasts when the server goes offline.
+let _lastOnline = true;
+function broadcastConnectivity(online) {
+  if (online === _lastOnline) return;
+  _lastOnline = online;
+  try {
+    window.dispatchEvent(new CustomEvent('qaai:connectivity', { detail: { online } }));
+  } catch {}
+}
+
 /**
  * Normalise *anything* a catch block might receive into an ApiError so the
  * UI never sees a bare Error / TypeError / object. Idempotent: passing an
@@ -67,11 +107,29 @@ export function normaliseError(err) {
     return new ApiError(0, { code: 'ABORTED', message: 'Request cancelled.' }, { cause: err, code: 'ABORTED' });
   }
   if (err instanceof Error) {
-    return new ApiError(0, { code: 'NETWORK', message: err.message }, { cause: err, code: 'NETWORK' });
+    const friendly = isRawNetworkMessage(err.message)
+      ? 'Server is temporarily unreachable. Please check your connection.'
+      : err.message;
+    if (isRawNetworkMessage(err.message)) broadcastConnectivity(false);
+    return new ApiError(0, { code: 'NETWORK', message: friendly }, { cause: err, code: 'NETWORK' });
   }
   // Plain object thrown / Promise.reject(string) / etc.
   const msg = typeof err === 'string' ? err : 'Unknown error';
   return new ApiError(0, { code: 'UNKNOWN', message: msg });
+}
+
+export function formatRunStartError(err, fallbackTitle = 'Could not start') {
+  const apiErr = normaliseError(err);
+  if (apiErr.code === 'BUDGET_EXCEEDED') {
+    return {
+      title: 'Daily AI budget reached',
+      message: apiErr.toUserMessage(),
+    };
+  }
+  return {
+    title: fallbackTitle,
+    message: apiErr.toUserMessage(),
+  };
 }
 
 function readCookie(name) {
@@ -139,6 +197,8 @@ async function request(path, { method = 'GET', body, signal, _retried = false } 
   }
 
   if (!resp.ok) throw new ApiError(resp.status, payload);
+  // Successful response — restore connectivity indicator if it was offline.
+  broadcastConnectivity(true);
   return payload;
 }
 

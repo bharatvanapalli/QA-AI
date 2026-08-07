@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "raw": {
+    "path": "server\\services\\agents\\conductor.js",
+    "bytes": 1125955,
+    "sha256": "AD90DAE50A5A503738E4FEB17A6D6618A3D2C9A26E37AFE62349697381A5BF97"
+  },
+  "loader": {
+    "path": "server\\services\\agents\\conductorRuntimeLoader.js",
+    "bytes": 163817,
+    "sha256": "55DC4C263C3779910B1C7F1830F679C8D2320A909851B852348E59252EE40489",
+    "frozenPath": ".qaai-migration\\runtime-freeze\\conductorRuntimeLoader.55DC4C263C3779910B1C7F1830F679C8D2320A909851B852348E59252EE40489.js"
+  },
+  "materialized": {
+    "candidatePath": ".qaai-migration\\runtime-freeze\\conductor.materialized.candidate.js",
+    "bytes": 1200334,
+    "sha256": "C4A4B00F05C8C6913AA60876CD5D2FBBE2516AD644B3AC07D92ADD2BE96BF67E"
+  },
+  "deterministic": true,
+  "compileChecked": true
+}

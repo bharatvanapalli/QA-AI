@@ -1,0 +1,47 @@
+
+> qaai-portal@1.0.0 server
+> node server/index.js
+
+[server] QAAI API listening on http://localhost:5000
+[server] WebSocket on ws://localhost:5000
+[server] CORS origin: http://localhost:5173
+[server] orphan MCP/Chrome sweep complete
+prisma:error 
+Invalid `prisma.requirement.findMany()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\routes\testCases.js:599:53
+
+  596   message: 'Applying your improvement guidance.',
+  597 });
+  598 
+→ 599 const requirements = await prisma.requirement.findMany({
+        where: {
+          projectId: "f8168938-ac0a-42fe-9c30-2f820aaee9dd"
+        },
+        orderBy: {
+          createdAt: "asc",
+          ~~~~~~~~~
+      ?   id?: SortOrder,
+      ?   projectId?: SortOrder,
+      ?   sprintId?: SortOrder | SortOrderInput,
+      ?   sourceType?: SortOrder,
+      ?   sourceIdentifier?: SortOrder | SortOrderInput,
+      ?   title?: SortOrder | SortOrderInput,
+      ?   content?: SortOrder,
+      ?   category?: SortOrder,
+      ?   pulledAt?: SortOrder,
+      ?   project?: ProjectOrderByWithRelationInput
+        },
+        take: 30,
+        select: {
+          title: true,
+          category: true,
+          content: true
+        }
+      })
+
+Unknown argument `createdAt`. Available options are marked with ?.
+[scenarios.generate user=a5d916cd-4178-4bcc-b409-c885a389e843 proj=f8168938-ac0a-42fe-9c30-2f820aaee9dd] request received
+[scenarios.generate user=a5d916cd-4178-4bcc-b409-c885a389e843 proj=f8168938-ac0a-42fe-9c30-2f820aaee9dd] loaded 1 requirement(s)
+[scenarios.generate user=a5d916cd-4178-4bcc-b409-c885a389e843 proj=f8168938-ac0a-42fe-9c30-2f820aaee9dd] using provider=claude model=claude-sonnet-4-6
+[scenarios.generate user=a5d916cd-4178-4bcc-b409-c885a389e843 proj=f8168938-ac0a-42fe-9c30-2f820aaee9dd] inline_text_assertions_inferred case "Continue from Home dashboard to validate {{target_menu_tooltip}} tabs and {{expected_user_profile_page_title}} locked fields.": 3 assertion(s)
+[scenarios.generate user=a5d916cd-4178-4bcc-b409-c885a389e843 proj=f8168938-ac0a-42fe-9c30-2f820aaee9dd] SUCCESS — 1 scenarios, 1 cases

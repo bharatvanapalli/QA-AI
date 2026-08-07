@@ -1,0 +1,128 @@
+Suite: OdysseyOne authenticated user management continuation flow
+
+Existing prerequisite test case:
+TC-1 - Login through email classifier and Microsoft sign-in, ending on the OdysseyOne Home dashboard.
+
+New test case:
+TC-2 - Continue from Home dashboard to validate User Management tabs and user profile locked fields.
+
+Dependency and session contract:
+TC-2 depends on TC-1.
+sessionMode: continue_from_dependency
+dependsOn: TC-1
+failurePolicy: block_dependents
+TC-2 must continue in the same authenticated browser session created by TC-1.
+Do not start a fresh browser session for TC-2.
+Do not navigate back to the login page.
+Do not repeat email classifier login or Microsoft login.
+
+Starting state:
+TC-1 has passed.
+The browser is already authenticated and remains on the OdysseyOne Home dashboard.
+The Home page shows the text Welcome OdysseyOne.
+
+Inline test data:
+Expected Home validation text: Welcome OdysseyOne
+Target menu tooltip: User Management
+Expected User Management page title: User Management
+Expected User Management breadcrumb or navigation context: Dashboard > User Management
+Expected tabs and counts:
+All Users = 64
+Active = 61
+Locked = 1
+Terminated = 2
+Expected record count text: 64 Records found
+Expected pagination text: Showing 1 to 50 of 64
+Target user link text: Pranavijay Ikhar
+Target user URL path: /user/view-user/3460
+Expected User Profile page title: User Profile
+Expected User Profile breadcrumb: User Management > User Profile
+Expected first name: pranavijay
+Expected last name: ikhar
+Expected profile initials: PI
+
+Blocked-field probe values:
+Email ID probe value: blocked.email@example.com
+First Name probe value: BlockedFirst
+Middle Name probe value: BlockedMiddle
+Last Name probe value: BlockedLast
+User Name probe value: Blocked User
+Contact Number probe value: 9999999999
+
+Test steps:
+1. Verify the continuation start state.
+   Confirm the browser is still authenticated and the Home dashboard is visible.
+   Validate that the page contains Welcome OdysseyOne.
+   This is a continuation from TC-1, so do not perform login again.
+
+2. Hover over the left-side menu icons from top to bottom.
+   For each icon that is hovered, verify that a tooltip appears.
+   Continue hovering menu icons until the tooltip text User Management appears.
+   As soon as the User Management tooltip appears, stop checking the remaining menu icons and click the User Management icon immediately.
+
+3. Wait for the User Management page to load.
+   Wait until the User Management title, tabs, and records table are visible.
+   Wait up to 10 seconds.
+   If the table or page content is not visible within 10 seconds, refresh or reload the current User Management page once, then wait again until the title, tabs, and records table are visible.
+   If the content loads before 10 seconds, continue immediately.
+
+4. Validate the User Management page.
+   Confirm the page title contains User Management.
+   Confirm the navigation context or breadcrumb shows Dashboard > User Management.
+   Confirm the Internal User view is selected or visible.
+   Confirm the records table is visible.
+   Confirm the table has columns for Name, User ID, Organization Name(s) and ID, Role, Status, and Action.
+
+5. Validate the tab counts and record count.
+   Confirm All Users shows 64.
+   Confirm Active shows 61.
+   Confirm Locked shows 1.
+   Confirm Terminated shows 2.
+   Confirm the page shows 64 Records found.
+   Confirm pagination shows Showing 1 to 50 of 64.
+
+6. Open the target user profile.
+   In the records table, find and click the user link Pranavijay Ikhar.
+   Validate that navigation goes to the user profile route /user/view-user/3460.
+
+7. Validate the User Profile page.
+   Confirm the page title contains User Profile.
+   Confirm the breadcrumb or navigation context shows User Management > User Profile.
+   Confirm the General Information section is visible.
+
+8. Validate the profile avatar initials.
+   Confirm the profile avatar or profile picture area visibly shows PI.
+   Confirm PI is consistent with the first letter of the first name pranavijay and the first letter of the last name ikhar.
+
+9. Validate profile field values before editing attempts.
+   Confirm Email ID contains pranavijayikhar@odysseylogistics.com.
+   Confirm First Name contains pranavijay.
+   Confirm Last Name contains ikhar.
+   Confirm User Name contains pranavijay ikhar.
+   Confirm Contact Number field is visible.
+
+10. Verify the profile input fields are blocked through Contact Number only.
+   For each field listed below, attempt to focus the field and enter the corresponding probe value.
+   The expected result for every field is that the field is disabled, read-only, not editable, or the value does not change after the typing attempt.
+   Do not click Save.
+   Do not continue beyond the Contact Number fields.
+
+   Fields to test:
+   Email ID should reject blocked.email@example.com and keep the original email value.
+   First Name should reject BlockedFirst and keep pranavijay.
+   Middle Name should reject BlockedMiddle and remain unchanged or empty.
+   Last Name should reject BlockedLast and keep ikhar.
+   User Name should reject Blocked User and keep pranavijay ikhar.
+   Contact Number should reject 9999999999 and remain unchanged or empty.
+
+11. Final validation.
+   Confirm the browser is still on the User Profile page for Pranavijay Ikhar.
+   Confirm the avatar still shows PI.
+   Confirm the tested fields through Contact Number did not accept the probe values.
+   Pass TC-2 only if all tab counts, record count, profile navigation, avatar initials, and blocked-field validations are confirmed.
+
+Validation guidance:
+Text validations should be tolerant for casing and whitespace.
+Numeric counts must match exactly.
+Tooltip validation should confirm that a tooltip is visible and contains User Management when the User Management icon is hovered.
+Blocked-field validation may pass by either disabled/read-only state or by failed value readback after an edit attempt.

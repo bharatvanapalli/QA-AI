@@ -1,0 +1,30 @@
+-- PAGE assertion sprint Day 1 — additive only (SQLite-safe).
+--
+-- Project.pageAtlas: per-project learned-page-identity store. Populated by
+-- the Conductor when a PAGE assertion matches (either via deterministic
+-- quorum or LLM semantic rescue). Read by the page matcher to augment the
+-- architect's declared signals with previously-verified ones. Atlas entries
+-- carry { source, verifiedCount, firstSeenAt } so unverified entries can
+-- contribute at half weight and only promote to full weight after two
+-- independent runs corroborate them (strict corroboration trigger per the
+-- friend-2 RFC ruling).
+--
+-- Shape (JSON):
+-- {
+--   "login_page": {
+--     "primaryIndicator": { "role": "button", "name": "Login" } | null,
+--     "signals": {
+--       "text": [
+--         { "value": "Username", "source": "architect_declared", "verifiedCount": 5 },
+--         { "value": "로그인", "source": "semantic_rescue", "verifiedCount": 0, "firstSeenAt": 1717..." }
+--       ],
+--       "role": [...],
+--       "url":  [...]
+--     }
+--   },
+--   ...
+-- }
+--
+-- Nullable so existing projects work unchanged. The page matcher treats a
+-- missing atlas as "no learned signals" and runs on architect signals alone.
+ALTER TABLE "Project" ADD COLUMN "pageAtlas" TEXT;

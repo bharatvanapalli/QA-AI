@@ -1,0 +1,240 @@
+{
+  "schemaVersion": "qaai.reliability.benchmark.report.v1",
+  "generatedAt": "2026-07-04T12:46:14.186Z",
+  "source": "database_generation",
+  "sourceFile": null,
+  "generation": {
+    "id": "254f9237-0dde-4198-af07-8aeef4339dfe",
+    "projectId": "6a68412b-2d91-4ec5-b15a-2e1bf8fd744e",
+    "version": 10,
+    "isCurrent": true,
+    "createdAt": "2026-07-04T12:44:00.699Z"
+  },
+  "skipped": false,
+  "skipReason": null,
+  "scenarioCount": 15,
+  "caseCount": 30,
+  "benchmarkId": "orangehrm-scenario-generation",
+  "pass": false,
+  "missingCoverageRefs": [
+    {
+      "code": "benchmark_missing_coverage_ref",
+      "coverageRef": "admin-system-user-search",
+      "message": "No generated case cites coverageRef \"admin-system-user-search\"."
+    },
+    {
+      "code": "benchmark_missing_coverage_ref",
+      "coverageRef": "claim-validation",
+      "message": "No generated case cites coverageRef \"claim-validation\"."
+    },
+    {
+      "code": "benchmark_missing_coverage_ref",
+      "coverageRef": "pim-employee-lifecycle",
+      "message": "No generated case cites coverageRef \"pim-employee-lifecycle\"."
+    },
+    {
+      "code": "benchmark_missing_coverage_ref",
+      "coverageRef": "pim-employee-lifecycle",
+      "message": "No generated case cites coverageRef \"pim-employee-lifecycle\"."
+    },
+    {
+      "code": "benchmark_missing_coverage_ref",
+      "coverageRef": "login-dashboard",
+      "message": "No generated case cites coverageRef \"login-dashboard\"."
+    }
+  ],
+  "missingRequiredFields": [],
+  "missingOracles": [],
+  "missingRowIntents": [],
+  "contractDefects": [],
+  "regressionDetectionResults": [
+    {
+      "id": "double-encoded-steps",
+      "ok": true,
+      "expectedDefectCodes": [
+        "double_encoded_steps"
+      ],
+      "actualDefectCodes": [
+        "double_encoded_steps",
+        "missing_structured_oracle",
+        "weak_oracle"
+      ],
+      "missingDefectCodes": []
+    },
+    {
+      "id": "generic-weak-oracle",
+      "ok": true,
+      "expectedDefectCodes": [
+        "weak_oracle"
+      ],
+      "actualDefectCodes": [
+        "missing_structured_oracle",
+        "weak_oracle"
+      ],
+      "missingDefectCodes": []
+    },
+    {
+      "id": "verify-kind-none",
+      "ok": true,
+      "expectedDefectCodes": [
+        "verify_kind_none"
+      ],
+      "actualDefectCodes": [
+        "missing_structured_oracle",
+        "verify_kind_none"
+      ],
+      "missingDefectCodes": []
+    },
+    {
+      "id": "login-business-token-collision",
+      "ok": true,
+      "expectedDefectCodes": [
+        "token_collision"
+      ],
+      "actualDefectCodes": [
+        "missing_required_story_field",
+        "missing_structured_oracle",
+        "token_collision",
+        "weak_oracle"
+      ],
+      "missingDefectCodes": []
+    },
+    {
+      "id": "missing-row-execution-plan",
+      "ok": true,
+      "expectedDefectCodes": [
+        "missing_row_execution_plan"
+      ],
+      "actualDefectCodes": [
+        "missing_data_lineage",
+        "missing_row_execution_plan"
+      ],
+      "missingDefectCodes": []
+    }
+  ],
+  "fixtureResults": [
+    {
+      "fixture": "admin-search.expected.json",
+      "benchmarkId": "orangehrm-admin-search",
+      "pass": false,
+      "missingCoverageRefs": [
+        {
+          "code": "benchmark_missing_coverage_ref",
+          "coverageRef": "admin-system-user-search",
+          "message": "No generated case cites coverageRef \"admin-system-user-search\"."
+        }
+      ],
+      "missingRequiredFields": [],
+      "missingOracles": [],
+      "missingRowIntents": [],
+      "contractDefects": [],
+      "failures": [
+        {
+          "code": "benchmark_missing_coverage_ref",
+          "coverageRef": "admin-system-user-search",
+          "message": "No generated case cites coverageRef \"admin-system-user-search\"."
+        }
+      ]
+    },
+    {
+      "fixture": "claim-validation.expected.json",
+      "benchmarkId": "orangehrm-claim-validation",
+      "pass": false,
+      "missingCoverageRefs": [
+        {
+          "code": "benchmark_missing_coverage_ref",
+          "coverageRef": "claim-validation",
+          "message": "No generated case cites coverageRef \"claim-validation\"."
+        }
+      ],
+      "missingRequiredFields": [],
+      "missingOracles": [],
+      "missingRowIntents": [],
+      "contractDefects": [],
+      "failures": [
+        {
+          "code": "benchmark_missing_coverage_ref",
+          "coverageRef": "claim-validation",
+          "message": "No generated case cites coverageRef \"claim-validation\"."
+        }
+      ]
+    },
+    {
+      "fixture": "data-binding.expected.json",
+      "benchmarkId": "orangehrm-data-binding",
+      "pass": false,
+      "missingCoverageRefs": [
+        {
+          "code": "benchmark_missing_coverage_ref",
+          "coverageRef": "pim-employee-lifecycle",
+          "message": "No generated case cites coverageRef \"pim-employee-lifecycle\"."
+        }
+      ],
+      "missingRequiredFields": [],
+      "missingOracles": [],
+      "missingRowIntents": [],
+      "contractDefects": [],
+      "failures": [
+        {
+          "code": "benchmark_missing_coverage_ref",
+          "coverageRef": "pim-employee-lifecycle",
+          "message": "No generated case cites coverageRef \"pim-employee-lifecycle\"."
+        }
+      ]
+    },
+    {
+      "fixture": "multi-row.expected.json",
+      "benchmarkId": "orangehrm-multi-row",
+      "pass": false,
+      "missingCoverageRefs": [
+        {
+          "code": "benchmark_missing_coverage_ref",
+          "coverageRef": "pim-employee-lifecycle",
+          "message": "No generated case cites coverageRef \"pim-employee-lifecycle\"."
+        }
+      ],
+      "missingRequiredFields": [],
+      "missingOracles": [],
+      "missingRowIntents": [],
+      "contractDefects": [],
+      "failures": [
+        {
+          "code": "benchmark_missing_coverage_ref",
+          "coverageRef": "pim-employee-lifecycle",
+          "message": "No generated case cites coverageRef \"pim-employee-lifecycle\"."
+        }
+      ]
+    },
+    {
+      "fixture": "execution-readiness.expected.json",
+      "benchmarkId": "orangehrm-execution-readiness",
+      "pass": false,
+      "missingCoverageRefs": [
+        {
+          "code": "benchmark_missing_coverage_ref",
+          "coverageRef": "login-dashboard",
+          "message": "No generated case cites coverageRef \"login-dashboard\"."
+        }
+      ],
+      "missingRequiredFields": [],
+      "missingOracles": [],
+      "missingRowIntents": [],
+      "contractDefects": [],
+      "failures": [
+        {
+          "code": "benchmark_missing_coverage_ref",
+          "coverageRef": "login-dashboard",
+          "message": "No generated case cites coverageRef \"login-dashboard\"."
+        }
+      ]
+    }
+  ],
+  "fixturesLoaded": [
+    "admin-search.expected.json",
+    "claim-validation.expected.json",
+    "data-binding.expected.json",
+    "multi-row.expected.json",
+    "execution-readiness.expected.json",
+    "negative-regressions.expected.json"
+  ]
+}

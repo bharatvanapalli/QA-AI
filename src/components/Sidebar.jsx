@@ -4,10 +4,8 @@ import {
   LayoutDashboard,
   PlayCircle,
   FileText,
-  Terminal,
   BarChart3,
   AlertCircle,
-  ShieldCheck,
   Database,
   Brain,
   Files,
@@ -26,6 +24,7 @@ import { useRunStream } from '../store/runStream';
 import { useProject } from '../store/project';
 import { useToast } from '../lib/useToast';
 import api from '../lib/apiClient';
+import { buildProjectWorkspacePath } from '../lib/projectRoutes';
 
 const PRIMARY = [
   { to: '/overview', label: 'Overview', icon: LayoutDashboard },
@@ -36,10 +35,8 @@ const PRIMARY = [
 ];
 
 const RESULTS = [
-  { to: '/execution-log', label: 'Execution Log', icon: Terminal },
   { to: '/reports', label: 'Reports', icon: BarChart3 },
-  { to: '/blocked-items', label: 'Blocked', icon: AlertCircle },
-  { to: '/governance', label: 'Governance', icon: ShieldCheck },
+  { to: '/blocked-items', label: 'Recovery', icon: AlertCircle },
 ];
 
 const KNOWLEDGE = [
@@ -81,11 +78,13 @@ const NavItem = memo(function NavItem({
   showBadge,
   onNavigate,
   collapsed,
+  end,
 }) {
   return (
     <li>
       <NavLink
         to={to}
+        end={end}
         onClick={onNavigate}
         title={collapsed ? label : undefined}
         // NavLink already sets aria-current="page" when the route matches, so
@@ -139,12 +138,25 @@ function Sidebar({
   onToggleCollapse,
 }) {
   const { profile, logout, status } = useAuth();
-  const { running } = useRunStream();
+  const { running, liveActive } = useRunStream();
   const { current } = useProject();
   const toast = useToast();
   const navigate = useNavigate();
   const location = useLocation();
   const providerStatus = useProviderStatus(status, current?.aiProvider, location.pathname);
+  const projectPath = (tab) => buildProjectWorkspacePath(current?.id, tab);
+  const primaryItems = [
+    { to: projectPath('overview'), label: 'Overview', icon: LayoutDashboard },
+    { to: projectPath('run-suite'), label: 'Run Suite', icon: PlayCircle },
+    { to: projectPath('tests'), label: 'Tests', icon: FileText },
+    { to: projectPath('live'), label: 'Live Pipeline', icon: Bot, liveBadge: true },
+  ];
+  const outputItems = [
+    { to: projectPath('results'), label: 'Reports', icon: BarChart3 },
+    { to: projectPath('output-files'), label: 'Output Files', icon: Files },
+    { to: projectPath('recovery'), label: 'Recovery', icon: AlertCircle },
+    { to: projectPath('memory'), label: 'Memory', icon: Brain },
+  ];
 
   const handleLogout = async () => {
     try {
@@ -223,17 +235,15 @@ function Sidebar({
         {/* Nav — proper <ul> so screen readers announce "list, N items". */}
         <nav className="flex-1 overflow-y-auto py-3" aria-label="Primary">
           <ul className="list-none m-0 p-0">
-            {PRIMARY.map((i) => (
-              <NavItem key={i.to} {...i} showBadge={running} collapsed={collapsed} />
+            {primaryItems.map((i) => (
+              <NavItem key={i.to} {...i} showBadge={liveActive ?? running} collapsed={collapsed} />
             ))}
 
-            <SectionLabel id="sidebar-results" collapsed={collapsed}>Results</SectionLabel>
-            {RESULTS.map((i) => <NavItem key={i.to} {...i} collapsed={collapsed} />)}
-
-            <SectionLabel id="sidebar-knowledge" collapsed={collapsed}>Knowledge</SectionLabel>
-            {KNOWLEDGE.map((i) => <NavItem key={i.to} {...i} collapsed={collapsed} />)}
+            <SectionLabel id="sidebar-output" collapsed={collapsed}>Output</SectionLabel>
+            {outputItems.map((i) => <NavItem key={i.to} {...i} collapsed={collapsed} />)}
 
             <SectionLabel id="sidebar-config" collapsed={collapsed}>Configuration</SectionLabel>
+            <NavItem to="/project-setup" label="Projects" icon={Database} collapsed={collapsed} />
             <NavItem to="/settings" label="Settings" icon={SettingsIcon} collapsed={collapsed} />
             <ProviderStatusRow status={providerStatus} collapsed={collapsed} />
             <NavItem to="/profile" label="Profile" icon={User} collapsed={collapsed} />
@@ -302,8 +312,17 @@ function Sidebar({
 // Cheap — one GET per transition, payload is tiny.
 function useProviderStatus(authStatus, aiProvider, pathname) {
   const [state, setState] = useState({ loading: true, info: null, provider: null });
+  const [refreshNonce, setRefreshNonce] = useState(0);
   // Track the previous pathname so we re-fetch on exit-from-settings.
   const wasInSettings = pathname.startsWith('/settings');
+  useEffect(() => {
+    const onChanged = (event) => {
+      const provider = event && event.detail && event.detail.provider;
+      if (!provider || provider === aiProvider) setRefreshNonce((n) => n + 1);
+    };
+    window.addEventListener('qaai:provider-settings-changed', onChanged);
+    return () => window.removeEventListener('qaai:provider-settings-changed', onChanged);
+  }, [aiProvider]);
   useEffect(() => {
     if (authStatus !== 'authed' || !aiProvider) {
       setState({ loading: false, info: null, provider: aiProvider || null });
@@ -326,7 +345,7 @@ function useProviderStatus(authStatus, aiProvider, pathname) {
     return () => { cancelled = true; };
     // pathname dep lets us refetch when user leaves a /settings/* route.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authStatus, aiProvider, wasInSettings]);
+  }, [authStatus, aiProvider, wasInSettings, refreshNonce]);
   return state;
 }
 

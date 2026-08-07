@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "qaai.reliability.benchmark.v1",
+  "id": "orangehrm-claim-validation",
+  "items": [
+    {
+      "coverageRef": "claim-validation",
+      "requiredFields": ["event", "currency", "amount", "remarks"],
+      "requiredOracles": [
+        { "kind": "validation_message", "target": "Claim validation message" }
+      ],
+      "dataRowIntents": ["validation"]
+    }
+  ]
+}

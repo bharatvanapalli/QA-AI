@@ -218,6 +218,101 @@ function roleProfileForTestCase(testCase = null) {
     || '') || null;
 }
 
+function dependencyIdsForTestCase(testCase = null) {
+  const raw = testCase?.dependsOnIds ?? testCase?.dependsOn ?? testCase?.dependencyIds ?? [];
+  if (Array.isArray(raw)) return [...new Set(raw.filter(Boolean).map(String))];
+  if (typeof raw !== 'string' || !raw.trim()) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? [...new Set(parsed.filter(Boolean).map(String))] : [raw.trim()];
+  } catch (_) {
+    return [raw.trim()];
+  }
+}
+
+function sessionModeForTestCase(testCase = null) {
+  return clean(testCase?.sessionMode || testCase?.session?.mode || testCase?.dependencySessionMode).toLowerCase() || 'independent';
+}
+
+function buildDependencySessionPlan({
+  testCase = null,
+  projectId = null,
+  runId = null,
+  caseId = null,
+  continuityGroupId = null,
+} = {}) {
+  const mode = sessionModeForTestCase(testCase);
+  const dependencyIds = dependencyIdsForTestCase(testCase);
+  const continuation = mode === 'continue_from_dependency';
+  return {
+    schemaVersion: `${AUTH_SCHEMA_VERSION}:dependency-continuity`,
+    mode,
+    continuation,
+    projectId: projectId || testCase?.projectId || null,
+    runId: runId || null,
+    caseId: caseId || testCase?.id || null,
+    continuityGroupId: clean(continuityGroupId || testCase?.continuityGroupId) || null,
+    dependencyCaseId: continuation ? dependencyIds[0] || null : null,
+    dependencyIds,
+    failurePolicy: clean(testCase?.failurePolicy || testCase?.dependencyFailurePolicy || testCase?.dependencyPolicy?.failurePolicy).toLowerCase() || null,
+    requiresExistingSession: continuation,
+    createNewSession: !continuation,
+    replayAuthentication: false,
+    revisitLogin: false,
+    repeatAuthActions: false,
+  };
+}
+
+async function acquireSessionForCase({
+  registry,
+  userId,
+  projectId,
+  runId,
+  testCase,
+  createSession = null,
+  continuityGroupId = null,
+} = {}) {
+  const plan = buildDependencySessionPlan({
+    testCase,
+    projectId,
+    runId,
+    caseId: testCase?.id,
+    continuityGroupId,
+  });
+  if (plan.continuation) {
+    if (!registry || typeof registry.leaseContinuation !== 'function') {
+      return { session: null, reused: false, plan, reason: 'session_registry_unavailable' };
+    }
+    if (!plan.dependencyCaseId) {
+      return { session: null, reused: false, plan, reason: 'dependency_case_missing' };
+    }
+    const lease = registry.leaseContinuation({
+      userId,
+      projectId: plan.projectId,
+      runId,
+      caseId: plan.caseId,
+      dependsOnCaseId: plan.dependencyCaseId,
+      dependsOnCaseIds: plan.dependencyIds,
+      continuityGroupId: plan.continuityGroupId,
+    });
+    return { ...lease, plan };
+  }
+  if (typeof createSession !== 'function') {
+    return { session: null, reused: false, plan, reason: 'session_factory_unavailable' };
+  }
+  const session = await createSession({ userId, projectId: plan.projectId, runId, caseId: plan.caseId, plan });
+  if (session && registry?.setScoped && userId && plan.projectId && runId && plan.caseId) {
+    registry.setScoped({
+      userId,
+      projectId: plan.projectId,
+      runId,
+      caseId: plan.caseId,
+      continuityGroupId: plan.continuityGroupId,
+    }, session);
+  }
+  return { session: session || null, reused: false, created: !!session, plan };
+}
+
 function buildAuthSetupEvidenceRow({ id, runResultId, testCase, actionEvidences = [], trail = [], assertionOutcomes = [], encodeJson = JSON.stringify, schemaVersion = AUTH_SCHEMA_VERSION } = {}) {
   const signals = authFlowSignals({ testCase, trail, actionEvidences, assertionOutcomes });
   const authRequired = authRequiredForRun({ testCase, trail, actionEvidences });
@@ -410,4 +505,8 @@ module.exports = {
   buildAuthSetupEvidenceRow,
   authSetupEvidenceIsComplete,
   buildAuthFixtureScaffold,
+  dependencyIdsForTestCase,
+  sessionModeForTestCase,
+  buildDependencySessionPlan,
+  acquireSessionForCase,
 };

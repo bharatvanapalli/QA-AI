@@ -1,0 +1,1686 @@
+{
+  "schema": "qaai-replayir-export/1",
+  "generatedAt": "2026-06-21T10:04:05.231Z",
+  "projectId": "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+  "runId": "5f7d4e52-2a5f-443e-99b1-e99b56f4b144",
+  "adapterId": "playwright-pom-js",
+  "adapterVersion": "playwright-pom-js-1",
+  "allBlocked": false,
+  "packagePassed": null,
+  "entries": [
+    {
+      "runId": "5f7d4e52-2a5f-443e-99b1-e99b56f4b144",
+      "runResultId": "ea63081b-2e74-4cd0-b20c-0b1d9e43a75d",
+      "testCaseId": "f3555978-578d-4369-b57f-12479fc67c61",
+      "dataRowIndex": 0,
+      "dataRowLabel": "Row 1 · admin",
+      "adapterId": "playwright-pom-js",
+      "adapterVersion": "playwright-pom-js-1",
+      "emitterVersion": "p6-emitter-1",
+      "irHash": "5e4fbbfd7fdaeba478fcf569a7912c153e6ba99fca323ecca942dca8890c3188",
+      "expectedVerdict": "pass",
+      "complete": true,
+      "gaps": [],
+      "requirementRefs": [
+        "REQ-873894fd7d",
+        "REQ-e09445b92c",
+        "REQ-c3eef35946"
+      ],
+      "authProfile": null,
+      "dataBinding": {
+        "sheet": "AuthProfiles",
+        "rowSelector": "positive",
+        "columnToField": {
+          "role": "authRole",
+          "username": "username",
+          "password": "password",
+          "sensitivitylevel": "sensitivityLevel",
+          "expected": "expectedVisibleMenuItems"
+        },
+        "expectedColumn": "expectedLandingPage",
+        "status": "incomplete",
+        "source": "explicit",
+        "placeholders": [
+          "username",
+          "password"
+        ],
+        "findings": [
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "AuthProfiles",
+            "header": "expectedLandingPage",
+            "rowIndex": 0,
+            "valuePreview": "/web/index.php/dashboard/index",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "AuthProfiles",
+            "header": "expectedLandingPage",
+            "rowIndex": 2,
+            "valuePreview": "/web/index.php/auth/login",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "FormValidation",
+            "header": "usernameInput",
+            "rowIndex": 1,
+            "valuePreview": "Admin",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "NegativeAuth",
+            "header": "usernameInput",
+            "rowIndex": 1,
+            "valuePreview": "Admin",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "SecurityAuth",
+            "header": "passwordPayload",
+            "rowIndex": 1,
+            "valuePreview": "password",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "SecurityAuth",
+            "header": "usernamePayload",
+            "rowIndex": 9,
+            "valuePreview": "Admin",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "RoleAccessControl",
+            "header": "loginUsername",
+            "rowIndex": 0,
+            "valuePreview": "Admin",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "RoleAccessControl",
+            "header": "menuItemShouldExist",
+            "rowIndex": 2,
+            "valuePreview": "Admin",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "ExpectedResults",
+            "header": "expectedURL",
+            "rowIndex": 0,
+            "valuePreview": "/web/index.php/dashboard/index",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "ExpectedResults",
+            "header": "expectedURL",
+            "rowIndex": 2,
+            "valuePreview": "/web/index.php/auth/login",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "ExpectedResults",
+            "header": "expectedHeading",
+            "rowIndex": 2,
+            "valuePreview": "Login",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_expected_placeholder_missing",
+            "severity": "error",
+            "sheet": "AuthProfiles",
+            "expectedColumn": "expectedLandingPage"
+          }
+        ]
+      },
+      "dataRowsUsed": true,
+      "files": [],
+      "validationFindings": [
+        {
+          "rule": "replayir_missing_action_time_locator",
+          "severity": "error",
+          "stepIndex": 3,
+          "message": "resolve 'el2' is missing verified action-time locator evidence; candidate-only replay would be a guess."
+        },
+        {
+          "rule": "replayir_action_missing_owned_locator",
+          "severity": "warning",
+          "stepIndex": 4,
+          "resolveIndex": 3,
+          "message": "act 'fill' targets 'el2' without verified action-level locator evidence."
+        }
+      ],
+      "fileHashes": {},
+      "status": "blocked",
+      "blockReason": "replayir_locator_unreplayable"
+    },
+    {
+      "runId": "5f7d4e52-2a5f-443e-99b1-e99b56f4b144",
+      "runResultId": "890ab97f-adaf-441c-8a33-dbf953538061",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowIndex": 0,
+      "dataRowLabel": "Row 1 · sqlInjection_OR",
+      "adapterId": "playwright-pom-js",
+      "adapterVersion": "playwright-pom-js-1",
+      "emitterVersion": "p6-emitter-1",
+      "irHash": "01a9b7a1c5858e075140ab9e4efdad335ee9035336fe9f22d944a891d1e35ac7",
+      "expectedVerdict": "pass",
+      "complete": true,
+      "gaps": [],
+      "requirementRefs": [
+        "REQ-548e33505e",
+        "REQ-8ef458c134",
+        "REQ-4e136f2974",
+        "REQ-657dc35e57"
+      ],
+      "authProfile": null,
+      "dataBinding": {
+        "sheet": "SecurityAuth",
+        "columnToField": {
+          "attacktype": "attackType",
+          "username": "usernamePayload",
+          "password": "passwordPayload",
+          "shouldcrash": "shouldCrash",
+          "shouldrender": "shouldRender"
+        },
+        "expectedColumn": "expectedOutcome",
+        "status": "incomplete",
+        "source": "explicit",
+        "placeholders": [
+          "username",
+          "password"
+        ],
+        "findings": [
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "AuthProfiles",
+            "header": "expectedLandingPage",
+            "rowIndex": 2,
+            "valuePreview": "/web/index.php/auth/login",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "SecurityAuth",
+            "header": "passwordPayload",
+            "rowIndex": 1,
+            "valuePreview": "password",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "ExpectedResults",
+            "header": "expectedURL",
+            "rowIndex": 2,
+            "valuePreview": "/web/index.php/auth/login",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "ExpectedResults",
+            "header": "expectedHeading",
+            "rowIndex": 2,
+            "valuePreview": "Login",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_expected_placeholder_missing",
+            "severity": "error",
+            "sheet": "SecurityAuth",
+            "expectedColumn": "expectedOutcome"
+          }
+        ]
+      },
+      "dataRowsUsed": true,
+      "files": [],
+      "validationFindings": [
+        {
+          "rule": "replayir_missing_action_time_locator",
+          "severity": "error",
+          "stepIndex": 3,
+          "message": "resolve 'el2' is missing verified action-time locator evidence; candidate-only replay would be a guess."
+        },
+        {
+          "rule": "replayir_action_missing_owned_locator",
+          "severity": "warning",
+          "stepIndex": 4,
+          "resolveIndex": 3,
+          "message": "act 'fill' targets 'el2' without verified action-level locator evidence."
+        }
+      ],
+      "fileHashes": {},
+      "status": "blocked",
+      "blockReason": "replayir_locator_unreplayable"
+    },
+    {
+      "runId": "5f7d4e52-2a5f-443e-99b1-e99b56f4b144",
+      "runResultId": "3cd7339d-7055-4000-b5c0-10427d03bba7",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowIndex": 1,
+      "dataRowLabel": "Row 2 · sqlInjection_UNION",
+      "adapterId": "playwright-pom-js",
+      "adapterVersion": "playwright-pom-js-1",
+      "emitterVersion": "p6-emitter-1",
+      "irHash": "5c001380f7bf04b66392fed0e039568670adcb965d6ecbd6a12840b914cb5cf7",
+      "expectedVerdict": "pass",
+      "complete": true,
+      "gaps": [],
+      "requirementRefs": [
+        "REQ-548e33505e",
+        "REQ-8ef458c134",
+        "REQ-4e136f2974",
+        "REQ-657dc35e57"
+      ],
+      "authProfile": null,
+      "dataBinding": {
+        "sheet": "SecurityAuth",
+        "columnToField": {
+          "attacktype": "attackType",
+          "username": "usernamePayload",
+          "password": "passwordPayload",
+          "shouldcrash": "shouldCrash",
+          "shouldrender": "shouldRender"
+        },
+        "expectedColumn": "expectedOutcome",
+        "status": "incomplete",
+        "source": "explicit",
+        "placeholders": [
+          "username",
+          "password"
+        ],
+        "findings": [
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "AuthProfiles",
+            "header": "expectedLandingPage",
+            "rowIndex": 2,
+            "valuePreview": "/web/index.php/auth/login",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "SecurityAuth",
+            "header": "passwordPayload",
+            "rowIndex": 1,
+            "valuePreview": "password",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "ExpectedResults",
+            "header": "expectedURL",
+            "rowIndex": 2,
+            "valuePreview": "/web/index.php/auth/login",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "ExpectedResults",
+            "header": "expectedHeading",
+            "rowIndex": 2,
+            "valuePreview": "Login",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_expected_placeholder_missing",
+            "severity": "error",
+            "sheet": "SecurityAuth",
+            "expectedColumn": "expectedOutcome"
+          }
+        ]
+      },
+      "dataRowsUsed": true,
+      "files": [],
+      "validationFindings": [
+        {
+          "rule": "replayir_missing_action_time_locator",
+          "severity": "error",
+          "stepIndex": 1,
+          "message": "resolve 'el1' is missing verified action-time locator evidence; candidate-only replay would be a guess."
+        },
+        {
+          "rule": "replayir_missing_action_time_locator",
+          "severity": "error",
+          "stepIndex": 3,
+          "message": "resolve 'el2' is missing verified action-time locator evidence; candidate-only replay would be a guess."
+        },
+        {
+          "rule": "replayir_missing_action_time_locator",
+          "severity": "error",
+          "stepIndex": 5,
+          "message": "resolve 'el3' is missing verified action-time locator evidence; candidate-only replay would be a guess."
+        },
+        {
+          "rule": "replayir_action_missing_owned_locator",
+          "severity": "warning",
+          "stepIndex": 2,
+          "resolveIndex": 1,
+          "message": "act 'fill' targets 'el1' without verified action-level locator evidence."
+        },
+        {
+          "rule": "replayir_action_missing_owned_locator",
+          "severity": "warning",
+          "stepIndex": 4,
+          "resolveIndex": 3,
+          "message": "act 'fill' targets 'el2' without verified action-level locator evidence."
+        },
+        {
+          "rule": "replayir_action_missing_owned_locator",
+          "severity": "warning",
+          "stepIndex": 6,
+          "resolveIndex": 5,
+          "message": "act 'click' targets 'el3' without verified action-level locator evidence."
+        }
+      ],
+      "fileHashes": {},
+      "status": "blocked",
+      "blockReason": "replayir_locator_unreplayable"
+    },
+    {
+      "runId": "5f7d4e52-2a5f-443e-99b1-e99b56f4b144",
+      "runResultId": "2247150c-5cda-4e17-809b-8b8fa520b005",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowIndex": 2,
+      "dataRowLabel": "Row 3 · sqlInjection_comment",
+      "adapterId": "playwright-pom-js",
+      "adapterVersion": "playwright-pom-js-1",
+      "emitterVersion": "p6-emitter-1",
+      "irHash": "967347ed4fea8aa8a6d5675a05105b66d8ba1e666a3583368f986739dea6e96b",
+      "expectedVerdict": "pass",
+      "complete": true,
+      "gaps": [],
+      "requirementRefs": [
+        "REQ-548e33505e",
+        "REQ-8ef458c134",
+        "REQ-4e136f2974",
+        "REQ-657dc35e57"
+      ],
+      "authProfile": null,
+      "dataBinding": {
+        "sheet": "SecurityAuth",
+        "columnToField": {
+          "attacktype": "attackType",
+          "username": "usernamePayload",
+          "password": "passwordPayload",
+          "shouldcrash": "shouldCrash",
+          "shouldrender": "shouldRender"
+        },
+        "expectedColumn": "expectedOutcome",
+        "status": "incomplete",
+        "source": "explicit",
+        "placeholders": [
+          "username",
+          "password"
+        ],
+        "findings": [
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "AuthProfiles",
+            "header": "expectedLandingPage",
+            "rowIndex": 2,
+            "valuePreview": "/web/index.php/auth/login",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "SecurityAuth",
+            "header": "passwordPayload",
+            "rowIndex": 1,
+            "valuePreview": "password",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "ExpectedResults",
+            "header": "expectedURL",
+            "rowIndex": 2,
+            "valuePreview": "/web/index.php/auth/login",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "ExpectedResults",
+            "header": "expectedHeading",
+            "rowIndex": 2,
+            "valuePreview": "Login",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_expected_placeholder_missing",
+            "severity": "error",
+            "sheet": "SecurityAuth",
+            "expectedColumn": "expectedOutcome"
+          }
+        ]
+      },
+      "dataRowsUsed": true,
+      "files": [],
+      "validationFindings": [
+        {
+          "rule": "replayir_missing_action_time_locator",
+          "severity": "error",
+          "stepIndex": 1,
+          "message": "resolve 'el1' is missing verified action-time locator evidence; candidate-only replay would be a guess."
+        },
+        {
+          "rule": "replayir_missing_action_time_locator",
+          "severity": "error",
+          "stepIndex": 3,
+          "message": "resolve 'el2' is missing verified action-time locator evidence; candidate-only replay would be a guess."
+        },
+        {
+          "rule": "replayir_missing_action_time_locator",
+          "severity": "error",
+          "stepIndex": 5,
+          "message": "resolve 'el3' is missing verified action-time locator evidence; candidate-only replay would be a guess."
+        },
+        {
+          "rule": "replayir_action_missing_owned_locator",
+          "severity": "warning",
+          "stepIndex": 2,
+          "resolveIndex": 1,
+          "message": "act 'fill' targets 'el1' without verified action-level locator evidence."
+        },
+        {
+          "rule": "replayir_action_missing_owned_locator",
+          "severity": "warning",
+          "stepIndex": 4,
+          "resolveIndex": 3,
+          "message": "act 'fill' targets 'el2' without verified action-level locator evidence."
+        },
+        {
+          "rule": "replayir_action_missing_owned_locator",
+          "severity": "warning",
+          "stepIndex": 6,
+          "resolveIndex": 5,
+          "message": "act 'click' targets 'el3' without verified action-level locator evidence."
+        }
+      ],
+      "fileHashes": {},
+      "status": "blocked",
+      "blockReason": "replayir_locator_unreplayable"
+    },
+    {
+      "runId": "5f7d4e52-2a5f-443e-99b1-e99b56f4b144",
+      "runResultId": "d64dba2b-e629-4da6-a4bb-eb32335c85fa",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowIndex": 3,
+      "dataRowLabel": "Row 4 · xss_scriptTag",
+      "adapterId": "playwright-pom-js",
+      "adapterVersion": "playwright-pom-js-1",
+      "emitterVersion": "p6-emitter-1",
+      "irHash": "99fe4bddfbe071d3adbd6a1f0e2488c732d53663294547837ed6f812f6aa7c86",
+      "expectedVerdict": "pass",
+      "complete": true,
+      "gaps": [],
+      "requirementRefs": [
+        "REQ-548e33505e",
+        "REQ-8ef458c134",
+        "REQ-4e136f2974",
+        "REQ-657dc35e57"
+      ],
+      "authProfile": null,
+      "dataBinding": {
+        "sheet": "SecurityAuth",
+        "columnToField": {
+          "attacktype": "attackType",
+          "username": "usernamePayload",
+          "password": "passwordPayload",
+          "shouldcrash": "shouldCrash",
+          "shouldrender": "shouldRender"
+        },
+        "expectedColumn": "expectedOutcome",
+        "status": "incomplete",
+        "source": "explicit",
+        "placeholders": [
+          "username",
+          "password"
+        ],
+        "findings": [
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "AuthProfiles",
+            "header": "expectedLandingPage",
+            "rowIndex": 2,
+            "valuePreview": "/web/index.php/auth/login",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "SecurityAuth",
+            "header": "passwordPayload",
+            "rowIndex": 1,
+            "valuePreview": "password",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "ExpectedResults",
+            "header": "expectedURL",
+            "rowIndex": 2,
+            "valuePreview": "/web/index.php/auth/login",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "ExpectedResults",
+            "header": "expectedHeading",
+            "rowIndex": 2,
+            "valuePreview": "Login",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_expected_placeholder_missing",
+            "severity": "error",
+            "sheet": "SecurityAuth",
+            "expectedColumn": "expectedOutcome"
+          }
+        ]
+      },
+      "dataRowsUsed": true,
+      "files": [],
+      "validationFindings": [
+        {
+          "rule": "replayir_missing_action_time_locator",
+          "severity": "error",
+          "stepIndex": 1,
+          "message": "resolve 'el1' is missing verified action-time locator evidence; candidate-only replay would be a guess."
+        },
+        {
+          "rule": "replayir_missing_action_time_locator",
+          "severity": "error",
+          "stepIndex": 3,
+          "message": "resolve 'el2' is missing verified action-time locator evidence; candidate-only replay would be a guess."
+        },
+        {
+          "rule": "replayir_missing_action_time_locator",
+          "severity": "error",
+          "stepIndex": 5,
+          "message": "resolve 'el3' is missing verified action-time locator evidence; candidate-only replay would be a guess."
+        },
+        {
+          "rule": "replayir_action_missing_owned_locator",
+          "severity": "warning",
+          "stepIndex": 2,
+          "resolveIndex": 1,
+          "message": "act 'fill' targets 'el1' without verified action-level locator evidence."
+        },
+        {
+          "rule": "replayir_action_missing_owned_locator",
+          "severity": "warning",
+          "stepIndex": 4,
+          "resolveIndex": 3,
+          "message": "act 'fill' targets 'el2' without verified action-level locator evidence."
+        },
+        {
+          "rule": "replayir_action_missing_owned_locator",
+          "severity": "warning",
+          "stepIndex": 6,
+          "resolveIndex": 5,
+          "message": "act 'click' targets 'el3' without verified action-level locator evidence."
+        }
+      ],
+      "fileHashes": {},
+      "status": "blocked",
+      "blockReason": "replayir_locator_unreplayable"
+    },
+    {
+      "runId": "5f7d4e52-2a5f-443e-99b1-e99b56f4b144",
+      "runResultId": "87e776f3-147b-474f-b94a-d8e4b1247cdd",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowIndex": 4,
+      "dataRowLabel": "Row 5 · xss_imgTag",
+      "adapterId": "playwright-pom-js",
+      "adapterVersion": "playwright-pom-js-1",
+      "emitterVersion": "p6-emitter-1",
+      "irHash": "385c3c9f543270a0ee072efbbe7558d292cd9baf4878fc3c5d1577f8b418c723",
+      "expectedVerdict": "pass",
+      "complete": true,
+      "gaps": [],
+      "requirementRefs": [
+        "REQ-548e33505e",
+        "REQ-8ef458c134",
+        "REQ-4e136f2974",
+        "REQ-657dc35e57"
+      ],
+      "authProfile": null,
+      "dataBinding": {
+        "sheet": "SecurityAuth",
+        "columnToField": {
+          "attacktype": "attackType",
+          "username": "usernamePayload",
+          "password": "passwordPayload",
+          "shouldcrash": "shouldCrash",
+          "shouldrender": "shouldRender"
+        },
+        "expectedColumn": "expectedOutcome",
+        "status": "incomplete",
+        "source": "explicit",
+        "placeholders": [
+          "username",
+          "password"
+        ],
+        "findings": [
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "AuthProfiles",
+            "header": "expectedLandingPage",
+            "rowIndex": 2,
+            "valuePreview": "/web/index.php/auth/login",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "SecurityAuth",
+            "header": "passwordPayload",
+            "rowIndex": 1,
+            "valuePreview": "password",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "ExpectedResults",
+            "header": "expectedURL",
+            "rowIndex": 2,
+            "valuePreview": "/web/index.php/auth/login",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "ExpectedResults",
+            "header": "expectedHeading",
+            "rowIndex": 2,
+            "valuePreview": "Login",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_expected_placeholder_missing",
+            "severity": "error",
+            "sheet": "SecurityAuth",
+            "expectedColumn": "expectedOutcome"
+          }
+        ]
+      },
+      "dataRowsUsed": true,
+      "files": [],
+      "validationFindings": [
+        {
+          "rule": "replayir_missing_action_time_locator",
+          "severity": "error",
+          "stepIndex": 1,
+          "message": "resolve 'el1' is missing verified action-time locator evidence; candidate-only replay would be a guess."
+        },
+        {
+          "rule": "replayir_missing_action_time_locator",
+          "severity": "error",
+          "stepIndex": 3,
+          "message": "resolve 'el2' is missing verified action-time locator evidence; candidate-only replay would be a guess."
+        },
+        {
+          "rule": "replayir_missing_action_time_locator",
+          "severity": "error",
+          "stepIndex": 5,
+          "message": "resolve 'el3' is missing verified action-time locator evidence; candidate-only replay would be a guess."
+        },
+        {
+          "rule": "replayir_action_missing_owned_locator",
+          "severity": "warning",
+          "stepIndex": 2,
+          "resolveIndex": 1,
+          "message": "act 'fill' targets 'el1' without verified action-level locator evidence."
+        },
+        {
+          "rule": "replayir_action_missing_owned_locator",
+          "severity": "warning",
+          "stepIndex": 4,
+          "resolveIndex": 3,
+          "message": "act 'fill' targets 'el2' without verified action-level locator evidence."
+        },
+        {
+          "rule": "replayir_action_missing_owned_locator",
+          "severity": "warning",
+          "stepIndex": 6,
+          "resolveIndex": 5,
+          "message": "act 'click' targets 'el3' without verified action-level locator evidence."
+        }
+      ],
+      "fileHashes": {},
+      "status": "blocked",
+      "blockReason": "replayir_locator_unreplayable"
+    },
+    {
+      "runId": "5f7d4e52-2a5f-443e-99b1-e99b56f4b144",
+      "runResultId": "5086625c-6f26-409f-8548-84c3cdd3c2a2",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowIndex": 5,
+      "dataRowLabel": "Row 6 · xss_eventHandler",
+      "adapterId": "playwright-pom-js",
+      "adapterVersion": "playwright-pom-js-1",
+      "emitterVersion": "p6-emitter-1",
+      "irHash": "be80eb397085bd8745642f7bb9115671c035a8dc74a1f3b241b87b17d3d71044",
+      "expectedVerdict": "pass",
+      "complete": true,
+      "gaps": [],
+      "requirementRefs": [
+        "REQ-548e33505e",
+        "REQ-8ef458c134",
+        "REQ-4e136f2974",
+        "REQ-657dc35e57"
+      ],
+      "authProfile": null,
+      "dataBinding": {
+        "sheet": "SecurityAuth",
+        "columnToField": {
+          "attacktype": "attackType",
+          "username": "usernamePayload",
+          "password": "passwordPayload",
+          "shouldcrash": "shouldCrash",
+          "shouldrender": "shouldRender"
+        },
+        "expectedColumn": "expectedOutcome",
+        "status": "incomplete",
+        "source": "explicit",
+        "placeholders": [
+          "username",
+          "password"
+        ],
+        "findings": [
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "AuthProfiles",
+            "header": "expectedLandingPage",
+            "rowIndex": 2,
+            "valuePreview": "/web/index.php/auth/login",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "SecurityAuth",
+            "header": "passwordPayload",
+            "rowIndex": 1,
+            "valuePreview": "password",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "ExpectedResults",
+            "header": "expectedURL",
+            "rowIndex": 2,
+            "valuePreview": "/web/index.php/auth/login",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "ExpectedResults",
+            "header": "expectedHeading",
+            "rowIndex": 2,
+            "valuePreview": "Login",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_expected_placeholder_missing",
+            "severity": "error",
+            "sheet": "SecurityAuth",
+            "expectedColumn": "expectedOutcome"
+          }
+        ]
+      },
+      "dataRowsUsed": true,
+      "files": [],
+      "validationFindings": [
+        {
+          "rule": "replayir_missing_action_time_locator",
+          "severity": "error",
+          "stepIndex": 2,
+          "message": "resolve 'el1' is missing verified action-time locator evidence; candidate-only replay would be a guess."
+        },
+        {
+          "rule": "replayir_missing_action_time_locator",
+          "severity": "error",
+          "stepIndex": 4,
+          "message": "resolve 'el2' is missing verified action-time locator evidence; candidate-only replay would be a guess."
+        },
+        {
+          "rule": "replayir_missing_action_time_locator",
+          "severity": "error",
+          "stepIndex": 6,
+          "message": "resolve 'el3' is missing verified action-time locator evidence; candidate-only replay would be a guess."
+        },
+        {
+          "rule": "replayir_action_missing_owned_locator",
+          "severity": "warning",
+          "stepIndex": 3,
+          "resolveIndex": 2,
+          "message": "act 'fill' targets 'el1' without verified action-level locator evidence."
+        },
+        {
+          "rule": "replayir_action_missing_owned_locator",
+          "severity": "warning",
+          "stepIndex": 5,
+          "resolveIndex": 4,
+          "message": "act 'fill' targets 'el2' without verified action-level locator evidence."
+        },
+        {
+          "rule": "replayir_action_missing_owned_locator",
+          "severity": "warning",
+          "stepIndex": 7,
+          "resolveIndex": 6,
+          "message": "act 'click' targets 'el3' without verified action-level locator evidence."
+        }
+      ],
+      "fileHashes": {},
+      "status": "blocked",
+      "blockReason": "replayir_locator_unreplayable"
+    },
+    {
+      "runId": "5f7d4e52-2a5f-443e-99b1-e99b56f4b144",
+      "runResultId": "92ff1e51-a334-4b6a-9501-e7640d8e59c7",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowIndex": 6,
+      "dataRowLabel": "Row 7 · htmlEncoding",
+      "adapterId": "playwright-pom-js",
+      "adapterVersion": "playwright-pom-js-1",
+      "emitterVersion": "p6-emitter-1",
+      "irHash": "a7d7564ea37ebad9ec54010f613d6cd932dc6a94a1e18757c21c3556f6d58dbe",
+      "expectedVerdict": "pass",
+      "complete": true,
+      "gaps": [],
+      "requirementRefs": [
+        "REQ-548e33505e",
+        "REQ-8ef458c134",
+        "REQ-4e136f2974",
+        "REQ-657dc35e57"
+      ],
+      "authProfile": null,
+      "dataBinding": {
+        "sheet": "SecurityAuth",
+        "columnToField": {
+          "attacktype": "attackType",
+          "username": "usernamePayload",
+          "password": "passwordPayload",
+          "shouldcrash": "shouldCrash",
+          "shouldrender": "shouldRender"
+        },
+        "expectedColumn": "expectedOutcome",
+        "status": "incomplete",
+        "source": "explicit",
+        "placeholders": [
+          "username",
+          "password"
+        ],
+        "findings": [
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "AuthProfiles",
+            "header": "expectedLandingPage",
+            "rowIndex": 2,
+            "valuePreview": "/web/index.php/auth/login",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "SecurityAuth",
+            "header": "passwordPayload",
+            "rowIndex": 1,
+            "valuePreview": "password",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "ExpectedResults",
+            "header": "expectedURL",
+            "rowIndex": 2,
+            "valuePreview": "/web/index.php/auth/login",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_literal_from_uploaded_sheet",
+            "severity": "error",
+            "sheet": "ExpectedResults",
+            "header": "expectedHeading",
+            "rowIndex": 2,
+            "valuePreview": "Login",
+            "message": "Architect copied an uploaded data value into the case instead of using a {{placeholder}} bound to the sheet mapping."
+          },
+          {
+            "code": "data_expected_placeholder_missing",
+            "severity": "error",
+            "sheet": "SecurityAuth",
+            "expectedColumn": "expectedOutcome"
+          }
+        ]
+      },
+      "dataRowsUsed": true,
+      "files": [],
+      "validationFindings": [
+        {
+          "rule": "replayir_missing_action_time_locator",
+          "severity": "error",
+          "stepIndex": 1,
+          "message": "resolve 'el1' is missing verified action-time locator evidence; candidate-only replay would be a guess."
+        },
+        {
+          "rule": "replayir_missing_action_time_locator",
+          "severity": "error",
+          "stepIndex": 3,
+          "message": "resolve 'el2' is missing verified action-time locator evidence; candidate-only replay would be a guess."
+        },
+        {
+          "rule": "replayir_missing_action_time_locator",
+          "severity": "error",
+          "stepIndex": 5,
+          "message": "resolve 'el3' is missing verified action-time locator evidence; candidate-only replay would be a guess."
+        },
+        {
+          "rule": "replayir_action_missing_owned_locator",
+          "severity": "warning",
+          "stepIndex": 2,
+          "resolveIndex": 1,
+          "message": "act 'fill' targets 'el1' without verified action-level locator evidence."
+        },
+        {
+          "rule": "replayir_action_missing_owned_locator",
+          "severity": "warning",
+          "stepIndex": 4,
+          "resolveIndex": 3,
+          "message": "act 'fill' targets 'el2' without verified action-level locator evidence."
+        },
+        {
+          "rule": "replayir_action_missing_owned_locator",
+          "severity": "warning",
+          "stepIndex": 6,
+          "resolveIndex": 5,
+          "message": "act 'click' targets 'el3' without verified action-level locator evidence."
+        }
+      ],
+      "fileHashes": {},
+      "status": "blocked",
+      "blockReason": "replayir_locator_unreplayable"
+    },
+    {
+      "adapterId": "playwright-pom-js",
+      "adapterVersion": "playwright-pom-js-1",
+      "scenarioId": "a0c562dd-ef55-42a6-b924-f258190ca282",
+      "scenarioName": "Admin Login — Happy Path and Session Establishment",
+      "runResultIds": [
+        "183e4ccb-e947-4687-a22a-fa9a3987c3d7"
+      ],
+      "testCaseIds": [
+        "8bd867de-aa20-45a5-995c-be812cc6eb74"
+      ],
+      "status": "blocked",
+      "blockReason": "replayir_session_unreproducible"
+    },
+    {
+      "adapterId": "playwright-pom-js",
+      "adapterVersion": "playwright-pom-js-1",
+      "scenarioId": "b00bc74b-e97e-4cc1-87a0-1b291ec785e2",
+      "scenarioName": "Logout — Redirect and Session Termination",
+      "runResultIds": [
+        "f52f9ac6-8b26-4a1d-a9f8-634e41f062d9",
+        "325a89e3-05d4-418a-9705-4b473bcde80c"
+      ],
+      "testCaseIds": [
+        "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6",
+        "6773b1db-c635-45fe-9bcf-34f857c2478f"
+      ],
+      "irHashes": [
+        "bd8bc3cbe59c118584c0ed2a1ca14e3b69a92e73ff7ce28653815d1f80dfff56",
+        "9b27d4857b7a2f32fb38557222c70b4eca9f56c454167954e31659bcbe1147f4"
+      ],
+      "expectedVerdict": "blocked",
+      "complete": false,
+      "files": [
+        "tests/authentication/logout-redirect-and-session-termination.spec.js",
+        "locators/generated/loginPage.generated.locators.js",
+        "locators/loginPage.locators.js",
+        "pages/LoginPage.js",
+        "locators/generated/dashboardPage.generated.locators.js",
+        "locators/dashboardPage.locators.js",
+        "pages/DashboardPage.js",
+        "evidence/locator-manifest.json",
+        "evidence/pom-architect-report.json",
+        "evidence/dom-atlas.json",
+        "tests/data/admin-logout-redirects-to-auth-login-page.json",
+        "tests/data/post-logout-direct-navigation-to-dashboard-redirects-to-login.json",
+        "evidence/certification-report.json"
+      ],
+      "fileHashes": {
+        "tests/authentication/logout-redirect-and-session-termination.spec.js": "4f7543eba29df3ab62d462de04e91185890efd45b713e7d906347cc58dcec167"
+      },
+      "validationFindings": [],
+      "composedLoginPrecondition": false,
+      "composedLogoutPrecondition": false
+    }
+  ],
+  "validation": null,
+  "secretFindings": [
+    {
+      "rule": "secret_literal_in_output",
+      "severity": "error",
+      "path": "tests/data/admin-logout-redirects-to-auth-login-page.json",
+      "line": 8,
+      "message": "Secret-keyed field assigned a string literal in tests/data/admin-logout-redirects-to-auth-login-page.json:8."
+    },
+    {
+      "rule": "secret_literal_in_output",
+      "severity": "error",
+      "path": "tests/data/post-logout-direct-navigation-to-dashboard-redirects-to-login.json",
+      "line": 8,
+      "message": "Secret-keyed field assigned a string literal in tests/data/post-logout-direct-navigation-to-dashboard-redirects-to-login.json:8."
+    }
+  ],
+  "assertionCardinalityFindings": [],
+  "assertionCoverageFindings": [],
+  "sanitizerRewrites": [],
+  "stepCompilationLedger": {
+    "totalCases": 11,
+    "totalPlannedSteps": 47,
+    "totalReplaySteps": 63,
+    "exported": 12,
+    "exportedDirect": 21,
+    "exportedComposite": 0,
+    "exportedAssertionMethod": 0,
+    "coveredByPrecondition": 0,
+    "skippedNoise": 0,
+    "blockedInternal": 42,
+    "replayOnly": 16,
+    "duplicateActionsPruned": 0
+  },
+  "stepCompilationFindings": [
+    {
+      "rule": "step_compilation_parity_gap",
+      "severity": "error",
+      "message": "42 planned/executed step(s) could not be proven through ReplayIR and generated output.",
+      "path": "evidence/step-parity-report.json"
+    }
+  ],
+  "contractCertification": {
+    "contractFirstActive": true,
+    "packagePassed": false,
+    "executableResultCount": 11,
+    "generatedRunnableTestCount": 2,
+    "errorCount": 67,
+    "repairTaskCount": 65
+  },
+  "contractCertificationFindings": [
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "ea63081b-2e74-4cd0-b20c-0b1d9e43a75d",
+      "testCaseId": "f3555978-578d-4369-b57f-12479fc67c61",
+      "contractStepId": "f3555978-578d-4369-b57f-12479fc67c61:step:1:f8df55542860d03c",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:unscoped_locator",
+      "severity": "error",
+      "runResultId": "ea63081b-2e74-4cd0-b20c-0b1d9e43a75d",
+      "testCaseId": "f3555978-578d-4369-b57f-12479fc67c61",
+      "contractStepId": "f3555978-578d-4369-b57f-12479fc67c61:step:2:59ae777a58951c6a",
+      "message": "unscoped_locator: Add page/container scope and uniqueness proof to the locator recipe."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "ea63081b-2e74-4cd0-b20c-0b1d9e43a75d",
+      "testCaseId": "f3555978-578d-4369-b57f-12479fc67c61",
+      "contractStepId": "f3555978-578d-4369-b57f-12479fc67c61:step:2:59ae777a58951c6a",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "ea63081b-2e74-4cd0-b20c-0b1d9e43a75d",
+      "testCaseId": "f3555978-578d-4369-b57f-12479fc67c61",
+      "contractStepId": "f3555978-578d-4369-b57f-12479fc67c61:step:3:8a32b5473606e6b4",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "ea63081b-2e74-4cd0-b20c-0b1d9e43a75d",
+      "testCaseId": "f3555978-578d-4369-b57f-12479fc67c61",
+      "contractStepId": "f3555978-578d-4369-b57f-12479fc67c61:step:3:8a32b5473606e6b4",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:unscoped_locator",
+      "severity": "error",
+      "runResultId": "ea63081b-2e74-4cd0-b20c-0b1d9e43a75d",
+      "testCaseId": "f3555978-578d-4369-b57f-12479fc67c61",
+      "contractStepId": "f3555978-578d-4369-b57f-12479fc67c61:step:4:a5d1c3de2db19bb0",
+      "message": "unscoped_locator: Add page/container scope and uniqueness proof to the locator recipe."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "ea63081b-2e74-4cd0-b20c-0b1d9e43a75d",
+      "testCaseId": "f3555978-578d-4369-b57f-12479fc67c61",
+      "contractStepId": "f3555978-578d-4369-b57f-12479fc67c61:step:5:a73bc13908282522",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "183e4ccb-e947-4687-a22a-fa9a3987c3d7",
+      "testCaseId": "8bd867de-aa20-45a5-995c-be812cc6eb74",
+      "contractStepId": "8bd867de-aa20-45a5-995c-be812cc6eb74:step:1:c9fdad61a7e51f8a",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "183e4ccb-e947-4687-a22a-fa9a3987c3d7",
+      "testCaseId": "8bd867de-aa20-45a5-995c-be812cc6eb74",
+      "contractStepId": "8bd867de-aa20-45a5-995c-be812cc6eb74:step:2:e655ff9aa236118d",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:unscoped_locator",
+      "severity": "error",
+      "runResultId": "f52f9ac6-8b26-4a1d-a9f8-634e41f062d9",
+      "testCaseId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6",
+      "contractStepId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6:step:1:e4025d7851fa7ab0",
+      "message": "unscoped_locator: Add page/container scope and uniqueness proof to the locator recipe."
+    },
+    {
+      "rule": "contract_repair_required:unscoped_locator",
+      "severity": "error",
+      "runResultId": "f52f9ac6-8b26-4a1d-a9f8-634e41f062d9",
+      "testCaseId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6",
+      "contractStepId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6:step:2:ebd8295012e51075",
+      "message": "unscoped_locator: Add page/container scope and uniqueness proof to the locator recipe."
+    },
+    {
+      "rule": "contract_repair_required:unscoped_locator",
+      "severity": "error",
+      "runResultId": "f52f9ac6-8b26-4a1d-a9f8-634e41f062d9",
+      "testCaseId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6",
+      "contractStepId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6:step:3:bf1335c57d26ccd5",
+      "message": "unscoped_locator: Add page/container scope and uniqueness proof to the locator recipe."
+    },
+    {
+      "rule": "contract_repair_required:unscoped_locator",
+      "severity": "error",
+      "runResultId": "f52f9ac6-8b26-4a1d-a9f8-634e41f062d9",
+      "testCaseId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6",
+      "contractStepId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6:assertion:ASN-af19cf78",
+      "message": "unscoped_locator: Add page/container scope and uniqueness proof to the locator recipe."
+    },
+    {
+      "rule": "contract_repair_required:unscoped_locator",
+      "severity": "error",
+      "runResultId": "f52f9ac6-8b26-4a1d-a9f8-634e41f062d9",
+      "testCaseId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6",
+      "contractStepId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6:assertion:ASN-499034ba",
+      "message": "unscoped_locator: Add page/container scope and uniqueness proof to the locator recipe."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "325a89e3-05d4-418a-9705-4b473bcde80c",
+      "testCaseId": "6773b1db-c635-45fe-9bcf-34f857c2478f",
+      "contractStepId": "6773b1db-c635-45fe-9bcf-34f857c2478f:step:1:21e1ecc91c9461cb",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "325a89e3-05d4-418a-9705-4b473bcde80c",
+      "testCaseId": "6773b1db-c635-45fe-9bcf-34f857c2478f",
+      "contractStepId": "6773b1db-c635-45fe-9bcf-34f857c2478f:step:2:936b091c4356b036",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:assertion_translation_gap",
+      "severity": "error",
+      "runResultId": "325a89e3-05d4-418a-9705-4b473bcde80c",
+      "testCaseId": "6773b1db-c635-45fe-9bcf-34f857c2478f",
+      "contractStepId": "6773b1db-c635-45fe-9bcf-34f857c2478f:assertion:ASN-033627f9",
+      "message": "assertion_translation_gap: Translate the declared assertion into a certified Playwright/POM assertion method."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "890ab97f-adaf-441c-8a33-dbf953538061",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:1:93112ae4180330c3",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:unscoped_locator",
+      "severity": "error",
+      "runResultId": "890ab97f-adaf-441c-8a33-dbf953538061",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "message": "unscoped_locator: Add page/container scope and uniqueness proof to the locator recipe."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "890ab97f-adaf-441c-8a33-dbf953538061",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "890ab97f-adaf-441c-8a33-dbf953538061",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "890ab97f-adaf-441c-8a33-dbf953538061",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:unscoped_locator",
+      "severity": "error",
+      "runResultId": "890ab97f-adaf-441c-8a33-dbf953538061",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:4:9742c9fda0fcbb46",
+      "message": "unscoped_locator: Add page/container scope and uniqueness proof to the locator recipe."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "890ab97f-adaf-441c-8a33-dbf953538061",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:5:2a3974f9aad974b1",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "3cd7339d-7055-4000-b5c0-10427d03bba7",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:1:93112ae4180330c3",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "3cd7339d-7055-4000-b5c0-10427d03bba7",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "3cd7339d-7055-4000-b5c0-10427d03bba7",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "3cd7339d-7055-4000-b5c0-10427d03bba7",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "3cd7339d-7055-4000-b5c0-10427d03bba7",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "3cd7339d-7055-4000-b5c0-10427d03bba7",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:4:9742c9fda0fcbb46",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "3cd7339d-7055-4000-b5c0-10427d03bba7",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:5:2a3974f9aad974b1",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "2247150c-5cda-4e17-809b-8b8fa520b005",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:1:93112ae4180330c3",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "2247150c-5cda-4e17-809b-8b8fa520b005",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "2247150c-5cda-4e17-809b-8b8fa520b005",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "2247150c-5cda-4e17-809b-8b8fa520b005",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "2247150c-5cda-4e17-809b-8b8fa520b005",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "2247150c-5cda-4e17-809b-8b8fa520b005",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:4:9742c9fda0fcbb46",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "2247150c-5cda-4e17-809b-8b8fa520b005",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:5:2a3974f9aad974b1",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "d64dba2b-e629-4da6-a4bb-eb32335c85fa",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:1:93112ae4180330c3",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "d64dba2b-e629-4da6-a4bb-eb32335c85fa",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "d64dba2b-e629-4da6-a4bb-eb32335c85fa",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "d64dba2b-e629-4da6-a4bb-eb32335c85fa",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "d64dba2b-e629-4da6-a4bb-eb32335c85fa",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "d64dba2b-e629-4da6-a4bb-eb32335c85fa",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:4:9742c9fda0fcbb46",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "d64dba2b-e629-4da6-a4bb-eb32335c85fa",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:5:2a3974f9aad974b1",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "87e776f3-147b-474f-b94a-d8e4b1247cdd",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:1:93112ae4180330c3",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "87e776f3-147b-474f-b94a-d8e4b1247cdd",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "87e776f3-147b-474f-b94a-d8e4b1247cdd",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "87e776f3-147b-474f-b94a-d8e4b1247cdd",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "87e776f3-147b-474f-b94a-d8e4b1247cdd",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "87e776f3-147b-474f-b94a-d8e4b1247cdd",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:4:9742c9fda0fcbb46",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "87e776f3-147b-474f-b94a-d8e4b1247cdd",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:5:2a3974f9aad974b1",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "5086625c-6f26-409f-8548-84c3cdd3c2a2",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:1:93112ae4180330c3",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "5086625c-6f26-409f-8548-84c3cdd3c2a2",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "5086625c-6f26-409f-8548-84c3cdd3c2a2",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "5086625c-6f26-409f-8548-84c3cdd3c2a2",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "5086625c-6f26-409f-8548-84c3cdd3c2a2",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:4:9742c9fda0fcbb46",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "5086625c-6f26-409f-8548-84c3cdd3c2a2",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:5:2a3974f9aad974b1",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "92ff1e51-a334-4b6a-9501-e7640d8e59c7",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:1:93112ae4180330c3",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "92ff1e51-a334-4b6a-9501-e7640d8e59c7",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "92ff1e51-a334-4b6a-9501-e7640d8e59c7",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "92ff1e51-a334-4b6a-9501-e7640d8e59c7",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "92ff1e51-a334-4b6a-9501-e7640d8e59c7",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "92ff1e51-a334-4b6a-9501-e7640d8e59c7",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:4:9742c9fda0fcbb46",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "92ff1e51-a334-4b6a-9501-e7640d8e59c7",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:5:2a3974f9aad974b1",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_step_parity_gap",
+      "severity": "error",
+      "path": "evidence/step-parity-report.json",
+      "message": "42 planned/executed step(s) still lack generated-code proof."
+    },
+    {
+      "rule": "contract_cardinality_mismatch",
+      "severity": "error",
+      "message": "Generated runnable test count (2) does not match executable result count (11)."
+    }
+  ],
+  "exportValid": false
+}

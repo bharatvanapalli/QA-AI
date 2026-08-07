@@ -1,0 +1,17 @@
+# Independent validations continue after mismatches
+
+Data:
+- searchText=invoice
+- expectedHeading=Invoices
+- expectedCount=999999
+
+1. Open the configured application target.
+2. Navigate to the available search experience.
+3. Search for `searchText`.
+4. Verify the page heading equals `expectedHeading`. Record a mismatch and continue.
+5. Verify the visible result count equals `expectedCount`. Record a mismatch and continue.
+6. Independently verify that the primary navigation remains visible.
+7. Take a screenshot named `after-independent-validations`.
+
+Text and number mismatches are non-blocking observations. The navigation check and
+screenshot are independent and must still execute.

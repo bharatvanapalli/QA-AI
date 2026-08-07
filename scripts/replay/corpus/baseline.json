@@ -1,0 +1,396 @@
+{
+  "capturedAt": "2026-05-29T13:35:45.325Z",
+  "runs": [
+    {
+      "runId": "c5fecc85-93ea-40f5-be95-9abf44dce4e5",
+      "projectId": "2ccb038c-22a0-46f5-a46a-47da40075822",
+      "startedAt": "2026-05-23T12:20:01.561Z",
+      "completedAt": "2026-05-23T12:20:28.066Z",
+      "verdictMode": "legacy",
+      "sprintName": "Agent run · May 23, 5:50 PM",
+      "counts": {
+        "total": 0,
+        "pass": 0,
+        "fail": 0,
+        "blocked": 0,
+        "skipped": 0,
+        "needsHuman": 0
+      },
+      "classification": "empty"
+    },
+    {
+      "runId": "95c6e575-f2ce-4a1e-ae4f-3c71f42072e8",
+      "projectId": "2ccb038c-22a0-46f5-a46a-47da40075822",
+      "startedAt": "2026-05-23T12:20:45.665Z",
+      "completedAt": "2026-05-23T12:21:09.282Z",
+      "verdictMode": "legacy",
+      "sprintName": "Agent run · May 23, 5:50 PM",
+      "counts": {
+        "total": 0,
+        "pass": 0,
+        "fail": 0,
+        "blocked": 0,
+        "skipped": 0,
+        "needsHuman": 0
+      },
+      "classification": "empty"
+    },
+    {
+      "runId": "71347a37-42d0-43c7-9b73-bb1db770900e",
+      "projectId": "2ccb038c-22a0-46f5-a46a-47da40075822",
+      "startedAt": "2026-05-23T12:21:15.499Z",
+      "completedAt": "2026-05-23T12:21:40.578Z",
+      "verdictMode": "legacy",
+      "sprintName": "Agent run · May 23, 5:51 PM",
+      "counts": {
+        "total": 0,
+        "pass": 0,
+        "fail": 0,
+        "blocked": 0,
+        "skipped": 0,
+        "needsHuman": 0
+      },
+      "classification": "empty"
+    },
+    {
+      "runId": "92cdfd03-ae9d-44b4-bade-c92f51690c6e",
+      "projectId": "2ccb038c-22a0-46f5-a46a-47da40075822",
+      "startedAt": "2026-05-23T12:39:32.739Z",
+      "completedAt": "2026-05-23T12:44:26.216Z",
+      "verdictMode": "legacy",
+      "sprintName": "Agent run · May 23, 6:09 PM",
+      "counts": {
+        "total": 0,
+        "pass": 0,
+        "fail": 0,
+        "blocked": 0,
+        "skipped": 0,
+        "needsHuman": 0
+      },
+      "classification": "empty"
+    },
+    {
+      "runId": "4fe18a3d-9642-4ac7-985d-d450158e7e3a",
+      "projectId": "2ccb038c-22a0-46f5-a46a-47da40075822",
+      "startedAt": "2026-05-23T12:45:25.998Z",
+      "completedAt": "2026-05-23T12:52:42.013Z",
+      "verdictMode": "legacy",
+      "sprintName": "Agent run · May 23, 6:15 PM",
+      "counts": {
+        "total": 0,
+        "pass": 0,
+        "fail": 0,
+        "blocked": 0,
+        "skipped": 0,
+        "needsHuman": 0
+      },
+      "classification": "empty"
+    },
+    {
+      "runId": "95d3fe26-ca90-464e-89a1-a1a49ccab2b2",
+      "projectId": "2ccb038c-22a0-46f5-a46a-47da40075822",
+      "startedAt": "2026-05-23T12:53:24.914Z",
+      "completedAt": "2026-05-23T12:56:32.251Z",
+      "verdictMode": "legacy",
+      "sprintName": "Agent run · May 23, 6:23 PM",
+      "counts": {
+        "total": 0,
+        "pass": 0,
+        "fail": 0,
+        "blocked": 0,
+        "skipped": 0,
+        "needsHuman": 0
+      },
+      "classification": "empty"
+    },
+    {
+      "runId": "20732970-a59f-43ef-9bf2-44408e5659c6",
+      "projectId": "2ccb038c-22a0-46f5-a46a-47da40075822",
+      "startedAt": "2026-05-23T12:58:30.933Z",
+      "completedAt": "2026-05-23T13:01:36.038Z",
+      "verdictMode": "legacy",
+      "sprintName": "Agent run · May 23, 6:28 PM",
+      "counts": {
+        "total": 0,
+        "pass": 0,
+        "fail": 0,
+        "blocked": 0,
+        "skipped": 0,
+        "needsHuman": 0
+      },
+      "classification": "empty"
+    },
+    {
+      "runId": "4517cc8a-8d91-4e05-8c2d-c2817329bb78",
+      "projectId": "2ccb038c-22a0-46f5-a46a-47da40075822",
+      "startedAt": "2026-05-26T08:55:24.458Z",
+      "completedAt": "2026-05-26T08:58:25.012Z",
+      "verdictMode": "legacy",
+      "sprintName": "Agent run · May 26, 2:25 PM",
+      "counts": {
+        "total": 17,
+        "pass": 0,
+        "fail": 0,
+        "blocked": 17,
+        "skipped": 0,
+        "needsHuman": 0
+      },
+      "classification": "all-blocked"
+    },
+    {
+      "runId": "5d05d6ee-af5b-4f02-8811-05e9424b67c7",
+      "projectId": "2ccb038c-22a0-46f5-a46a-47da40075822",
+      "startedAt": "2026-05-26T08:58:25.295Z",
+      "completedAt": "2026-05-26T08:59:27.303Z",
+      "verdictMode": "legacy",
+      "sprintName": "Agent run · May 26, 2:28 PM",
+      "counts": {
+        "total": 17,
+        "pass": 0,
+        "fail": 0,
+        "blocked": 17,
+        "skipped": 0,
+        "needsHuman": 0
+      },
+      "classification": "all-blocked"
+    },
+    {
+      "runId": "1f80dea5-c993-43a4-bcc7-693074a888e6",
+      "projectId": "2ccb038c-22a0-46f5-a46a-47da40075822",
+      "startedAt": "2026-05-26T08:59:27.832Z",
+      "completedAt": "2026-05-26T09:00:07.077Z",
+      "verdictMode": "legacy",
+      "sprintName": "Agent run · May 26, 2:29 PM",
+      "counts": {
+        "total": 17,
+        "pass": 0,
+        "fail": 0,
+        "blocked": 17,
+        "skipped": 0,
+        "needsHuman": 0
+      },
+      "classification": "all-blocked"
+    },
+    {
+      "runId": "413a8632-14e8-47f0-80aa-38082a5642c5",
+      "projectId": "2ccb038c-22a0-46f5-a46a-47da40075822",
+      "startedAt": "2026-05-26T09:04:40.224Z",
+      "completedAt": "2026-05-26T09:04:53.181Z",
+      "verdictMode": "legacy",
+      "sprintName": "Agent run · May 26, 2:34 PM",
+      "counts": {
+        "total": 4,
+        "pass": 0,
+        "fail": 0,
+        "blocked": 4,
+        "skipped": 0,
+        "needsHuman": 0
+      },
+      "classification": "all-blocked"
+    },
+    {
+      "runId": "d694d1af-2b6b-4ef0-a7e3-0ff65c68a750",
+      "projectId": "2ccb038c-22a0-46f5-a46a-47da40075822",
+      "startedAt": "2026-05-26T09:16:43.067Z",
+      "completedAt": "2026-05-26T09:35:07.239Z",
+      "verdictMode": "legacy",
+      "sprintName": "Agent run · May 26, 2:46 PM",
+      "counts": {
+        "total": 13,
+        "pass": 0,
+        "fail": 10,
+        "blocked": 3,
+        "skipped": 0,
+        "needsHuman": 0
+      },
+      "classification": "mixed"
+    },
+    {
+      "runId": "0036f1b0-c81b-4d96-8a93-b3607b18cd3c",
+      "projectId": "2ccb038c-22a0-46f5-a46a-47da40075822",
+      "startedAt": "2026-05-26T09:36:17.409Z",
+      "completedAt": "2026-05-26T09:37:20.634Z",
+      "verdictMode": "legacy",
+      "sprintName": "Agent run · May 26, 3:06 PM",
+      "counts": {
+        "total": 1,
+        "pass": 0,
+        "fail": 0,
+        "blocked": 1,
+        "skipped": 0,
+        "needsHuman": 0
+      },
+      "classification": "all-blocked"
+    },
+    {
+      "runId": "c20cf182-518a-4429-bb95-646a0999a8a3",
+      "projectId": "2ccb038c-22a0-46f5-a46a-47da40075822",
+      "startedAt": "2026-05-27T11:26:16.958Z",
+      "completedAt": "2026-05-27T11:48:42.787Z",
+      "verdictMode": "legacy",
+      "sprintName": "Agent run · May 27, 4:56 PM",
+      "counts": {
+        "total": 17,
+        "pass": 0,
+        "fail": 3,
+        "blocked": 14,
+        "skipped": 0,
+        "needsHuman": 0
+      },
+      "classification": "mixed"
+    },
+    {
+      "runId": "c9e9072f-a73f-415b-a6fd-7a707fbdbe56",
+      "projectId": "2ccb038c-22a0-46f5-a46a-47da40075822",
+      "startedAt": "2026-05-27T16:55:46.908Z",
+      "completedAt": "2026-05-27T17:19:15.483Z",
+      "verdictMode": "legacy",
+      "sprintName": "Agent run · May 27, 10:25 PM",
+      "counts": {
+        "total": 17,
+        "pass": 11,
+        "fail": 5,
+        "blocked": 1,
+        "skipped": 0,
+        "needsHuman": 0
+      },
+      "classification": "mixed-pass-fail"
+    },
+    {
+      "runId": "15e9adc3-f769-4764-83c6-51dea4a85547",
+      "projectId": "2ccb038c-22a0-46f5-a46a-47da40075822",
+      "startedAt": "2026-05-27T17:26:39.459Z",
+      "completedAt": "2026-05-27T17:36:22.544Z",
+      "verdictMode": "legacy",
+      "sprintName": "Agent run · May 27, 10:56 PM",
+      "counts": {
+        "total": 6,
+        "pass": 3,
+        "fail": 2,
+        "blocked": 1,
+        "skipped": 0,
+        "needsHuman": 0
+      },
+      "classification": "mixed-pass-fail"
+    },
+    {
+      "runId": "137d9238-7826-4bf4-ae42-4e985a67ef4a",
+      "projectId": "2ccb038c-22a0-46f5-a46a-47da40075822",
+      "startedAt": "2026-05-28T05:30:31.505Z",
+      "completedAt": "2026-05-28T05:34:33.984Z",
+      "verdictMode": "legacy",
+      "sprintName": "Agent run · May 28, 11:00 AM",
+      "counts": {
+        "total": 3,
+        "pass": 3,
+        "fail": 0,
+        "blocked": 0,
+        "skipped": 0,
+        "needsHuman": 0
+      },
+      "classification": "all-pass"
+    },
+    {
+      "runId": "2e880a99-957f-46af-988b-708aa4682bea",
+      "projectId": "2ccb038c-22a0-46f5-a46a-47da40075822",
+      "startedAt": "2026-05-28T07:04:51.030Z",
+      "completedAt": "2026-05-28T07:08:51.439Z",
+      "verdictMode": "legacy",
+      "sprintName": "Agent run · May 28, 12:34 PM",
+      "counts": {
+        "total": 3,
+        "pass": 3,
+        "fail": 0,
+        "blocked": 0,
+        "skipped": 0,
+        "needsHuman": 0
+      },
+      "classification": "all-pass"
+    },
+    {
+      "runId": "8cfc4eb5-2a19-4a2c-a19b-0802092d80bb",
+      "projectId": "ac18838d-0e5b-49e7-8e57-61924573bc3a",
+      "startedAt": "2026-05-28T10:16:46.555Z",
+      "completedAt": "2026-05-28T10:47:06.956Z",
+      "verdictMode": "legacy",
+      "sprintName": "Agent run · May 28, 3:46 PM",
+      "counts": {
+        "total": 0,
+        "pass": 0,
+        "fail": 0,
+        "blocked": 0,
+        "skipped": 0,
+        "needsHuman": 0
+      },
+      "classification": "empty"
+    },
+    {
+      "runId": "e283a3d0-b886-41e2-9f46-e9ae550cc6a2",
+      "projectId": "ac18838d-0e5b-49e7-8e57-61924573bc3a",
+      "startedAt": "2026-05-28T16:45:55.208Z",
+      "completedAt": "2026-05-28T17:48:23.523Z",
+      "verdictMode": "legacy",
+      "sprintName": "Agent run · May 28, 10:15 PM",
+      "counts": {
+        "total": 36,
+        "pass": 25,
+        "fail": 6,
+        "blocked": 5,
+        "skipped": 0,
+        "needsHuman": 0
+      },
+      "classification": "mixed-pass-fail"
+    },
+    {
+      "runId": "d84dbfa3-26ec-4529-8ed0-5ed80cb7cc55",
+      "projectId": "ac18838d-0e5b-49e7-8e57-61924573bc3a",
+      "startedAt": "2026-05-29T07:13:00.921Z",
+      "completedAt": "2026-05-29T07:26:18.968Z",
+      "verdictMode": "mechanical_v1",
+      "sprintName": "Agent run · May 29, 12:43 PM",
+      "counts": {
+        "total": 9,
+        "pass": 0,
+        "fail": 9,
+        "blocked": 0,
+        "skipped": 0,
+        "needsHuman": 0
+      },
+      "classification": "all-fail"
+    },
+    {
+      "runId": "38a0ad5a-e701-4f4b-bcd8-a0b12c3aaf20",
+      "projectId": "ac18838d-0e5b-49e7-8e57-61924573bc3a",
+      "startedAt": "2026-05-29T07:50:36.718Z",
+      "completedAt": "2026-05-29T08:01:38.288Z",
+      "verdictMode": "mechanical_v1",
+      "sprintName": "Agent run · May 29, 1:20 PM",
+      "counts": {
+        "total": 9,
+        "pass": 6,
+        "fail": 1,
+        "blocked": 1,
+        "skipped": 1,
+        "needsHuman": 0
+      },
+      "classification": "mixed-pass-fail"
+    },
+    {
+      "runId": "b02078e8-c3bf-43de-a10c-b6a17905df4b",
+      "projectId": "ac18838d-0e5b-49e7-8e57-61924573bc3a",
+      "startedAt": "2026-05-29T10:27:53.329Z",
+      "completedAt": "2026-05-29T10:40:25.055Z",
+      "verdictMode": "mechanical_v1",
+      "sprintName": "Agent run · May 29, 3:57 PM",
+      "counts": {
+        "total": 31,
+        "pass": 6,
+        "fail": 4,
+        "blocked": 1,
+        "skipped": 1,
+        "needsHuman": 19
+      },
+      "classification": "needs-human-mixed"
+    }
+  ]
+}

@@ -83,9 +83,24 @@ export const STATUS_META = {
     border: 'border-ink-200',
     cls: 'bg-ink-100 text-ink-600 border-ink-200',
   },
+  skipped: {
+    // QAAI's conductor doesn't use test.skip/--grep; a 'skipped' RunResult
+    // means the case never executed (run stopped mid-suite). Label it plainly.
+    label: 'Did not run',
+    icon: StopCircle,
+    dot: 'bg-ink-400',
+    text: 'text-ink-600',
+    bg: 'bg-ink-50',
+    border: 'border-ink-200',
+    cls: 'bg-ink-50 text-ink-600 border-ink-200',
+  },
+  // Legacy alias. A needs_human row means QAAI could not certify the outcome;
+  // render it as blocked so internal uncertainty is not shown as a website fail.
+  needs_human: null, // resolved dynamically in statusMeta() below
 };
 
 export function statusMeta(status) {
+  if (status === 'needs_human') return STATUS_META.blocked;
   return STATUS_META[status] || STATUS_META.pending;
 }
 

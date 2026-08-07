@@ -1,0 +1,1763 @@
+﻿Using RUN_ID: 2fda1038-bece-43f2-add9-0a7b0817dda3
+
+Project: Orange HRM Module Testing
+URL: https://opensource-demo.orangehrmlive.com
+Framework: playwright-js
+Run: 2fda1038-bece-43f2-add9-0a7b0817dda3
+
+=== STEP 1: BUILD EXPORT ===
+
+Export wrote 25 total files, 10 spec files:
+  tests/authentication/admin-successful-login-and-dashboard-redirect.spec.js
+  tests/authentication/login-form-empty-field-validation.spec.js
+  tests/authentication/sql-injection-in-login-username-field.spec.js
+  tests/authentication/xss-payload-in-login-username-field.spec.js
+  tests/authentication/admin-navigation-and-role-based-menu-visibility.spec.js
+  tests/authentication/password-field-masking.spec.js
+  tests/authentication/account-lockout-after-repeated-failed-attempts.spec.js
+  tests/authentication/login-form-security-no-sensitive-information-exposure.spec.js
+  tests/authentication/admin-session-persistence-across-page-navigations.spec.js
+  tests/authentication/credential-injection-from-authprofiles-without-hardcoding.spec.js
+
+=== STEP 2: STATIC AUDIT ===
+
+── tests/authentication/admin-successful-login-and-dashboard-redirect.spec.js
+   ISSUES: no expect() assertion
+   · locators: 0 semantic, 0 CSS-class, 0 fragile
+   · explicit timeouts
+   · 106 lines
+
+   SPEC:
+
+     1 | const { test, expect } = require('@playwright/test');
+     2 | const { assertTextPresent, dismissKnownPopups, readEnv, resolveLocator, evaluateSettled } = require('../support/replayir');
+     3 | 
+     4 | // QAAI Journey Export — test steps share browser state.
+     5 | // Run as a suite. Individual test.step blocks are not standalone tests.
+     6 | test.describe("Admin Successful Login and Dashboard Redirect", () => {
+     7 |   test.describe.configure({ mode: 'serial', retries: 1 });
+     8 | 
+     9 |   test('full journey', async ({ page }) => {
+    10 |     // ─── Admin login with valid credentials redirects to dashboard ───────
+    11 |     await test.step("Admin login with valid credentials redirects to dashboard", async () => {
+    12 |       await page.goto("https://opensource-demo.orangehrmlive.com/web/index.php/auth/login");
+    13 |       const el1 = await resolveLocator(page, [
+    14 |     {
+    15 |       "strategy": "label",
+    16 |       "text": "Username"
+    17 |     },
+    18 |     {
+    19 |       "strategy": "role",
+    20 |       "role": "textbox",
+    21 |       "name": "Username"
+    22 |     },
+    23 |     {
+    24 |       "strategy": "placeholder",
+    25 |       "text": "Username"
+    26 |     },
+    27 |     {
+    28 |       "strategy": "text",
+    29 |       "text": "Username"
+    30 |     }
+    31 |   ], "Username");
+    32 |       await el1.fill(readEnv("QAAI_USERNAME"), { force: true });
+    33 |       const el2 = await resolveLocator(page, [
+    34 |     {
+    35 |       "strategy": "label",
+    36 |       "text": "Password",
+    37 |       "contextText": [
+    38 |         "Login"
+    39 |       ]
+    40 |     },
+    41 |     {
+    42 |       "strategy": "role",
+    43 |       "role": "textbox",
+    44 |       "name": "Password",
+    45 |       "contextText": [
+    46 |         "Login"
+    47 |       ]
+    48 |     },
+    49 |     {
+    50 |       "strategy": "placeholder",
+    51 |       "text": "Password",
+    52 |       "contextText": [
+    53 |         "Login"
+    54 |       ]
+    55 |     },
+    56 |     {
+    57 |       "strategy": "text",
+    58 |       "text": "Password",
+    59 |       "contextText": [
+    60 |         "Login"
+    61 |       ]
+    62 |     }
+    63 |   ], "Password");
+    64 |       await el2.fill(readEnv("QAAI_PASSWORD"), { force: true });
+    65 |       const el3 = await resolveLocator(page, [
+    66 |     {
+    67 |       "strategy": "role",
+    68 |       "role": "button",
+    69 |       "name": "Login",
+    70 |       "contextText": [
+    71 |         "Password"
+    72 |       ]
+    73 |     },
+    74 |     {
+    75 |       "strategy": "text",
+    76 |       "text": "Login",
+    77 |       "contextText": [
+    78 |         "Password"
+    79 |       ]
+    80 |     }
+    81 |   ], "Login");
+    82 |       await el3.click({ force: true });
+    83 |       await assertTextPresent(page, "Dashboard", "ASN-7d103389", 10000);
+    84 |       await assertTextPresent(page, "Admin", "ASN-53369b06", 10000);
+    85 |       {
+    86 |         await page.waitForFunction(() => (!!document.querySelector('.oxd-userdropdown-name, .oxd-topbar-header-userinfo, [class*="userdropdown"]')?.textContent?.trim()), null, { timeout: 10000 }).catch((e) => {
+    87 |           throw new Error(`EVALUATE ASN-de64d66e: expected "true" but condition never became truthy within 10000ms — ${e.message}`);
+    88 |         });
+    89 |         test.info().annotations.push({ type: 'evaluate-result', description: `ASN-de64d66e: true (waitForFunction)` });
+    90 |       }
+    91 |       await page.screenshot({ path: "test-results/admin-login-with-valid-credentials-redirects-to-dashboard.png", fullPage: true });
+    92 |     });
+    93 | 
+    94 |     // ─── Admin dashboard displays admin-specific widgets ─────────────────
+    95 |     await test.step("Admin dashboard displays admin-specific widgets", async () => {
+    96 |       {
+    97 |         await page.waitForFunction(() => ((function(){ var links = Array.from(document.querySelectorAll('a, [role="menuitem"]')).map(el => el.textContent.trim()); return ['Admin','PIM','Recruitment'].every(m => links.includes(m)); })()), null, { timeout: 10000 }).catch((e) => {
+    98 |           throw new Error(`EVALUATE ASN-fe890459: expected "true" but condition never became truthy within 10000ms — ${e.message}`);
+    99 |         });
+   100 |         test.info().annotations.push({ type: 'evaluate-result', description: `ASN-fe890459: true (waitForFunction)` });
+   101 |       }
+   102 |       await page.screenshot({ path: "test-results/admin-dashboard-displays-admin-specific-widgets.png", fullPage: true });
+   103 |     });
+   104 |   });
+   105 | });
+   106 | 
+
+── tests/authentication/login-form-empty-field-validation.spec.js
+   CLEAN
+   · locators: 0 semantic, 0 CSS-class, 0 fragile
+   · 172 lines
+
+   SPEC:
+
+     1 | const { test, expect } = require('@playwright/test');
+     2 | const { assertTextPresent, dismissKnownPopups, readEnv, resolveLocator, evaluateSettled } = require('../support/replayir');
+     3 | 
+     4 | // QAAI Journey Export — test steps share browser state.
+     5 | // Run as a suite. Individual test.step blocks are not standalone tests.
+     6 | test.describe("Login Form Empty Field Validation", () => {
+     7 |   test.describe.configure({ mode: 'serial', retries: 1 });
+     8 | 
+     9 |   test('full journey', async ({ page }) => {
+    10 |     // ─── Submit login with empty password shows Password is required error 
+    11 |     await test.step("Submit login with empty password shows Password is required error", async () => {
+    12 |       await page.goto("https://opensource-demo.orangehrmlive.com/web/index.php/auth/login");
+    13 |       const el1 = await resolveLocator(page, [
+    14 |     {
+    15 |       "strategy": "role",
+    16 |       "role": "textbox",
+    17 |       "name": "Username"
+    18 |     },
+    19 |     {
+    20 |       "strategy": "placeholder",
+    21 |       "text": "Username"
+    22 |     },
+    23 |     {
+    24 |       "strategy": "label",
+    25 |       "text": "Username"
+    26 |     },
+    27 |     {
+    28 |       "strategy": "text",
+    29 |       "text": "Username"
+    30 |     }
+    31 |   ], "Username");
+    32 |       await el1.fill(readEnv("QAAI_USERNAME"), { force: true });
+    33 |       const el2 = await resolveLocator(page, [
+    34 |     {
+    35 |       "strategy": "role",
+    36 |       "role": "textbox",
+    37 |       "name": "Password",
+    38 |       "contextText": [
+    39 |         "Login"
+    40 |       ]
+    41 |     },
+    42 |     {
+    43 |       "strategy": "placeholder",
+    44 |       "text": "Password",
+    45 |       "contextText": [
+    46 |         "Login"
+    47 |       ]
+    48 |     },
+    49 |     {
+    50 |       "strategy": "label",
+    51 |       "text": "Password",
+    52 |       "contextText": [
+    53 |         "Login"
+    54 |       ]
+    55 |     },
+    56 |     {
+    57 |       "strategy": "text",
+    58 |       "text": "Password",
+    59 |       "contextText": [
+    60 |         "Login"
+    61 |       ]
+    62 |     }
+    63 |   ], "Password");
+    64 |       await el2.click({ force: true });
+    65 |       const el3 = await resolveLocator(page, [
+    66 |     {
+    67 |       "strategy": "role",
+    68 |       "role": "button",
+    69 |       "name": "Login",
+    70 |       "contextText": [
+    71 |         "Password"
+    72 |       ]
+    73 |     },
+    74 |     {
+    75 |       "strategy": "text",
+    76 |       "text": "Login",
+    77 |       "contextText": [
+    78 |         "Password"
+    79 |       ]
+    80 |     }
+    81 |   ], "Login");
+    82 |       await el3.click({ force: true });
+    83 |       await assertTextPresent(page, "Username", "ASN-bd299fc2", 10000);
+    84 |       {
+    85 |         const _evalResult = String(await evaluateSettled(page, () => (Array.from(document.querySelectorAll('.oxd-input-field-error-message, .oxd-text--span, [class*="error-message"]')).map(el => el.textContent.trim()).join(' '))).catch((e) => `EVALUATE_ERROR:${e.message}`));
+    86 |         test.info().annotations.push({ type: 'evaluate-result', description: `ASN-78cc44af: ${_evalResult}` });
+    87 |         expect(_evalResult, "EVALUATE ASN-78cc44af: expected \"Required\"").toContain("Required");
+    88 |       }
+    89 |       await page.screenshot({ path: "test-results/submit-login-with-empty-password-shows-password-is-required-error.png", fullPage: true });
+    90 |     });
+    91 | 
+    92 |     // ─── Submit login with both fields empty shows errors on both fields simultaneously 
+    93 |     await test.step("Submit login with both fields empty shows errors on both fields simultaneously", async () => {
+    94 |       await page.goto("https://opensource-demo.orangehrmlive.com/web/index.php/auth/login");
+    95 |       const el1 = await resolveLocator(page, [
+    96 |     {
+    97 |       "strategy": "role",
+    98 |       "role": "textbox",
+    99 |       "name": "Username"
+   100 |     },
+   101 |     {
+   102 |       "strategy": "placeholder",
+   103 |       "text": "Username"
+   104 |     },
+   105 |     {
+   106 |       "strategy": "label",
+   107 |       "text": "Username"
+   108 |     },
+   109 |     {
+   110 |       "strategy": "text",
+   111 |       "text": "Username"
+   112 |     }
+   113 |   ], "Username");
+   114 |       await el1.click({ force: true });
+   115 |       const el2 = await resolveLocator(page, [
+   116 |     {
+   117 |       "strategy": "role",
+   118 |       "role": "button",
+   119 |       "name": "Login",
+   120 |       "contextText": [
+   121 |         "Password"
+   122 |       ]
+   123 |     },
+   124 |     {
+   125 |       "strategy": "text",
+   126 |       "text": "Login",
+   127 |       "contextText": [
+   128 |         "Password"
+   129 |       ]
+   130 |     }
+   131 |   ], "Login");
+   132 |       await el2.click({ force: true });
+   133 |       await assertTextPresent(page, "Username", "ASN-3026918a", 10000);
+   134 |       {
+   135 |         const _evalResult = String(await evaluateSettled(page, () => ((function(){ var msgs = Array.from(document.querySelectorAll('.oxd-input-field-error-message, .oxd-text--span, [class*="error-message"]')).map(el => el.textContent.trim()).join(' '); return msgs.includes('Required') ? 'two_errors' : 'none'; })())).catch((e) => `EVALUATE_ERROR:${e.message}`));
+   136 |         test.info().annotations.push({ type: 'evaluate-result', description: `ASN-6f123056: ${_evalResult}` });
+   137 |         expect(_evalResult, "EVALUATE ASN-6f123056: expected \"two_errors\"").toContain("two_errors");
+   138 |       }
+   139 |       await page.screenshot({ path: "test-results/submit-login-with-both-fields-empty-shows-errors-on-both-fields-simultaneously.png", fullPage: true });
+   140 |     });
+   141 | 
+   142 |     // ─── Validation errors appear inline below fields not as generic alert 
+   143 |     await test.step("Validation errors appear inline below fields not as generic alert", async () => {
+   144 |       await page.goto("https://opensource-demo.orangehrmlive.com/web/index.php/auth/login");
+   145 |       const el3 = await resolveLocator(page, [
+   146 |     {
+   147 |       "strategy": "role",
+   148 |       "role": "button",
+   149 |       "name": "Login",
+   150 |       "contextText": [
+   151 |         "Password"
+   152 |       ]
+   153 |     },
+   154 |     {
+   155 |       "strategy": "text",
+   156 |       "text": "Login",
+   157 |       "contextText": [
+   158 |         "Password"
+   159 |       ]
+   160 |     }
+   161 |   ], "Login");
+   162 |       await el3.click({ force: true });
+   163 |       {
+   164 |         const _evalResult = String(await evaluateSettled(page, () => ((function(){ var errorEls = document.querySelectorAll('.oxd-input-field-error-message, .oxd-text--span, [class*="error-message"]'); return errorEls.length >= 2 ? 'inline_errors_present' : 'not_found'; })())).catch((e) => `EVALUATE_ERROR:${e.message}`));
+   165 |         test.info().annotations.push({ type: 'evaluate-result', description: `ASN-09465b3e: ${_evalResult}` });
+   166 |         expect(_evalResult, "EVALUATE ASN-09465b3e: expected \"inline_errors_present\"").toContain("inline_errors_present");
+   167 |       }
+   168 |       await page.screenshot({ path: "test-results/validation-errors-appear-inline-below-fields-not-as-generic-alert.png", fullPage: true });
+   169 |     });
+   170 |   });
+   171 | });
+   172 | 
+
+── tests/authentication/sql-injection-in-login-username-field.spec.js
+   CLEAN
+   · locators: 0 semantic, 0 CSS-class, 0 fragile
+   · explicit timeouts
+   · 187 lines
+
+   SPEC:
+
+     1 | const { test, expect } = require('@playwright/test');
+     2 | const { assertTextPresent, dismissKnownPopups, readEnv, resolveLocator, evaluateSettled } = require('../support/replayir');
+     3 | 
+     4 | // QAAI Journey Export — test steps share browser state.
+     5 | // Run as a suite. Individual test.step blocks are not standalone tests.
+     6 | test.describe("SQL Injection in Login Username Field", () => {
+     7 |   test.describe.configure({ mode: 'serial', retries: 1 });
+     8 | 
+     9 |   test('full journey', async ({ page }) => {
+    10 |     // ─── SQL injection payload in username is safely rejected with Invalid credentials 
+    11 |     await test.step("SQL injection payload in username is safely rejected with Invalid credentials", async () => {
+    12 |       await page.goto("https://opensource-demo.orangehrmlive.com/web/index.php/auth/login");
+    13 |       const el1 = await resolveLocator(page, [
+    14 |     {
+    15 |       "strategy": "label",
+    16 |       "text": "Username"
+    17 |     },
+    18 |     {
+    19 |       "strategy": "role",
+    20 |       "role": "textbox",
+    21 |       "name": "Username"
+    22 |     },
+    23 |     {
+    24 |       "strategy": "placeholder",
+    25 |       "text": "Username"
+    26 |     },
+    27 |     {
+    28 |       "strategy": "text",
+    29 |       "text": "Username"
+    30 |     }
+    31 |   ], "Username");
+    32 |       await el1.fill("admin' OR '1'='1", { force: true });
+    33 |       const el2 = await resolveLocator(page, [
+    34 |     {
+    35 |       "strategy": "label",
+    36 |       "text": "Password",
+    37 |       "contextText": [
+    38 |         "Login"
+    39 |       ]
+    40 |     },
+    41 |     {
+    42 |       "strategy": "role",
+    43 |       "role": "textbox",
+    44 |       "name": "Password",
+    45 |       "contextText": [
+    46 |         "Login"
+    47 |       ]
+    48 |     },
+    49 |     {
+    50 |       "strategy": "placeholder",
+    51 |       "text": "Password",
+    52 |       "contextText": [
+    53 |         "Login"
+    54 |       ]
+    55 |     },
+    56 |     {
+    57 |       "strategy": "text",
+    58 |       "text": "Password",
+    59 |       "contextText": [
+    60 |         "Login"
+    61 |       ]
+    62 |     }
+    63 |   ], "Password");
+    64 |       await el2.fill(readEnv("QAAI_PASSWORD"), { force: true });
+    65 |       const el3 = await resolveLocator(page, [
+    66 |     {
+    67 |       "strategy": "role",
+    68 |       "role": "button",
+    69 |       "name": "Login",
+    70 |       "contextText": [
+    71 |         "Password"
+    72 |       ]
+    73 |     },
+    74 |     {
+    75 |       "strategy": "text",
+    76 |       "text": "Login",
+    77 |       "contextText": [
+    78 |         "Password"
+    79 |       ]
+    80 |     }
+    81 |   ], "Login");
+    82 |       await el3.click({ force: true });
+    83 |       await assertTextPresent(page, "Username", "ASN-235b89a4", 10000);
+    84 |       {
+    85 |         await page.waitForFunction(() => ((function(){ var body = document.body.textContent; return !body.includes('SQL') && !body.includes('syntax error') && !body.includes('Traceback') && !body.includes('PDOException') && !body.includes('mysql_fetch'); })()), null, { timeout: 10000 }).catch((e) => {
+    86 |           throw new Error(`EVALUATE ASN-8672ce53: expected "true" but condition never became truthy within 10000ms — ${e.message}`);
+    87 |         });
+    88 |         test.info().annotations.push({ type: 'evaluate-result', description: `ASN-8672ce53: true (waitForFunction)` });
+    89 |       }
+    90 |       {
+    91 |         const _evalResult = String(await evaluateSettled(page, () => (document.querySelector('.oxd-alert-content-text, .orangehrm-login-error, [class*="alert"], [role="alert"]')?.textContent?.trim() || '')).catch((e) => `EVALUATE_ERROR:${e.message}`));
+    92 |         test.info().annotations.push({ type: 'evaluate-result', description: `ASN-3cea33d8: ${_evalResult}` });
+    93 |         expect(_evalResult, "EVALUATE ASN-3cea33d8: expected \"Invalid credentials\"").toContain("Invalid credentials");
+    94 |       }
+    95 |       await page.screenshot({ path: "test-results/sql-injection-payload-in-username-is-safely-rejected-with-invalid-credentials.png", fullPage: true });
+    96 |     });
+    97 | 
+    98 |     // ─── SQL injection payload does not grant authenticated access to dashboard 
+    99 |     await test.step("SQL injection payload does not grant authenticated access to dashboard", async () => {
+   100 |       await page.goto("https://opensource-demo.orangehrmlive.com/web/index.php/auth/login");
+   101 |       const el1 = await resolveLocator(page, [
+   102 |     {
+   103 |       "strategy": "label",
+   104 |       "text": "Username"
+   105 |     },
+   106 |     {
+   107 |       "strategy": "role",
+   108 |       "role": "textbox",
+   109 |       "name": "Username"
+   110 |     },
+   111 |     {
+   112 |       "strategy": "placeholder",
+   113 |       "text": "Username"
+   114 |     },
+   115 |     {
+   116 |       "strategy": "text",
+   117 |       "text": "Username"
+   118 |     }
+   119 |   ], "Username");
+   120 |       await el1.fill("' OR 1=1--", { force: true });
+   121 |       const el2 = await resolveLocator(page, [
+   122 |     {
+   123 |       "strategy": "label",
+   124 |       "text": "Password",
+   125 |       "contextText": [
+   126 |         "Login"
+   127 |       ]
+   128 |     },
+   129 |     {
+   130 |       "strategy": "role",
+   131 |       "role": "textbox",
+   132 |       "name": "Password",
+   133 |       "contextText": [
+   134 |         "Login"
+   135 |       ]
+   136 |     },
+   137 |     {
+   138 |       "strategy": "placeholder",
+   139 |       "text": "Password",
+   140 |       "contextText": [
+   141 |         "Login"
+   142 |       ]
+   143 |     },
+   144 |     {
+   145 |       "strategy": "text",
+   146 |       "text": "Password",
+   147 |       "contextText": [
+   148 |         "Login"
+   149 |       ]
+   150 |     }
+   151 |   ], "Password");
+   152 |       await el2.fill(readEnv("QAAI_PASSWORD"), { force: true });
+   153 |       const el3 = await resolveLocator(page, [
+   154 |     {
+   155 |       "strategy": "role",
+   156 |       "role": "button",
+   157 |       "name": "Login",
+   158 |       "contextText": [
+   159 |         "Password"
+   160 |       ]
+   161 |     },
+   162 |     {
+   163 |       "strategy": "text",
+   164 |       "text": "Login",
+   165 |       "contextText": [
+   166 |         "Password"
+   167 |       ]
+   168 |     }
+   169 |   ], "Login");
+   170 |       await el3.click({ force: true });
+   171 |       {
+   172 |         await page.waitForFunction(() => (!window.location.href.includes('/dashboard')), null, { timeout: 10000 }).catch((e) => {
+   173 |           throw new Error(`EVALUATE ASN-c98882d8: expected "true" but condition never became truthy within 10000ms — ${e.message}`);
+   174 |         });
+   175 |         test.info().annotations.push({ type: 'evaluate-result', description: `ASN-c98882d8: true (waitForFunction)` });
+   176 |       }
+   177 |       {
+   178 |         await page.waitForFunction(() => ((function(){ var links = Array.from(document.querySelectorAll('a')).map(el => el.textContent.trim()); return !links.includes('Admin') || document.querySelector('input[name="username"]') !== null; })()), null, { timeout: 10000 }).catch((e) => {
+   179 |           throw new Error(`EVALUATE ASN-f39ad6a1: expected "true" but condition never became truthy within 10000ms — ${e.message}`);
+   180 |         });
+   181 |         test.info().annotations.push({ type: 'evaluate-result', description: `ASN-f39ad6a1: true (waitForFunction)` });
+   182 |       }
+   183 |       await page.screenshot({ path: "test-results/sql-injection-payload-does-not-grant-authenticated-access-to-dashboard.png", fullPage: true });
+   184 |     });
+   185 |   });
+   186 | });
+   187 | 
+
+── tests/authentication/xss-payload-in-login-username-field.spec.js
+   ISSUES: no expect() assertion
+   · locators: 0 semantic, 0 CSS-class, 0 fragile
+   · explicit timeouts
+   · 183 lines
+
+   SPEC:
+
+     1 | const { test, expect } = require('@playwright/test');
+     2 | const { assertTextPresent, dismissKnownPopups, readEnv, resolveLocator, evaluateSettled } = require('../support/replayir');
+     3 | 
+     4 | // QAAI Journey Export — test steps share browser state.
+     5 | // Run as a suite. Individual test.step blocks are not standalone tests.
+     6 | test.describe("XSS Payload in Login Username Field", () => {
+     7 |   test.describe.configure({ mode: 'serial', retries: 1 });
+     8 | 
+     9 |   test('full journey', async ({ page }) => {
+    10 |     // ─── XSS payload in username is not executed and no alert fires ──────
+    11 |     await test.step("XSS payload in username is not executed and no alert fires", async () => {
+    12 |       await page.goto("https://opensource-demo.orangehrmlive.com/web/index.php/auth/login");
+    13 |       const el1 = await resolveLocator(page, [
+    14 |     {
+    15 |       "strategy": "label",
+    16 |       "text": "Username"
+    17 |     },
+    18 |     {
+    19 |       "strategy": "role",
+    20 |       "role": "textbox",
+    21 |       "name": "Username"
+    22 |     },
+    23 |     {
+    24 |       "strategy": "placeholder",
+    25 |       "text": "Username"
+    26 |     },
+    27 |     {
+    28 |       "strategy": "text",
+    29 |       "text": "Username"
+    30 |     }
+    31 |   ], "Username");
+    32 |       await el1.fill("<script>alert('xss')</script>", { force: true });
+    33 |       const el2 = await resolveLocator(page, [
+    34 |     {
+    35 |       "strategy": "label",
+    36 |       "text": "Password",
+    37 |       "contextText": [
+    38 |         "Login"
+    39 |       ]
+    40 |     },
+    41 |     {
+    42 |       "strategy": "role",
+    43 |       "role": "textbox",
+    44 |       "name": "Password",
+    45 |       "contextText": [
+    46 |         "Login"
+    47 |       ]
+    48 |     },
+    49 |     {
+    50 |       "strategy": "placeholder",
+    51 |       "text": "Password",
+    52 |       "contextText": [
+    53 |         "Login"
+    54 |       ]
+    55 |     },
+    56 |     {
+    57 |       "strategy": "text",
+    58 |       "text": "Password",
+    59 |       "contextText": [
+    60 |         "Login"
+    61 |       ]
+    62 |     }
+    63 |   ], "Password");
+    64 |       await el2.fill(readEnv("QAAI_PASSWORD"), { force: true });
+    65 |       const el3 = await resolveLocator(page, [
+    66 |     {
+    67 |       "strategy": "role",
+    68 |       "role": "button",
+    69 |       "name": "Login",
+    70 |       "contextText": [
+    71 |         "Password"
+    72 |       ]
+    73 |     },
+    74 |     {
+    75 |       "strategy": "text",
+    76 |       "text": "Login",
+    77 |       "contextText": [
+    78 |         "Password"
+    79 |       ]
+    80 |     }
+    81 |   ], "Login");
+    82 |       await el3.click({ force: true });
+    83 |       await assertTextPresent(page, "Username", "ASN-adccbf65", 10000);
+    84 |       {
+    85 |         await page.waitForFunction(() => ((function(){ var scripts = document.querySelectorAll('script'); var injected = Array.from(scripts).some(s => s.textContent.toLowerCase().includes('alert') && !s.src); return !injected; })()), null, { timeout: 10000 }).catch((e) => {
+    86 |           throw new Error(`EVALUATE ASN-1c501bf0: expected "true" but condition never became truthy within 10000ms — ${e.message}`);
+    87 |         });
+    88 |         test.info().annotations.push({ type: 'evaluate-result', description: `ASN-1c501bf0: true (waitForFunction)` });
+    89 |       }
+    90 |       {
+    91 |         await page.waitForFunction(() => (Array.from(document.querySelectorAll('*')).every(el => !el.innerHTML.includes('<script>alert'))), null, { timeout: 10000 }).catch((e) => {
+    92 |           throw new Error(`EVALUATE ASN-b001368f: expected "true" but condition never became truthy within 10000ms — ${e.message}`);
+    93 |         });
+    94 |         test.info().annotations.push({ type: 'evaluate-result', description: `ASN-b001368f: true (waitForFunction)` });
+    95 |       }
+    96 |       await page.screenshot({ path: "test-results/xss-payload-in-username-is-not-executed-and-no-alert-fires.png", fullPage: true });
+    97 |     });
+    98 | 
+    99 |     // ─── XSS payload via img onerror attribute is not executed ───────────
+   100 |     await test.step("XSS payload via img onerror attribute is not executed", async () => {
+   101 |       await page.goto("https://opensource-demo.orangehrmlive.com/web/index.php/auth/login");
+   102 |       const el1 = await resolveLocator(page, [
+   103 |     {
+   104 |       "strategy": "label",
+   105 |       "text": "Username"
+   106 |     },
+   107 |     {
+   108 |       "strategy": "role",
+   109 |       "role": "textbox",
+   110 |       "name": "Username"
+   111 |     },
+   112 |     {
+   113 |       "strategy": "placeholder",
+   114 |       "text": "Username"
+   115 |     },
+   116 |     {
+   117 |       "strategy": "text",
+   118 |       "text": "Username"
+   119 |     }
+   120 |   ], "Username");
+   121 |       await el1.fill("<img src=x onerror=alert(1)>", { force: true });
+   122 |       const el2 = await resolveLocator(page, [
+   123 |     {
+   124 |       "strategy": "label",
+   125 |       "text": "Password",
+   126 |       "contextText": [
+   127 |         "Login"
+   128 |       ]
+   129 |     },
+   130 |     {
+   131 |       "strategy": "role",
+   132 |       "role": "textbox",
+   133 |       "name": "Password",
+   134 |       "contextText": [
+   135 |         "Login"
+   136 |       ]
+   137 |     },
+   138 |     {
+   139 |       "strategy": "placeholder",
+   140 |       "text": "Password",
+   141 |       "contextText": [
+   142 |         "Login"
+   143 |       ]
+   144 |     },
+   145 |     {
+   146 |       "strategy": "text",
+   147 |       "text": "Password",
+   148 |       "contextText": [
+   149 |         "Login"
+   150 |       ]
+   151 |     }
+   152 |   ], "Password");
+   153 |       await el2.fill(readEnv("QAAI_PASSWORD"), { force: true });
+   154 |       const el3 = await resolveLocator(page, [
+   155 |     {
+   156 |       "strategy": "role",
+   157 |       "role": "button",
+   158 |       "name": "Login",
+   159 |       "contextText": [
+   160 |         "Password"
+   161 |       ]
+   162 |     },
+   163 |     {
+   164 |       "strategy": "text",
+   165 |       "text": "Login",
+   166 |       "contextText": [
+   167 |         "Password"
+   168 |       ]
+   169 |     }
+   170 |   ], "Login");
+   171 |       await el3.click({ force: true });
+   172 |       await assertTextPresent(page, "Username", "ASN-fc773f04", 10000);
+   173 |       {
+   174 |         await page.waitForFunction(() => ((function(){ var imgs = Array.from(document.querySelectorAll('img')).filter(img => img.getAttribute('onerror') && img.getAttribute('onerror').includes('alert')); return imgs.length === 0; })()), null, { timeout: 10000 }).catch((e) => {
+   175 |           throw new Error(`EVALUATE ASN-056880ce: expected "true" but condition never became truthy within 10000ms — ${e.message}`);
+   176 |         });
+   177 |         test.info().annotations.push({ type: 'evaluate-result', description: `ASN-056880ce: true (waitForFunction)` });
+   178 |       }
+   179 |       await page.screenshot({ path: "test-results/xss-payload-via-img-onerror-attribute-is-not-executed.png", fullPage: true });
+   180 |     });
+   181 |   });
+   182 | });
+   183 | 
+
+── tests/authentication/admin-navigation-and-role-based-menu-visibility.spec.js
+   CLEAN
+   · locators: 0 semantic, 0 CSS-class, 0 fragile
+   · 93 lines
+
+   SPEC:
+
+     1 | const { test, expect } = require('@playwright/test');
+     2 | const { assertTextPresent, dismissKnownPopups, readEnv, resolveLocator, evaluateSettled } = require('../support/replayir');
+     3 | 
+     4 | // QAAI Journey Export — test steps share browser state.
+     5 | // Run as a suite. Individual test.step blocks are not standalone tests.
+     6 | test.describe("Admin Navigation and Role-Based Menu Visibility", () => {
+     7 |   test.describe.configure({ mode: 'serial', retries: 1 });
+     8 | 
+     9 |   test('full journey', async ({ page }) => {
+    10 |     // ─── Admin login reveals full module navigation including Admin and PIM 
+    11 |     await test.step("Admin login reveals full module navigation including Admin and PIM", async () => {
+    12 |       await page.goto("https://opensource-demo.orangehrmlive.com/web/index.php/auth/login");
+    13 |       const el1 = await resolveLocator(page, [
+    14 |     {
+    15 |       "strategy": "label",
+    16 |       "text": "Username"
+    17 |     },
+    18 |     {
+    19 |       "strategy": "role",
+    20 |       "role": "textbox",
+    21 |       "name": "Username"
+    22 |     },
+    23 |     {
+    24 |       "strategy": "placeholder",
+    25 |       "text": "Username"
+    26 |     },
+    27 |     {
+    28 |       "strategy": "text",
+    29 |       "text": "Username"
+    30 |     }
+    31 |   ], "Username");
+    32 |       await el1.fill(readEnv("QAAI_USERNAME"), { force: true });
+    33 |       const el2 = await resolveLocator(page, [
+    34 |     {
+    35 |       "strategy": "label",
+    36 |       "text": "Password",
+    37 |       "contextText": [
+    38 |         "Login"
+    39 |       ]
+    40 |     },
+    41 |     {
+    42 |       "strategy": "role",
+    43 |       "role": "textbox",
+    44 |       "name": "Password",
+    45 |       "contextText": [
+    46 |         "Login"
+    47 |       ]
+    48 |     },
+    49 |     {
+    50 |       "strategy": "placeholder",
+    51 |       "text": "Password",
+    52 |       "contextText": [
+    53 |         "Login"
+    54 |       ]
+    55 |     },
+    56 |     {
+    57 |       "strategy": "text",
+    58 |       "text": "Password",
+    59 |       "contextText": [
+    60 |         "Login"
+    61 |       ]
+    62 |     }
+    63 |   ], "Password");
+    64 |       await el2.fill(readEnv("QAAI_PASSWORD"), { force: true });
+    65 |       const el3 = await resolveLocator(page, [
+    66 |     {
+    67 |       "strategy": "role",
+    68 |       "role": "button",
+    69 |       "name": "Login",
+    70 |       "contextText": [
+    71 |         "Password"
+    72 |       ]
+    73 |     },
+    74 |     {
+    75 |       "strategy": "text",
+    76 |       "text": "Login",
+    77 |       "contextText": [
+    78 |         "Password"
+    79 |       ]
+    80 |     }
+    81 |   ], "Login");
+    82 |       await el3.click({ force: true });
+    83 |       {
+    84 |         const _evalResult = String(await evaluateSettled(page, () => ((function(){ var links = Array.from(document.querySelectorAll('a, [role="menuitem"]')).map(el => el.textContent.trim()); return ['Admin','PIM','Leave','Time','Recruitment'].every(m => links.includes(m)) ? 'all_visible' : 'missing_modules'; })())).catch((e) => `EVALUATE_ERROR:${e.message}`));
+    85 |         test.info().annotations.push({ type: 'evaluate-result', description: `ASN-ff0d4613: ${_evalResult}` });
+    86 |         expect(_evalResult, "EVALUATE ASN-ff0d4613: expected \"all_visible\"").toContain("all_visible");
+    87 |       }
+    88 |       await assertTextPresent(page, "Admin", "ASN-abac6eb4", 10000);
+    89 |       await page.screenshot({ path: "test-results/admin-login-reveals-full-module-navigation-including-admin-and-pim.png", fullPage: true });
+    90 |     });
+    91 |   });
+    92 | });
+    93 | 
+
+── tests/authentication/password-field-masking.spec.js
+   CLEAN
+   · locators: 0 semantic, 0 CSS-class, 0 fragile
+   · 118 lines
+
+   SPEC:
+
+     1 | const { test, expect } = require('@playwright/test');
+     2 | const { assertTextPresent, dismissKnownPopups, readEnv, resolveLocator, evaluateSettled } = require('../support/replayir');
+     3 | 
+     4 | // QAAI Journey Export — test steps share browser state.
+     5 | // Run as a suite. Individual test.step blocks are not standalone tests.
+     6 | test.describe("Password Field Masking", () => {
+     7 |   test.describe.configure({ mode: 'serial', retries: 1 });
+     8 | 
+     9 |   test('full journey', async ({ page }) => {
+    10 |     // ─── Password field masking is consistent after clear and re-entry ───
+    11 |     await test.step("Password field masking is consistent after clear and re-entry", async () => {
+    12 |       await page.goto("https://opensource-demo.orangehrmlive.com/web/index.php/auth/login");
+    13 |       const el1 = await resolveLocator(page, [
+    14 |     {
+    15 |       "strategy": "role",
+    16 |       "role": "textbox",
+    17 |       "name": "Password",
+    18 |       "contextText": [
+    19 |         "Login"
+    20 |       ]
+    21 |     },
+    22 |     {
+    23 |       "strategy": "placeholder",
+    24 |       "text": "Password",
+    25 |       "contextText": [
+    26 |         "Login"
+    27 |       ]
+    28 |     },
+    29 |     {
+    30 |       "strategy": "label",
+    31 |       "text": "Password",
+    32 |       "contextText": [
+    33 |         "Login"
+    34 |       ]
+    35 |     },
+    36 |     {
+    37 |       "strategy": "text",
+    38 |       "text": "Password",
+    39 |       "contextText": [
+    40 |         "Login"
+    41 |       ]
+    42 |     }
+    43 |   ], "Password");
+    44 |       await el1.click({ force: true });
+    45 |       const el2 = await resolveLocator(page, [
+    46 |     {
+    47 |       "strategy": "role",
+    48 |       "role": "textbox",
+    49 |       "name": "Password",
+    50 |       "contextText": [
+    51 |         "Login"
+    52 |       ]
+    53 |     },
+    54 |     {
+    55 |       "strategy": "placeholder",
+    56 |       "text": "Password",
+    57 |       "contextText": [
+    58 |         "Login"
+    59 |       ]
+    60 |     },
+    61 |     {
+    62 |       "strategy": "label",
+    63 |       "text": "Password",
+    64 |       "contextText": [
+    65 |         "Login"
+    66 |       ]
+    67 |     },
+    68 |     {
+    69 |       "strategy": "text",
+    70 |       "text": "Password",
+    71 |       "contextText": [
+    72 |         "Login"
+    73 |       ]
+    74 |     }
+    75 |   ], "Password");
+    76 |       await el2.fill(readEnv("QAAI_PASSWORD"), { force: true });
+    77 |       const el3 = await resolveLocator(page, [
+    78 |     {
+    79 |       "strategy": "role",
+    80 |       "role": "textbox",
+    81 |       "name": "Password",
+    82 |       "contextText": [
+    83 |         "Login"
+    84 |       ]
+    85 |     },
+    86 |     {
+    87 |       "strategy": "placeholder",
+    88 |       "text": "Password",
+    89 |       "contextText": [
+    90 |         "Login"
+    91 |       ]
+    92 |     },
+    93 |     {
+    94 |       "strategy": "label",
+    95 |       "text": "Password",
+    96 |       "contextText": [
+    97 |         "Login"
+    98 |       ]
+    99 |     },
+   100 |     {
+   101 |       "strategy": "text",
+   102 |       "text": "Password",
+   103 |       "contextText": [
+   104 |         "Login"
+   105 |       ]
+   106 |     }
+   107 |   ], "Password");
+   108 |       await el3.fill(readEnv("QAAI_PASSWORD"), { force: true });
+   109 |       {
+   110 |         const _evalResult = String(await evaluateSettled(page, () => (document.querySelector('input[name="password"], input[type="password"]')?.getAttribute('type') || 'not_found')).catch((e) => `EVALUATE_ERROR:${e.message}`));
+   111 |         test.info().annotations.push({ type: 'evaluate-result', description: `ASN-e661779d: ${_evalResult}` });
+   112 |         expect(_evalResult, "EVALUATE ASN-e661779d: expected \"password\"").toContain("password");
+   113 |       }
+   114 |       await page.screenshot({ path: "test-results/password-field-masking-is-consistent-after-clear-and-re-entry.png", fullPage: true });
+   115 |     });
+   116 |   });
+   117 | });
+   118 | 
+
+── tests/authentication/account-lockout-after-repeated-failed-attempts.spec.js
+   CLEAN
+   · locators: 0 semantic, 0 CSS-class, 0 fragile
+   · qaai-uncheckable annotations: 1
+   · 356 lines
+
+   SPEC:
+
+     1 | const { test, expect } = require('@playwright/test');
+     2 | const { assertTextPresent, dismissKnownPopups, readEnv, resolveLocator, evaluateSettled } = require('../support/replayir');
+     3 | 
+     4 | // QAAI Journey Export — test steps share browser state.
+     5 | // Run as a suite. Individual test.step blocks are not standalone tests.
+     6 | test.describe("Account Lockout After Repeated Failed Attempts", () => {
+     7 |   test.describe.configure({ mode: 'serial', retries: 1 });
+     8 | 
+     9 |   test('full journey', async ({ page }) => {
+    10 |     // ─── Five consecutive failed login attempts show 'Invalid credentials' and no account lockout on this demo instance 
+    11 |     await test.step("Five consecutive failed login attempts show 'Invalid credentials' and no account lockout on this demo instance", async () => {
+    12 |       await page.goto("https://opensource-demo.orangehrmlive.com/web/index.php/auth/login");
+    13 |       const el1 = await resolveLocator(page, [
+    14 |     {
+    15 |       "strategy": "label",
+    16 |       "text": "Username"
+    17 |     },
+    18 |     {
+    19 |       "strategy": "role",
+    20 |       "role": "textbox",
+    21 |       "name": "Username"
+    22 |     },
+    23 |     {
+    24 |       "strategy": "placeholder",
+    25 |       "text": "Username"
+    26 |     },
+    27 |     {
+    28 |       "strategy": "text",
+    29 |       "text": "Username"
+    30 |     }
+    31 |   ], "Username");
+    32 |       await el1.fill(readEnv("QAAI_USERNAME"), { force: true });
+    33 |       const el2 = await resolveLocator(page, [
+    34 |     {
+    35 |       "strategy": "label",
+    36 |       "text": "Password",
+    37 |       "contextText": [
+    38 |         "Login"
+    39 |       ]
+    40 |     },
+    41 |     {
+    42 |       "strategy": "role",
+    43 |       "role": "textbox",
+    44 |       "name": "Password",
+    45 |       "contextText": [
+    46 |         "Login"
+    47 |       ]
+    48 |     },
+    49 |     {
+    50 |       "strategy": "placeholder",
+    51 |       "text": "Password",
+    52 |       "contextText": [
+    53 |         "Login"
+    54 |       ]
+    55 |     },
+    56 |     {
+    57 |       "strategy": "text",
+    58 |       "text": "Password",
+    59 |       "contextText": [
+    60 |         "Login"
+    61 |       ]
+    62 |     }
+    63 |   ], "Password");
+    64 |       await el2.fill(readEnv("QAAI_PASSWORD"), { force: true });
+    65 |       const el3 = await resolveLocator(page, [
+    66 |     {
+    67 |       "strategy": "role",
+    68 |       "role": "button",
+    69 |       "name": "Login",
+    70 |       "contextText": [
+    71 |         "Password"
+    72 |       ]
+    73 |     },
+    74 |     {
+    75 |       "strategy": "text",
+    76 |       "text": "Login",
+    77 |       "contextText": [
+    78 |         "Password"
+    79 |       ]
+    80 |     }
+    81 |   ], "Login");
+    82 |       await el3.click({ force: true });
+    83 |       const el4 = await resolveLocator(page, [
+    84 |     {
+    85 |       "strategy": "label",
+    86 |       "text": "Username"
+    87 |     },
+    88 |     {
+    89 |       "strategy": "role",
+    90 |       "role": "textbox",
+    91 |       "name": "Username"
+    92 |     },
+    93 |     {
+    94 |       "strategy": "placeholder",
+    95 |       "text": "Username"
+    96 |     },
+    97 |     {
+    98 |       "strategy": "text",
+    99 |       "text": "Username"
+   100 |     }
+   101 |   ], "Username");
+   102 |       await el4.fill(readEnv("QAAI_USERNAME"), { force: true });
+   103 |       const el5 = await resolveLocator(page, [
+   104 |     {
+   105 |       "strategy": "label",
+   106 |       "text": "Password",
+   107 |       "contextText": [
+   108 |         "Login"
+   109 |       ]
+   110 |     },
+   111 |     {
+   112 |       "strategy": "role",
+   113 |       "role": "textbox",
+   114 |       "name": "Password",
+   115 |       "contextText": [
+   116 |         "Login"
+   117 |       ]
+   118 |     },
+   119 |     {
+   120 |       "strategy": "placeholder",
+   121 |       "text": "Password",
+   122 |       "contextText": [
+   123 |         "Login"
+   124 |       ]
+   125 |     },
+   126 |     {
+   127 |       "strategy": "text",
+   128 |       "text": "Password",
+   129 |       "contextText": [
+   130 |         "Login"
+   131 |       ]
+   132 |     }
+   133 |   ], "Password");
+   134 |       await el5.fill(readEnv("QAAI_PASSWORD"), { force: true });
+   135 |       const el6 = await resolveLocator(page, [
+   136 |     {
+   137 |       "strategy": "role",
+   138 |       "role": "button",
+   139 |       "name": "Login",
+   140 |       "contextText": [
+   141 |         "Password"
+   142 |       ]
+   143 |     },
+   144 |     {
+   145 |       "strategy": "text",
+   146 |       "text": "Login",
+   147 |       "contextText": [
+   148 |         "Password"
+   149 |       ]
+   150 |     }
+   151 |   ], "Login");
+   152 |       await el6.click({ force: true });
+   153 |       const el7 = await resolveLocator(page, [
+   154 |     {
+   155 |       "strategy": "label",
+   156 |       "text": "Username"
+   157 |     },
+   158 |     {
+   159 |       "strategy": "role",
+   160 |       "role": "textbox",
+   161 |       "name": "Username"
+   162 |     },
+   163 |     {
+   164 |       "strategy": "placeholder",
+   165 |       "text": "Username"
+   166 |     },
+   167 |     {
+   168 |       "strategy": "text",
+   169 |       "text": "Username"
+   170 |     }
+   171 |   ], "Username");
+   172 |       await el7.fill(readEnv("QAAI_USERNAME"), { force: true });
+   173 |       const el8 = await resolveLocator(page, [
+   174 |     {
+   175 |       "strategy": "label",
+   176 |       "text": "Password",
+   177 |       "contextText": [
+   178 |         "Login"
+   179 |       ]
+   180 |     },
+   181 |     {
+   182 |       "strategy": "role",
+   183 |       "role": "textbox",
+   184 |       "name": "Password",
+   185 |       "contextText": [
+   186 |         "Login"
+   187 |       ]
+   188 |     },
+   189 |     {
+   190 |       "strategy": "placeholder",
+   191 |       "text": "Password",
+   192 |       "contextText": [
+   193 |         "Login"
+   194 |       ]
+   195 |     },
+   196 |     {
+   197 |       "strategy": "text",
+   198 |       "text": "Password",
+   199 |       "contextText": [
+   200 |         "Login"
+   201 |       ]
+   202 |     }
+   203 |   ], "Password");
+   204 |       await el8.fill(readEnv("QAAI_PASSWORD"), { force: true });
+   205 |       const el9 = await resolveLocator(page, [
+   206 |     {
+   207 |       "strategy": "role",
+   208 |       "role": "button",
+   209 |       "name": "Login",
+   210 |       "contextText": [
+   211 |         "Password"
+   212 |       ]
+   213 |     },
+   214 |     {
+   215 |       "strategy": "text",
+   216 |       "text": "Login",
+   217 |       "contextText": [
+   218 |         "Password"
+   219 |       ]
+   220 |     }
+   221 |   ], "Login");
+   222 |       await el9.click({ force: true });
+   223 |       const el10 = await resolveLocator(page, [
+   224 |     {
+   225 |       "strategy": "label",
+   226 |       "text": "Username"
+   227 |     },
+   228 |     {
+   229 |       "strategy": "role",
+   230 |       "role": "textbox",
+   231 |       "name": "Username"
+   232 |     },
+   233 |     {
+   234 |       "strategy": "placeholder",
+   235 |       "text": "Username"
+   236 |     },
+   237 |     {
+   238 |       "strategy": "text",
+   239 |       "text": "Username"
+   240 |     }
+   241 |   ], "Username");
+   242 |       await el10.fill(readEnv("QAAI_USERNAME"), { force: true });
+   243 |       const el11 = await resolveLocator(page, [
+   244 |     {
+   245 |       "strategy": "label",
+   246 |       "text": "Password",
+   247 |       "contextText": [
+   248 |         "Login"
+   249 |       ]
+   250 |     },
+   251 |     {
+   252 |       "strategy": "role",
+   253 |       "role": "textbox",
+   254 |       "name": "Password",
+   255 |       "contextText": [
+   256 |         "Login"
+   257 |       ]
+   258 |     },
+   259 |     {
+   260 |       "strategy": "placeholder",
+   261 |       "text": "Password",
+   262 |       "contextText": [
+   263 |         "Login"
+   264 |       ]
+   265 |     },
+   266 |     {
+   267 |       "strategy": "text",
+   268 |       "text": "Password",
+   269 |       "contextText": [
+   270 |         "Login"
+   271 |       ]
+   272 |     }
+   273 |   ], "Password");
+   274 |       await el11.fill(readEnv("QAAI_PASSWORD"), { force: true });
+   275 |       await page.goto("https://opensource-demo.orangehrmlive.com/web/index.php/auth/login");
+   276 |       const el12 = await resolveLocator(page, [
+   277 |     {
+   278 |       "strategy": "label",
+   279 |       "text": "Username"
+   280 |     },
+   281 |     {
+   282 |       "strategy": "role",
+   283 |       "role": "textbox",
+   284 |       "name": "Username"
+   285 |     },
+   286 |     {
+   287 |       "strategy": "placeholder",
+   288 |       "text": "Username"
+   289 |     },
+   290 |     {
+   291 |       "strategy": "text",
+   292 |       "text": "Username"
+   293 |     }
+   294 |   ], "Username");
+   295 |       await el12.fill(readEnv("QAAI_USERNAME"), { force: true });
+   296 |       const el13 = await resolveLocator(page, [
+   297 |     {
+   298 |       "strategy": "label",
+   299 |       "text": "Password",
+   300 |       "contextText": [
+   301 |         "Login"
+   302 |       ]
+   303 |     },
+   304 |     {
+   305 |       "strategy": "role",
+   306 |       "role": "textbox",
+   307 |       "name": "Password",
+   308 |       "contextText": [
+   309 |         "Login"
+   310 |       ]
+   311 |     },
+   312 |     {
+   313 |       "strategy": "placeholder",
+   314 |       "text": "Password",
+   315 |       "contextText": [
+   316 |         "Login"
+   317 |       ]
+   318 |     },
+   319 |     {
+   320 |       "strategy": "text",
+   321 |       "text": "Password",
+   322 |       "contextText": [
+   323 |         "Login"
+   324 |       ]
+   325 |     }
+   326 |   ], "Password");
+   327 |       await el13.fill(readEnv("QAAI_PASSWORD"), { force: true });
+   328 |       const el14 = await resolveLocator(page, [
+   329 |     {
+   330 |       "strategy": "role",
+   331 |       "role": "button",
+   332 |       "name": "Login",
+   333 |       "contextText": [
+   334 |         "Password"
+   335 |       ]
+   336 |     },
+   337 |     {
+   338 |       "strategy": "text",
+   339 |       "text": "Login",
+   340 |       "contextText": [
+   341 |         "Password"
+   342 |       ]
+   343 |     }
+   344 |   ], "Login");
+   345 |       await el14.click({ force: true });
+   346 |       {
+   347 |         const _evalResult = String(await evaluateSettled(page, () => ((function(){ var body = document.body.textContent; var locked = body.includes('Account is locked') || body.includes('locked'); var onLoginPage = !!document.querySelector('input[name="username"]'); return (locked || onLoginPage) ? 'policy_compliant' : 'crashed_or_undefined'; })())).catch((e) => `EVALUATE_ERROR:${e.message}`));
+   348 |         test.info().annotations.push({ type: 'evaluate-result', description: `ASN-49598d2c: ${_evalResult}` });
+   349 |         expect(_evalResult, "EVALUATE ASN-49598d2c: expected \"policy_compliant\"").toContain("policy_compliant");
+   350 |       }
+   351 |       test.info().annotations.push({ type: 'qaai-uncheckable', description: "EVALUATE ASN-4e4f3f2b: uncheckable in live run - not asserted (export will not invent a gate the live run never resolved)." });
+   352 |       await page.screenshot({ path: "test-results/five-consecutive-failed-login-attempts-show-invalid-credentials-and-no-account-l.png", fullPage: true });
+   353 |     });
+   354 |   });
+   355 | });
+   356 | 
+
+── tests/authentication/login-form-security-no-sensitive-information-exposure.spec.js
+   ISSUES: no expect() assertion
+   · locators: 0 semantic, 0 CSS-class, 0 fragile
+   · explicit timeouts
+   · 105 lines
+
+   SPEC:
+
+     1 | const { test, expect } = require('@playwright/test');
+     2 | const { assertTextPresent, dismissKnownPopups, readEnv, resolveLocator, evaluateSettled } = require('../support/replayir');
+     3 | 
+     4 | // QAAI Journey Export — test steps share browser state.
+     5 | // Run as a suite. Individual test.step blocks are not standalone tests.
+     6 | test.describe("Login Form Security — No Sensitive Information Exposure", () => {
+     7 |   test.describe.configure({ mode: 'serial', retries: 1 });
+     8 | 
+     9 |   test('full journey', async ({ page }) => {
+    10 |     // ─── Login form does not display password hints or username suggestions 
+    11 |     await test.step("Login form does not display password hints or username suggestions", async () => {
+    12 |       await page.goto("https://opensource-demo.orangehrmlive.com/web/index.php/auth/login");
+    13 |       {
+    14 |         await page.waitForFunction(() => ((function(){ var hints = Array.from(document.querySelectorAll('[placeholder], .password-hint, .username-hint, [data-hint]')).map(el => el.getAttribute('placeholder') || el.textContent).join(' ').toLowerCase(); return !hints.includes('your password is') && !hints.includes('hint:') && !hints.includes('default password'); })()), null, { timeout: 10000 }).catch((e) => {
+    15 |           throw new Error(`EVALUATE ASN-20a68191: expected "true" but condition never became truthy within 10000ms — ${e.message}`);
+    16 |         });
+    17 |         test.info().annotations.push({ type: 'evaluate-result', description: `ASN-20a68191: true (waitForFunction)` });
+    18 |       }
+    19 |       await page.screenshot({ path: "test-results/login-form-does-not-display-password-hints-or-username-suggestions.png", fullPage: true });
+    20 |     });
+    21 | 
+    22 |     // ─── Error messages after failed login are user-friendly and contain no stack trace 
+    23 |     await test.step("Error messages after failed login are user-friendly and contain no stack trace", async () => {
+    24 |       await page.goto("https://opensource-demo.orangehrmlive.com/web/index.php/auth/login");
+    25 |       const el1 = await resolveLocator(page, [
+    26 |     {
+    27 |       "strategy": "label",
+    28 |       "text": "Username"
+    29 |     },
+    30 |     {
+    31 |       "strategy": "role",
+    32 |       "role": "textbox",
+    33 |       "name": "Username"
+    34 |     },
+    35 |     {
+    36 |       "strategy": "placeholder",
+    37 |       "text": "Username"
+    38 |     },
+    39 |     {
+    40 |       "strategy": "text",
+    41 |       "text": "Username"
+    42 |     }
+    43 |   ], "Username");
+    44 |       await el1.fill(readEnv("QAAI_USERNAME"), { force: true });
+    45 |       const el2 = await resolveLocator(page, [
+    46 |     {
+    47 |       "strategy": "label",
+    48 |       "text": "Password",
+    49 |       "contextText": [
+    50 |         "Login"
+    51 |       ]
+    52 |     },
+    53 |     {
+    54 |       "strategy": "role",
+    55 |       "role": "textbox",
+    56 |       "name": "Password",
+    57 |       "contextText": [
+    58 |         "Login"
+    59 |       ]
+    60 |     },
+    61 |     {
+    62 |       "strategy": "placeholder",
+    63 |       "text": "Password",
+    64 |       "contextText": [
+    65 |         "Login"
+    66 |       ]
+    67 |     },
+    68 |     {
+    69 |       "strategy": "text",
+    70 |       "text": "Password",
+    71 |       "contextText": [
+    72 |         "Login"
+    73 |       ]
+    74 |     }
+    75 |   ], "Password");
+    76 |       await el2.fill(readEnv("QAAI_PASSWORD"), { force: true });
+    77 |       const el3 = await resolveLocator(page, [
+    78 |     {
+    79 |       "strategy": "role",
+    80 |       "role": "button",
+    81 |       "name": "Login",
+    82 |       "contextText": [
+    83 |         "Password"
+    84 |       ]
+    85 |     },
+    86 |     {
+    87 |       "strategy": "text",
+    88 |       "text": "Login",
+    89 |       "contextText": [
+    90 |         "Password"
+    91 |       ]
+    92 |     }
+    93 |   ], "Login");
+    94 |       await el3.click({ force: true });
+    95 |       {
+    96 |         await page.waitForFunction(() => ((function(){ var body = document.body.textContent; return !body.includes('Traceback') && !body.includes('Exception in') && !body.includes('at line') && !body.includes('stack:') && !body.includes('PDOException'); })()), null, { timeout: 10000 }).catch((e) => {
+    97 |           throw new Error(`EVALUATE ASN-41ec3bbc: expected "true" but condition never became truthy within 10000ms — ${e.message}`);
+    98 |         });
+    99 |         test.info().annotations.push({ type: 'evaluate-result', description: `ASN-41ec3bbc: true (waitForFunction)` });
+   100 |       }
+   101 |       await page.screenshot({ path: "test-results/error-messages-after-failed-login-are-user-friendly-and-contain-no-stack-trace.png", fullPage: true });
+   102 |     });
+   103 |   });
+   104 | });
+   105 | 
+
+── tests/authentication/admin-session-persistence-across-page-navigations.spec.js
+   ISSUES: no expect() assertion
+   · locators: 0 semantic, 0 CSS-class, 0 fragile
+   · 112 lines
+
+   SPEC:
+
+     1 | const { test, expect } = require('@playwright/test');
+     2 | const { assertTextPresent, dismissKnownPopups, readEnv, resolveLocator, evaluateSettled } = require('../support/replayir');
+     3 | 
+     4 | // QAAI Journey Export — test steps share browser state.
+     5 | // Run as a suite. Individual test.step blocks are not standalone tests.
+     6 | test.describe("Admin Session Persistence Across Page Navigations", () => {
+     7 |   test.describe.configure({ mode: 'serial', retries: 1 });
+     8 | 
+     9 |   test('full journey', async ({ page }) => {
+    10 |     // ─── Admin session persists across navigation to PIM and back to dashboard 
+    11 |     await test.step("Admin session persists across navigation to PIM and back to dashboard", async () => {
+    12 |       await page.goto("https://opensource-demo.orangehrmlive.com/web/index.php/auth/login");
+    13 |       const el1 = await resolveLocator(page, [
+    14 |     {
+    15 |       "strategy": "label",
+    16 |       "text": "Username"
+    17 |     },
+    18 |     {
+    19 |       "strategy": "role",
+    20 |       "role": "textbox",
+    21 |       "name": "Username"
+    22 |     },
+    23 |     {
+    24 |       "strategy": "placeholder",
+    25 |       "text": "Username"
+    26 |     },
+    27 |     {
+    28 |       "strategy": "text",
+    29 |       "text": "Username"
+    30 |     }
+    31 |   ], "Username");
+    32 |       await el1.fill(readEnv("QAAI_USERNAME"), { force: true });
+    33 |       const el2 = await resolveLocator(page, [
+    34 |     {
+    35 |       "strategy": "label",
+    36 |       "text": "Password",
+    37 |       "contextText": [
+    38 |         "Login"
+    39 |       ]
+    40 |     },
+    41 |     {
+    42 |       "strategy": "role",
+    43 |       "role": "textbox",
+    44 |       "name": "Password",
+    45 |       "contextText": [
+    46 |         "Login"
+    47 |       ]
+    48 |     },
+    49 |     {
+    50 |       "strategy": "placeholder",
+    51 |       "text": "Password",
+    52 |       "contextText": [
+    53 |         "Login"
+    54 |       ]
+    55 |     },
+    56 |     {
+    57 |       "strategy": "text",
+    58 |       "text": "Password",
+    59 |       "contextText": [
+    60 |         "Login"
+    61 |       ]
+    62 |     }
+    63 |   ], "Password");
+    64 |       await el2.fill(readEnv("QAAI_PASSWORD"), { force: true });
+    65 |       const el3 = await resolveLocator(page, [
+    66 |     {
+    67 |       "strategy": "role",
+    68 |       "role": "button",
+    69 |       "name": "Login",
+    70 |       "contextText": [
+    71 |         "Password"
+    72 |       ]
+    73 |     },
+    74 |     {
+    75 |       "strategy": "text",
+    76 |       "text": "Login",
+    77 |       "contextText": [
+    78 |         "Password"
+    79 |       ]
+    80 |     }
+    81 |   ], "Login");
+    82 |       await el3.click({ force: true });
+    83 |       const el4 = await resolveLocator(page, [
+    84 |     {
+    85 |       "strategy": "role",
+    86 |       "role": "link",
+    87 |       "name": "PIM"
+    88 |     },
+    89 |     {
+    90 |       "strategy": "text",
+    91 |       "text": "PIM nav"
+    92 |     }
+    93 |   ], "PIM");
+    94 |       await el4.click({ force: true });
+    95 |       const el5 = await resolveLocator(page, [
+    96 |     {
+    97 |       "strategy": "role",
+    98 |       "role": "link",
+    99 |       "name": "Dashboard"
+   100 |     },
+   101 |     {
+   102 |       "strategy": "text",
+   103 |       "text": "Dashboard nav"
+   104 |     }
+   105 |   ], "Dashboard");
+   106 |       await el5.click({ force: true });
+   107 |       await assertTextPresent(page, "Dashboard", "ASN-55f11a42", 10000);
+   108 |       await page.screenshot({ path: "test-results/admin-session-persists-across-navigation-to-pim-and-back-to-dashboard.png", fullPage: true });
+   109 |     });
+   110 |   });
+   111 | });
+   112 | 
+
+── tests/authentication/credential-injection-from-authprofiles-without-hardcoding.spec.js
+   ISSUES: no expect() assertion
+   · locators: 2 semantic, 0 CSS-class, 0 fragile
+   · 200 lines
+
+   SPEC:
+
+     1 | const { test, expect } = require('@playwright/test');
+     2 | const { assertTextPresent, dismissKnownPopups, readEnv, resolveLocator, evaluateSettled } = require('../support/replayir');
+     3 | 
+     4 | // QAAI Journey Export — test steps share browser state.
+     5 | // Run as a suite. Individual test.step blocks are not standalone tests.
+     6 | test.describe("Credential Injection from AuthProfiles Without Hardcoding", () => {
+     7 |   test.describe.configure({ mode: 'serial', retries: 1 });
+     8 | 
+     9 |   test('full journey', async ({ page }) => {
+    10 |     // ─── Login using ESS credentials (ess_user_01 / TestUser@123) after creating the account via Admin 
+    11 |     await test.step("Login using ESS credentials (ess_user_01 / TestUser@123) after creating the account via Admin", async () => {
+    12 |       await page.goto("https://opensource-demo.orangehrmlive.com/web/index.php/auth/login");
+    13 |       await assertTextPresent(page, "Dashboard", "ASN-ede179c4", 10000);
+    14 |       await page.screenshot({ path: "test-results/login-using-ess-credentials-ess-user-01-testuser-123-after-creating-the-account.png", fullPage: true });
+    15 |     });
+    16 | 
+    17 |     // ─── Login using ESS credentials (ess_user_01 / TestUser@123) after creating the account via Admin 
+    18 |     await test.step("Login using ESS credentials (ess_user_01 / TestUser@123) after creating the account via Admin", async () => {
+    19 |       await page.goto("https://opensource-demo.orangehrmlive.com/web/index.php/auth/login");
+    20 |       const el1 = await resolveLocator(page, [
+    21 |     {
+    22 |       "strategy": "label",
+    23 |       "text": "Username"
+    24 |     },
+    25 |     {
+    26 |       "strategy": "role",
+    27 |       "role": "textbox",
+    28 |       "name": "Username"
+    29 |     },
+    30 |     {
+    31 |       "strategy": "placeholder",
+    32 |       "text": "Username"
+    33 |     },
+    34 |     {
+    35 |       "strategy": "text",
+    36 |       "text": "Username"
+    37 |     }
+    38 |   ], "Username");
+    39 |       await el1.fill(readData(row, "username"), { force: true });
+    40 |       const el2 = await resolveLocator(page, [
+    41 |     {
+    42 |       "strategy": "label",
+    43 |       "text": "Password",
+    44 |       "contextText": [
+    45 |         "Login"
+    46 |       ]
+    47 |     },
+    48 |     {
+    49 |       "strategy": "role",
+    50 |       "role": "textbox",
+    51 |       "name": "Password",
+    52 |       "contextText": [
+    53 |         "Login"
+    54 |       ]
+    55 |     },
+    56 |     {
+    57 |       "strategy": "placeholder",
+    58 |       "text": "Password",
+    59 |       "contextText": [
+    60 |         "Login"
+    61 |       ]
+    62 |     },
+    63 |     {
+    64 |       "strategy": "text",
+    65 |       "text": "Password",
+    66 |       "contextText": [
+    67 |         "Login"
+    68 |       ]
+    69 |     }
+    70 |   ], "Password");
+    71 |       await el2.fill(readData(row, "password"), { force: true });
+    72 |       const el3 = await resolveLocator(page, [
+    73 |     {
+    74 |       "strategy": "role",
+    75 |       "role": "button",
+    76 |       "name": "Login",
+    77 |       "contextText": [
+    78 |         "Password"
+    79 |       ]
+    80 |     },
+    81 |     {
+    82 |       "strategy": "text",
+    83 |       "text": "Login",
+    84 |       "contextText": [
+    85 |         "Password"
+    86 |       ]
+    87 |     }
+    88 |   ], "Login");
+    89 |       await el3.click({ force: true });
+    90 |       const el4 = page.getByText("Profile user menu trigger", { exact: true });
+    91 |       await el4.click({ force: true });
+    92 |       const el5 = await resolveLocator(page, [
+    93 |     {
+    94 |       "strategy": "role",
+    95 |       "role": "menuitem",
+    96 |       "name": "Logout",
+    97 |       "contextText": [
+    98 |         "Change Password",
+    99 |         "Topbar Menu"
+   100 |       ]
+   101 |     }
+   102 |   ], "Logout");
+   103 |       await el5.click({ force: true });
+   104 |       await assertTextPresent(page, "Dashboard", "ASN-ede179c4", 10000);
+   105 |       await page.screenshot({ path: "test-results/login-using-ess-credentials-ess-user-01-testuser-123-after-creating-the-account.png", fullPage: true });
+   106 |     });
+   107 | 
+   108 |     // ─── Login using ESS credentials (ess_user_01 / TestUser@123) after creating the account via Admin 
+   109 |     await test.step("Login using ESS credentials (ess_user_01 / TestUser@123) after creating the account via Admin", async () => {
+   110 |       await page.goto("https://opensource-demo.orangehrmlive.com/web/index.php/auth/login");
+   111 |       const el1 = await resolveLocator(page, [
+   112 |     {
+   113 |       "strategy": "label",
+   114 |       "text": "Username"
+   115 |     },
+   116 |     {
+   117 |       "strategy": "role",
+   118 |       "role": "textbox",
+   119 |       "name": "Username"
+   120 |     },
+   121 |     {
+   122 |       "strategy": "placeholder",
+   123 |       "text": "Username"
+   124 |     },
+   125 |     {
+   126 |       "strategy": "text",
+   127 |       "text": "Username"
+   128 |     }
+   129 |   ], "Username");
+   130 |       await el1.fill(readData(row, "username"), { force: true });
+   131 |       const el2 = await resolveLocator(page, [
+   132 |     {
+   133 |       "strategy": "label",
+   134 |       "text": "Password",
+   135 |       "contextText": [
+   136 |         "Login"
+   137 |       ]
+   138 |     },
+   139 |     {
+   140 |       "strategy": "role",
+   141 |       "role": "textbox",
+   142 |       "name": "Password",
+   143 |       "contextText": [
+   144 |         "Login"
+   145 |       ]
+   146 |     },
+   147 |     {
+   148 |       "strategy": "placeholder",
+   149 |       "text": "Password",
+   150 |       "contextText": [
+   151 |         "Login"
+   152 |       ]
+   153 |     },
+   154 |     {
+   155 |       "strategy": "text",
+   156 |       "text": "Password",
+   157 |       "contextText": [
+   158 |         "Login"
+   159 |       ]
+   160 |     }
+   161 |   ], "Password");
+   162 |       await el2.fill(readData(row, "password"), { force: true });
+   163 |       const el3 = await resolveLocator(page, [
+   164 |     {
+   165 |       "strategy": "role",
+   166 |       "role": "button",
+   167 |       "name": "Login",
+   168 |       "contextText": [
+   169 |         "Password"
+   170 |       ]
+   171 |     },
+   172 |     {
+   173 |       "strategy": "text",
+   174 |       "text": "Login",
+   175 |       "contextText": [
+   176 |         "Password"
+   177 |       ]
+   178 |     }
+   179 |   ], "Login");
+   180 |       await el3.click({ force: true });
+   181 |       const el4 = page.getByText("Profile user menu trigger", { exact: true });
+   182 |       await el4.click({ force: true });
+   183 |       const el5 = await resolveLocator(page, [
+   184 |     {
+   185 |       "strategy": "role",
+   186 |       "role": "menuitem",
+   187 |       "name": "Logout",
+   188 |       "contextText": [
+   189 |         "Change Password",
+   190 |         "Topbar Menu"
+   191 |       ]
+   192 |     }
+   193 |   ], "Logout");
+   194 |       await el5.click({ force: true });
+   195 |       await assertTextPresent(page, "Dashboard", "ASN-ede179c4", 10000);
+   196 |       await page.screenshot({ path: "test-results/login-using-ess-credentials-ess-user-01-testuser-123-after-creating-the-account.png", fullPage: true });
+   197 |     });
+   198 |   });
+   199 | });
+   200 | 
+
+Static audit: 5/10 clean
+
+=== STEP 3: INSTALL DEPS (if needed) ===
+
+
+added 5 packages, and audited 6 packages in 2s
+
+found 0 vulnerabilities
+
+=== STEP 4: RUN PLAYWRIGHT TESTS ===
+
+--- Playwright output ---
+
+Running 10 tests using 1 worker
+
+  x   1 tests\authentication\account-lockout-after-repeated-failed-attempts.spec.js:9:3 › Account Lockout After Repeated Failed Attempts › full journey (1.0m)
+  x   2 tests\authentication\account-lockout-after-repeated-failed-attempts.spec.js:9:3 › Account Lockout After Repeated Failed Attempts › full journey (retry #1) (1.0m)
+  ok  3 tests\authentication\admin-navigation-and-role-based-menu-visibility.spec.js:9:3 › Admin Navigation and Role-Based Menu Visibility › full journey (43.8s)
+  ok  4 tests\authentication\admin-session-persistence-across-page-navigations.spec.js:9:3 › Admin Session Persistence Across Page Navigations › full journey (34.3s)
+  ok  5 tests\authentication\admin-successful-login-and-dashboard-redirect.spec.js:9:3 › Admin Successful Login and Dashboard Redirect › full journey (31.9s)
+  x   6 tests\authentication\credential-injection-from-authprofiles-without-hardcoding.spec.js:9:3 › Credential Injection from AuthProfiles Without Hardcoding › full journey (15.3s)
+  x   7 tests\authentication\credential-injection-from-authprofiles-without-hardcoding.spec.js:9:3 › Credential Injection from AuthProfiles Without Hardcoding › full journey (retry #1) (17.1s)
+

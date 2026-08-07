@@ -1,0 +1,1809 @@
+{
+  "schemaVersion": "qaai-step-compilation-ledger-v2",
+  "generatedAt": "2026-06-21T10:04:05.213Z",
+  "adapterId": "playwright-pom-js",
+  "summary": {
+    "totalCases": 11,
+    "totalPlannedSteps": 47,
+    "totalReplaySteps": 63,
+    "exported": 12,
+    "exportedDirect": 21,
+    "exportedComposite": 0,
+    "exportedAssertionMethod": 0,
+    "coveredByPrecondition": 0,
+    "skippedNoise": 0,
+    "blockedInternal": 42,
+    "replayOnly": 16,
+    "duplicateActionsPruned": 0
+  },
+  "cases": [
+    {
+      "testCaseId": "f3555978-578d-4369-b57f-12479fc67c61",
+      "runResultId": "ea63081b-2e74-4cd0-b20c-0b1d9e43a75d",
+      "caseName": "Admin logs in with valid credentials and lands on dashboard",
+      "scenarioId": "a0c562dd-ef55-42a6-b924-f258190ca282",
+      "scenarioName": "Admin Login — Happy Path and Session Establishment",
+      "specFile": null,
+      "plannedStepCount": 5,
+      "replayStepCount": 6,
+      "emitterFindings": [
+        {
+          "code": "export_safe_unverified_locator",
+          "severity": "info",
+          "where": "browser_type",
+          "elementLabel": "Password field",
+          "detail": "Step \"Password field\" exported with a faithful ARIA-derived locator that did not clear the gold count=1 proof; runnable but flagged unverified."
+        }
+      ],
+      "ledger": [
+        {
+          "testCaseId": "f3555978-578d-4369-b57f-12479fc67c61",
+          "runResultId": "ea63081b-2e74-4cd0-b20c-0b1d9e43a75d",
+          "plannedStepId": "1",
+          "plannedText": "Login form is visible with Username and Password fields",
+          "executedToolCalls": [
+            "navigate https://opensource-demo.orangehrmlive.com/web/index.php/auth/login"
+          ],
+          "replayStepIndex": 0,
+          "replayOp": "act",
+          "replayAction": "navigate",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "f3555978-578d-4369-b57f-12479fc67c61",
+          "runResultId": "ea63081b-2e74-4cd0-b20c-0b1d9e43a75d",
+          "plannedStepId": "2",
+          "plannedText": "Fill Username field",
+          "executedToolCalls": [
+            "fill el1"
+          ],
+          "replayStepIndex": 2,
+          "replayOp": "act",
+          "replayAction": "fill",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "f3555978-578d-4369-b57f-12479fc67c61",
+          "runResultId": "ea63081b-2e74-4cd0-b20c-0b1d9e43a75d",
+          "plannedStepId": "3",
+          "plannedText": "Fill Password field",
+          "executedToolCalls": [
+            "fill el2"
+          ],
+          "replayStepIndex": 4,
+          "replayOp": "act",
+          "replayAction": "fill",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "f3555978-578d-4369-b57f-12479fc67c61",
+          "runResultId": "ea63081b-2e74-4cd0-b20c-0b1d9e43a75d",
+          "plannedStepId": "4",
+          "plannedText": "User is redirected to the dashboard",
+          "executedToolCalls": [
+            "click el3"
+          ],
+          "replayStepIndex": 6,
+          "replayOp": "act",
+          "replayAction": "click",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "f3555978-578d-4369-b57f-12479fc67c61",
+          "runResultId": "ea63081b-2e74-4cd0-b20c-0b1d9e43a75d",
+          "plannedStepId": "5",
+          "plannedText": "Admin navigation link is visible on the dashboard",
+          "executedToolCalls": [
+            "assert URL /web/index.php/dashboard/index"
+          ],
+          "replayStepIndex": 8,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "f3555978-578d-4369-b57f-12479fc67c61",
+          "runResultId": "ea63081b-2e74-4cd0-b20c-0b1d9e43a75d",
+          "plannedStepId": null,
+          "plannedText": null,
+          "executedToolCalls": [
+            "assert PAGE dashboard"
+          ],
+          "replayStepIndex": 9,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "exported_direct",
+          "reason": "ReplayIR contains an extra executed step with no authored planned step; kept visible for audit."
+        }
+      ]
+    },
+    {
+      "testCaseId": "8bd867de-aa20-45a5-995c-be812cc6eb74",
+      "runResultId": "183e4ccb-e947-4687-a22a-fa9a3987c3d7",
+      "caseName": "Admin session persists across page navigations",
+      "scenarioId": "a0c562dd-ef55-42a6-b924-f258190ca282",
+      "scenarioName": "Admin Login — Happy Path and Session Establishment",
+      "specFile": null,
+      "plannedStepCount": 2,
+      "replayStepCount": 2,
+      "emitterFindings": [],
+      "ledger": [
+        {
+          "testCaseId": "8bd867de-aa20-45a5-995c-be812cc6eb74",
+          "runResultId": "183e4ccb-e947-4687-a22a-fa9a3987c3d7",
+          "plannedStepId": "1",
+          "plannedText": "PIM Employee List page loads and user is still authenticated",
+          "executedToolCalls": [
+            "navigate https://opensource-demo.orangehrmlive.com/web/index.php/pim/viewEmployeeList"
+          ],
+          "replayStepIndex": 0,
+          "replayOp": "act",
+          "replayAction": "navigate",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "8bd867de-aa20-45a5-995c-be812cc6eb74",
+          "runResultId": "183e4ccb-e947-4687-a22a-fa9a3987c3d7",
+          "plannedStepId": "2",
+          "plannedText": "Employee Information header visible — session persisted",
+          "executedToolCalls": [
+            "assert PAGE add_user_view_configuration"
+          ],
+          "replayStepIndex": 1,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        }
+      ]
+    },
+    {
+      "testCaseId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6",
+      "runResultId": "f52f9ac6-8b26-4a1d-a9f8-634e41f062d9",
+      "caseName": "Admin logout redirects to /auth/login page",
+      "scenarioId": "b00bc74b-e97e-4cc1-87a0-1b291ec785e2",
+      "scenarioName": "Logout — Redirect and Session Termination",
+      "specFile": "tests/authentication/logout-redirect-and-session-termination.spec.js",
+      "plannedStepCount": 3,
+      "replayStepCount": 9,
+      "emitterFindings": [
+        {
+          "code": "context_switch_inferred",
+          "where": "browser_fill_form",
+          "detail": "Action on 'https://opensource-demo.orangehrmlive.com/web/index.php/auth/login' followed a navigate to 'https://opensource-demo.orangehrmlive.com' with no recorded URL change — a browser tab switch (target=\"_blank\") likely occurred. The emitter inserts a navigate for faithful replay; this case may need manual adjustment for multi-tab scenarios (see the comment in the emitted spec)."
+        },
+        {
+          "code": "context_switch_inferred",
+          "where": "browser_click",
+          "detail": "Action on 'https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index' followed a navigate to 'https://opensource-demo.orangehrmlive.com/web/index.php/auth/login' with no recorded URL change — a browser tab switch (target=\"_blank\") likely occurred. The emitter inserts a navigate for faithful replay; this case may need manual adjustment for multi-tab scenarios (see the comment in the emitted spec)."
+        },
+        {
+          "code": "immediate_replayir_evidence_repair",
+          "detail": "EvidenceRepair: 1 gaps → 0 resolved, 1 failed; resolved=0; failed=1"
+        }
+      ],
+      "ledger": [
+        {
+          "testCaseId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6",
+          "runResultId": "f52f9ac6-8b26-4a1d-a9f8-634e41f062d9",
+          "plannedStepId": "1",
+          "plannedText": "Profile dropdown opens with Logout option",
+          "executedToolCalls": [
+            "navigate https://opensource-demo.orangehrmlive.com"
+          ],
+          "replayStepIndex": 0,
+          "replayOp": "act",
+          "replayAction": "navigate",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/authentication/logout-redirect-and-session-termination.spec.js",
+          "exportedSpecLine": 15,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "exported_direct",
+          "reason": null
+        },
+        {
+          "testCaseId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6",
+          "runResultId": "f52f9ac6-8b26-4a1d-a9f8-634e41f062d9",
+          "plannedStepId": "2",
+          "plannedText": "User is redirected to /auth/login after logout",
+          "executedToolCalls": [
+            "navigate https://opensource-demo.orangehrmlive.com/web/index.php/auth/login"
+          ],
+          "replayStepIndex": 1,
+          "replayOp": "act",
+          "replayAction": "navigate",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/authentication/logout-redirect-and-session-termination.spec.js",
+          "exportedSpecLine": 15,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "exported_direct",
+          "reason": null
+        },
+        {
+          "testCaseId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6",
+          "runResultId": "f52f9ac6-8b26-4a1d-a9f8-634e41f062d9",
+          "plannedStepId": "3",
+          "plannedText": "Login form is displayed with Username field visible",
+          "executedToolCalls": [
+            "fill el1"
+          ],
+          "replayStepIndex": 3,
+          "replayOp": "act",
+          "replayAction": "fill",
+          "actionLocatorId": "el1",
+          "assertionId": null,
+          "dataBinding": {
+            "column": "username",
+            "source": "ReplayIR.act.dataRole"
+          },
+          "exportedSpecFile": "tests/authentication/logout-redirect-and-session-termination.spec.js",
+          "exportedSpecLine": 17,
+          "exportedPageMethod": "fillUsername",
+          "exportedLocatorKey": "usernameInput",
+          "exportStatus": "exported",
+          "status": "exported_direct",
+          "reason": null
+        },
+        {
+          "testCaseId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6",
+          "runResultId": "f52f9ac6-8b26-4a1d-a9f8-634e41f062d9",
+          "plannedStepId": null,
+          "plannedText": null,
+          "executedToolCalls": [
+            "fill el2"
+          ],
+          "replayStepIndex": 5,
+          "replayOp": "act",
+          "replayAction": "fill",
+          "actionLocatorId": "el2",
+          "assertionId": null,
+          "dataBinding": {
+            "column": "password",
+            "source": "ReplayIR.act.dataRole"
+          },
+          "exportedSpecFile": "tests/authentication/logout-redirect-and-session-termination.spec.js",
+          "exportedSpecLine": 18,
+          "exportedPageMethod": "fillPassword",
+          "exportedLocatorKey": "passwordInput",
+          "exportStatus": "exported",
+          "status": "exported_direct",
+          "reason": "ReplayIR contains an extra executed step with no authored planned step; kept visible for audit."
+        },
+        {
+          "testCaseId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6",
+          "runResultId": "f52f9ac6-8b26-4a1d-a9f8-634e41f062d9",
+          "plannedStepId": null,
+          "plannedText": null,
+          "executedToolCalls": [
+            "click el3"
+          ],
+          "replayStepIndex": 7,
+          "replayOp": "act",
+          "replayAction": "click",
+          "actionLocatorId": "el3",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/authentication/logout-redirect-and-session-termination.spec.js",
+          "exportedSpecLine": 19,
+          "exportedPageMethod": "clickLogin",
+          "exportedLocatorKey": "loginButton",
+          "exportStatus": "exported",
+          "status": "exported_direct",
+          "reason": "ReplayIR contains an extra executed step with no authored planned step; kept visible for audit."
+        },
+        {
+          "testCaseId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6",
+          "runResultId": "f52f9ac6-8b26-4a1d-a9f8-634e41f062d9",
+          "plannedStepId": null,
+          "plannedText": null,
+          "executedToolCalls": [
+            "navigate https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index"
+          ],
+          "replayStepIndex": 9,
+          "replayOp": "act",
+          "replayAction": "navigate",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/authentication/logout-redirect-and-session-termination.spec.js",
+          "exportedSpecLine": 15,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "exported_direct",
+          "reason": "ReplayIR contains an extra executed step with no authored planned step; kept visible for audit."
+        },
+        {
+          "testCaseId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6",
+          "runResultId": "f52f9ac6-8b26-4a1d-a9f8-634e41f062d9",
+          "plannedStepId": null,
+          "plannedText": null,
+          "executedToolCalls": [
+            "click el4"
+          ],
+          "replayStepIndex": 11,
+          "replayOp": "act",
+          "replayAction": "click",
+          "actionLocatorId": "el4",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/authentication/logout-redirect-and-session-termination.spec.js",
+          "exportedSpecLine": 21,
+          "exportedPageMethod": "clickLogout",
+          "exportedLocatorKey": "logoutMenuItem",
+          "exportStatus": "exported",
+          "status": "exported_direct",
+          "reason": "ReplayIR contains an extra executed step with no authored planned step; kept visible for audit."
+        },
+        {
+          "testCaseId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6",
+          "runResultId": "f52f9ac6-8b26-4a1d-a9f8-634e41f062d9",
+          "plannedStepId": null,
+          "plannedText": null,
+          "executedToolCalls": [
+            "assert URL /web/index.php/dashboard/index"
+          ],
+          "replayStepIndex": 13,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-af19cf78",
+          "dataBinding": {
+            "column": "expectedLandingPage",
+            "source": "ReplayIR.assert.dataExpected"
+          },
+          "exportedSpecFile": "tests/authentication/logout-redirect-and-session-termination.spec.js",
+          "exportedSpecLine": 23,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "exported_direct",
+          "reason": "ReplayIR contains an extra executed step with no authored planned step; kept visible for audit."
+        },
+        {
+          "testCaseId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6",
+          "runResultId": "f52f9ac6-8b26-4a1d-a9f8-634e41f062d9",
+          "plannedStepId": null,
+          "plannedText": null,
+          "executedToolCalls": [
+            "assert PAGE dashboard"
+          ],
+          "replayStepIndex": 14,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-499034ba",
+          "dataBinding": {
+            "column": "expectedLandingPage",
+            "source": "ReplayIR.assert.dataExpected"
+          },
+          "exportedSpecFile": "tests/authentication/logout-redirect-and-session-termination.spec.js",
+          "exportedSpecLine": 13,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "exported_direct",
+          "reason": "ReplayIR contains an extra executed step with no authored planned step; kept visible for audit."
+        }
+      ]
+    },
+    {
+      "testCaseId": "6773b1db-c635-45fe-9bcf-34f857c2478f",
+      "runResultId": "325a89e3-05d4-418a-9705-4b473bcde80c",
+      "caseName": "Post-logout direct navigation to /dashboard redirects to login",
+      "scenarioId": "b00bc74b-e97e-4cc1-87a0-1b291ec785e2",
+      "scenarioName": "Logout — Redirect and Session Termination",
+      "specFile": "tests/authentication/logout-redirect-and-session-termination.spec.js",
+      "plannedStepCount": 2,
+      "replayStepCount": 3,
+      "emitterFindings": [
+        {
+          "code": "immediate_replayir_evidence_repair",
+          "detail": "no repairable ReplayIR gaps; resolved=0; failed=0"
+        }
+      ],
+      "ledger": [
+        {
+          "testCaseId": "6773b1db-c635-45fe-9bcf-34f857c2478f",
+          "runResultId": "325a89e3-05d4-418a-9705-4b473bcde80c",
+          "plannedStepId": "1",
+          "plannedText": "Redirect to /auth/login because session is terminated",
+          "executedToolCalls": [
+            "navigate https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index"
+          ],
+          "replayStepIndex": 0,
+          "replayOp": "act",
+          "replayAction": "navigate",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/authentication/logout-redirect-and-session-termination.spec.js",
+          "exportedSpecLine": 15,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "exported_direct",
+          "reason": null
+        },
+        {
+          "testCaseId": "6773b1db-c635-45fe-9bcf-34f857c2478f",
+          "runResultId": "325a89e3-05d4-418a-9705-4b473bcde80c",
+          "plannedStepId": "2",
+          "plannedText": "Login form is presented — session is confirmed cleared",
+          "executedToolCalls": [
+            "assert URL /web/index.php/dashboard/index"
+          ],
+          "replayStepIndex": 2,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-033627f9",
+          "dataBinding": {
+            "column": "expectedLandingPage",
+            "source": "ReplayIR.assert.dataExpected"
+          },
+          "exportedSpecFile": "tests/authentication/logout-redirect-and-session-termination.spec.js",
+          "exportedSpecLine": 23,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "exported_direct",
+          "reason": null
+        },
+        {
+          "testCaseId": "6773b1db-c635-45fe-9bcf-34f857c2478f",
+          "runResultId": "325a89e3-05d4-418a-9705-4b473bcde80c",
+          "plannedStepId": null,
+          "plannedText": null,
+          "executedToolCalls": [
+            "assert PAGE dashboard"
+          ],
+          "replayStepIndex": 3,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-493ec513",
+          "dataBinding": {
+            "column": "expectedLandingPage",
+            "source": "ReplayIR.assert.dataExpected"
+          },
+          "exportedSpecFile": "tests/authentication/logout-redirect-and-session-termination.spec.js",
+          "exportedSpecLine": 13,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "exported_direct",
+          "reason": "ReplayIR contains an extra executed step with no authored planned step; kept visible for audit."
+        }
+      ]
+    },
+    {
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "runResultId": "890ab97f-adaf-441c-8a33-dbf953538061",
+      "caseName": "SQL injection OR-payload in username is safely rejected",
+      "scenarioId": "6cc682f9-7221-4bd3-8740-2bddb5b5c245",
+      "scenarioName": "SQL Injection Attack Prevention (Exhaustive SecurityAuth Sheet — SQL Rows)",
+      "specFile": null,
+      "plannedStepCount": 5,
+      "replayStepCount": 6,
+      "emitterFindings": [
+        {
+          "code": "declared_negative_credential_preserved",
+          "detail": "Preserved declared negative credential/test input for Username field so export does not substitute canonical env credentials."
+        },
+        {
+          "code": "export_safe_unverified_locator",
+          "severity": "info",
+          "where": "browser_type",
+          "elementLabel": "Password field",
+          "detail": "Step \"Password field\" exported with a faithful ARIA-derived locator that did not clear the gold count=1 proof; runnable but flagged unverified."
+        },
+        {
+          "code": "declared_negative_credential_preserved",
+          "detail": "Preserved declared negative credential/test input for Password field so export does not substitute canonical env credentials."
+        }
+      ],
+      "ledger": [
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "890ab97f-adaf-441c-8a33-dbf953538061",
+          "plannedStepId": "1",
+          "plannedText": "Login form visible",
+          "executedToolCalls": [
+            "navigate https://opensource-demo.orangehrmlive.com/web/index.php/auth/login"
+          ],
+          "replayStepIndex": 0,
+          "replayOp": "act",
+          "replayAction": "navigate",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "890ab97f-adaf-441c-8a33-dbf953538061",
+          "plannedStepId": "2",
+          "plannedText": "Fill Username field",
+          "executedToolCalls": [
+            "fill el1"
+          ],
+          "replayStepIndex": 2,
+          "replayOp": "act",
+          "replayAction": "fill",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "890ab97f-adaf-441c-8a33-dbf953538061",
+          "plannedStepId": "3",
+          "plannedText": "Fill Password field",
+          "executedToolCalls": [
+            "fill el2"
+          ],
+          "replayStepIndex": 4,
+          "replayOp": "act",
+          "replayAction": "fill",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "890ab97f-adaf-441c-8a33-dbf953538061",
+          "plannedStepId": "4",
+          "plannedText": "SQL injection payload submitted",
+          "executedToolCalls": [
+            "click el3"
+          ],
+          "replayStepIndex": 6,
+          "replayOp": "act",
+          "replayAction": "click",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "890ab97f-adaf-441c-8a33-dbf953538061",
+          "plannedStepId": "5",
+          "plannedText": "User remains on login page; no DB error or crash",
+          "executedToolCalls": [
+            "assert PAGE Invalid credentials"
+          ],
+          "replayStepIndex": 7,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "890ab97f-adaf-441c-8a33-dbf953538061",
+          "plannedStepId": null,
+          "plannedText": null,
+          "executedToolCalls": [
+            "assert EVALUATE safe"
+          ],
+          "replayStepIndex": 8,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "exported_direct",
+          "reason": "ReplayIR contains an extra executed step with no authored planned step; kept visible for audit."
+        }
+      ]
+    },
+    {
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "runResultId": "3cd7339d-7055-4000-b5c0-10427d03bba7",
+      "caseName": "SQL injection OR-payload in username is safely rejected",
+      "scenarioId": "6cc682f9-7221-4bd3-8740-2bddb5b5c245",
+      "scenarioName": "SQL Injection Attack Prevention (Exhaustive SecurityAuth Sheet — SQL Rows)",
+      "specFile": null,
+      "plannedStepCount": 5,
+      "replayStepCount": 6,
+      "emitterFindings": [
+        {
+          "code": "action_failed_dropped",
+          "detail": "browser_type did not succeed; not replayed."
+        },
+        {
+          "code": "export_safe_unverified_locator",
+          "severity": "info",
+          "where": "browser_type",
+          "elementLabel": "Username field",
+          "detail": "Step \"Username field\" exported with a faithful ARIA-derived locator that did not clear the gold count=1 proof; runnable but flagged unverified."
+        },
+        {
+          "code": "declared_negative_credential_preserved",
+          "detail": "Preserved declared negative credential/test input for Username field so export does not substitute canonical env credentials."
+        },
+        {
+          "code": "export_safe_unverified_locator",
+          "severity": "info",
+          "where": "browser_type",
+          "elementLabel": "Password field",
+          "detail": "Step \"Password field\" exported with a faithful ARIA-derived locator that did not clear the gold count=1 proof; runnable but flagged unverified."
+        },
+        {
+          "code": "declared_negative_credential_preserved",
+          "detail": "Preserved declared negative credential/test input for Password field so export does not substitute canonical env credentials."
+        },
+        {
+          "code": "export_safe_unverified_locator",
+          "severity": "info",
+          "where": "browser_click",
+          "elementLabel": "Login button",
+          "detail": "Step \"Login button\" exported with a faithful ARIA-derived locator that did not clear the gold count=1 proof; runnable but flagged unverified."
+        }
+      ],
+      "ledger": [
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "3cd7339d-7055-4000-b5c0-10427d03bba7",
+          "plannedStepId": "1",
+          "plannedText": "Login form visible",
+          "executedToolCalls": [
+            "navigate https://opensource-demo.orangehrmlive.com/web/index.php/auth/login"
+          ],
+          "replayStepIndex": 0,
+          "replayOp": "act",
+          "replayAction": "navigate",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "3cd7339d-7055-4000-b5c0-10427d03bba7",
+          "plannedStepId": "2",
+          "plannedText": "Fill Username field",
+          "executedToolCalls": [
+            "fill el1"
+          ],
+          "replayStepIndex": 2,
+          "replayOp": "act",
+          "replayAction": "fill",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "3cd7339d-7055-4000-b5c0-10427d03bba7",
+          "plannedStepId": "3",
+          "plannedText": "Fill Password field",
+          "executedToolCalls": [
+            "fill el2"
+          ],
+          "replayStepIndex": 4,
+          "replayOp": "act",
+          "replayAction": "fill",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "3cd7339d-7055-4000-b5c0-10427d03bba7",
+          "plannedStepId": "4",
+          "plannedText": "SQL injection payload submitted",
+          "executedToolCalls": [
+            "click el3"
+          ],
+          "replayStepIndex": 6,
+          "replayOp": "act",
+          "replayAction": "click",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "3cd7339d-7055-4000-b5c0-10427d03bba7",
+          "plannedStepId": "5",
+          "plannedText": "User remains on login page; no DB error or crash",
+          "executedToolCalls": [
+            "assert PAGE Invalid credentials"
+          ],
+          "replayStepIndex": 7,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "3cd7339d-7055-4000-b5c0-10427d03bba7",
+          "plannedStepId": null,
+          "plannedText": null,
+          "executedToolCalls": [
+            "assert EVALUATE safe"
+          ],
+          "replayStepIndex": 8,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "exported_direct",
+          "reason": "ReplayIR contains an extra executed step with no authored planned step; kept visible for audit."
+        }
+      ]
+    },
+    {
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "runResultId": "2247150c-5cda-4e17-809b-8b8fa520b005",
+      "caseName": "SQL injection OR-payload in username is safely rejected",
+      "scenarioId": "6cc682f9-7221-4bd3-8740-2bddb5b5c245",
+      "scenarioName": "SQL Injection Attack Prevention (Exhaustive SecurityAuth Sheet — SQL Rows)",
+      "specFile": null,
+      "plannedStepCount": 5,
+      "replayStepCount": 6,
+      "emitterFindings": [
+        {
+          "code": "export_safe_unverified_locator",
+          "severity": "info",
+          "where": "browser_type",
+          "elementLabel": "Username field",
+          "detail": "Step \"Username field\" exported with a faithful ARIA-derived locator that did not clear the gold count=1 proof; runnable but flagged unverified."
+        },
+        {
+          "code": "declared_negative_credential_preserved",
+          "detail": "Preserved declared negative credential/test input for Username field so export does not substitute canonical env credentials."
+        },
+        {
+          "code": "export_safe_unverified_locator",
+          "severity": "info",
+          "where": "browser_type",
+          "elementLabel": "Password field",
+          "detail": "Step \"Password field\" exported with a faithful ARIA-derived locator that did not clear the gold count=1 proof; runnable but flagged unverified."
+        },
+        {
+          "code": "declared_negative_credential_preserved",
+          "detail": "Preserved declared negative credential/test input for Password field so export does not substitute canonical env credentials."
+        },
+        {
+          "code": "export_safe_unverified_locator",
+          "severity": "info",
+          "where": "browser_click",
+          "elementLabel": "Login button",
+          "detail": "Step \"Login button\" exported with a faithful ARIA-derived locator that did not clear the gold count=1 proof; runnable but flagged unverified."
+        }
+      ],
+      "ledger": [
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "2247150c-5cda-4e17-809b-8b8fa520b005",
+          "plannedStepId": "1",
+          "plannedText": "Login form visible",
+          "executedToolCalls": [
+            "navigate https://opensource-demo.orangehrmlive.com/web/index.php/auth/login"
+          ],
+          "replayStepIndex": 0,
+          "replayOp": "act",
+          "replayAction": "navigate",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "2247150c-5cda-4e17-809b-8b8fa520b005",
+          "plannedStepId": "2",
+          "plannedText": "Fill Username field",
+          "executedToolCalls": [
+            "fill el1"
+          ],
+          "replayStepIndex": 2,
+          "replayOp": "act",
+          "replayAction": "fill",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "2247150c-5cda-4e17-809b-8b8fa520b005",
+          "plannedStepId": "3",
+          "plannedText": "Fill Password field",
+          "executedToolCalls": [
+            "fill el2"
+          ],
+          "replayStepIndex": 4,
+          "replayOp": "act",
+          "replayAction": "fill",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "2247150c-5cda-4e17-809b-8b8fa520b005",
+          "plannedStepId": "4",
+          "plannedText": "SQL injection payload submitted",
+          "executedToolCalls": [
+            "click el3"
+          ],
+          "replayStepIndex": 6,
+          "replayOp": "act",
+          "replayAction": "click",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "2247150c-5cda-4e17-809b-8b8fa520b005",
+          "plannedStepId": "5",
+          "plannedText": "User remains on login page; no DB error or crash",
+          "executedToolCalls": [
+            "assert PAGE Invalid credentials"
+          ],
+          "replayStepIndex": 7,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "2247150c-5cda-4e17-809b-8b8fa520b005",
+          "plannedStepId": null,
+          "plannedText": null,
+          "executedToolCalls": [
+            "assert EVALUATE safe"
+          ],
+          "replayStepIndex": 8,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "exported_direct",
+          "reason": "ReplayIR contains an extra executed step with no authored planned step; kept visible for audit."
+        }
+      ]
+    },
+    {
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "runResultId": "d64dba2b-e629-4da6-a4bb-eb32335c85fa",
+      "caseName": "SQL injection OR-payload in username is safely rejected",
+      "scenarioId": "6cc682f9-7221-4bd3-8740-2bddb5b5c245",
+      "scenarioName": "SQL Injection Attack Prevention (Exhaustive SecurityAuth Sheet — SQL Rows)",
+      "specFile": null,
+      "plannedStepCount": 5,
+      "replayStepCount": 6,
+      "emitterFindings": [
+        {
+          "code": "export_safe_unverified_locator",
+          "severity": "info",
+          "where": "browser_type",
+          "elementLabel": "Username field",
+          "detail": "Step \"Username field\" exported with a faithful ARIA-derived locator that did not clear the gold count=1 proof; runnable but flagged unverified."
+        },
+        {
+          "code": "export_safe_unverified_locator",
+          "severity": "info",
+          "where": "browser_type",
+          "elementLabel": "Password field",
+          "detail": "Step \"Password field\" exported with a faithful ARIA-derived locator that did not clear the gold count=1 proof; runnable but flagged unverified."
+        },
+        {
+          "code": "declared_negative_credential_preserved",
+          "detail": "Preserved declared negative credential/test input for Password field so export does not substitute canonical env credentials."
+        },
+        {
+          "code": "export_safe_unverified_locator",
+          "severity": "info",
+          "where": "browser_click",
+          "elementLabel": "Login button",
+          "detail": "Step \"Login button\" exported with a faithful ARIA-derived locator that did not clear the gold count=1 proof; runnable but flagged unverified."
+        }
+      ],
+      "ledger": [
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "d64dba2b-e629-4da6-a4bb-eb32335c85fa",
+          "plannedStepId": "1",
+          "plannedText": "Login form visible",
+          "executedToolCalls": [
+            "navigate https://opensource-demo.orangehrmlive.com/web/index.php/auth/login"
+          ],
+          "replayStepIndex": 0,
+          "replayOp": "act",
+          "replayAction": "navigate",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "d64dba2b-e629-4da6-a4bb-eb32335c85fa",
+          "plannedStepId": "2",
+          "plannedText": "Fill Username field",
+          "executedToolCalls": [
+            "fill el1"
+          ],
+          "replayStepIndex": 2,
+          "replayOp": "act",
+          "replayAction": "fill",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "d64dba2b-e629-4da6-a4bb-eb32335c85fa",
+          "plannedStepId": "3",
+          "plannedText": "Fill Password field",
+          "executedToolCalls": [
+            "fill el2"
+          ],
+          "replayStepIndex": 4,
+          "replayOp": "act",
+          "replayAction": "fill",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "d64dba2b-e629-4da6-a4bb-eb32335c85fa",
+          "plannedStepId": "4",
+          "plannedText": "SQL injection payload submitted",
+          "executedToolCalls": [
+            "click el3"
+          ],
+          "replayStepIndex": 6,
+          "replayOp": "act",
+          "replayAction": "click",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "d64dba2b-e629-4da6-a4bb-eb32335c85fa",
+          "plannedStepId": "5",
+          "plannedText": "User remains on login page; no DB error or crash",
+          "executedToolCalls": [
+            "assert PAGE /auth/login"
+          ],
+          "replayStepIndex": 7,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "d64dba2b-e629-4da6-a4bb-eb32335c85fa",
+          "plannedStepId": null,
+          "plannedText": null,
+          "executedToolCalls": [
+            "assert EVALUATE safe"
+          ],
+          "replayStepIndex": 8,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "exported_direct",
+          "reason": "ReplayIR contains an extra executed step with no authored planned step; kept visible for audit."
+        }
+      ]
+    },
+    {
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "runResultId": "87e776f3-147b-474f-b94a-d8e4b1247cdd",
+      "caseName": "SQL injection OR-payload in username is safely rejected",
+      "scenarioId": "6cc682f9-7221-4bd3-8740-2bddb5b5c245",
+      "scenarioName": "SQL Injection Attack Prevention (Exhaustive SecurityAuth Sheet — SQL Rows)",
+      "specFile": null,
+      "plannedStepCount": 5,
+      "replayStepCount": 6,
+      "emitterFindings": [
+        {
+          "code": "export_safe_unverified_locator",
+          "severity": "info",
+          "where": "browser_type",
+          "elementLabel": "Username field",
+          "detail": "Step \"Username field\" exported with a faithful ARIA-derived locator that did not clear the gold count=1 proof; runnable but flagged unverified."
+        },
+        {
+          "code": "export_safe_unverified_locator",
+          "severity": "info",
+          "where": "browser_type",
+          "elementLabel": "Password field",
+          "detail": "Step \"Password field\" exported with a faithful ARIA-derived locator that did not clear the gold count=1 proof; runnable but flagged unverified."
+        },
+        {
+          "code": "declared_negative_credential_preserved",
+          "detail": "Preserved declared negative credential/test input for Password field so export does not substitute canonical env credentials."
+        },
+        {
+          "code": "export_safe_unverified_locator",
+          "severity": "info",
+          "where": "browser_click",
+          "elementLabel": "Login button",
+          "detail": "Step \"Login button\" exported with a faithful ARIA-derived locator that did not clear the gold count=1 proof; runnable but flagged unverified."
+        }
+      ],
+      "ledger": [
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "87e776f3-147b-474f-b94a-d8e4b1247cdd",
+          "plannedStepId": "1",
+          "plannedText": "Login form visible",
+          "executedToolCalls": [
+            "navigate https://opensource-demo.orangehrmlive.com/web/index.php/auth/login"
+          ],
+          "replayStepIndex": 0,
+          "replayOp": "act",
+          "replayAction": "navigate",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "87e776f3-147b-474f-b94a-d8e4b1247cdd",
+          "plannedStepId": "2",
+          "plannedText": "Fill Username field",
+          "executedToolCalls": [
+            "fill el1"
+          ],
+          "replayStepIndex": 2,
+          "replayOp": "act",
+          "replayAction": "fill",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "87e776f3-147b-474f-b94a-d8e4b1247cdd",
+          "plannedStepId": "3",
+          "plannedText": "Fill Password field",
+          "executedToolCalls": [
+            "fill el2"
+          ],
+          "replayStepIndex": 4,
+          "replayOp": "act",
+          "replayAction": "fill",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "87e776f3-147b-474f-b94a-d8e4b1247cdd",
+          "plannedStepId": "4",
+          "plannedText": "SQL injection payload submitted",
+          "executedToolCalls": [
+            "click el3"
+          ],
+          "replayStepIndex": 6,
+          "replayOp": "act",
+          "replayAction": "click",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "87e776f3-147b-474f-b94a-d8e4b1247cdd",
+          "plannedStepId": "5",
+          "plannedText": "User remains on login page; no DB error or crash",
+          "executedToolCalls": [
+            "assert PAGE auth/login"
+          ],
+          "replayStepIndex": 7,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "87e776f3-147b-474f-b94a-d8e4b1247cdd",
+          "plannedStepId": null,
+          "plannedText": null,
+          "executedToolCalls": [
+            "assert EVALUATE safe"
+          ],
+          "replayStepIndex": 8,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "exported_direct",
+          "reason": "ReplayIR contains an extra executed step with no authored planned step; kept visible for audit."
+        }
+      ]
+    },
+    {
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "runResultId": "5086625c-6f26-409f-8548-84c3cdd3c2a2",
+      "caseName": "SQL injection OR-payload in username is safely rejected",
+      "scenarioId": "6cc682f9-7221-4bd3-8740-2bddb5b5c245",
+      "scenarioName": "SQL Injection Attack Prevention (Exhaustive SecurityAuth Sheet — SQL Rows)",
+      "specFile": null,
+      "plannedStepCount": 5,
+      "replayStepCount": 7,
+      "emitterFindings": [
+        {
+          "code": "action_failed_dropped",
+          "detail": "browser_type did not succeed; not replayed."
+        },
+        {
+          "code": "context_switch_inferred",
+          "where": "browser_type",
+          "detail": "Action on 'https://opensource-demo.orangehrmlive.com/web/index.php/auth/login\\' followed a navigate to 'https://opensource-demo.orangehrmlive.com/web/index.php/auth/login' with no recorded URL change — a browser tab switch (target=\"_blank\") likely occurred. The emitter inserts a navigate for faithful replay; this case may need manual adjustment for multi-tab scenarios (see the comment in the emitted spec)."
+        },
+        {
+          "code": "export_safe_unverified_locator",
+          "severity": "info",
+          "where": "browser_type",
+          "elementLabel": "Username field",
+          "detail": "Step \"Username field\" exported with a faithful ARIA-derived locator that did not clear the gold count=1 proof; runnable but flagged unverified."
+        },
+        {
+          "code": "declared_negative_credential_preserved",
+          "detail": "Preserved declared negative credential/test input for Username field so export does not substitute canonical env credentials."
+        },
+        {
+          "code": "action_failed_dropped",
+          "detail": "browser_type did not succeed; not replayed."
+        },
+        {
+          "code": "export_safe_unverified_locator",
+          "severity": "info",
+          "where": "browser_type",
+          "elementLabel": "Password field",
+          "detail": "Step \"Password field\" exported with a faithful ARIA-derived locator that did not clear the gold count=1 proof; runnable but flagged unverified."
+        },
+        {
+          "code": "declared_negative_credential_preserved",
+          "detail": "Preserved declared negative credential/test input for Password field so export does not substitute canonical env credentials."
+        },
+        {
+          "code": "export_safe_unverified_locator",
+          "severity": "info",
+          "where": "browser_click",
+          "elementLabel": "Login button",
+          "detail": "Step \"Login button\" exported with a faithful ARIA-derived locator that did not clear the gold count=1 proof; runnable but flagged unverified."
+        }
+      ],
+      "ledger": [
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "5086625c-6f26-409f-8548-84c3cdd3c2a2",
+          "plannedStepId": "1",
+          "plannedText": "Login form visible",
+          "executedToolCalls": [
+            "navigate https://opensource-demo.orangehrmlive.com/web/index.php/auth/login"
+          ],
+          "replayStepIndex": 0,
+          "replayOp": "act",
+          "replayAction": "navigate",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "5086625c-6f26-409f-8548-84c3cdd3c2a2",
+          "plannedStepId": "2",
+          "plannedText": "Fill Username field",
+          "executedToolCalls": [
+            "navigate https://opensource-demo.orangehrmlive.com/web/index.php/auth/login\\"
+          ],
+          "replayStepIndex": 1,
+          "replayOp": "act",
+          "replayAction": "navigate",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "5086625c-6f26-409f-8548-84c3cdd3c2a2",
+          "plannedStepId": "3",
+          "plannedText": "Fill Password field",
+          "executedToolCalls": [
+            "fill el1"
+          ],
+          "replayStepIndex": 3,
+          "replayOp": "act",
+          "replayAction": "fill",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "5086625c-6f26-409f-8548-84c3cdd3c2a2",
+          "plannedStepId": "4",
+          "plannedText": "SQL injection payload submitted",
+          "executedToolCalls": [
+            "fill el2"
+          ],
+          "replayStepIndex": 5,
+          "replayOp": "act",
+          "replayAction": "fill",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "5086625c-6f26-409f-8548-84c3cdd3c2a2",
+          "plannedStepId": "5",
+          "plannedText": "User remains on login page; no DB error or crash",
+          "executedToolCalls": [
+            "click el3"
+          ],
+          "replayStepIndex": 7,
+          "replayOp": "act",
+          "replayAction": "click",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "5086625c-6f26-409f-8548-84c3cdd3c2a2",
+          "plannedStepId": null,
+          "plannedText": null,
+          "executedToolCalls": [
+            "assert PAGE auth/login"
+          ],
+          "replayStepIndex": 8,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "exported_direct",
+          "reason": "ReplayIR contains an extra executed step with no authored planned step; kept visible for audit."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "5086625c-6f26-409f-8548-84c3cdd3c2a2",
+          "plannedStepId": null,
+          "plannedText": null,
+          "executedToolCalls": [
+            "assert EVALUATE safe"
+          ],
+          "replayStepIndex": 9,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "exported_direct",
+          "reason": "ReplayIR contains an extra executed step with no authored planned step; kept visible for audit."
+        }
+      ]
+    },
+    {
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "runResultId": "92ff1e51-a334-4b6a-9501-e7640d8e59c7",
+      "caseName": "SQL injection OR-payload in username is safely rejected",
+      "scenarioId": "6cc682f9-7221-4bd3-8740-2bddb5b5c245",
+      "scenarioName": "SQL Injection Attack Prevention (Exhaustive SecurityAuth Sheet — SQL Rows)",
+      "specFile": null,
+      "plannedStepCount": 5,
+      "replayStepCount": 6,
+      "emitterFindings": [
+        {
+          "code": "action_failed_dropped",
+          "detail": "browser_navigate did not succeed; not replayed."
+        },
+        {
+          "code": "export_safe_unverified_locator",
+          "severity": "info",
+          "where": "browser_type",
+          "elementLabel": "Username field",
+          "detail": "Step \"Username field\" exported with a faithful ARIA-derived locator that did not clear the gold count=1 proof; runnable but flagged unverified."
+        },
+        {
+          "code": "export_safe_unverified_locator",
+          "severity": "info",
+          "where": "browser_type",
+          "elementLabel": "Password field",
+          "detail": "Step \"Password field\" exported with a faithful ARIA-derived locator that did not clear the gold count=1 proof; runnable but flagged unverified."
+        },
+        {
+          "code": "declared_negative_credential_preserved",
+          "detail": "Preserved declared negative credential/test input for Password field so export does not substitute canonical env credentials."
+        },
+        {
+          "code": "export_safe_unverified_locator",
+          "severity": "info",
+          "where": "browser_click",
+          "elementLabel": "Login button",
+          "detail": "Step \"Login button\" exported with a faithful ARIA-derived locator that did not clear the gold count=1 proof; runnable but flagged unverified."
+        }
+      ],
+      "ledger": [
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "92ff1e51-a334-4b6a-9501-e7640d8e59c7",
+          "plannedStepId": "1",
+          "plannedText": "Login form visible",
+          "executedToolCalls": [
+            "navigate https://opensource-demo.orangehrmlive.com/web/index.php/auth/login"
+          ],
+          "replayStepIndex": 0,
+          "replayOp": "act",
+          "replayAction": "navigate",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "92ff1e51-a334-4b6a-9501-e7640d8e59c7",
+          "plannedStepId": "2",
+          "plannedText": "Fill Username field",
+          "executedToolCalls": [
+            "fill el1"
+          ],
+          "replayStepIndex": 2,
+          "replayOp": "act",
+          "replayAction": "fill",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "92ff1e51-a334-4b6a-9501-e7640d8e59c7",
+          "plannedStepId": "3",
+          "plannedText": "Fill Password field",
+          "executedToolCalls": [
+            "fill el2"
+          ],
+          "replayStepIndex": 4,
+          "replayOp": "act",
+          "replayAction": "fill",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "92ff1e51-a334-4b6a-9501-e7640d8e59c7",
+          "plannedStepId": "4",
+          "plannedText": "SQL injection payload submitted",
+          "executedToolCalls": [
+            "click el3"
+          ],
+          "replayStepIndex": 6,
+          "replayOp": "act",
+          "replayAction": "click",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "92ff1e51-a334-4b6a-9501-e7640d8e59c7",
+          "plannedStepId": "5",
+          "plannedText": "User remains on login page; no DB error or crash",
+          "executedToolCalls": [
+            "assert PAGE treated_as_text"
+          ],
+          "replayStepIndex": 7,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "requires_repair",
+          "reason": "No generated spec file was admitted for this test case."
+        },
+        {
+          "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+          "runResultId": "92ff1e51-a334-4b6a-9501-e7640d8e59c7",
+          "plannedStepId": null,
+          "plannedText": null,
+          "executedToolCalls": [
+            "assert EVALUATE safe"
+          ],
+          "replayStepIndex": 8,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "exported_direct",
+          "reason": "ReplayIR contains an extra executed step with no authored planned step; kept visible for audit."
+        }
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "rule": "step_compilation_parity_gap",
+      "severity": "error",
+      "message": "42 planned/executed step(s) could not be proven through ReplayIR and generated output.",
+      "path": "evidence/step-parity-report.json"
+    }
+  ]
+}

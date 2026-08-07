@@ -1,0 +1,26 @@
+AutomationExercise — Product Search & Filter TestData
+PURPOSE
+"This TestData.xlsx drives QAAI's autonomous validation of product search, filtering, and result assertion on AutomationExercise."
+SHEET GUIDE
+"FilterData → 17 test cases covering search, category filter, price filter, and multi-criteria combinations"
+"NegativeFilter → 10 edge/security test cases (SQL injection, XSS, oversized input, boundary conditions)"
+"AssertionData → Defines what QAAI must verify: product names, prices, categories match filter criteria"
+README → This sheet; setup and usage instructions
+KEY FEATURES
+• Single-Criterion Tests (TC-FILTER-01 to TC-FILTER-11): Prove QAAI can discover and apply individual filters
+• Multi-Criteria Tests (TC-FILTER-12 to TC-FILTER-15): Prove QAAI can combine search + category + price
+• Security Tests (TC-NEG-01 to TC-NEG-02): Prove QAAI handles SQL injection and XSS without crashing
+• Boundary Tests (TC-NEG-04 to TC-NEG-10): Prove edge cases are handled gracefully
+• Assertion Tests (AssertionData): Define exact assertions QAAI must make per filter type
+EXECUTION NOTES
+1. Navigate to https://automationexercise.com/products
+2. No login required — all product filtering is public-facing
+3. FilterData testCaseID maps to user story (TC-FILTER-01 → US-PS-01)
+"4. AssertionData.assertionType specifies HOW QAAI should assert (text_contains, price_range, etc.)"
+5. NegativeFilter rows test security and boundary conditions — all should result in graceful rejection
+BENCHMARK SUCCESS CRITERIA
+✓ All 17 FilterData tests pass with correct result assertion
+✓ Multi-criteria tests (12-15) prove QAAI combines filters correctly (AND logic)
+✓ All 10 NegativeFilter tests handled gracefully with no crashes
+"✓ Security tests (SQL injection, XSS) rejected without rendering malicious content"
+✓ BDD and Playwright scripts exported and runnable without modification

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useProject } from '../store/project';
 import { ChevronDown, Folder, FolderPlus, Search, Check } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -16,6 +17,7 @@ export default function ProjectPicker() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [activeIdx, setActiveIdx] = useState(0);
+  const [menuRect, setMenuRect] = useState(null);
   const btnRef = useRef(null);
   const inputRef = useRef(null);
   const listRef = useRef(null);
@@ -57,8 +59,26 @@ export default function ProjectPicker() {
   useEffect(() => {
     if (open) {
       setActiveIdx(0);
+      const updateRect = () => {
+        const rect = btnRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        const width = Math.min(420, Math.max(300, rect.width));
+        setMenuRect({
+          top: Math.min(window.innerHeight - 96, rect.bottom + 8),
+          left: Math.max(12, Math.min(rect.left, window.innerWidth - width - 12)),
+          width,
+          maxHeight: Math.max(180, window.innerHeight - rect.bottom - 24),
+        });
+      };
+      updateRect();
+      window.addEventListener('resize', updateRect);
+      window.addEventListener('scroll', updateRect, true);
       const t = setTimeout(() => inputRef.current?.focus(), 0);
-      return () => clearTimeout(t);
+      return () => {
+        clearTimeout(t);
+        window.removeEventListener('resize', updateRect);
+        window.removeEventListener('scroll', updateRect, true);
+      };
     }
   }, [open]);
 
@@ -131,10 +151,17 @@ export default function ProjectPicker() {
         <ChevronDown className={`w-3.5 h-3.5 text-ink-400 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden="true" />
       </button>
 
-      {open && (
+      {open && menuRect && createPortal(
         <div
           ref={listRef}
-          className="absolute z-40 top-full mt-1 left-0 w-[280px] bg-white border border-ink-200 rounded-md shadow-pop overflow-hidden"
+          // z-[100]: the dropdown sits inside the page header's z-10 stacking
+          // context. Sibling pages with their own z-10 main (e.g. OutputFiles'
+          // glass-styled explorer panel) would otherwise paint OVER the
+          // dropdown list — operators reported "dropdown opens but the
+          // project rows are hidden under the tests panel" (2026-05-29).
+          // z-[100] beats any normal page chrome without needing a portal.
+          className="fixed z-[1000] bg-white border border-ink-200 rounded-lg shadow-pop overflow-hidden"
+          style={{ top: menuRect.top, left: menuRect.left, width: menuRect.width, maxHeight: menuRect.maxHeight }}
           role="presentation"
         >
           <div className="relative border-b border-ink-100">
@@ -156,7 +183,8 @@ export default function ProjectPicker() {
             id="project-picker-list"
             role="listbox"
             aria-label="Projects"
-            className="max-h-72 overflow-y-auto py-1"
+            className="overflow-y-auto py-1"
+            style={{ maxHeight: Math.max(120, menuRect.maxHeight - 40) }}
           >
             {filtered.length === 0 ? (
               <li className="px-3 py-3 text-xs text-ink-500" role="presentation">
@@ -184,7 +212,8 @@ export default function ProjectPicker() {
               );
             })}
           </ul>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

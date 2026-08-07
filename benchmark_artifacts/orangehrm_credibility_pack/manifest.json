@@ -1,0 +1,17 @@
+{
+  "preparedOn": "2026-06-28",
+  "outputDir": "C:\\Users\\2461898\\Downloads\\qaai_fixed\\qaai_fixed\\qaai_fixed\\benchmark_artifacts\\orangehrm_credibility_pack",
+  "files": {
+    "userStoriesMarkdown": "C:\\Users\\2461898\\Downloads\\qaai_fixed\\qaai_fixed\\qaai_fixed\\benchmark_artifacts\\orangehrm_credibility_pack\\OrangeHRM_Credibility_User_Stories.md",
+    "userStoriesDocx": "C:\\Users\\2461898\\Downloads\\qaai_fixed\\qaai_fixed\\qaai_fixed\\benchmark_artifacts\\orangehrm_credibility_pack\\OrangeHRM_Credibility_User_Stories.docx",
+    "testDataWorkbook": "C:\\Users\\2461898\\Downloads\\qaai_fixed\\qaai_fixed\\qaai_fixed\\benchmark_artifacts\\orangehrm_credibility_pack\\OrangeHRM_Credibility_Test_Data.xlsx"
+  },
+  "storyCount": 17,
+  "sheetCount": 21,
+  "expectedProductGapStories": [
+    "US-OHRM-004",
+    "US-OHRM-010",
+    "US-OHRM-015",
+    "US-OHRM-017"
+  ]
+}

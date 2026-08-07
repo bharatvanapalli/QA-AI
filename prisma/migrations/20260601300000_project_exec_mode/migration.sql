@@ -1,0 +1,12 @@
+-- 20260601300000_project_exec_mode
+-- Phase F (cost control). Add Project.execMode toggle so each project can
+-- pick its Conductor profile:
+--   'fast'     (default) — 12 turns/case, 1 conductor attempt,
+--                          no Supervisor finalise, error-only inline Critic.
+--   'thorough' — 22 turns/case, 2 conductor attempts + Supervisor finalise,
+--                periodic inline Critic every 5 turns.
+-- Additive + defaulted; legacy rows quietly adopt 'fast'. The default flip
+-- (from prior implicit 'thorough') is intentional — see PHASE_LOG: a 5-case
+-- sample run was burning 3.5M tokens because we were running thorough-like
+-- behaviour on every iteration.
+ALTER TABLE "Project" ADD COLUMN "execMode" TEXT NOT NULL DEFAULT 'fast';

@@ -1,0 +1,24 @@
+
+=== P2-integration acceptance evidence · 2026-06-03T06:16:37.979Z ===
+Project 9675bfde-acb2-4eda-aaed-b6694b88f920 "Orange HRM" · generation v4 (95dec73c-9c30-4ade-824a-9a206e5726ef)  P2 Hybrid smoke 2026-06-03T06:11:02.626Z
+
+[1] Clauses extracted for project: 131
+    (acceptance: nonzero + consistent with the uploaded docs. A STABLE count across re-runs is EXPECTED — content-hash dedupe reuses existing clauses, so it need not increase.)
+Cases in generation: 33
+
+[2] Cases traced to clauses: 33/33; invalid refs stored: 0
+    ✓ every stored requirementRef cites a real clause (Node disposed correctly)
+
+[3] must assertions: 53; with app-origin provenance: 0
+    ✓ no must carries website/atlas/app provenance
+
+[4] RTM uncovered-requirement findings: 62
+    • Uncovered requirement: REQ-197a392ac5
+    • Uncovered requirement: REQ-6c7747369a
+    • Uncovered requirement: REQ-a57db6b1b4
+    • Uncovered requirement: REQ-0699a9ef5b
+    • Uncovered requirement: REQ-f8df330ceb
+    … and 57 more
+
+OK — oracle evidence consistent
+

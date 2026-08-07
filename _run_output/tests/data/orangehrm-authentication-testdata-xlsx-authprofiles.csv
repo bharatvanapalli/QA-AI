@@ -1,0 +1,5 @@
+testCaseID,authRole,username,password,sensitivityLevel,expectedLandingPage,expectedVisibleMenuItems,expectedHiddenMenuItems,notes
+TC-AUTH-01,admin,Admin,admin123,MASKED,/web/index.php/dashboard/index,"Admin,PIM,Leave,Time,Recruitment,Performance,Directory,Maintenance",None,Valid admin login - full system access
+TC-AUTH-02,ess,ess_user_01,TestUser@123,MASKED,/web/index.php/dashboard/index,"Leave,Time,My Info,Directory","Admin,PIM,Recruitment,Maintenance",Valid ESS user login - self-service only - must be created before running ESS tests
+TC-AUTH-03,admin_logout,Admin,admin123,MASKED,/web/index.php/auth/login,,,Admin login then logout - verify session cleared and redirect to login
+TC-AUTH-04,ess_logout,ess_user_01,TestUser@123,MASKED,/web/index.php/auth/login,,,ESS login then logout - verify session cleared

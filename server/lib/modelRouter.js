@@ -56,6 +56,21 @@ const FLAGSHIP_FALLBACKS = Object.freeze({
   gemini: 'gemini-2.5-pro',
 });
 
+// Strong-tier model IDs by provider. Used by THOROUGH-mode high-stakes
+// agents (Supervisor, Verifier) to bump to the provider's most capable
+// model even when the main loop runs a fast model for speed. This is the
+// "thorough buys you a stronger second opinion" lever: the Conductor can
+// run gemini-2.5-flash (fast, per the operator's Settings choice) while the
+// Verifier that double-checks PASS verdicts runs gemini-2.5-pro. Same API
+// key calls every model — bumping costs more tokens, not a new credential.
+const STRONG_MODELS = Object.freeze({
+  claude: 'claude-sonnet-4-6',
+  gemini: 'gemini-2.5-pro',
+});
+
+// The set of mid/fast model IDs we treat as "needs a bump" for strong-tier.
+const MID_MODEL_VALUES = Object.freeze(new Set(Object.values(MID_TIER_MODELS)));
+
 function normaliseProvider(name) {
   const s = String(name || '').toLowerCase();
   if (s === 'claude' || s === 'gemini') return s;
@@ -82,9 +97,33 @@ function resolveModelForTier({ provider, requestedModel, tier } = {}) {
   return requestedModel || FLAGSHIP_FALLBACKS[p];
 }
 
+/**
+ * Resolve the STRONGEST appropriate model for a high-stakes thorough-mode
+ * agent. If the operator's chosen model is a mid/fast model (Haiku, Flash —
+ * e.g. they picked Flash for Conductor speed), bump to the provider's strong
+ * model so the verdict-critical second opinion isn't made on the weak model.
+ * If they already picked a flagship model (Sonnet/Opus/Pro), respect it.
+ *
+ * @param {object} opts
+ * @param {string} opts.provider          'claude' | 'gemini'
+ * @param {string} [opts.requestedModel]  The operator's chosen model.
+ * @returns {string} The model ID the thorough-mode agent should call.
+ */
+function resolveStrongModel({ provider, requestedModel } = {}) {
+  const p = normaliseProvider(provider);
+  const m = String(requestedModel || '').trim();
+  if (!m) return STRONG_MODELS[p];
+  // Operator picked a mid/fast model → bump to strong for this high-stakes call.
+  if (MID_MODEL_VALUES.has(m) || /haiku|flash/i.test(m)) return STRONG_MODELS[p];
+  // Already a flagship-class model (sonnet/opus/pro) → respect their choice.
+  return m;
+}
+
 module.exports = {
   resolveModelForTier,
+  resolveStrongModel,
   TIERS,
   MID_TIER_MODELS,
   FLAGSHIP_FALLBACKS,
+  STRONG_MODELS,
 };

@@ -1,0 +1,7 @@
+{
+  "schema": "qaai-target-parity/1",
+  "ok": true,
+  "expectedTargetUrl": "https://opensource-demo.orangehrmlive.com",
+  "envTargetUrl": "https://opensource-demo.orangehrmlive.com",
+  "parentEnvOverrideGuard": true
+}

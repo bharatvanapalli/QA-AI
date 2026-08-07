@@ -40,6 +40,20 @@ Stack: React 19, Vite 6, Tailwind 3 with custom tokens, Express, Prisma 5.22, SQ
 
 ## Conventions (do these)
 
+### Operating principle — Node unless genuine novelty
+
+Every new agent, sub-agent, or LLM call MUST justify why a function isn't enough. The default is deterministic code; LLM is the fallback for genuine reasoning under ambiguity (free-form scenario generation, semantic restructuring, conversational follow-up).
+
+Concretely:
+- Topological sorts, regex classification, keyword matching, substring search, pixel diffs, graph joins — Node.
+- Free-form authoring, ambiguous-page strategy, post-mortem narrative, conversational chat — LLM.
+
+When proposing a new LLM call, write the case for it in the PR description: *what novelty does Claude provide here that a function couldn't?* If you can't answer that, the design is wrong — refactor before merging.
+
+Cost claims ("X is cheaper", "Y reduces tokens") require evidence. The replay harness at `scripts/replay/` (Phase H Stage 2) is the source of truth — run candidate-vs-baseline against the corpus and quote the delta. Without harness evidence, cost claims are folklore and get pushed back.
+
+The baseline this rule was introduced against: 16 runs / 109 cases / **12.8 % pass rate, 68.8 % blocked rate** as of 2026-05-28 (`scripts/stage0-output/baseline.json`). Phase H is the discipline correction for the previous habit of attaching every new feature as another LLM call.
+
 ### Colour tokens
 Use only the project palette. NEVER raw Tailwind colours.
 - `success` (greens) — passed cases, GO recommendation
@@ -132,6 +146,7 @@ If you find yourself reaching for `bg-slate-*` or `bg-rose-*`, stop and use the 
 - Mock the database in tests — integration tests hit the real SQLite. Reason: prior incident where mock/prod divergence masked a broken migration.
 - Hardcode counts, durations, or status labels. Everything must derive from current API state — no fallback "4 passed" sprinkled in.
 - Bypass git hooks (`--no-verify`) or skip prisma migrate steps.
+- Run `npx prisma generate` directly — always use `npm run prisma:generate` instead. The raw command only updates the root client; the npm script chains `scripts/sync-server-prisma.cjs` which copies and patches the server client automatically.
 - Read `Run.passed` directly when the source of truth for current pass/fail is `RunResult`.
 - Create destructive migrations without backfill + recompute steps.
 - Use `bg-slate-*`, `bg-rose-*`, `bg-emerald-*`, `bg-amber-*`, `bg-sky-*`, `bg-violet-*` — use tokens.

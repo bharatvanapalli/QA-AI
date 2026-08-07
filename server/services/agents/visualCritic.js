@@ -38,7 +38,7 @@
  */
 
 const { getProvider } = require('../../lib/llmProvider');
-const { composeSystemPrompt } = require('../../lib/promptCompose');
+const { composeSystemPrompt, composeSystemPromptCached } = require('../../lib/promptCompose');
 const { parseJsonResponse } = require('../../lib/parseJsonResponse');
 
 const SYSTEM_PROMPT = `You are a senior QA visual critic comparing two screenshots of the SAME page taken at two points in time.
@@ -193,7 +193,7 @@ async function compare({
       apiKey,
       model,
       maxTokens: 1500,
-      system: composeSystemPrompt(SYSTEM_PROMPT, extraGuidance),
+      system: composeSystemPromptCached(SYSTEM_PROMPT, extraGuidance),
       messages: [
         {
           role: 'user',

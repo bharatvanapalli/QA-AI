@@ -1,0 +1,15 @@
+# Requested behavior may not exist
+
+Data:
+- exportFormat=Parquet
+
+1. Open the configured application target.
+2. Navigate to an available records or administration page.
+3. Request an export using `exportFormat`.
+4. Verify that a download in `exportFormat` is offered.
+5. Independently verify that the page remains responsive.
+6. Take a screenshot named `product-gap-evidence`.
+
+If the requested export behavior does not exist, record a truthful product failure
+with browser evidence. Keep the independent responsiveness check runnable, and keep
+the failed export expectation enabled in generated automation.

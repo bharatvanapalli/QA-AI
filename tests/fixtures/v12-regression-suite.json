@@ -1,0 +1,66 @@
+{
+  "name": "V12 regression pattern",
+  "manifest": {
+    "items": [
+      {
+        "manifestItemId": "cov::req-admin-search::standard",
+        "title": "Admin system user search by username, role, employee name, and status",
+        "module": "Admin",
+        "required": true,
+        "storyRef": { "id": "US-OHRM-ADMIN-SEARCH", "title": "Search system users", "moduleHint": "Admin" },
+        "requiredFields": ["username", "role", "employee name", "status"],
+        "requiredOracles": [{ "kind": "table_row", "target": "System Users results table", "expected": "matching user row", "source": "story", "required": true }],
+        "dataRowIntents": ["positive"],
+        "dataSource": {
+          "sheet": "Admin_SystemUserSearch",
+          "rows": [{ "rowId": "admin-positive-1", "intent": "positive" }],
+          "rowSelector": "positive",
+          "placeholders": ["usernamefilter", "userrolefilter", "employeename", "statusfilter"]
+        }
+      },
+      {
+        "manifestItemId": "cov::req-leave-list::standard",
+        "title": "Leave List filter by date and status",
+        "module": "Leave",
+        "required": true,
+        "storyRef": { "id": "US-OHRM-LEAVE-LIST", "title": "Filter leave list", "moduleHint": "Leave" },
+        "requiredFields": ["from date", "to date", "status"],
+        "requiredOracles": [{ "kind": "table_row", "target": "Leave List table", "expected": "Leave List table or No Records Found", "source": "story", "required": true }],
+        "dataRowIntents": ["positive"],
+        "dataSource": {
+          "sheet": "Leave_ListFilters",
+          "rows": [{ "rowId": "leave-positive-1", "intent": "positive" }],
+          "rowSelector": "positive",
+          "placeholders": ["fromdate", "todate", "statusfilter"]
+        }
+      }
+    ]
+  },
+  "suite": [
+    {
+      "name": "Admin System User Search",
+      "module": "Admin",
+      "cases": [
+        {
+          "id": "admin-v12-case",
+          "name": "Admin search with stale V12 defects",
+          "module": "Admin",
+          "dataBinding": { "sheet": "Admin_SystemUserSearch", "source": "proposed" },
+          "qualityContract": {
+            "phase45": {
+              "status": "Repair retry needed",
+              "unresolvedDefects": [
+                { "code": "token_collision", "message": "stale suite-level defect without case ownership" }
+              ]
+            }
+          },
+          "steps": [
+            { "action": "Fill", "target": "Username filter field", "value": "{{username}}" },
+            { "action": "Click", "target": "Search button" },
+            { "action": "Verify", "target": "Dashboard page", "verify": { "kind": "visible", "target": "Dashboard page" }, "expected": "page ready" }
+          ]
+        }
+      ]
+    }
+  ]
+}

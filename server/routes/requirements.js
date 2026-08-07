@@ -8,9 +8,12 @@ const ado = require('../services/ado');
 const jira = require('../services/jira');
 const integrations = require('../services/integrations');
 const { extractText } = require('../services/docs');
+const { resolveAiCredentials } = require('../lib/resolveAiCredentials');
+const { buildDocumentUnderstanding } = require('../services/documentUnderstanding');
 const { requireAuth } = require('../middleware/auth');
 const { requireOrg } = require('../middleware/org');
 const { requireCsrf } = require('../middleware/csrf');
+const { sanitizeWarningList, sanitizeDegradations } = require('../lib/userFacingErrors');
 
 const router = express.Router({ mergeParams: true });
 router.use(requireAuth);
@@ -21,18 +24,58 @@ router.use(requireOrg);
  * The user can override in the UI.
  */
 function guessCategory(name, text) {
-  const lower = `${name}\n${(text || '').slice(0, 500)}`.toLowerCase();
-  if (/release[\s_-]?notes?|changelog|whats[\s_-]?new|release[\s_-]?\d/i.test(lower)) return 'release-notes';
-  if (/brd|business[\s_-]?requirement|business[\s_-]?spec/i.test(lower)) return 'brd';
-  if (/user[\s_-]?stor|us-\d|acceptance criteria|\bgiven\b.+\bwhen\b.+\bthen\b/is.test(lower)) return 'user-stories';
-  if (/openapi|swagger|api[\s_-]?spec|endpoint|paths:|\/api\/v\d/i.test(lower)) return 'api-spec';
+  const fname = String(name || '').toLowerCase();
+  const bodyRaw = String(text || '').slice(0, 3000);
+  const body = bodyRaw.toLowerCase();
+
+  // 1) FILENAME is the strongest signal — trust an explicit name before any
+  //    content scan. A user-stories / API / release doc routinely QUOTES its
+  //    parent BRD (e.g. "as per BRD-SD-2025-001"), so a content-first scan with
+  //    a broad /brd/ net mislabels them as BRD. Filename-first kills that class.
+  //    Order within filename: specific types before the broad BRD catch-all.
+  if (/user[\s_-]?stor|userstor|\bus[\s_-]?\d/i.test(fname)) return 'user-stories';
+  if (/release[\s_-]?note|changelog|whats[\s_-]?new/i.test(fname)) return 'release-notes';
+  if (/openapi|swagger|\bapi\b|api[\s_-]?spec|endpoint/i.test(fname)) return 'api-spec';
+  if (/\bbrd\b|business[\s_-]?req|business[\s_-]?spec/i.test(fname)) return 'brd';
+
+  // 2) CONTENT fallback — again SPECIFIC types before BRD. The BRD pattern is
+  //    tightened to require explicit BRD phrasing (a bare "brd" substring, as
+  //    in a quoted doc-ID, no longer wins) and runs LAST so a real user-story /
+  //    API / release body is classified by its own strong markers first.
+  if (/release[\s_-]?notes?|changelog|whats[\s_-]?new|version\s+history/i.test(body)) return 'release-notes';
+  if (/openapi|swagger|api[\s_-]?spec(ification)?|\bendpoint\b|paths:\s|\/api\/v\d/i.test(body)) return 'api-spec';
+  if (looksLikeProceduralTestFlow(bodyRaw)) return 'user-stories';
+  if (/user[\s_-]?stor|\bus-\d|acceptance criteria|\bas a\b.+\bi want\b|\bgiven\b.+\bwhen\b.+\bthen\b/is.test(body)) return 'user-stories';
+  if (/business[\s_-]?requirements?[\s_-]?document|\bbrd[\s_-]?(document|spec)\b|business[\s_-]?requirement|business[\s_-]?spec/i.test(body)) return 'brd';
   return 'other';
+}
+
+function looksLikeProceduralTestFlow(text) {
+  const body = String(text || '');
+  const hasScenario = /^\s*scenario\s*:/im.test(body);
+  const hasTestCase = /^\s*test\s*case\s*:/im.test(body);
+  const hasSteps = /^\s*steps\s*:/im.test(body) && /^\s*\d+[.)]\s+\S+/m.test(body);
+  const hasOracle = /^\s*(final|preferred)\s+validation\s*:/im.test(body)
+    || /^\s*preferred\s+final\s+assertion\s*:/im.test(body);
+  const hasExplicitShape = /^\s*expected\s+scenario\/test\s+case\s+shape\s*:/im.test(body)
+    || /\bexpected\s+(scenario|test\s*case)\s+count\s*:/i.test(body);
+  return (hasScenario && hasTestCase && hasSteps) || (hasSteps && hasOracle && hasExplicitShape);
 }
 
 async function getProject(req) {
   return prisma.project.findFirst({
     where: { id: req.params.projectId, orgId: req.org.id },
   });
+}
+
+async function safeFindMany(modelName, args, fallback = []) {
+  try {
+    const model = prisma[modelName];
+    if (!model || typeof model.findMany !== 'function') return fallback;
+    return await model.findMany(args);
+  } catch (_) {
+    return fallback;
+  }
 }
 
 // ── GET /api/projects/:projectId/requirements ─────────────
@@ -56,6 +99,68 @@ router.get('/', async (req, res, next) => {
 });
 
 // ── POST /api/projects/:projectId/requirements/upload ──────
+// Phase 1: understand uploaded BRD/User Stories/Release Notes before test-case
+// generation. Read-only, deterministic, and no-egress: this produces the
+// planning artifact that later asks for module-specific TestData.
+router.get('/understanding', async (req, res, next) => {
+  try {
+    const project = await getProject(req);
+    if (!project) return res.status(404).json({ success: false, code: 'NOT_FOUND' });
+    const sprintId = req.query.sprintId ? String(req.query.sprintId) : null;
+    const scoped = { projectId: project.id, ...(sprintId ? { sprintId } : {}) };
+
+    const [documents, requirementClauses, testDataSets, scenarios, calibrations] = await Promise.all([
+      safeFindMany('document', {
+        where: scoped,
+        orderBy: { uploadedAt: 'desc' },
+        select: { id: true, name: true, category: true, content: true, uploadedAt: true },
+      }),
+      safeFindMany('requirementClause', {
+        where: scoped,
+        orderBy: { createdAt: 'asc' },
+        select: { id: true, sourceType: true, behaviourText: true, excerpt: true, sourceDocId: true },
+      }),
+      safeFindMany('testDataSet', {
+        where: scoped,
+        orderBy: { uploadedAt: 'desc' },
+        select: { id: true, name: true, rowCount: true, sheetsJson: true, mappingJson: true, uploadedAt: true },
+      }),
+      safeFindMany('testScenario', {
+        where: { projectId: project.id },
+        orderBy: [{ priority: 'asc' }, { createdAt: 'asc' }],
+        select: { id: true, name: true, module: true },
+      }),
+      safeFindMany('calibration', {
+        where: { projectId: project.id },
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          module: true,
+          authProfileId: true,
+          version: true,
+          isCurrent: true,
+          pagesCount: true,
+          startUrl: true,
+          status: true,
+          staleAt: true,
+        },
+      }),
+    ]);
+
+    const understanding = buildDocumentUnderstanding({
+      project,
+      documents,
+      requirementClauses,
+      testDataSets,
+      scenarios,
+      calibrations,
+    });
+    res.json({ success: true, understanding });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.post('/upload', requireCsrf, async (req, res, next) => {
   try {
     const project = await getProject(req);
@@ -70,16 +175,33 @@ router.post('/upload', requireCsrf, async (req, res, next) => {
     // legacy clients that don't send the field.
     const sprintId = req.body?.sprintId ? String(req.body.sprintId) : null;
 
+    // Resolve the project's AI credentials ONCE (best-effort). Only IMAGE
+    // uploads need them — for vision extraction (Phase M0). Text/PDF/DOCX paths
+    // are unaffected, so a missing key never blocks a normal upload; an image
+    // upload without a key is rejected with a clear degradation inside extractText.
+    let aiCreds = null;
+    try {
+      const { provider, apiKey, model } = await resolveAiCredentials(req.user.id, project);
+      if (apiKey && provider) aiCreds = { provider, apiKey, model };
+    } catch (_) { aiCreds = null; }
+
     const created = [];
     const warnings = [];
+    const degradations = []; // structured honest-signal records surfaced to the UI
     for (const d of docs) {
-      const { text, parser, warning } = await extractText(d);
+      const { text, parser, warning, rejected } = await extractText(d, { collector: degradations, ai: aiCreds });
       if (warning) warnings.push(`${d.name}: ${warning}`);
+      // Rejected formats / scanned PDFs already emitted a structured degradation
+      // with a clear reason; skip the generic "no extractable text" duplicate.
+      if (rejected) continue;
       if (!text || text.trim().length < 20) {
         warnings.push(`${d.name}: no extractable text`);
         continue;
       }
-      const category = guessCategory(d.name || '', text);
+      // Vision-transcribed images are tagged 'visual' so the requirementOracle
+      // includes them (sourceTypeForCategory → 'VISUAL') and preserves their
+      // provenance; text docs keep the heuristic category.
+      const category = parser === 'vision' ? 'visual' : guessCategory(d.name || '', text);
       const doc = await prisma.document.create({
         data: {
           projectId: project.id,
@@ -98,7 +220,14 @@ router.post('/upload', requireCsrf, async (req, res, next) => {
           sourceType: 'upload',
           sourceIdentifier: doc.id,
           title: d.name || null,
-          content: text.slice(0, 8000),
+          // Lifted from 8000 → 32000. The 8K cap was clipping substantive BRDs
+          // and dropping MANUAL ONLY-flagged stories that lived past the cut
+          // (observed on SauceDemo project 2026-05-28: 4 of 5 manual stories
+          // missing from Architect output, partially because the source flag
+          // was outside the 8K window). The Architect's join-and-slice still
+          // caps at 80K total, so per-doc 32K stays well within budget even
+          // for projects with 3–5 source documents.
+          content: text.slice(0, 32000),
           category,
         },
       });
@@ -124,20 +253,24 @@ router.post('/upload', requireCsrf, async (req, res, next) => {
       });
     }
 
+    const safeWarnings = sanitizeWarningList(warnings, { area: 'document' });
+    const safeDegradations = sanitizeDegradations(degradations, { area: 'document' });
+
     await audit.log({
       userId: req.user.id,
       action: 'requirements.upload',
       target: project.id,
-      metadata: { count: created.length, warnings: warnings.length, clearedStaleAnalysis: touchedReleaseNotes },
+      metadata: { count: created.length, warnings: safeWarnings.length, degradations: safeDegradations.length, clearedStaleAnalysis: touchedReleaseNotes },
       req,
     });
     res.json({
       success: true,
       created,
-      warnings,
+      warnings: safeWarnings,
+      degradations: safeDegradations,
       message:
         `${created.length} document(s) indexed.` +
-        (warnings.length ? ` ${warnings.length} warning(s).` : ''),
+        (safeWarnings.length ? ` ${safeWarnings.length} warning(s).` : ''),
     });
   } catch (err) {
     next(err);
@@ -272,3 +405,4 @@ router.get('/documents/list', async (req, res, next) => {
 });
 
 module.exports = router;
+module.exports._private = { guessCategory, looksLikeProceduralTestFlow };

@@ -43,39 +43,58 @@ const VALID_PROVIDERS = Object.freeze(['claude', 'gemini']);
  * sees the regular options bag and returns the canonical response.
  */
 function wrap(impl, providerName) {
-  return {
+  // Shared breaker+budget envelope. `call` performs the actual provider
+  // request (streaming or not) and returns the canonical response; this
+  // function applies the identical protection around it for both paths.
+  async function guarded(call) {
+    const userId = userContext.getUserId();
+
+    // 1. Breaker pre-flight. Throws BREAKER_OPEN if the provider is
+    //    in cool-down. Returns a token when in half_open so we can
+    //    release the probe slot on completion.
+    const probeToken = breaker.check(providerName);
+
+    // 2. Budget pre-flight. Only enforced when we have a request-bound
+    //    userId (scripts/jobs without ALS context bypass — they're
+    //    operator-initiated, not end-user runs).
+    if (userId) await budget.assertWithinLimit(userId);
+
+    try {
+      const resp = await call();
+      breaker.recordSuccess(providerName, probeToken);
+      // Record usage AFTER a successful call. On error we don't bill —
+      // the user shouldn't be charged for an upstream 5xx.
+      if (userId && resp?.usage) {
+        await budget.recordUsage(userId, providerName, resp.usage).catch((err) => {
+          // Budget bookkeeping must never break a successful AI call.
+          console.warn('[budget] record failed:', err.message);
+        });
+      }
+      return resp;
+    } catch (err) {
+      breaker.recordFailure(providerName, err, probeToken);
+      throw err;
+    }
+  }
+
+  const wrapped = {
     name: impl.name,
     async complete(opts) {
-      const userId = userContext.getUserId();
-
-      // 1. Breaker pre-flight. Throws BREAKER_OPEN if the provider is
-      //    in cool-down. Returns a token when in half_open so we can
-      //    release the probe slot on completion.
-      const probeToken = breaker.check(providerName);
-
-      // 2. Budget pre-flight. Only enforced when we have a request-bound
-      //    userId (scripts/jobs without ALS context bypass — they're
-      //    operator-initiated, not end-user runs).
-      if (userId) await budget.assertWithinLimit(userId);
-
-      try {
-        const resp = await impl.complete(opts);
-        breaker.recordSuccess(providerName, probeToken);
-        // Record usage AFTER a successful call. On error we don't bill —
-        // the user shouldn't be charged for an upstream 5xx.
-        if (userId && resp?.usage) {
-          await budget.recordUsage(userId, providerName, resp.usage).catch((err) => {
-            // Budget bookkeeping must never break a successful AI call.
-            console.warn('[budget] record failed:', err.message);
-          });
-        }
-        return resp;
-      } catch (err) {
-        breaker.recordFailure(providerName, err, probeToken);
-        throw err;
-      }
+      return guarded(() => impl.complete(opts));
     },
   };
+
+  // Streaming path (Claude). Routed through the SAME breaker + budget
+  // envelope as complete() — the Architect previously built a raw client
+  // inline and bypassed both. Streaming progress events still flow via the
+  // caller's onText callback (the provider wires it to stream.on('text')).
+  if (typeof impl.completeStream === 'function') {
+    wrapped.completeStream = async function completeStream(opts) {
+      return guarded(() => impl.completeStream(opts));
+    };
+  }
+
+  return wrapped;
 }
 
 const PROVIDERS = {

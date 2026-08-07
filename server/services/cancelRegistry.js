@@ -37,6 +37,13 @@ function create(userId) {
     requestedAt: null,
     controller,
     signal: controller.signal,
+    // Track when the token was created so the leak-detection self-heal in
+    // routes/agents.js doesn't reap a freshly-created live token before the
+    // IIFE has had time to write its first AgentRun.status='running' row.
+    // Run rows lag AgentRun rows by one phase (Run is created by the
+    // Conductor, not the Planner) so the leak-check window has to be both
+    // age-bounded AND DB-aware.
+    createdAt: Date.now(),
   };
   tokens.set(userId, token);
   return token;

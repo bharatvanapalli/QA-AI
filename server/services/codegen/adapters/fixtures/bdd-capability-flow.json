@@ -1,0 +1,60 @@
+{
+  "featureName": "Product selection",
+  "scenarioName": "Add the least priced matching product to cart",
+  "tags": ["qaai", "entity-selection"],
+  "operations": [
+    {
+      "operation": "authenticateAs",
+      "params": { "role": "demo" }
+    },
+    {
+      "operation": "navigateToModule",
+      "params": { "module": "Shop" }
+    },
+    {
+      "operation": "selectEntityWhere",
+      "params": {
+        "entity": "product",
+        "criteria": [
+          { "field": "name", "operator": "contains", "value": "iPhone 17" },
+          { "field": "color", "operator": "equals", "value": "<color>" }
+        ]
+      }
+    },
+    {
+      "operation": "rankByMin",
+      "params": { "field": "price" }
+    },
+    {
+      "operation": "chooseSelected",
+      "params": {}
+    },
+    {
+      "operation": "invokeAction",
+      "params": { "action": "add to cart" }
+    },
+    {
+      "operation": "assertTableContains",
+      "params": {
+        "criteria": [
+          { "field": "cart item", "operator": "contains", "value": "iPhone 17" },
+          { "field": "color", "operator": "equals", "value": "<color>" }
+        ]
+      }
+    }
+  ],
+  "dataRows": [
+    {
+      "index": 0,
+      "label": "Row 1 - black product",
+      "fields": { "color": "black" },
+      "sensitivity": "synthetic"
+    },
+    {
+      "index": 1,
+      "label": "Row 2 - pink product",
+      "fields": { "color": "pink" },
+      "sensitivity": "synthetic"
+    }
+  ]
+}

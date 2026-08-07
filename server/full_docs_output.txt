@@ -1,0 +1,918 @@
+﻿
+=== DOCUMENT: OrangeHRM_Authentication_BRD.docx [brd] ===
+
+
+
+
+BUSINESS REQUIREMENTS DOCUMENT
+
+QAAI Enterprise Test Automation
+
+Module: Authentication & Post-Login Access Control
+
+Application: OrangeHRM
+
+Document Version
+
+1.0
+
+Module
+
+Authentication & Post-Login Access Control
+
+Application URL
+
+https://opensource-demo.orangehrmlive.com
+
+Framework
+
+Playwright + BDD
+
+Date
+
+June 2026
+
+
+
+
+
+1. Purpose
+
+This document specifies business requirements for QAAI's Authentication & Post-Login Access Control validation on OrangeHRM. This module is critical because it demonstrates QAAI's ability to:
+
+Bind credentials from TestData.xlsx to login automation (no hardcoded passwords)
+
+Assert role-specific UI elements post-login (what Admin sees vs ESS sees)
+
+Handle validation errors and edge cases gracefully
+
+Validate session state and logout functionality
+
+Detect and prevent common security threats (SQL injection, brute force)
+
+
+
+2. Login Page Overview
+
+2.1 Target URL
+
+https://opensource-demo.orangehrmlive.com/web/index.php/auth/login
+
+2.2 Login Form Elements
+
+Element
+
+Type
+
+Expected Behavior
+
+Username Input
+
+Text field
+
+Accepts alphanumeric, email format
+
+Password Input
+
+Password field
+
+Masks input; no plain text visible
+
+Login Button
+
+Submit button
+
+Submits form; shows loading state
+
+Error Message Area
+
+Alert/message box
+
+Displays validation or auth errors
+
+'Remember Me' checkbox
+
+Optional checkbox
+
+Optional feature for session extension
+
+
+
+3. Business Requirements
+
+3.1 Valid Login & Session Establishment
+
+BR-AUTH-01: QAAI shall read credentials from AuthProfiles sheet (no hardcoding); inject username and password at login form.
+
+BR-AUTH-02: QAAI shall login with Admin credentials (Admin / admin123) and assert redirect to /dashboard/index.
+
+BR-AUTH-03: QAAI shall login with ESS credentials (ess_user_01 / TestUser@123) and assert redirect to /dashboard/index.
+
+BR-AUTH-04: QAAI shall verify session is established — verify cookies set and subsequent requests include auth headers.
+
+BR-AUTH-05: QAAI shall assert that post-login URL contains '/dashboard' or equivalent authenticated path.
+
+
+
+3.2 Form Validation — Empty Fields
+
+BR-FORM-01: QAAI shall submit login form with empty username and assert field-level validation error 'Username is required'.
+
+BR-FORM-02: QAAI shall submit login form with empty password and assert field-level validation error 'Password is required'.
+
+BR-FORM-03: QAAI shall submit with both fields empty and assert validation on both fields.
+
+BR-FORM-04: QAAI shall verify error messages appear inline below respective fields, not generic alert.
+
+
+
+3.3 Invalid Credentials & Error Handling
+
+BR-ERROR-01: QAAI shall login with invalid username + valid password and assert error 'Invalid credentials'.
+
+BR-ERROR-02: QAAI shall login with valid username + wrong password and assert error 'Invalid credentials'.
+
+BR-ERROR-03: QAAI shall login with non-existent username and assert error message does NOT leak whether user exists.
+
+BR-ERROR-04: QAAI shall assert error message is user-friendly and not a technical stack trace.
+
+BR-ERROR-05: After invalid login, QAAI shall verify user remains on login page (no redirect).
+
+BR-ERROR-06: QAAI shall verify error message is clearly visible (not hidden, proper color contrast).
+
+
+
+3.4 Role-Based Post-Login Access Control
+
+BR-RBAC-01: QAAI shall login as Admin and assert Admin menu item is visible in left navigation.
+
+BR-RBAC-02: QAAI shall login as Admin and assert PIM, Leave, Time, Admin, Recruitment modules all visible.
+
+BR-RBAC-03: QAAI shall login as ESS user and assert Admin menu item is NOT visible.
+
+BR-RBAC-04: QAAI shall login as ESS user and assert only Leave, Time, My Info, Directory are visible.
+
+BR-RBAC-05: QAAI shall assert user's name or avatar displays correctly in the top-right corner post-login.
+
+BR-RBAC-06: QAAI shall verify that Admin dashboard shows admin-specific widgets (user management, system stats).
+
+BR-RBAC-07: QAAI shall verify that ESS dashboard shows ESS-specific widgets (my info, my leave balance).
+
+
+
+3.5 Session Management & Logout
+
+BR-SESSION-01: QAAI shall login successfully and then logout via the top-right user menu.
+
+BR-SESSION-02: QAAI shall verify logout redirects to /auth/login (login page).
+
+BR-SESSION-03: QAAI shall verify session cookie is cleared after logout.
+
+BR-SESSION-04: QAAI shall attempt to navigate directly to /dashboard after logout and assert redirect to /auth/login.
+
+BR-SESSION-05: QAAI shall verify 'Remember Me' checkbox (if present) extends session timeout.
+
+
+
+3.6 Security — Injection & Brute Force
+
+BR-SEC-01: QAAI shall attempt SQL injection in username field (e.g., 'admin' OR '1'='1') and assert safe rejection.
+
+BR-SEC-02: QAAI shall attempt XSS payload in username field (e.g., <script>alert(1)</script>) and assert payload not rendered.
+
+BR-SEC-03: QAAI shall attempt multiple failed logins (5+) and assert account not locked (or lockout message shown).
+
+BR-SEC-04: QAAI shall verify password field masks input (bullets, not plain text).
+
+BR-SEC-05: QAAI shall verify no sensitive info (password hints, username suggestions) is exposed in UI.
+
+
+
+
+
+4. QAAI Capability Gates — Authentication Module
+
+#
+
+Gate
+
+Evidence Required
+
+G1
+
+Credential binding
+
+Exported script reads credentials from AuthProfiles; no hardcoded password
+
+G2
+
+Valid login flow
+
+Both Admin and ESS roles successfully authenticate and redirect to dashboard
+
+G3
+
+Form validation
+
+Empty field validations caught and asserted (Username required, Password required)
+
+G4
+
+Invalid credential handling
+
+Invalid login shows 'Invalid credentials' error; user remains on login page
+
+G5
+
+Role-based UI assertion
+
+Admin and ESS see different navigation menus; assertions match expected role visibility
+
+G6
+
+Session management
+
+Logout clears session; direct dashboard access after logout redirects to login
+
+G7
+
+Security threat handling
+
+SQL injection, XSS, oversized input all handled safely — no crash, no injection success
+
+G8
+
+BDD export
+
+Generated Gherkin feature file includes Given/When/Then from TestData columns
+
+G9
+
+Playwright export
+
+Generated .spec.ts runs without modification
+
+
+
+5. Assumptions & Constraints
+
+OrangeHRM demo at https://opensource-demo.orangehrmlive.com is publicly accessible; no VPN required.
+
+Admin credentials (Admin / admin123) are fixed and displayed on the demo login page.
+
+ESS user (ess_user_01) will be created via Admin > User Management during test setup.
+
+No CAPTCHA or bot protection on the demo login page.
+
+Session timeout is set to a reasonable value (>30 mins) to avoid timeout during test execution.
+
+Password field properly masks input (uses HTML password input type, not text type).
+
+
+
+6. Test Environment & Roles
+
+Role
+
+Username
+
+Password
+
+Notes
+
+Admin
+
+Admin
+
+admin123
+
+Fixed demo creds
+
+ESS User
+
+ess_user_01
+
+TestUser@123
+
+Created via Admin panel
+
+Invalid Test
+
+nonexistent
+
+WrongPass@123
+
+For negative tests
+
+
+
+7. Success Criteria
+
+This Authentication module is VALIDATED when:
+
+✅ All 9 capability gates (G1-G9) PASS.
+
+✅ At least 25 test cases execute successfully.
+
+✅ Both Admin and ESS login flows work with correct RBAC assertions.
+
+✅ Form validation errors are detected and asserted.
+
+✅ Security tests (SQL injection, XSS) are handled safely.
+
+✅ Logout flow clears session correctly.
+
+✅ Exported BDD and Playwright scripts run without modification.
+
+
+
+=== DOCUMENT: OrangeHRM_Authentication_UserStories.docx [user-stories] ===
+
+
+
+
+USER STORIES
+
+QAAI Enterprise Test Automation
+
+Module: Authentication & Post-Login Access Control
+
+Total User Stories
+
+12
+
+Application
+
+OrangeHRM
+
+Module
+
+Authentication & Post-Login Access Control
+
+
+
+
+
+
+
+Story Index
+
+ID
+
+Title
+
+Priority
+
+Type
+
+US-AUTH-01
+
+Valid Admin Login
+
+Critical
+
+Positive
+
+US-AUTH-02
+
+Valid ESS Login
+
+Critical
+
+Positive
+
+US-AUTH-03
+
+Empty Username
+
+High
+
+Validation
+
+US-AUTH-04
+
+Empty Password
+
+High
+
+Validation
+
+US-AUTH-05
+
+Both Fields Empty
+
+High
+
+Validation
+
+US-AUTH-06
+
+Invalid Username
+
+High
+
+Negative
+
+US-AUTH-07
+
+Invalid Password
+
+High
+
+Negative
+
+US-AUTH-08
+
+SQL Injection Prevention
+
+Critical
+
+Security
+
+US-AUTH-09
+
+XSS Prevention
+
+Critical
+
+Security
+
+US-AUTH-10
+
+Logout & Session
+
+High
+
+Session
+
+US-AUTH-11
+
+Password Masking
+
+High
+
+Security
+
+US-AUTH-12
+
+Brute Force Handling
+
+Medium
+
+Security
+
+
+
+
+
+User Story Cards
+
+
+
+US-AUTH-01 — Valid Admin Login
+
+Story ID
+
+US-AUTH-01
+
+Priority
+
+Critical
+
+User Story
+
+As a login, I want to login with my Admin credentials, so that I can access all system modules and perform administrative tasks.
+
+Acceptance Criteria
+
+AC1: Entering username 'Admin' and password 'admin123', then clicking Login redirects to /dashboard/index
+
+
+
+AC2: Post-login, Admin menu item is visible in left navigation
+
+
+
+AC3: Dashboard displays admin-specific widgets (system stats, user count, etc.)
+
+
+
+AC4: Session cookie is set and user remains logged in across page navigations
+
+Negative Cases
+
+NEG1: After logout, attempting to navigate to /dashboard directly redirects back to /auth/login
+
+TestData Sheet
+
+AuthProfiles sheet → row: authRole=admin
+
+
+
+
+
+US-AUTH-02 — Valid ESS User Login
+
+Story ID
+
+US-AUTH-02
+
+Priority
+
+Critical
+
+User Story
+
+As a login, I want to login with my ESS user credentials, so that I can access self-service employee features without seeing admin-restricted modules.
+
+Acceptance Criteria
+
+AC1: Entering username 'ess_user_01' and password 'TestUser@123' redirects to /dashboard/index
+
+
+
+AC2: Post-login, Admin menu item is NOT visible in left navigation
+
+
+
+AC3: Only Leave, Time, My Info, Directory modules are visible
+
+
+
+AC4: Dashboard displays ESS-specific widgets (my leave balance, my info, etc.)
+
+Negative Cases
+
+NEG1: Attempting to navigate to /admin/viewSystemUsers as ESS user is redirected to dashboard
+
+TestData Sheet
+
+AuthProfiles sheet → row: authRole=ess
+
+
+
+
+
+US-AUTH-03 — Empty Username Validation
+
+Story ID
+
+US-AUTH-03
+
+Priority
+
+High
+
+User Story
+
+As a submit, I want to submit the login form with empty username, so that the system rejects the submission with a clear validation message.
+
+Acceptance Criteria
+
+AC1: Leaving username field empty and clicking Login shows field-level error
+
+
+
+AC2: Error message states 'Username is required' or equivalent
+
+
+
+AC3: User remains on login page; no redirect occurs
+
+
+
+AC4: Error is displayed inline below the username field with proper styling
+
+TestData Sheet
+
+FormValidation sheet → scenario=emptyUsername
+
+
+
+
+
+US-AUTH-04 — Empty Password Validation
+
+Story ID
+
+US-AUTH-04
+
+Priority
+
+High
+
+User Story
+
+As a submit, I want to submit the login form with empty password, so that the system validates the required field and prevents submission.
+
+Acceptance Criteria
+
+AC1: Leaving password field empty and clicking Login shows field-level error
+
+
+
+AC2: Error message states 'Password is required' or equivalent
+
+
+
+AC3: User remains on login page
+
+
+
+AC4: Error is inline below the password field
+
+TestData Sheet
+
+FormValidation sheet → scenario=emptyPassword
+
+
+
+
+
+US-AUTH-05 — Both Fields Empty Validation
+
+Story ID
+
+US-AUTH-05
+
+Priority
+
+High
+
+User Story
+
+As a submit, I want to submit the login form with both username and password fields empty, so that validations are triggered on both fields simultaneously.
+
+Acceptance Criteria
+
+AC1: Clicking Login with both fields empty shows validation errors on both
+
+
+
+AC2: Both error messages are visible: 'Username is required' and 'Password is required'
+
+
+
+AC3: User remains on login page
+
+TestData Sheet
+
+FormValidation sheet → scenario=bothFieldsEmpty
+
+
+
+
+
+US-AUTH-06 — Invalid Username Error
+
+Story ID
+
+US-AUTH-06
+
+Priority
+
+High
+
+User Story
+
+As a login, I want to login with a non-existent username, so that the system rejects the login with a clear error message without leaking user information.
+
+Acceptance Criteria
+
+AC1: Entering non-existent username 'nonexistent_user' and valid password shows error
+
+
+
+AC2: Error message is generic: 'Invalid credentials' (does NOT say 'user not found')
+
+
+
+AC3: User remains on login page
+
+
+
+AC4: Error message is clearly visible (proper color, not hidden)
+
+Negative Cases
+
+NEG1: Error message does not leak whether username or password was wrong
+
+TestData Sheet
+
+NegativeAuth sheet → scenario=invalidUsername
+
+
+
+
+
+US-AUTH-07 — Invalid Password Error
+
+Story ID
+
+US-AUTH-07
+
+Priority
+
+High
+
+User Story
+
+As a login, I want to login with correct username but wrong password, so that the system rejects the login with an error message.
+
+Acceptance Criteria
+
+AC1: Entering 'Admin' with wrong password shows 'Invalid credentials' error
+
+
+
+AC2: User remains on login page; no partial authentication occurs
+
+
+
+AC3: Login button shows loading state during submission
+
+TestData Sheet
+
+NegativeAuth sheet → scenario=invalidPassword
+
+
+
+
+
+US-AUTH-08 — SQL Injection Prevention
+
+Story ID
+
+US-AUTH-08
+
+Priority
+
+Critical
+
+User Story
+
+As a attempt, I want to attempt SQL injection in the username field, so that the system treats the injection payload as a regular string and safely rejects it.
+
+Acceptance Criteria
+
+AC1: Entering "admin' OR '1'='1" in username field and submitting shows 'Invalid credentials'
+
+
+
+AC2: No database error or stack trace is displayed
+
+
+
+AC3: User remains on login page (no redirect)
+
+
+
+AC4: Application does not crash or show technical errors
+
+TestData Sheet
+
+SecurityAuth sheet → scenario=sqlInjection
+
+
+
+
+
+US-AUTH-09 — XSS Prevention
+
+Story ID
+
+US-AUTH-09
+
+Priority
+
+Critical
+
+User Story
+
+As a attempt, I want to attempt XSS payload injection in the username field, so that the system treats the payload as plain text and does not render or execute it.
+
+Acceptance Criteria
+
+AC1: Entering "<script>alert('xss')</script>" shows 'Invalid credentials' or graceful rejection
+
+
+
+AC2: No JavaScript alert appears; script is not executed
+
+
+
+AC3: Payload is treated as a literal search string, not HTML/JavaScript
+
+TestData Sheet
+
+SecurityAuth sheet → scenario=xssAttempt
+
+
+
+
+
+US-AUTH-10 — Logout & Session Termination
+
+Story ID
+
+US-AUTH-10
+
+Priority
+
+High
+
+User Story
+
+As a click, I want to click logout from the authenticated dashboard, so that my session is terminated and I am returned to the login page.
+
+Acceptance Criteria
+
+AC1: After logout, the user is redirected to /auth/login
+
+
+
+AC2: Session cookie is cleared (verified by checking Set-Cookie headers)
+
+
+
+AC3: Navigating back to /dashboard results in redirect to login page
+
+
+
+AC4: User's name/avatar no longer appears in top-right corner
+
+TestData Sheet
+
+AuthProfiles sheet → any role post-login
+
+
+
+
+
+US-AUTH-11 — Password Masking
+
+Story ID
+
+US-AUTH-11
+
+Priority
+
+High
+
+User Story
+
+As a enter, I want to enter characters in the password field, so that the characters are hidden (masked with bullets or dots), not displayed as plain text.
+
+Acceptance Criteria
+
+AC1: Password field uses HTML type='password' (not type='text')
+
+
+
+AC2: Entered characters appear as bullets (•) or dots (•), not readable text
+
+
+
+AC3: Clearing and re-entering shows consistent masking
+
+TestData Sheet
+
+SecurityAuth sheet → password masking verification
+
+
+
+
+
+US-AUTH-12 — Multiple Failed Login Attempts
+
+Story ID
+
+US-AUTH-12
+
+Priority
+
+Medium
+
+User Story
+
+As a attempt, I want to attempt login with incorrect credentials 5+ times in succession, so that the system either denies further attempts or shows a lockout message (depending on policy).
+
+Acceptance Criteria
+
+AC1: After 5 failed attempts, system shows either 'Account locked' or continues to accept attempts
+
+
+
+AC2: If lockout occurs, a message is displayed: 'Account is locked'
+
+
+
+AC3: No infinite loop or crash occurs
+
+TestData Sheet
+
+SecurityAuth sheet → scenario=bruteForceAttempt
+
+
+
+

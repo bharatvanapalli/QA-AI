@@ -1,0 +1,14 @@
+[
+  {
+    "index": 0,
+    "label": "Row 1 · ess",
+    "fields": {
+      "role": "ess",
+      "username": "ess_user_01",
+      "password": "TestUser@123",
+      "sensitivitylevel": "MASKED",
+      "expected": "/web/index.php/dashboard/index",
+      "expectedLandingPage": "/web/index.php/dashboard/index"
+    }
+  }
+]

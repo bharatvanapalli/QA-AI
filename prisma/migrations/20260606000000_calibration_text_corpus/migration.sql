@@ -1,0 +1,19 @@
+-- Calibrator grounding — additive only (SQLite-safe).
+--
+-- CalibrationPage.textCorpus: the visible TEXT of a crawled page (headings,
+-- form labels, column headers, static copy) as a JSON string[]. elementsJson
+-- already holds the INTERACTIVE controls (button/link/textbox); textCorpus is
+-- the complementary half — the copy a TEXT/PAGE assertion is verified against.
+--
+-- Why this column exists: the Architect previously authored TEXT assertions
+-- blind (it had never seen the page), so it invented labels like "Employee
+-- Name" on pages that don't show them. With the real page text captured here,
+-- (1) getCalibrationContext can show the Architect the actual labels, and
+-- (2) groundAssertions() can deterministically down-tier any expectedText that
+-- no calibrated page displays — so a hallucinated label can never again
+-- hard-escalate a case to needs_human/fail.
+--
+-- Nullable: pre-existing CalibrationPage rows (captured before this column)
+-- keep working with textCorpus = NULL, which the consumers treat as "page text
+-- not captured — do not gate against it".
+ALTER TABLE "CalibrationPage" ADD COLUMN "textCorpus" TEXT;

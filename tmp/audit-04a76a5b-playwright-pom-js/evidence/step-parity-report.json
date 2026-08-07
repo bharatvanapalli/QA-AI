@@ -1,0 +1,2481 @@
+{
+  "schemaVersion": "qaai-step-compilation-ledger-v1",
+  "generatedAt": "2026-06-17T13:18:16.742Z",
+  "adapterId": "playwright-pom-js",
+  "summary": {
+    "totalCases": 21,
+    "totalPlannedSteps": 80,
+    "totalReplaySteps": 85,
+    "exported": 84,
+    "skippedNoise": 0,
+    "blockedInternal": 8,
+    "replayOnly": 12,
+    "duplicateActionsPruned": 1
+  },
+  "cases": [
+    {
+      "testCaseId": "a1a8df47-69b4-4d12-bd82-404886313c37",
+      "runResultId": "867e4bd0-2be5-4f4e-b996-26ec9ce11c49",
+      "caseName": "Products page loads and displays product listing without authentication",
+      "scenarioId": "eb080bbc-9024-4d4f-8f3f-9f7aeef830b1",
+      "scenarioName": "Products Page Load and Search Box Visibility",
+      "specFile": "tests/products/products-page-load-and-search-box-visibility.spec.js",
+      "plannedStepCount": 3,
+      "replayStepCount": 3,
+      "emitterFindings": [
+        {
+          "code": "unscoped_text_assertion",
+          "where": "ASN-1cca0c6a",
+          "detail": "UI_TEXT assertion \"All Products\": no containerSelector recorded — assertion verified full-page text; false pass from sidebar/nav/footer text is possible."
+        },
+        {
+          "code": "unscoped_text_assertion",
+          "where": "ASN-6f9ef9e2",
+          "detail": "UI_TEXT assertion \"Rs.\": no containerSelector recorded — assertion verified full-page text; false pass from sidebar/nav/footer text is possible."
+        }
+      ],
+      "ledger": [
+        {
+          "testCaseId": "a1a8df47-69b4-4d12-bd82-404886313c37",
+          "runResultId": "867e4bd0-2be5-4f4e-b996-26ec9ce11c49",
+          "plannedStepId": "1",
+          "plannedText": "All Products heading visible",
+          "executedToolCalls": [
+            "navigate https://automationexercise.com/products"
+          ],
+          "replayStepIndex": 0,
+          "replayOp": "act",
+          "replayAction": "navigate",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/products-page-load-and-search-box-visibility.spec.js",
+          "exportedSpecLine": 8,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "a1a8df47-69b4-4d12-bd82-404886313c37",
+          "runResultId": "867e4bd0-2be5-4f4e-b996-26ec9ce11c49",
+          "plannedStepId": "2",
+          "plannedText": "'All Products' text visible on page",
+          "executedToolCalls": [
+            "assert UI_TEXT All Products"
+          ],
+          "replayStepIndex": 1,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-1cca0c6a",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/products-page-load-and-search-box-visibility.spec.js",
+          "exportedSpecLine": 9,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "a1a8df47-69b4-4d12-bd82-404886313c37",
+          "runResultId": "867e4bd0-2be5-4f4e-b996-26ec9ce11c49",
+          "plannedStepId": "3",
+          "plannedText": "At least one 'Rs.' price label visible in product grid",
+          "executedToolCalls": [
+            "assert UI_TEXT Rs."
+          ],
+          "replayStepIndex": 2,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-6f9ef9e2",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/products-page-load-and-search-box-visibility.spec.js",
+          "exportedSpecLine": 10,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        }
+      ]
+    },
+    {
+      "testCaseId": "ff39ffb2-98af-4b19-9fae-f21f98f31847",
+      "runResultId": "d7ecd978-d429-408f-b9d9-cae08723e800",
+      "caseName": "Search box is visible on the Products page",
+      "scenarioId": "eb080bbc-9024-4d4f-8f3f-9f7aeef830b1",
+      "scenarioName": "Products Page Load and Search Box Visibility",
+      "specFile": "tests/products/products-page-load-and-search-box-visibility.spec.js",
+      "plannedStepCount": 2,
+      "replayStepCount": 1,
+      "emitterFindings": [
+        {
+          "code": "unscoped_text_assertion",
+          "where": "ASN-792da1ee",
+          "detail": "UI_TEXT assertion \"Search Product\": no containerSelector recorded — assertion verified full-page text; false pass from sidebar/nav/footer text is possible."
+        }
+      ],
+      "ledger": [
+        {
+          "testCaseId": "ff39ffb2-98af-4b19-9fae-f21f98f31847",
+          "runResultId": "d7ecd978-d429-408f-b9d9-cae08723e800",
+          "plannedStepId": "1",
+          "plannedText": "Products page loaded",
+          "executedToolCalls": [
+            "assert UI_TEXT Search Product"
+          ],
+          "replayStepIndex": 0,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-792da1ee",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/products-page-load-and-search-box-visibility.spec.js",
+          "exportedSpecLine": 16,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "ff39ffb2-98af-4b19-9fae-f21f98f31847",
+          "runResultId": "d7ecd978-d429-408f-b9d9-cae08723e800",
+          "plannedStepId": "2",
+          "plannedText": "'Search Product' label visible; search input field present on page",
+          "executedToolCalls": [],
+          "replayStepIndex": null,
+          "replayOp": null,
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "blocked_internal",
+          "reason": "Planned step has no corresponding ReplayIR action/assertion; QAAI must recapture or classify it before exporting."
+        }
+      ]
+    },
+    {
+      "testCaseId": "aadb4252-d6c0-49cc-88d8-7bec1de6565b",
+      "runResultId": "23184a6a-8a04-4dc8-8244-376ddcd956c2",
+      "caseName": "Category filter list is visible with expected options on Products page",
+      "scenarioId": "eb080bbc-9024-4d4f-8f3f-9f7aeef830b1",
+      "scenarioName": "Products Page Load and Search Box Visibility",
+      "specFile": "tests/products/products-page-load-and-search-box-visibility.spec.js",
+      "plannedStepCount": 2,
+      "replayStepCount": 3,
+      "emitterFindings": [
+        {
+          "code": "unscoped_text_assertion",
+          "where": "ASN-bc3385ee",
+          "detail": "UI_TEXT assertion \"Women\": no containerSelector recorded — assertion verified full-page text; false pass from sidebar/nav/footer text is possible."
+        },
+        {
+          "code": "unscoped_text_assertion",
+          "where": "ASN-dc21607a",
+          "detail": "UI_TEXT assertion \"Men\": no containerSelector recorded — assertion verified full-page text; false pass from sidebar/nav/footer text is possible."
+        },
+        {
+          "code": "unscoped_text_assertion",
+          "where": "ASN-6d443393",
+          "detail": "UI_TEXT assertion \"Kids\": no containerSelector recorded — assertion verified full-page text; false pass from sidebar/nav/footer text is possible."
+        }
+      ],
+      "ledger": [
+        {
+          "testCaseId": "aadb4252-d6c0-49cc-88d8-7bec1de6565b",
+          "runResultId": "23184a6a-8a04-4dc8-8244-376ddcd956c2",
+          "plannedStepId": "1",
+          "plannedText": "Products page loaded",
+          "executedToolCalls": [
+            "assert UI_TEXT Women"
+          ],
+          "replayStepIndex": 0,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-bc3385ee",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/products-page-load-and-search-box-visibility.spec.js",
+          "exportedSpecLine": 22,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "aadb4252-d6c0-49cc-88d8-7bec1de6565b",
+          "runResultId": "23184a6a-8a04-4dc8-8244-376ddcd956c2",
+          "plannedStepId": "2",
+          "plannedText": "'Women', 'Men', 'Kids' labels visible in Category section",
+          "executedToolCalls": [
+            "assert UI_TEXT Men"
+          ],
+          "replayStepIndex": 1,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-dc21607a",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/products-page-load-and-search-box-visibility.spec.js",
+          "exportedSpecLine": 23,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "aadb4252-d6c0-49cc-88d8-7bec1de6565b",
+          "runResultId": "23184a6a-8a04-4dc8-8244-376ddcd956c2",
+          "plannedStepId": null,
+          "plannedText": null,
+          "executedToolCalls": [
+            "assert UI_TEXT Kids"
+          ],
+          "replayStepIndex": 2,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-6d443393",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/products-page-load-and-search-box-visibility.spec.js",
+          "exportedSpecLine": 24,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": "ReplayIR contains an extra executed step with no authored planned step; kept visible for audit."
+        }
+      ]
+    },
+    {
+      "testCaseId": "a3df6292-2e57-44cb-a08b-65683b701bac",
+      "runResultId": "5207139d-6e95-40f2-8d34-0655383d4491",
+      "caseName": "Search 'Printed' returns products containing 'Printed' in name",
+      "scenarioId": "98561a85-57d1-4bbf-8ea3-f59718857437",
+      "scenarioName": "Product Search by Name — Happy Path",
+      "specFile": "tests/search/product-search-by-name-happy-path.spec.js",
+      "plannedStepCount": 4,
+      "replayStepCount": 4,
+      "emitterFindings": [
+        {
+          "code": "unscoped_text_assertion",
+          "where": "ASN-2412a119",
+          "detail": "UI_TEXT assertion \"Printed\": no containerSelector recorded — assertion verified full-page text; false pass from sidebar/nav/footer text is possible."
+        }
+      ],
+      "ledger": [
+        {
+          "testCaseId": "a3df6292-2e57-44cb-a08b-65683b701bac",
+          "runResultId": "5207139d-6e95-40f2-8d34-0655383d4491",
+          "plannedStepId": "1",
+          "plannedText": "All Products page loaded; textbox 'Search Product' visible",
+          "executedToolCalls": [
+            "navigate https://automationexercise.com/products"
+          ],
+          "replayStepIndex": 0,
+          "replayOp": "act",
+          "replayAction": "navigate",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/product-search-by-name-happy-path.spec.js",
+          "exportedSpecLine": 12,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "a3df6292-2e57-44cb-a08b-65683b701bac",
+          "runResultId": "5207139d-6e95-40f2-8d34-0655383d4491",
+          "plannedStepId": "2",
+          "plannedText": "Search field contains 'Printed'",
+          "executedToolCalls": [
+            "fill el1"
+          ],
+          "replayStepIndex": 2,
+          "replayOp": "act",
+          "replayAction": "fill",
+          "actionLocatorId": "el1",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/product-search-by-name-happy-path.spec.js",
+          "exportedSpecLine": null,
+          "exportedPageMethod": "fillSearchProduct",
+          "exportedLocatorKey": "searchProductInput",
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "a3df6292-2e57-44cb-a08b-65683b701bac",
+          "runResultId": "5207139d-6e95-40f2-8d34-0655383d4491",
+          "plannedStepId": "3",
+          "plannedText": "Search executed; results update",
+          "executedToolCalls": [
+            "click el2"
+          ],
+          "replayStepIndex": 4,
+          "replayOp": "act",
+          "replayAction": "click",
+          "actionLocatorId": "el2",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/product-search-by-name-happy-path.spec.js",
+          "exportedSpecLine": null,
+          "exportedPageMethod": "clickSearch",
+          "exportedLocatorKey": "searchButton",
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "a3df6292-2e57-44cb-a08b-65683b701bac",
+          "runResultId": "5207139d-6e95-40f2-8d34-0655383d4491",
+          "plannedStepId": "4",
+          "plannedText": "At least one product name containing 'Printed' is displayed",
+          "executedToolCalls": [
+            "assert UI_TEXT Printed"
+          ],
+          "replayStepIndex": 5,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-2412a119",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/product-search-by-name-happy-path.spec.js",
+          "exportedSpecLine": 10,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        }
+      ]
+    },
+    {
+      "testCaseId": "3edc779e-7466-463e-a119-bb8116b395d4",
+      "runResultId": "533505fa-5320-41fe-8041-67c91361460d",
+      "caseName": "Each product in search results for 'Printed' contains the term in its name",
+      "scenarioId": "98561a85-57d1-4bbf-8ea3-f59718857437",
+      "scenarioName": "Product Search by Name — Happy Path",
+      "specFile": "tests/search/product-search-by-name-happy-path.spec.js",
+      "plannedStepCount": 5,
+      "replayStepCount": 1,
+      "emitterFindings": [
+        {
+          "code": "unscoped_text_assertion",
+          "where": "ASN-a0d8f1b1",
+          "detail": "UI_TEXT assertion \"Printed\": no containerSelector recorded — assertion verified full-page text; false pass from sidebar/nav/footer text is possible."
+        }
+      ],
+      "ledger": [
+        {
+          "testCaseId": "3edc779e-7466-463e-a119-bb8116b395d4",
+          "runResultId": "533505fa-5320-41fe-8041-67c91361460d",
+          "plannedStepId": "1",
+          "plannedText": "Products page loaded; textbox 'Search Product' visible",
+          "executedToolCalls": [
+            "assert UI_TEXT Printed"
+          ],
+          "replayStepIndex": 0,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-a0d8f1b1",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/product-search-by-name-happy-path.spec.js",
+          "exportedSpecLine": 10,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "3edc779e-7466-463e-a119-bb8116b395d4",
+          "runResultId": "533505fa-5320-41fe-8041-67c91361460d",
+          "plannedStepId": "2",
+          "plannedText": "Search field contains 'Printed'",
+          "executedToolCalls": [],
+          "replayStepIndex": null,
+          "replayOp": null,
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "blocked_internal",
+          "reason": "Planned step has no corresponding ReplayIR action/assertion; QAAI must recapture or classify it before exporting."
+        },
+        {
+          "testCaseId": "3edc779e-7466-463e-a119-bb8116b395d4",
+          "runResultId": "533505fa-5320-41fe-8041-67c91361460d",
+          "plannedStepId": "3",
+          "plannedText": "Results displayed",
+          "executedToolCalls": [],
+          "replayStepIndex": null,
+          "replayOp": null,
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "blocked_internal",
+          "reason": "Planned step has no corresponding ReplayIR action/assertion; QAAI must recapture or classify it before exporting."
+        },
+        {
+          "testCaseId": "3edc779e-7466-463e-a119-bb8116b395d4",
+          "runResultId": "533505fa-5320-41fe-8041-67c91361460d",
+          "plannedStepId": "4",
+          "plannedText": "Product name contains 'Printed'",
+          "executedToolCalls": [],
+          "replayStepIndex": null,
+          "replayOp": null,
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "blocked_internal",
+          "reason": "Planned step has no corresponding ReplayIR action/assertion; QAAI must recapture or classify it before exporting."
+        },
+        {
+          "testCaseId": "3edc779e-7466-463e-a119-bb8116b395d4",
+          "runResultId": "533505fa-5320-41fe-8041-67c91361460d",
+          "plannedStepId": "5",
+          "plannedText": "No product name in results is missing 'Printed'",
+          "executedToolCalls": [],
+          "replayStepIndex": null,
+          "replayOp": null,
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "blocked_internal",
+          "reason": "Planned step has no corresponding ReplayIR action/assertion; QAAI must recapture or classify it before exporting."
+        }
+      ]
+    },
+    {
+      "testCaseId": "4df039bc-01f7-4399-9fdb-e7aeb1cf7399",
+      "runResultId": "4da64e07-b1df-4a31-915b-67d13ba38b7d",
+      "caseName": "Selecting Women > Dress category shows only Women Dress products",
+      "scenarioId": "cad2f0f4-3b25-42c5-81d2-a6ee746b8781",
+      "scenarioName": "Category Filter — Happy Path",
+      "specFile": "tests/products/category-filter-happy-path.spec.js",
+      "plannedStepCount": 4,
+      "replayStepCount": 5,
+      "emitterFindings": [
+        {
+          "code": "unscoped_text_assertion",
+          "where": "ASN-60835e2a",
+          "detail": "UI_TEXT assertion \"Women - Dress Products\": no containerSelector recorded — assertion verified full-page text; false pass from sidebar/nav/footer text is possible."
+        }
+      ],
+      "ledger": [
+        {
+          "testCaseId": "4df039bc-01f7-4399-9fdb-e7aeb1cf7399",
+          "runResultId": "4da64e07-b1df-4a31-915b-67d13ba38b7d",
+          "plannedStepId": "1",
+          "plannedText": "Products page loaded; Category sidebar visible",
+          "executedToolCalls": [
+            "navigate https://automationexercise.com/products"
+          ],
+          "replayStepIndex": 0,
+          "replayOp": "act",
+          "replayAction": "navigate",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/category-filter-happy-path.spec.js",
+          "exportedSpecLine": 10,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "4df039bc-01f7-4399-9fdb-e7aeb1cf7399",
+          "runResultId": "4da64e07-b1df-4a31-915b-67d13ba38b7d",
+          "plannedStepId": "2",
+          "plannedText": "Women subcategories expand",
+          "executedToolCalls": [
+            "click el1"
+          ],
+          "replayStepIndex": 2,
+          "replayOp": "act",
+          "replayAction": "click",
+          "actionLocatorId": "el1",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/category-filter-happy-path.spec.js",
+          "exportedSpecLine": null,
+          "exportedPageMethod": "clickSearchProduct",
+          "exportedLocatorKey": "searchProductInput",
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "4df039bc-01f7-4399-9fdb-e7aeb1cf7399",
+          "runResultId": "4da64e07-b1df-4a31-915b-67d13ba38b7d",
+          "plannedStepId": "3",
+          "plannedText": "Navigates to Women Dress category page",
+          "executedToolCalls": [
+            "click el2"
+          ],
+          "replayStepIndex": 4,
+          "replayOp": "act",
+          "replayAction": "click",
+          "actionLocatorId": "el2",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/category-filter-happy-path.spec.js",
+          "exportedSpecLine": null,
+          "exportedPageMethod": "clickSearch",
+          "exportedLocatorKey": "searchButton",
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "4df039bc-01f7-4399-9fdb-e7aeb1cf7399",
+          "runResultId": "4da64e07-b1df-4a31-915b-67d13ba38b7d",
+          "plannedStepId": "4",
+          "plannedText": "'Women - Dress Products' heading visible; product grid contains items",
+          "executedToolCalls": [
+            "assert UI_TEXT Women - Dress Products"
+          ],
+          "replayStepIndex": 5,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-60835e2a",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/category-filter-happy-path.spec.js",
+          "exportedSpecLine": 13,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "4df039bc-01f7-4399-9fdb-e7aeb1cf7399",
+          "runResultId": "4da64e07-b1df-4a31-915b-67d13ba38b7d",
+          "plannedStepId": null,
+          "plannedText": null,
+          "executedToolCalls": [
+            "assert UI_TEXT Rs."
+          ],
+          "replayStepIndex": 6,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-483082bc",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/category-filter-happy-path.spec.js",
+          "exportedSpecLine": 14,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": "ReplayIR contains an extra executed step with no authored planned step; kept visible for audit."
+        }
+      ]
+    },
+    {
+      "testCaseId": "fdc8c509-c3b7-4215-9341-628d1da59543",
+      "runResultId": "7b921c07-a6c9-487a-9d86-9a1c6b57289f",
+      "caseName": "Selecting Men > Tshirts category shows only Men Tshirts products",
+      "scenarioId": "cad2f0f4-3b25-42c5-81d2-a6ee746b8781",
+      "scenarioName": "Category Filter — Happy Path",
+      "specFile": "tests/products/category-filter-happy-path.spec.js",
+      "plannedStepCount": 4,
+      "replayStepCount": 4,
+      "emitterFindings": [
+        {
+          "code": "unscoped_text_assertion",
+          "where": "ASN-c6af4ca5",
+          "detail": "UI_TEXT assertion \"Men - Tshirts Products\": no containerSelector recorded — assertion verified full-page text; false pass from sidebar/nav/footer text is possible."
+        }
+      ],
+      "ledger": [
+        {
+          "testCaseId": "fdc8c509-c3b7-4215-9341-628d1da59543",
+          "runResultId": "7b921c07-a6c9-487a-9d86-9a1c6b57289f",
+          "plannedStepId": "1",
+          "plannedText": "Products page loaded; Category sidebar visible",
+          "executedToolCalls": [
+            "navigate https://automationexercise.com/products"
+          ],
+          "replayStepIndex": 0,
+          "replayOp": "act",
+          "replayAction": "navigate",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/category-filter-happy-path.spec.js",
+          "exportedSpecLine": 10,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "fdc8c509-c3b7-4215-9341-628d1da59543",
+          "runResultId": "7b921c07-a6c9-487a-9d86-9a1c6b57289f",
+          "plannedStepId": "2",
+          "plannedText": "Men subcategories expand",
+          "executedToolCalls": [
+            "click el1"
+          ],
+          "replayStepIndex": 2,
+          "replayOp": "act",
+          "replayAction": "click",
+          "actionLocatorId": "el1",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/category-filter-happy-path.spec.js",
+          "exportedSpecLine": null,
+          "exportedPageMethod": "clickSearchProduct",
+          "exportedLocatorKey": "searchProductInput",
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "fdc8c509-c3b7-4215-9341-628d1da59543",
+          "runResultId": "7b921c07-a6c9-487a-9d86-9a1c6b57289f",
+          "plannedStepId": "3",
+          "plannedText": "Navigates to Men Tshirts category page",
+          "executedToolCalls": [
+            "click el2"
+          ],
+          "replayStepIndex": 4,
+          "replayOp": "act",
+          "replayAction": "click",
+          "actionLocatorId": "el2",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/category-filter-happy-path.spec.js",
+          "exportedSpecLine": null,
+          "exportedPageMethod": "clickSearch",
+          "exportedLocatorKey": "searchButton",
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "fdc8c509-c3b7-4215-9341-628d1da59543",
+          "runResultId": "7b921c07-a6c9-487a-9d86-9a1c6b57289f",
+          "plannedStepId": "4",
+          "plannedText": "'Men - Tshirts Products' heading visible",
+          "executedToolCalls": [
+            "assert UI_TEXT Men - Tshirts Products"
+          ],
+          "replayStepIndex": 5,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-c6af4ca5",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/category-filter-happy-path.spec.js",
+          "exportedSpecLine": 23,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        }
+      ]
+    },
+    {
+      "testCaseId": "b07fd71c-502e-43f8-ba30-f15d807416ad",
+      "runResultId": "7098b31e-eebb-4738-a36a-0a04688883a9",
+      "caseName": "Search 'Printed' on Women Dress category page returns intersection",
+      "scenarioId": "cbfbaf10-f84b-49dd-b03a-6f68e1aeb185",
+      "scenarioName": "Combined Search and Category Filter",
+      "specFile": "tests/search/combined-search-and-category-filter.spec.js",
+      "plannedStepCount": 6,
+      "replayStepCount": 5,
+      "emitterFindings": [
+        {
+          "code": "unscoped_text_assertion",
+          "where": "ASN-bd2b71f4",
+          "detail": "UI_TEXT assertion \"Printed\": no containerSelector recorded — assertion verified full-page text; false pass from sidebar/nav/footer text is possible."
+        },
+        {
+          "code": "unscoped_text_assertion",
+          "where": "ASN-0c6bf396",
+          "detail": "UI_TEXT assertion \"Women - Dress Products\": no containerSelector recorded — assertion verified full-page text; false pass from sidebar/nav/footer text is possible."
+        }
+      ],
+      "ledger": [
+        {
+          "testCaseId": "b07fd71c-502e-43f8-ba30-f15d807416ad",
+          "runResultId": "7098b31e-eebb-4738-a36a-0a04688883a9",
+          "plannedStepId": "1",
+          "plannedText": "All Products page loaded; textbox 'Search Product' visible",
+          "executedToolCalls": [
+            "navigate https://automationexercise.com/products"
+          ],
+          "replayStepIndex": 0,
+          "replayOp": "act",
+          "replayAction": "navigate",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/combined-search-and-category-filter.spec.js",
+          "exportedSpecLine": 12,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "b07fd71c-502e-43f8-ba30-f15d807416ad",
+          "runResultId": "7098b31e-eebb-4738-a36a-0a04688883a9",
+          "plannedStepId": "2",
+          "plannedText": "Search field contains 'Printed'",
+          "executedToolCalls": [
+            "fill el1"
+          ],
+          "replayStepIndex": 2,
+          "replayOp": "act",
+          "replayAction": "fill",
+          "actionLocatorId": "el1",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/combined-search-and-category-filter.spec.js",
+          "exportedSpecLine": null,
+          "exportedPageMethod": "fillSearchProduct",
+          "exportedLocatorKey": "searchProductInput",
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "b07fd71c-502e-43f8-ba30-f15d807416ad",
+          "runResultId": "7098b31e-eebb-4738-a36a-0a04688883a9",
+          "plannedStepId": "3",
+          "plannedText": "Results filtered to 'Printed' products",
+          "executedToolCalls": [
+            "click el2"
+          ],
+          "replayStepIndex": 4,
+          "replayOp": "act",
+          "replayAction": "click",
+          "actionLocatorId": "el2",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/combined-search-and-category-filter.spec.js",
+          "exportedSpecLine": null,
+          "exportedPageMethod": "clickSearch",
+          "exportedLocatorKey": "searchButton",
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "b07fd71c-502e-43f8-ba30-f15d807416ad",
+          "runResultId": "7098b31e-eebb-4738-a36a-0a04688883a9",
+          "plannedStepId": "4",
+          "plannedText": "Women subcategories expand",
+          "executedToolCalls": [
+            "assert UI_TEXT Printed"
+          ],
+          "replayStepIndex": 5,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-bd2b71f4",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/combined-search-and-category-filter.spec.js",
+          "exportedSpecLine": 10,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "b07fd71c-502e-43f8-ba30-f15d807416ad",
+          "runResultId": "7098b31e-eebb-4738-a36a-0a04688883a9",
+          "plannedStepId": "5",
+          "plannedText": "Dress category page loads",
+          "executedToolCalls": [
+            "assert UI_TEXT Women - Dress Products"
+          ],
+          "replayStepIndex": 6,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-0c6bf396",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/combined-search-and-category-filter.spec.js",
+          "exportedSpecLine": 15,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "b07fd71c-502e-43f8-ba30-f15d807416ad",
+          "runResultId": "7098b31e-eebb-4738-a36a-0a04688883a9",
+          "plannedStepId": "6",
+          "plannedText": "'Women - Dress Products' heading visible; product grid shows items",
+          "executedToolCalls": [],
+          "replayStepIndex": null,
+          "replayOp": null,
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "blocked_internal",
+          "reason": "Planned step has no corresponding ReplayIR action/assertion; QAAI must recapture or classify it before exporting."
+        }
+      ]
+    },
+    {
+      "testCaseId": "e5d8ada1-ed4d-4e30-8f68-bd4e1e488a50",
+      "runResultId": "6db691f0-cbc2-4d78-9736-677b1614817e",
+      "caseName": "SQL injection string in search box is rejected safely",
+      "scenarioId": "8d119bb4-8d7a-42f5-9388-ff11777c9ab3",
+      "scenarioName": "Search Security — SQL Injection and XSS",
+      "specFile": "tests/search/search-security-sql-injection-and-xss.spec.js",
+      "plannedStepCount": 4,
+      "replayStepCount": 5,
+      "emitterFindings": [
+        {
+          "code": "unscoped_text_assertion",
+          "where": "ASN-1426675e",
+          "detail": "UI_TEXT assertion \"No products found\": no containerSelector recorded — assertion verified full-page text; false pass from sidebar/nav/footer text is possible."
+        }
+      ],
+      "ledger": [
+        {
+          "testCaseId": "e5d8ada1-ed4d-4e30-8f68-bd4e1e488a50",
+          "runResultId": "6db691f0-cbc2-4d78-9736-677b1614817e",
+          "plannedStepId": "1",
+          "plannedText": "Products page loaded — title 'Automation Exercise - All Products'",
+          "executedToolCalls": [
+            "navigate https://automationexercise.com/products"
+          ],
+          "replayStepIndex": 0,
+          "replayOp": "act",
+          "replayAction": "navigate",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/search-security-sql-injection-and-xss.spec.js",
+          "exportedSpecLine": 12,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "e5d8ada1-ed4d-4e30-8f68-bd4e1e488a50",
+          "runResultId": "6db691f0-cbc2-4d78-9736-677b1614817e",
+          "plannedStepId": "2",
+          "plannedText": "SQL injection string entered in search field",
+          "executedToolCalls": [
+            "fill el1"
+          ],
+          "replayStepIndex": 2,
+          "replayOp": "act",
+          "replayAction": "fill",
+          "actionLocatorId": "el1",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/search-security-sql-injection-and-xss.spec.js",
+          "exportedSpecLine": null,
+          "exportedPageMethod": "fillSearchProduct",
+          "exportedLocatorKey": "searchProductInput",
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "e5d8ada1-ed4d-4e30-8f68-bd4e1e488a50",
+          "runResultId": "6db691f0-cbc2-4d78-9736-677b1614817e",
+          "plannedStepId": "3",
+          "plannedText": "Search executes without server error",
+          "executedToolCalls": [
+            "click el2"
+          ],
+          "replayStepIndex": 4,
+          "replayOp": "act",
+          "replayAction": "click",
+          "actionLocatorId": "el2",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/search-security-sql-injection-and-xss.spec.js",
+          "exportedSpecLine": null,
+          "exportedPageMethod": "clickSearch",
+          "exportedLocatorKey": "searchButton",
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "e5d8ada1-ed4d-4e30-8f68-bd4e1e488a50",
+          "runResultId": "6db691f0-cbc2-4d78-9736-677b1614817e",
+          "plannedStepId": "4",
+          "plannedText": "URL contains /products; heading 'Searched Products' is visible; no product cards rendered; page text contains no SQL or database error keywords",
+          "executedToolCalls": [
+            "assert PAGE Search Product"
+          ],
+          "replayStepIndex": 5,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-2f37473f",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/search-security-sql-injection-and-xss.spec.js",
+          "exportedSpecLine": 14,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "e5d8ada1-ed4d-4e30-8f68-bd4e1e488a50",
+          "runResultId": "6db691f0-cbc2-4d78-9736-677b1614817e",
+          "plannedStepId": null,
+          "plannedText": null,
+          "executedToolCalls": [
+            "assert UI_TEXT No products found"
+          ],
+          "replayStepIndex": 6,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-1426675e",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/search-security-sql-injection-and-xss.spec.js",
+          "exportedSpecLine": 15,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": "ReplayIR contains an extra executed step with no authored planned step; kept visible for audit."
+        }
+      ]
+    },
+    {
+      "testCaseId": "c6c0a615-fb28-4c65-97fe-89d887abba14",
+      "runResultId": "da48b3f8-1cd3-4d66-96f0-95b1b1910952",
+      "caseName": "Search with numeric value returns matching products",
+      "scenarioId": "5ace7e3f-d53c-45f4-940c-694ca992ce69",
+      "scenarioName": "Product Search — Numeric and Special-Value Inputs",
+      "specFile": "tests/search/product-search-numeric-and-special-value-inputs.spec.js",
+      "plannedStepCount": 4,
+      "replayStepCount": 4,
+      "emitterFindings": [
+        {
+          "code": "unscoped_text_assertion",
+          "where": "ASN-4aa8d4be",
+          "detail": "UI_TEXT assertion \"Search Product\": no containerSelector recorded — assertion verified full-page text; false pass from sidebar/nav/footer text is possible."
+        }
+      ],
+      "ledger": [
+        {
+          "testCaseId": "c6c0a615-fb28-4c65-97fe-89d887abba14",
+          "runResultId": "da48b3f8-1cd3-4d66-96f0-95b1b1910952",
+          "plannedStepId": "1",
+          "plannedText": "Products page loaded",
+          "executedToolCalls": [
+            "navigate https://automationexercise.com/products"
+          ],
+          "replayStepIndex": 0,
+          "replayOp": "act",
+          "replayAction": "navigate",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/product-search-numeric-and-special-value-inputs.spec.js",
+          "exportedSpecLine": 12,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "c6c0a615-fb28-4c65-97fe-89d887abba14",
+          "runResultId": "da48b3f8-1cd3-4d66-96f0-95b1b1910952",
+          "plannedStepId": "2",
+          "plannedText": "Numeric value entered in search field",
+          "executedToolCalls": [
+            "fill el1"
+          ],
+          "replayStepIndex": 2,
+          "replayOp": "act",
+          "replayAction": "fill",
+          "actionLocatorId": "el1",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/product-search-numeric-and-special-value-inputs.spec.js",
+          "exportedSpecLine": null,
+          "exportedPageMethod": "fillSearchProduct",
+          "exportedLocatorKey": "searchProductInput",
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "c6c0a615-fb28-4c65-97fe-89d887abba14",
+          "runResultId": "da48b3f8-1cd3-4d66-96f0-95b1b1910952",
+          "plannedStepId": "3",
+          "plannedText": "Results page updated; no crash or error page",
+          "executedToolCalls": [
+            "click el2"
+          ],
+          "replayStepIndex": 4,
+          "replayOp": "act",
+          "replayAction": "click",
+          "actionLocatorId": "el2",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/product-search-numeric-and-special-value-inputs.spec.js",
+          "exportedSpecLine": null,
+          "exportedPageMethod": "clickSearch",
+          "exportedLocatorKey": "searchButton",
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "c6c0a615-fb28-4c65-97fe-89d887abba14",
+          "runResultId": "da48b3f8-1cd3-4d66-96f0-95b1b1910952",
+          "plannedStepId": "4",
+          "plannedText": "Page remains on products listing; no crash; results grid or empty state visible",
+          "executedToolCalls": [
+            "assert UI_TEXT Search Product"
+          ],
+          "replayStepIndex": 5,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-4aa8d4be",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/product-search-numeric-and-special-value-inputs.spec.js",
+          "exportedSpecLine": 14,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        }
+      ]
+    },
+    {
+      "testCaseId": "e8d7f201-c4b4-43e2-ba82-72681c90ffe7",
+      "runResultId": "35808dcd-85e2-4424-a278-550514d21b6d",
+      "caseName": "Clearing search input restores full product grid",
+      "scenarioId": "dfe5ed44-86c1-4e0d-9a49-b8c9e01991dc",
+      "scenarioName": "Search Clear Resets Product Grid",
+      "specFile": "tests/search/search-clear-resets-product-grid.spec.js",
+      "plannedStepCount": 6,
+      "replayStepCount": 5,
+      "emitterFindings": [
+        {
+          "code": "duplicate_action_pruned",
+          "where": "browser_click",
+          "detail": "Duplicate click on the same verified locator was excluded from ReplayIR because no wait/assertion/navigation/state boundary occurred between repeated actions.",
+          "classification": "skipped_noise",
+          "duplicateOfTrailIndex": 2,
+          "trailIndex": 5,
+          "action": "click"
+        },
+        {
+          "code": "action_failed_dropped",
+          "detail": "browser_triple_click did not succeed; not replayed."
+        },
+        {
+          "code": "unscoped_text_assertion",
+          "where": "ASN-320af5f3",
+          "detail": "UI_TEXT assertion \"All Products\": no containerSelector recorded — assertion verified full-page text; false pass from sidebar/nav/footer text is possible."
+        },
+        {
+          "code": "unscoped_text_assertion",
+          "where": "ASN-8170bc8b",
+          "detail": "UI_TEXT assertion \"Rs.\": no containerSelector recorded — assertion verified full-page text; false pass from sidebar/nav/footer text is possible."
+        }
+      ],
+      "ledger": [
+        {
+          "testCaseId": "e8d7f201-c4b4-43e2-ba82-72681c90ffe7",
+          "runResultId": "35808dcd-85e2-4424-a278-550514d21b6d",
+          "plannedStepId": "1",
+          "plannedText": "Products page loaded",
+          "executedToolCalls": [
+            "navigate https://automationexercise.com/products"
+          ],
+          "replayStepIndex": 0,
+          "replayOp": "act",
+          "replayAction": "navigate",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/search-clear-resets-product-grid.spec.js",
+          "exportedSpecLine": 12,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "e8d7f201-c4b4-43e2-ba82-72681c90ffe7",
+          "runResultId": "35808dcd-85e2-4424-a278-550514d21b6d",
+          "plannedStepId": "2",
+          "plannedText": "Search field contains 'Printed'",
+          "executedToolCalls": [
+            "fill el1"
+          ],
+          "replayStepIndex": 2,
+          "replayOp": "act",
+          "replayAction": "fill",
+          "actionLocatorId": "el1",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/search-clear-resets-product-grid.spec.js",
+          "exportedSpecLine": null,
+          "exportedPageMethod": "fillSearchProduct",
+          "exportedLocatorKey": "searchProductInput",
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "e8d7f201-c4b4-43e2-ba82-72681c90ffe7",
+          "runResultId": "35808dcd-85e2-4424-a278-550514d21b6d",
+          "plannedStepId": "3",
+          "plannedText": "Filtered results shown",
+          "executedToolCalls": [
+            "click el2"
+          ],
+          "replayStepIndex": 4,
+          "replayOp": "act",
+          "replayAction": "click",
+          "actionLocatorId": "el2",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/search-clear-resets-product-grid.spec.js",
+          "exportedSpecLine": null,
+          "exportedPageMethod": "clickSearch",
+          "exportedLocatorKey": "searchButton",
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "e8d7f201-c4b4-43e2-ba82-72681c90ffe7",
+          "runResultId": "35808dcd-85e2-4424-a278-550514d21b6d",
+          "plannedStepId": "4",
+          "plannedText": "Search field cleared",
+          "executedToolCalls": [
+            "assert UI_TEXT All Products"
+          ],
+          "replayStepIndex": 5,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-320af5f3",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/search-clear-resets-product-grid.spec.js",
+          "exportedSpecLine": 14,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "e8d7f201-c4b4-43e2-ba82-72681c90ffe7",
+          "runResultId": "35808dcd-85e2-4424-a278-550514d21b6d",
+          "plannedStepId": "5",
+          "plannedText": "Full product list restores",
+          "executedToolCalls": [
+            "assert UI_TEXT Rs."
+          ],
+          "replayStepIndex": 6,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-8170bc8b",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/search-clear-resets-product-grid.spec.js",
+          "exportedSpecLine": 15,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "e8d7f201-c4b4-43e2-ba82-72681c90ffe7",
+          "runResultId": "35808dcd-85e2-4424-a278-550514d21b6d",
+          "plannedStepId": "6",
+          "plannedText": "'All Products' heading visible; multiple products with 'Rs.' prices shown",
+          "executedToolCalls": [],
+          "replayStepIndex": null,
+          "replayOp": null,
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": null,
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "blocked_internal",
+          "reason": "Planned step has no corresponding ReplayIR action/assertion; QAAI must recapture or classify it before exporting."
+        }
+      ]
+    },
+    {
+      "testCaseId": "3ef7cddf-7948-4937-8842-4fd0d0fc484d",
+      "runResultId": "9dbc3f52-9647-4343-8676-33a2099f4525",
+      "caseName": "Navigating back to All Products after category filter restores full grid",
+      "scenarioId": "e42935cb-5a6b-4898-ba9f-fde1f68b232e",
+      "scenarioName": "Category Filter — Clear Restores Full Grid",
+      "specFile": "tests/products/category-filter-clear-restores-full-grid.spec.js",
+      "plannedStepCount": 3,
+      "replayStepCount": 3,
+      "emitterFindings": [
+        {
+          "code": "unscoped_text_assertion",
+          "where": "ASN-25cabe2d",
+          "detail": "UI_TEXT assertion \"All Products\": no containerSelector recorded — assertion verified full-page text; false pass from sidebar/nav/footer text is possible."
+        }
+      ],
+      "ledger": [
+        {
+          "testCaseId": "3ef7cddf-7948-4937-8842-4fd0d0fc484d",
+          "runResultId": "9dbc3f52-9647-4343-8676-33a2099f4525",
+          "plannedStepId": "1",
+          "plannedText": "Dress Products page loaded; breadcrumb shows 'Women > Dress'",
+          "executedToolCalls": [
+            "navigate https://automationexercise.com/category_products/1"
+          ],
+          "replayStepIndex": 0,
+          "replayOp": "act",
+          "replayAction": "navigate",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/category-filter-clear-restores-full-grid.spec.js",
+          "exportedSpecLine": 10,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "3ef7cddf-7948-4937-8842-4fd0d0fc484d",
+          "runResultId": "9dbc3f52-9647-4343-8676-33a2099f4525",
+          "plannedStepId": "2",
+          "plannedText": "Navigates back to All Products page",
+          "executedToolCalls": [
+            "click el1"
+          ],
+          "replayStepIndex": 2,
+          "replayOp": "act",
+          "replayAction": "click",
+          "actionLocatorId": "el1",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/category-filter-clear-restores-full-grid.spec.js",
+          "exportedSpecLine": null,
+          "exportedPageMethod": "clickSearchProduct",
+          "exportedLocatorKey": "searchProductInput",
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "3ef7cddf-7948-4937-8842-4fd0d0fc484d",
+          "runResultId": "9dbc3f52-9647-4343-8676-33a2099f4525",
+          "plannedStepId": "3",
+          "plannedText": "'All Products' heading visible; full product listing restored",
+          "executedToolCalls": [
+            "assert UI_TEXT All Products"
+          ],
+          "replayStepIndex": 3,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-25cabe2d",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/category-filter-clear-restores-full-grid.spec.js",
+          "exportedSpecLine": 12,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        }
+      ]
+    },
+    {
+      "testCaseId": "62821c2b-85c2-47b5-ae17-713807623b70",
+      "runResultId": "f9d0ca1c-1d55-4536-83a1-a6de7a352b01",
+      "caseName": "Selecting Polo brand shows only Polo brand products",
+      "scenarioId": "fd758ad2-36ea-463d-9f84-477c3cad667e",
+      "scenarioName": "Brand Filter — Category by Brand",
+      "specFile": "tests/products/brand-filter-category-by-brand.spec.js",
+      "plannedStepCount": 3,
+      "replayStepCount": 4,
+      "emitterFindings": [
+        {
+          "code": "unscoped_text_assertion",
+          "where": "ASN-36521d82",
+          "detail": "UI_TEXT assertion \"Brand - Polo Products\": no containerSelector recorded — assertion verified full-page text; false pass from sidebar/nav/footer text is possible."
+        },
+        {
+          "code": "unscoped_text_assertion",
+          "where": "ASN-7c4e8cfa",
+          "detail": "UI_TEXT assertion \"Rs.\": no containerSelector recorded — assertion verified full-page text; false pass from sidebar/nav/footer text is possible."
+        }
+      ],
+      "ledger": [
+        {
+          "testCaseId": "62821c2b-85c2-47b5-ae17-713807623b70",
+          "runResultId": "f9d0ca1c-1d55-4536-83a1-a6de7a352b01",
+          "plannedStepId": "1",
+          "plannedText": "Products page loaded with Brands sidebar",
+          "executedToolCalls": [
+            "navigate https://automationexercise.com/products"
+          ],
+          "replayStepIndex": 0,
+          "replayOp": "act",
+          "replayAction": "navigate",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/brand-filter-category-by-brand.spec.js",
+          "exportedSpecLine": 10,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "62821c2b-85c2-47b5-ae17-713807623b70",
+          "runResultId": "f9d0ca1c-1d55-4536-83a1-a6de7a352b01",
+          "plannedStepId": "2",
+          "plannedText": "Navigates to Brand - Polo Products page",
+          "executedToolCalls": [
+            "click el1"
+          ],
+          "replayStepIndex": 2,
+          "replayOp": "act",
+          "replayAction": "click",
+          "actionLocatorId": "el1",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/brand-filter-category-by-brand.spec.js",
+          "exportedSpecLine": null,
+          "exportedPageMethod": "clickSearchProduct",
+          "exportedLocatorKey": "searchProductInput",
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "62821c2b-85c2-47b5-ae17-713807623b70",
+          "runResultId": "f9d0ca1c-1d55-4536-83a1-a6de7a352b01",
+          "plannedStepId": "3",
+          "plannedText": "'Brand - Polo Products' heading visible; product grid populated",
+          "executedToolCalls": [
+            "assert UI_TEXT Brand - Polo Products"
+          ],
+          "replayStepIndex": 3,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-36521d82",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/brand-filter-category-by-brand.spec.js",
+          "exportedSpecLine": 12,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "62821c2b-85c2-47b5-ae17-713807623b70",
+          "runResultId": "f9d0ca1c-1d55-4536-83a1-a6de7a352b01",
+          "plannedStepId": null,
+          "plannedText": null,
+          "executedToolCalls": [
+            "assert UI_TEXT Rs."
+          ],
+          "replayStepIndex": 4,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-7c4e8cfa",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/brand-filter-category-by-brand.spec.js",
+          "exportedSpecLine": 13,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": "ReplayIR contains an extra executed step with no authored planned step; kept visible for audit."
+        }
+      ]
+    },
+    {
+      "testCaseId": "e694182e-78d3-4c35-9704-9f0f809c7620",
+      "runResultId": "fff6d249-c7a7-40e2-94fb-38ad7584bd28",
+      "caseName": "Search non-existent product name returns empty state",
+      "scenarioId": "64f06e1d-dd15-47fa-9c64-c51acccbc1b5",
+      "scenarioName": "Search Negative — Non-Existent Product",
+      "specFile": "tests/search/search-negative-non-existent-product.spec.js",
+      "plannedStepCount": 2,
+      "replayStepCount": 5,
+      "emitterFindings": [
+        {
+          "code": "unscoped_text_assertion",
+          "where": "ASN-653c49a4",
+          "detail": "UI_TEXT assertion \"No products found\": no containerSelector recorded — assertion verified full-page text; false pass from sidebar/nav/footer text is possible."
+        }
+      ],
+      "ledger": [
+        {
+          "testCaseId": "e694182e-78d3-4c35-9704-9f0f809c7620",
+          "runResultId": "fff6d249-c7a7-40e2-94fb-38ad7584bd28",
+          "plannedStepId": "1",
+          "plannedText": "Products page loaded — title 'Automation Exercise - All Products'",
+          "executedToolCalls": [
+            "navigate https://automationexercise.com/products"
+          ],
+          "replayStepIndex": 0,
+          "replayOp": "act",
+          "replayAction": "navigate",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/search-negative-non-existent-product.spec.js",
+          "exportedSpecLine": 12,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "e694182e-78d3-4c35-9704-9f0f809c7620",
+          "runResultId": "fff6d249-c7a7-40e2-94fb-38ad7584bd28",
+          "plannedStepId": "2",
+          "plannedText": "Non-existent search term entered",
+          "executedToolCalls": [
+            "fill el1"
+          ],
+          "replayStepIndex": 2,
+          "replayOp": "act",
+          "replayAction": "fill",
+          "actionLocatorId": "el1",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/search-negative-non-existent-product.spec.js",
+          "exportedSpecLine": null,
+          "exportedPageMethod": "fillSearchProduct",
+          "exportedLocatorKey": "searchProductInput",
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "e694182e-78d3-4c35-9704-9f0f809c7620",
+          "runResultId": "fff6d249-c7a7-40e2-94fb-38ad7584bd28",
+          "plannedStepId": null,
+          "plannedText": null,
+          "executedToolCalls": [
+            "click el2"
+          ],
+          "replayStepIndex": 4,
+          "replayOp": "act",
+          "replayAction": "click",
+          "actionLocatorId": "el2",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/search-negative-non-existent-product.spec.js",
+          "exportedSpecLine": null,
+          "exportedPageMethod": "clickSearch",
+          "exportedLocatorKey": "searchButton",
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": "ReplayIR contains an extra executed step with no authored planned step; kept visible for audit."
+        },
+        {
+          "testCaseId": "e694182e-78d3-4c35-9704-9f0f809c7620",
+          "runResultId": "fff6d249-c7a7-40e2-94fb-38ad7584bd28",
+          "plannedStepId": null,
+          "plannedText": null,
+          "executedToolCalls": [
+            "assert PAGE Search Product"
+          ],
+          "replayStepIndex": 5,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-56f0619b",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/search-negative-non-existent-product.spec.js",
+          "exportedSpecLine": 14,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": "ReplayIR contains an extra executed step with no authored planned step; kept visible for audit."
+        },
+        {
+          "testCaseId": "e694182e-78d3-4c35-9704-9f0f809c7620",
+          "runResultId": "fff6d249-c7a7-40e2-94fb-38ad7584bd28",
+          "plannedStepId": null,
+          "plannedText": null,
+          "executedToolCalls": [
+            "assert UI_TEXT No products found"
+          ],
+          "replayStepIndex": 6,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-653c49a4",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/search-negative-non-existent-product.spec.js",
+          "exportedSpecLine": 15,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": "ReplayIR contains an extra executed step with no authored planned step; kept visible for audit."
+        }
+      ]
+    },
+    {
+      "testCaseId": "285658ff-589d-430d-b83b-e127e9705ac4",
+      "runResultId": "d098228d-ab13-49d5-9979-e130fe7f9fc1",
+      "caseName": "Special characters in search box return empty state gracefully",
+      "scenarioId": "8864992f-1f7d-43f9-8718-7dc440408a8c",
+      "scenarioName": "Search Edge Cases — Special Characters and Oversized Input",
+      "specFile": "tests/search/search-edge-cases-special-characters-and-oversized-input.spec.js",
+      "plannedStepCount": 4,
+      "replayStepCount": 5,
+      "emitterFindings": [
+        {
+          "code": "unscoped_text_assertion",
+          "where": "ASN-bee6959f",
+          "detail": "UI_TEXT assertion \"No products found\": no containerSelector recorded — assertion verified full-page text; false pass from sidebar/nav/footer text is possible."
+        }
+      ],
+      "ledger": [
+        {
+          "testCaseId": "285658ff-589d-430d-b83b-e127e9705ac4",
+          "runResultId": "d098228d-ab13-49d5-9979-e130fe7f9fc1",
+          "plannedStepId": "1",
+          "plannedText": "Products page loaded — title 'Automation Exercise - All Products'",
+          "executedToolCalls": [
+            "navigate https://automationexercise.com/products"
+          ],
+          "replayStepIndex": 0,
+          "replayOp": "act",
+          "replayAction": "navigate",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/search-edge-cases-special-characters-and-oversized-input.spec.js",
+          "exportedSpecLine": 12,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "285658ff-589d-430d-b83b-e127e9705ac4",
+          "runResultId": "d098228d-ab13-49d5-9979-e130fe7f9fc1",
+          "plannedStepId": "2",
+          "plannedText": "Special characters typed; browser accepts '@' only — search box shows '@'",
+          "executedToolCalls": [
+            "fill el1"
+          ],
+          "replayStepIndex": 2,
+          "replayOp": "act",
+          "replayAction": "fill",
+          "actionLocatorId": "el1",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/search-edge-cases-special-characters-and-oversized-input.spec.js",
+          "exportedSpecLine": null,
+          "exportedPageMethod": "fillSearchProduct",
+          "exportedLocatorKey": "searchProductInput",
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "285658ff-589d-430d-b83b-e127e9705ac4",
+          "runResultId": "d098228d-ab13-49d5-9979-e130fe7f9fc1",
+          "plannedStepId": "3",
+          "plannedText": "Search executes; URL becomes /products?search=@#$%",
+          "executedToolCalls": [
+            "click el2"
+          ],
+          "replayStepIndex": 4,
+          "replayOp": "act",
+          "replayAction": "click",
+          "actionLocatorId": "el2",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/search-edge-cases-special-characters-and-oversized-input.spec.js",
+          "exportedSpecLine": null,
+          "exportedPageMethod": "clickSearch",
+          "exportedLocatorKey": "searchButton",
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "285658ff-589d-430d-b83b-e127e9705ac4",
+          "runResultId": "d098228d-ab13-49d5-9979-e130fe7f9fc1",
+          "plannedStepId": "4",
+          "plannedText": "URL contains /products; heading 'Searched Products' is visible; product grid contains 0 items; page title is 'Automation Exercise - All Products'; no error page displayed",
+          "executedToolCalls": [
+            "assert PAGE Search Product"
+          ],
+          "replayStepIndex": 5,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-47dabebc",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/search-edge-cases-special-characters-and-oversized-input.spec.js",
+          "exportedSpecLine": 14,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "285658ff-589d-430d-b83b-e127e9705ac4",
+          "runResultId": "d098228d-ab13-49d5-9979-e130fe7f9fc1",
+          "plannedStepId": null,
+          "plannedText": null,
+          "executedToolCalls": [
+            "assert UI_TEXT No products found"
+          ],
+          "replayStepIndex": 6,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-bee6959f",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/search-edge-cases-special-characters-and-oversized-input.spec.js",
+          "exportedSpecLine": 15,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": "ReplayIR contains an extra executed step with no authored planned step; kept visible for audit."
+        }
+      ]
+    },
+    {
+      "testCaseId": "216b0b6f-b635-4f90-b0c6-0187c7e40f09",
+      "runResultId": "e941ba6d-9e9b-48ff-a352-7508752a28b9",
+      "caseName": "Kids Dress category page loads with products and does not crash",
+      "scenarioId": "100275d4-7599-478b-aab9-f85002e34c7a",
+      "scenarioName": "Category Filter — Empty Category State",
+      "specFile": "tests/products/category-filter-empty-category-state.spec.js",
+      "plannedStepCount": 4,
+      "replayStepCount": 5,
+      "emitterFindings": [
+        {
+          "code": "unscoped_text_assertion",
+          "where": "ASN-83dd35b5",
+          "detail": "UI_TEXT assertion \"No products found\": no containerSelector recorded — assertion verified full-page text; false pass from sidebar/nav/footer text is possible."
+        }
+      ],
+      "ledger": [
+        {
+          "testCaseId": "216b0b6f-b635-4f90-b0c6-0187c7e40f09",
+          "runResultId": "e941ba6d-9e9b-48ff-a352-7508752a28b9",
+          "plannedStepId": "1",
+          "plannedText": "Products page loaded with Category sidebar",
+          "executedToolCalls": [
+            "navigate https://automationexercise.com/products"
+          ],
+          "replayStepIndex": 0,
+          "replayOp": "act",
+          "replayAction": "navigate",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/category-filter-empty-category-state.spec.js",
+          "exportedSpecLine": 10,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "216b0b6f-b635-4f90-b0c6-0187c7e40f09",
+          "runResultId": "e941ba6d-9e9b-48ff-a352-7508752a28b9",
+          "plannedStepId": "2",
+          "plannedText": "Kids subcategories expand in the sidebar",
+          "executedToolCalls": [
+            "click el1"
+          ],
+          "replayStepIndex": 2,
+          "replayOp": "act",
+          "replayAction": "click",
+          "actionLocatorId": "el1",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/category-filter-empty-category-state.spec.js",
+          "exportedSpecLine": null,
+          "exportedPageMethod": "clickSearchProduct",
+          "exportedLocatorKey": "searchProductInput",
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "216b0b6f-b635-4f90-b0c6-0187c7e40f09",
+          "runResultId": "e941ba6d-9e9b-48ff-a352-7508752a28b9",
+          "plannedStepId": "3",
+          "plannedText": "Navigates to /category_products/4 — page title 'Automation Exercise - Dress Products'",
+          "executedToolCalls": [
+            "click el2"
+          ],
+          "replayStepIndex": 4,
+          "replayOp": "act",
+          "replayAction": "click",
+          "actionLocatorId": "el2",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/category-filter-empty-category-state.spec.js",
+          "exportedSpecLine": null,
+          "exportedPageMethod": "clickSearch",
+          "exportedLocatorKey": "searchButton",
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "216b0b6f-b635-4f90-b0c6-0187c7e40f09",
+          "runResultId": "e941ba6d-9e9b-48ff-a352-7508752a28b9",
+          "plannedStepId": "4",
+          "plannedText": "URL is /category_products/4; heading 'Kids - Dress Products' is visible; breadcrumb reads 'Kids > Dress'; no crash",
+          "executedToolCalls": [
+            "assert PAGE Category"
+          ],
+          "replayStepIndex": 5,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-f4ae7c3e",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/category-filter-empty-category-state.spec.js",
+          "exportedSpecLine": 12,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "216b0b6f-b635-4f90-b0c6-0187c7e40f09",
+          "runResultId": "e941ba6d-9e9b-48ff-a352-7508752a28b9",
+          "plannedStepId": null,
+          "plannedText": null,
+          "executedToolCalls": [
+            "assert UI_TEXT No products found"
+          ],
+          "replayStepIndex": 6,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-83dd35b5",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/category-filter-empty-category-state.spec.js",
+          "exportedSpecLine": 13,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": "ReplayIR contains an extra executed step with no authored planned step; kept visible for audit."
+        }
+      ]
+    },
+    {
+      "testCaseId": "a6fa82ba-a9d2-4417-a182-57a60bfff160",
+      "runResultId": "7d76e4a4-642a-424a-a247-a445dfc37b54",
+      "caseName": "Category link navigates to category page independently of prior search term",
+      "scenarioId": "793dfbab-bc81-41e4-9899-da405ef58f60",
+      "scenarioName": "Triple Filter Combination — Zero Matches Empty State",
+      "specFile": "tests/search/triple-filter-combination-zero-matches-empty-state.spec.js",
+      "plannedStepCount": 6,
+      "replayStepCount": 7,
+      "emitterFindings": [
+        {
+          "code": "unscoped_text_assertion",
+          "where": "ASN-5a45fb50",
+          "detail": "UI_TEXT assertion \"No products found\": no containerSelector recorded — assertion verified full-page text; false pass from sidebar/nav/footer text is possible."
+        }
+      ],
+      "ledger": [
+        {
+          "testCaseId": "a6fa82ba-a9d2-4417-a182-57a60bfff160",
+          "runResultId": "7d76e4a4-642a-424a-a247-a445dfc37b54",
+          "plannedStepId": "1",
+          "plannedText": "Products page loaded",
+          "executedToolCalls": [
+            "navigate https://automationexercise.com/products"
+          ],
+          "replayStepIndex": 0,
+          "replayOp": "act",
+          "replayAction": "navigate",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/triple-filter-combination-zero-matches-empty-state.spec.js",
+          "exportedSpecLine": 12,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "a6fa82ba-a9d2-4417-a182-57a60bfff160",
+          "runResultId": "7d76e4a4-642a-424a-a247-a445dfc37b54",
+          "plannedStepId": "2",
+          "plannedText": "Non-existent search term entered",
+          "executedToolCalls": [
+            "fill el1"
+          ],
+          "replayStepIndex": 2,
+          "replayOp": "act",
+          "replayAction": "fill",
+          "actionLocatorId": "el1",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/triple-filter-combination-zero-matches-empty-state.spec.js",
+          "exportedSpecLine": null,
+          "exportedPageMethod": "fillSearchProduct",
+          "exportedLocatorKey": "searchProductInput",
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "a6fa82ba-a9d2-4417-a182-57a60bfff160",
+          "runResultId": "7d76e4a4-642a-424a-a247-a445dfc37b54",
+          "plannedStepId": "3",
+          "plannedText": "Search returns empty result under 'Searched Products' heading",
+          "executedToolCalls": [
+            "click el2"
+          ],
+          "replayStepIndex": 4,
+          "replayOp": "act",
+          "replayAction": "click",
+          "actionLocatorId": "el2",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/triple-filter-combination-zero-matches-empty-state.spec.js",
+          "exportedSpecLine": null,
+          "exportedPageMethod": "clickSearch",
+          "exportedLocatorKey": "searchButton",
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "a6fa82ba-a9d2-4417-a182-57a60bfff160",
+          "runResultId": "7d76e4a4-642a-424a-a247-a445dfc37b54",
+          "plannedStepId": "4",
+          "plannedText": "Women subcategories expand in the sidebar",
+          "executedToolCalls": [
+            "click el3"
+          ],
+          "replayStepIndex": 6,
+          "replayOp": "act",
+          "replayAction": "click",
+          "actionLocatorId": "el3",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/triple-filter-combination-zero-matches-empty-state.spec.js",
+          "exportedSpecLine": null,
+          "exportedPageMethod": "clickWomen",
+          "exportedLocatorKey": "womenLink",
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "a6fa82ba-a9d2-4417-a182-57a60bfff160",
+          "runResultId": "7d76e4a4-642a-424a-a247-a445dfc37b54",
+          "plannedStepId": "5",
+          "plannedText": "Navigates to /category_products/1 — Women Dress products page",
+          "executedToolCalls": [
+            "click el4"
+          ],
+          "replayStepIndex": 8,
+          "replayOp": "act",
+          "replayAction": "click",
+          "actionLocatorId": "el4",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/triple-filter-combination-zero-matches-empty-state.spec.js",
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "held",
+          "status": "blocked_internal",
+          "reason": "Could not prove a page method or locator key for this action in the generated package."
+        },
+        {
+          "testCaseId": "a6fa82ba-a9d2-4417-a182-57a60bfff160",
+          "runResultId": "7d76e4a4-642a-424a-a247-a445dfc37b54",
+          "plannedStepId": "6",
+          "plannedText": "URL is /category_products/1; heading 'Women - Dress Products' is visible; breadcrumb reads 'Women > Dress'; category navigation overrides prior search filter",
+          "executedToolCalls": [
+            "assert PAGE Search Product"
+          ],
+          "replayStepIndex": 9,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-1800ec7d",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/triple-filter-combination-zero-matches-empty-state.spec.js",
+          "exportedSpecLine": 15,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "a6fa82ba-a9d2-4417-a182-57a60bfff160",
+          "runResultId": "7d76e4a4-642a-424a-a247-a445dfc37b54",
+          "plannedStepId": null,
+          "plannedText": null,
+          "executedToolCalls": [
+            "assert UI_TEXT No products found"
+          ],
+          "replayStepIndex": 10,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-5a45fb50",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/triple-filter-combination-zero-matches-empty-state.spec.js",
+          "exportedSpecLine": 16,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": "ReplayIR contains an extra executed step with no authored planned step; kept visible for audit."
+        }
+      ]
+    },
+    {
+      "testCaseId": "13a89c84-e811-4000-b8cc-f263f03f301e",
+      "runResultId": "8ce252b6-35f9-44bb-955a-3b590b8ce897",
+      "caseName": "Search result cards display product name and price",
+      "scenarioId": "ba7a24f4-1fc4-4f1e-9a36-9eba8d92814d",
+      "scenarioName": "Product Search Result Details",
+      "specFile": "tests/search/product-search-result-details.spec.js",
+      "plannedStepCount": 4,
+      "replayStepCount": 5,
+      "emitterFindings": [
+        {
+          "code": "unscoped_text_assertion",
+          "where": "ASN-2f628f56",
+          "detail": "UI_TEXT assertion \"Printed\": no containerSelector recorded — assertion verified full-page text; false pass from sidebar/nav/footer text is possible."
+        },
+        {
+          "code": "unscoped_text_assertion",
+          "where": "ASN-c3420c3e",
+          "detail": "UI_TEXT assertion \"Rs.\": no containerSelector recorded — assertion verified full-page text; false pass from sidebar/nav/footer text is possible."
+        }
+      ],
+      "ledger": [
+        {
+          "testCaseId": "13a89c84-e811-4000-b8cc-f263f03f301e",
+          "runResultId": "8ce252b6-35f9-44bb-955a-3b590b8ce897",
+          "plannedStepId": "1",
+          "plannedText": "Products page loaded",
+          "executedToolCalls": [
+            "navigate https://automationexercise.com/products"
+          ],
+          "replayStepIndex": 0,
+          "replayOp": "act",
+          "replayAction": "navigate",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/product-search-result-details.spec.js",
+          "exportedSpecLine": 12,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "13a89c84-e811-4000-b8cc-f263f03f301e",
+          "runResultId": "8ce252b6-35f9-44bb-955a-3b590b8ce897",
+          "plannedStepId": "2",
+          "plannedText": "Search term entered",
+          "executedToolCalls": [
+            "fill el1"
+          ],
+          "replayStepIndex": 2,
+          "replayOp": "act",
+          "replayAction": "fill",
+          "actionLocatorId": "el1",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/product-search-result-details.spec.js",
+          "exportedSpecLine": null,
+          "exportedPageMethod": "fillSearchProduct",
+          "exportedLocatorKey": "searchProductInput",
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "13a89c84-e811-4000-b8cc-f263f03f301e",
+          "runResultId": "8ce252b6-35f9-44bb-955a-3b590b8ce897",
+          "plannedStepId": "3",
+          "plannedText": "Search results shown",
+          "executedToolCalls": [
+            "click el2"
+          ],
+          "replayStepIndex": 4,
+          "replayOp": "act",
+          "replayAction": "click",
+          "actionLocatorId": "el2",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/product-search-result-details.spec.js",
+          "exportedSpecLine": null,
+          "exportedPageMethod": "clickSearch",
+          "exportedLocatorKey": "searchButton",
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "13a89c84-e811-4000-b8cc-f263f03f301e",
+          "runResultId": "8ce252b6-35f9-44bb-955a-3b590b8ce897",
+          "plannedStepId": "4",
+          "plannedText": "Product name contains 'Printed' and 'Rs.' price label visible on card",
+          "executedToolCalls": [
+            "assert UI_TEXT Printed"
+          ],
+          "replayStepIndex": 5,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-2f628f56",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/product-search-result-details.spec.js",
+          "exportedSpecLine": null,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "13a89c84-e811-4000-b8cc-f263f03f301e",
+          "runResultId": "8ce252b6-35f9-44bb-955a-3b590b8ce897",
+          "plannedStepId": null,
+          "plannedText": null,
+          "executedToolCalls": [
+            "assert UI_TEXT Rs."
+          ],
+          "replayStepIndex": 6,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-c3420c3e",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/search/product-search-result-details.spec.js",
+          "exportedSpecLine": 15,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": "ReplayIR contains an extra executed step with no authored planned step; kept visible for audit."
+        }
+      ]
+    },
+    {
+      "testCaseId": "328248b4-16c2-4e79-92a2-d6739ab3dec2",
+      "runResultId": "858ade45-9964-4a1c-9da5-b204f33150b1",
+      "caseName": "Brand filter sidebar visible with brand names and product counts",
+      "scenarioId": "ac640b52-64cc-416f-b640-5bca424476aa",
+      "scenarioName": "Filter UI Controls Visibility",
+      "specFile": "tests/products/filter-ui-controls-visibility.spec.js",
+      "plannedStepCount": 2,
+      "replayStepCount": 3,
+      "emitterFindings": [],
+      "ledger": [
+        {
+          "testCaseId": "328248b4-16c2-4e79-92a2-d6739ab3dec2",
+          "runResultId": "858ade45-9964-4a1c-9da5-b204f33150b1",
+          "plannedStepId": "1",
+          "plannedText": "Products page loaded",
+          "executedToolCalls": [
+            "navigate https://automationexercise.com/products"
+          ],
+          "replayStepIndex": 0,
+          "replayOp": "act",
+          "replayAction": "navigate",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/filter-ui-controls-visibility.spec.js",
+          "exportedSpecLine": 8,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "328248b4-16c2-4e79-92a2-d6739ab3dec2",
+          "runResultId": "858ade45-9964-4a1c-9da5-b204f33150b1",
+          "plannedStepId": "2",
+          "plannedText": "'Brands' heading visible; brand names including 'Polo' and 'H&M' listed with product counts",
+          "executedToolCalls": [
+            "assert UI_TEXT Brands"
+          ],
+          "replayStepIndex": 1,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-d6cd4527",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/filter-ui-controls-visibility.spec.js",
+          "exportedSpecLine": 9,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "328248b4-16c2-4e79-92a2-d6739ab3dec2",
+          "runResultId": "858ade45-9964-4a1c-9da5-b204f33150b1",
+          "plannedStepId": null,
+          "plannedText": null,
+          "executedToolCalls": [
+            "assert UI_TEXT Polo"
+          ],
+          "replayStepIndex": 2,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-fa77c6bd",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/filter-ui-controls-visibility.spec.js",
+          "exportedSpecLine": 10,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": "ReplayIR contains an extra executed step with no authored planned step; kept visible for audit."
+        }
+      ]
+    },
+    {
+      "testCaseId": "97f40985-cb1b-41a0-89fb-f437ee5f213c",
+      "runResultId": "3cdbf881-c1d2-4b8b-8696-2c9958a3cfcf",
+      "caseName": "Homepage shows featured products with prices and navigation to Products page works",
+      "scenarioId": "3aff6603-b3b2-4ead-8deb-02bde7472cd0",
+      "scenarioName": "Homepage Product Browsing",
+      "specFile": "tests/products/homepage-product-browsing.spec.js",
+      "plannedStepCount": 4,
+      "replayStepCount": 4,
+      "emitterFindings": [
+        {
+          "code": "unscoped_text_assertion",
+          "where": "ASN-23d05d8c",
+          "detail": "UI_TEXT assertion \"Features Items\": no containerSelector recorded — assertion verified full-page text; false pass from sidebar/nav/footer text is possible."
+        },
+        {
+          "code": "unscoped_text_assertion",
+          "where": "ASN-cf14c6ec",
+          "detail": "UI_TEXT assertion \"All Products\": no containerSelector recorded — assertion verified full-page text; false pass from sidebar/nav/footer text is possible."
+        }
+      ],
+      "ledger": [
+        {
+          "testCaseId": "97f40985-cb1b-41a0-89fb-f437ee5f213c",
+          "runResultId": "3cdbf881-c1d2-4b8b-8696-2c9958a3cfcf",
+          "plannedStepId": "1",
+          "plannedText": "Homepage loaded with Features Items section",
+          "executedToolCalls": [
+            "navigate https://automationexercise.com/"
+          ],
+          "replayStepIndex": 0,
+          "replayOp": "act",
+          "replayAction": "navigate",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/homepage-product-browsing.spec.js",
+          "exportedSpecLine": 10,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "97f40985-cb1b-41a0-89fb-f437ee5f213c",
+          "runResultId": "3cdbf881-c1d2-4b8b-8696-2c9958a3cfcf",
+          "plannedStepId": "2",
+          "plannedText": "'Features Items' heading visible; product cards with 'Rs.' prices shown",
+          "executedToolCalls": [
+            "click el1"
+          ],
+          "replayStepIndex": 2,
+          "replayOp": "act",
+          "replayAction": "click",
+          "actionLocatorId": "el1",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/homepage-product-browsing.spec.js",
+          "exportedSpecLine": null,
+          "exportedPageMethod": "clickSearchProduct",
+          "exportedLocatorKey": "searchProductInput",
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "97f40985-cb1b-41a0-89fb-f437ee5f213c",
+          "runResultId": "3cdbf881-c1d2-4b8b-8696-2c9958a3cfcf",
+          "plannedStepId": "3",
+          "plannedText": "Navigates to /products",
+          "executedToolCalls": [
+            "assert UI_TEXT Features Items"
+          ],
+          "replayStepIndex": 3,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-23d05d8c",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/homepage-product-browsing.spec.js",
+          "exportedSpecLine": 12,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "97f40985-cb1b-41a0-89fb-f437ee5f213c",
+          "runResultId": "3cdbf881-c1d2-4b8b-8696-2c9958a3cfcf",
+          "plannedStepId": "4",
+          "plannedText": "'All Products' heading visible on product listing page",
+          "executedToolCalls": [
+            "assert UI_TEXT All Products"
+          ],
+          "replayStepIndex": 4,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-cf14c6ec",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/homepage-product-browsing.spec.js",
+          "exportedSpecLine": 13,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        }
+      ]
+    },
+    {
+      "testCaseId": "7a7c1f6e-5271-43fc-9276-3680f71ca69c",
+      "runResultId": "0b101d6a-b1eb-4181-b679-819a0806f549",
+      "caseName": "Applying category filter updates product grid without full page reload",
+      "scenarioId": "517e4e43-9331-4173-9476-5d3a666ea07d",
+      "scenarioName": "Filter Application Synchronous Update",
+      "specFile": "tests/products/filter-application-synchronous-update.spec.js",
+      "plannedStepCount": 4,
+      "replayStepCount": 4,
+      "emitterFindings": [
+        {
+          "code": "unscoped_text_assertion",
+          "where": "ASN-3358bd34",
+          "detail": "UI_TEXT assertion \"Women - Tops Products\": no containerSelector recorded — assertion verified full-page text; false pass from sidebar/nav/footer text is possible."
+        }
+      ],
+      "ledger": [
+        {
+          "testCaseId": "7a7c1f6e-5271-43fc-9276-3680f71ca69c",
+          "runResultId": "0b101d6a-b1eb-4181-b679-819a0806f549",
+          "plannedStepId": "1",
+          "plannedText": "Products page loaded",
+          "executedToolCalls": [
+            "navigate https://automationexercise.com/products"
+          ],
+          "replayStepIndex": 0,
+          "replayOp": "act",
+          "replayAction": "navigate",
+          "actionLocatorId": null,
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/filter-application-synchronous-update.spec.js",
+          "exportedSpecLine": 10,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "7a7c1f6e-5271-43fc-9276-3680f71ca69c",
+          "runResultId": "0b101d6a-b1eb-4181-b679-819a0806f549",
+          "plannedStepId": "2",
+          "plannedText": "Women subcategories expand",
+          "executedToolCalls": [
+            "click el1"
+          ],
+          "replayStepIndex": 2,
+          "replayOp": "act",
+          "replayAction": "click",
+          "actionLocatorId": "el1",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/filter-application-synchronous-update.spec.js",
+          "exportedSpecLine": null,
+          "exportedPageMethod": "clickSearchProduct",
+          "exportedLocatorKey": "searchProductInput",
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "7a7c1f6e-5271-43fc-9276-3680f71ca69c",
+          "runResultId": "0b101d6a-b1eb-4181-b679-819a0806f549",
+          "plannedStepId": "3",
+          "plannedText": "Women Tops category page loads",
+          "executedToolCalls": [
+            "click el2"
+          ],
+          "replayStepIndex": 4,
+          "replayOp": "act",
+          "replayAction": "click",
+          "actionLocatorId": "el2",
+          "assertionId": null,
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/filter-application-synchronous-update.spec.js",
+          "exportedSpecLine": null,
+          "exportedPageMethod": "clickSearch",
+          "exportedLocatorKey": "searchButton",
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        },
+        {
+          "testCaseId": "7a7c1f6e-5271-43fc-9276-3680f71ca69c",
+          "runResultId": "0b101d6a-b1eb-4181-b679-819a0806f549",
+          "plannedStepId": "4",
+          "plannedText": "'Women - Tops Products' heading visible; products with 'Rs.' prices shown synchronously",
+          "executedToolCalls": [
+            "assert UI_TEXT Women - Tops Products"
+          ],
+          "replayStepIndex": 5,
+          "replayOp": "assert",
+          "replayAction": null,
+          "actionLocatorId": null,
+          "assertionId": "ASN-3358bd34",
+          "dataBinding": null,
+          "exportedSpecFile": "tests/products/filter-application-synchronous-update.spec.js",
+          "exportedSpecLine": 12,
+          "exportedPageMethod": null,
+          "exportedLocatorKey": null,
+          "exportStatus": "exported",
+          "status": "captured",
+          "reason": null
+        }
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "rule": "step_compilation_parity_gap",
+      "severity": "error",
+      "message": "8 planned/executed step(s) could not be proven through ReplayIR and generated output.",
+      "path": "evidence/step-parity-report.json"
+    }
+  ]
+}

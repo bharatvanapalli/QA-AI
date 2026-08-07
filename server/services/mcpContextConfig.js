@@ -36,6 +36,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const crypto = require('crypto');
+const inPageEventRecorder = require('./inPageEventRecorder');
 
 function parseJson(raw, fallback) {
   if (raw == null || raw === '') return fallback;
@@ -129,6 +130,11 @@ function writeInitScript(project, session) {
     lines.push('    window.confirm = function(_msg) { return true; };');
     lines.push('    window.prompt = function(_msg, def) { return def != null ? String(def) : ""; };');
   }
+
+  // Evidence-only recorder. It captures event shape and selector hints, never
+  // field values, and has no authority over execution or verdict decisions.
+  lines.push('    // Bounded, redacted interaction evidence recorder.');
+  lines.push(`    ${inPageEventRecorder.installExpression({ maxEvents: 100 })};`);
 
   // Locale override
   if (project?.contextLocale) {

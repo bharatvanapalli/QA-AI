@@ -30,7 +30,7 @@
  */
 
 const { getProvider } = require('../../lib/llmProvider');
-const { composeSystemPrompt } = require('../../lib/promptCompose');
+const { composeSystemPrompt, composeSystemPromptCached } = require('../../lib/promptCompose');
 const { parseJsonResponse } = require('../../lib/parseJsonResponse');
 const { resolveModelForTier } = require('../../lib/modelRouter');
 
@@ -145,7 +145,7 @@ async function readInstructions({
       apiKey,
       model: routedModel,
       maxTokens: 800,
-      system: composeSystemPrompt(SYSTEM_PROMPT, extraGuidance),
+      system: composeSystemPromptCached(SYSTEM_PROMPT, extraGuidance),
       messages: [
         {
           role: 'user',

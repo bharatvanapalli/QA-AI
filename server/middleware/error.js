@@ -1,5 +1,7 @@
 'use strict';
 
+const { sanitizeUserMessage } = require('../lib/userFacingErrors');
+
 function notFound(req, res) {
   res.status(404).json({ success: false, code: 'NOT_FOUND', message: 'Route not found' });
 }
@@ -8,13 +10,11 @@ function notFound(req, res) {
 function errorHandler(err, req, res, next) {
   console.error('[error]', err.message, err.stack);
   const status = err.status || 500;
+  const exposeMessage = status < 500 || err.expose === true;
   res.status(status).json({
     success: false,
     code: err.code || 'INTERNAL_ERROR',
-    message:
-      process.env.NODE_ENV === 'production'
-        ? 'Internal server error'
-        : err.message,
+    message: exposeMessage ? sanitizeUserMessage(err.message) : 'Internal server error',
   });
 }
 

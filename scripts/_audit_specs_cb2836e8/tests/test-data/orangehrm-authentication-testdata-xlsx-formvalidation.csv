@@ -1,0 +1,10 @@
+testCaseID,scenario,usernameInput,passwordInput,expectedValidationError,expectedErrorLocation,shouldSubmit,notes
+TC-FORM-01,emptyUsername,,validPassword123,Username is required,Below username field,No,Empty username field - expect Required validation
+TC-FORM-02,emptyPassword,Admin,,Password is required,Below password field,No,Empty password field - expect Required validation
+TC-FORM-03,bothFieldsEmpty,,,Username is required; Password is required,On both fields,No,Both fields empty - expect validations on BOTH fields
+TC-FORM-04,validAdminInputs,Admin,admin123,(none),,Yes,Valid Admin inputs - should submit successfully
+TC-FORM-05,validESSInputs,ess_user_01,TestUser@123,(none),,Yes,Valid ESS inputs - should submit successfully
+TC-FORM-06,usernameWithSpaces,Admin,admin123,(validation or successful),,Varies,Username with leading/trailing spaces - system should trim or validate
+TC-FORM-07,passwordWithSpaces,Admin,admin123,(validation or successful),,Varies,Password with spaces - system should handle
+TC-FORM-08,overlyLongUsername,AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA,admin123,Validation or graceful rejection,,No,Oversized username (256 chars) - expect rejection
+TC-FORM-09,overlyLongPassword,Admin,AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA,Validation or graceful rejection,,No,Oversized password (512 chars) - expect rejection

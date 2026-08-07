@@ -39,6 +39,10 @@ const DEFAULT_DAILY_TOKEN_LIMIT = parseInt(
  * "Today" in UTC as YYYY-MM-DD. Server-wide consistent — no TZ math at
  * write time. UI also uses UTC midnight for the reset countdown.
  */
+function enforcementEnabled() {
+  return /^(1|true|yes|on)$/i.test(String(process.env.QAAI_ENFORCE_DAILY_BUDGET || ''));
+}
+
 function todayUtc() {
   const d = new Date();
   const y = d.getUTCFullYear();
@@ -87,6 +91,7 @@ async function todaysTotal(userId, date) {
  * Settings UI) how many calls today were refused.
  */
 async function assertWithinLimit(userId) {
+  if (!enforcementEnabled()) return;
   if (!userId) return; // background / scripts bypass
   const limit = await resolveLimit(userId);
   if (!limit || limit <= 0) return; // 0/negative = unlimited
@@ -168,6 +173,7 @@ async function getStatus(userId) {
     limit: unlimited ? null : limit,
     pct,
     unlimited,
+    enforced: enforcementEnabled(),
     blockedToday: blocked,
     perProvider,
     resetAt: reset.toISOString(),
@@ -179,6 +185,7 @@ module.exports = {
   recordUsage,
   getStatus,
   DEFAULT_DAILY_TOKEN_LIMIT,
+  enforcementEnabled,
   // exported for tests
   _todayUtc: todayUtc,
 };

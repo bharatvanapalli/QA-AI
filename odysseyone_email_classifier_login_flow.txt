@@ -1,0 +1,63 @@
+Requirement Title: OdysseyOne email classifier Microsoft sign-in opens the Home dashboard
+
+Target URL:
+https://qa.linx.odysseylogistics.com/auth/email-classifier?returnUrl=%2Fuser%2Fadministration
+
+Test Data:
+Email Address: OdysseyOneAutomationTester1@odysseylogistics.com
+Password: Behavior-ticket-organize1*
+
+Scenario:
+Verify that a user can start from the OdysseyOne email classifier URL, continue with the supplied email address, choose Microsoft sign-in, complete the Microsoft login form with the same email address and password, and land on the OdysseyOne Home dashboard.
+
+Authoring Rule:
+This is one continuous login flow and should be generated as one test case in one fresh browser session. Do not split the email classifier step, Microsoft sign-in step, and final dashboard validation into separate independent test cases. Later steps depend on the browser/session state created by earlier steps.
+
+Test Case: Login through email classifier and Microsoft sign-in
+
+Steps:
+1. Open a fresh browser session.
+2. Navigate to https://qa.linx.odysseylogistics.com/auth/email-classifier?returnUrl=%2Fuser%2Fadministration.
+3. In the Email Address field, enter OdysseyOneAutomationTester1@odysseylogistics.com.
+4. Click the Continue button.
+5. Verify that the Sign in with Microsoft option is displayed.
+6. Click Sign in with Microsoft.
+7. On the Microsoft sign-in page, enter OdysseyOneAutomationTester1@odysseylogistics.com in the email, phone, or Skype field.
+8. Click the Next button.
+9. Enter Behavior-ticket-organize1* in the password field.
+10. Click the Sign in button.
+11. If Microsoft asks whether to stay signed in, choose the option that continues to the application.
+12. Verify that the OdysseyOne Home dashboard is displayed.
+
+Final Validation:
+The test passes only when the authenticated OdysseyOne dashboard is visible after login. Use visible dashboard text from the application as the final assertion. Valid final dashboard signals include:
+- OdysseyONE logo
+- Home
+- Welcome OdysseyOne!
+- OdysseyOne Automation
+- Admin
+- Edit Dashboard View
+- Order Exceptions
+- Go to Order
+- Carriers
+- What would you like to do?
+- Go to Create a New Order
+- Track a Shipment
+- Management Users
+- Invoices
+
+Preferred Final Assertion:
+Verify that the Home page is displayed and the text "Welcome OdysseyOne!" is visible.
+
+Session Policy:
+sessionMode: fresh
+dependsOnIds: none
+failurePolicy: block_dependents
+
+Data Binding Rule:
+Use the exact email address and password from the Test Data section. Do not invent substitute credentials. Do not generate draft or placeholder credentials. The same email address must be used in both the OdysseyOne email classifier step and the Microsoft sign-in page.
+
+Expected Scenario/Test Case Shape:
+Expected scenario count: 1
+Expected test case count: 1
+Reason: this is one coherent authentication flow with one final business outcome, not separate independent behaviors.

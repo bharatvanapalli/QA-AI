@@ -1,0 +1,233 @@
+{
+  "schemaVersion": "qaai-dom-atlas-v1",
+  "pages": {
+    "/web/index.php/auth/login": {
+      "schemaVersion": "qaai-dom-atlas-v1",
+      "pageKey": "/web/index.php/auth/login",
+      "routeKey": "/web/index.php/auth/login",
+      "url": "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+      "title": null,
+      "counts": {
+        "controls": 2
+      },
+      "firstSeenAt": 1782036244773,
+      "lastSeenAt": 1782036244773,
+      "seenCount": 1,
+      "controls": [
+        {
+          "selector": "getByRole(\"textbox\", { name: \"Username\" })",
+          "role": "textbox",
+          "name": "Username",
+          "visible": null,
+          "enabled": null,
+          "source": "verified_mcp_accessibility_snapshot",
+          "seenCount": 1
+        },
+        {
+          "selector": "getByText(\"Username\", { exact: false })",
+          "role": "textbox",
+          "name": "Username",
+          "visible": null,
+          "enabled": null,
+          "source": "verified_mcp_accessibility_snapshot",
+          "seenCount": 1
+        },
+        {
+          "selector": "getByRole(\"textbox\", { name: \"Password\" })",
+          "role": "textbox",
+          "name": "Password",
+          "visible": null,
+          "enabled": null,
+          "source": "verified_mcp_accessibility_snapshot",
+          "seenCount": 1
+        },
+        {
+          "selector": "getByText(\"Password\", { exact: false })",
+          "role": "textbox",
+          "name": "Password",
+          "visible": null,
+          "enabled": null,
+          "source": "verified_mcp_accessibility_snapshot",
+          "seenCount": 1
+        },
+        {
+          "selector": "getByRole(\"button\", { name: \"Login\" })",
+          "role": "button",
+          "name": "Login",
+          "visible": null,
+          "enabled": null,
+          "source": "verified_mcp_accessibility_snapshot",
+          "seenCount": 1
+        },
+        {
+          "selector": "getByText(\"Login\", { exact: false })",
+          "role": "button",
+          "name": "Login",
+          "visible": null,
+          "enabled": null,
+          "source": "verified_mcp_accessibility_snapshot",
+          "seenCount": 1
+        }
+      ],
+      "forms": [],
+      "tables": [],
+      "dialogs": [],
+      "landmarks": [],
+      "frames": [],
+      "shadowHosts": [],
+      "headings": [],
+      "verifiedActions": [
+        {
+          "toolName": "browser_fill_form",
+          "elementLabel": "Username",
+          "strategy": "role",
+          "expression": "getByRole(\"textbox\", { name: \"Username\" })",
+          "frameworkExpressions": {
+            "playwright": "getByRole(\"textbox\", { name: \"Username\" })"
+          },
+          "targetFacts": {
+            "role": "textbox",
+            "rawAccessibleName": "Username",
+            "normalizedAccessibleName": "Username",
+            "accessibleName": "Username"
+          },
+          "context": {
+            "source": "verified_mcp_accessibility_snapshot"
+          },
+          "proof": {
+            "count": 1,
+            "sameElement": true,
+            "visible": null,
+            "enabled": null,
+            "source": "verified_mcp_accessibility_snapshot",
+            "verified": true
+          },
+          "seenCount": 1
+        },
+        {
+          "toolName": "browser_fill_form",
+          "elementLabel": "Password",
+          "strategy": "role",
+          "expression": "getByRole(\"textbox\", { name: \"Password\" })",
+          "frameworkExpressions": {
+            "playwright": "getByRole(\"textbox\", { name: \"Password\" })"
+          },
+          "targetFacts": {
+            "role": "textbox",
+            "rawAccessibleName": "Password",
+            "normalizedAccessibleName": "Password",
+            "accessibleName": "Password"
+          },
+          "context": {
+            "source": "verified_mcp_accessibility_snapshot"
+          },
+          "proof": {
+            "count": 1,
+            "sameElement": true,
+            "visible": null,
+            "enabled": null,
+            "source": "verified_mcp_accessibility_snapshot",
+            "verified": true
+          },
+          "seenCount": 1
+        },
+        {
+          "toolName": "browser_click",
+          "elementLabel": "Login button",
+          "strategy": "role",
+          "expression": "getByRole(\"button\", { name: \"Login\" })",
+          "frameworkExpressions": {
+            "playwright": "getByRole(\"button\", { name: \"Login\" })"
+          },
+          "targetFacts": {
+            "role": "button",
+            "rawAccessibleName": "Login",
+            "normalizedAccessibleName": "Login",
+            "accessibleName": "Login"
+          },
+          "context": {
+            "source": "verified_mcp_accessibility_snapshot"
+          },
+          "proof": {
+            "count": 1,
+            "sameElement": true,
+            "visible": null,
+            "enabled": null,
+            "source": "verified_mcp_accessibility_snapshot",
+            "verified": true
+          },
+          "seenCount": 1
+        }
+      ]
+    },
+    "/web/index.php/dashboard/index": {
+      "schemaVersion": "qaai-dom-atlas-v1",
+      "pageKey": "/web/index.php/dashboard/index",
+      "routeKey": "/web/index.php/dashboard/index",
+      "url": "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+      "title": null,
+      "counts": {
+        "controls": 2
+      },
+      "firstSeenAt": 1782036244773,
+      "lastSeenAt": 1782036244773,
+      "seenCount": 1,
+      "controls": [
+        {
+          "selector": "getByRole(\"menuitem\", { name: \"Logout\" })",
+          "role": "menuitem",
+          "name": "Logout",
+          "visible": null,
+          "enabled": null,
+          "source": "verified_mcp_accessibility_snapshot",
+          "seenCount": 1
+        },
+        {
+          "selector": "getByText(\"Logout\", { exact: false })",
+          "role": "menuitem",
+          "name": "Logout",
+          "visible": null,
+          "enabled": null,
+          "source": "verified_mcp_accessibility_snapshot",
+          "seenCount": 1
+        }
+      ],
+      "forms": [],
+      "tables": [],
+      "dialogs": [],
+      "landmarks": [],
+      "frames": [],
+      "shadowHosts": [],
+      "headings": [],
+      "verifiedActions": [
+        {
+          "toolName": "browser_click",
+          "elementLabel": "Logout menu item",
+          "strategy": "role",
+          "expression": "getByRole(\"menuitem\", { name: \"Logout\" })",
+          "frameworkExpressions": {
+            "playwright": "getByRole(\"menuitem\", { name: \"Logout\" })"
+          },
+          "targetFacts": {
+            "role": "menuitem",
+            "rawAccessibleName": "Logout",
+            "normalizedAccessibleName": "Logout",
+            "accessibleName": "Logout"
+          },
+          "context": {
+            "source": "verified_mcp_accessibility_snapshot"
+          },
+          "proof": {
+            "count": 1,
+            "sameElement": true,
+            "visible": null,
+            "enabled": null,
+            "source": "verified_mcp_accessibility_snapshot",
+            "verified": true
+          },
+          "seenCount": 1
+        }
+      ]
+    }
+  }
+}

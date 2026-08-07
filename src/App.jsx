@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import { AuthProvider, useAuth } from './store/auth';
-import { ProjectProvider } from './store/project';
+import { ProjectProvider, useProject } from './store/project';
 import { RunStreamProvider } from './store/runStream';
 import { ToastProvider } from './lib/useToast';
 import { ConfirmProvider } from './lib/useConfirm';
@@ -11,19 +11,26 @@ import ErrorBoundary from './components/ErrorBoundary';
 import LoginScreen from './pages/LoginScreen';
 import Profile from './pages/Profile';
 import Overview from './pages/Overview';
-import RunSuite from './pages/RunSuite';
-import TestCases from './pages/TestCases';
-import Theater from './pages/Theater';
 import AgentRunningIndicator from './components/AgentRunningIndicator';
+import PauseModal from './components/PauseModal';
+import PausedBanner from './components/PausedBanner';
+import ConnectivityBanner from './components/ConnectivityBanner';
 import ProjectSetup from './pages/ProjectSetup';
-import ExecutionLog from './pages/ExecutionLog';
-import Reports from './pages/Reports';
+import RunSuite from './pages/RunSuite';
 import CompareView from './pages/reports/CompareView';
 import SprintCompare from './pages/SprintCompare';
-import BlockedItems from './pages/BlockedItems';
-import Governance from './pages/Governance';
-import KnowledgeBase from './pages/KnowledgeBase';
-import OutputFiles from './pages/OutputFiles';
+import ProjectWorkspaceShell from './pages/workspace/ProjectWorkspaceShell';
+import {
+  WorkspaceFiles,
+  WorkspaceIntegrations,
+  WorkspaceLive,
+  WorkspaceMemory,
+  WorkspaceOutputFiles,
+  WorkspaceRecovery,
+  WorkspaceResults,
+  WorkspaceTestAccounts,
+  WorkspaceTests,
+} from './pages/workspace/WorkspaceTabs';
 
 import Settings from './pages/settings/Settings';
 import ClaudeSettings from './pages/settings/ClaudeSettings';
@@ -59,6 +66,19 @@ function RequireAuth({ children }) {
   return children;
 }
 
+function CurrentProjectRedirect({ to }) {
+  const { current, loading } = useProject();
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-ink-50 text-sm text-ink-500">
+        Loading workspace...
+      </div>
+    );
+  }
+  if (!current?.id) return <Navigate to="/project-setup" replace />;
+  return <Navigate to={`/projects/${current.id}/${to}`} replace />;
+}
+
 function MainLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const closeMobileNav = useCallback(() => setMobileNavOpen(false), []);
@@ -85,6 +105,7 @@ function MainLayout() {
     // takes the full width.
     <>
       <AgentRunningIndicator />
+      <PauseModal />
       <div className={`md:grid ${gridCols} h-screen w-full overflow-hidden flex flex-col`}>
       <Sidebar
         mobileOpen={mobileNavOpen}
@@ -93,6 +114,8 @@ function MainLayout() {
         onToggleCollapse={toggleCollapse}
       />
       <main className="flex flex-col h-screen overflow-hidden bg-ink-50">
+        <ConnectivityBanner />
+        <PausedBanner />
         {/* Mobile-only top bar with hamburger. Hidden on md+ where the
             sidebar is always visible. Stays above the main scroll area. */}
         <div className="md:hidden flex items-center gap-3 h-12 px-3 border-b border-ink-200 bg-white shrink-0">
@@ -110,22 +133,45 @@ function MainLayout() {
         </div>
         <RouteAwareBoundary>
           <Routes>
-            <Route index element={<Navigate to="/overview" replace />} />
-            <Route path="overview" element={<Overview />} />
-            <Route path="run-suite" element={<RunSuite />} />
-            <Route path="test-cases" element={<TestCases />} />
-            <Route path="live-pipeline" element={<Theater />} />
+            <Route index element={<Navigate to="/project-setup" replace />} />
+            <Route path="projects" element={<Navigate to="/project-setup" replace />} />
+            <Route path="projects/:projectId" element={<ProjectWorkspaceShell />}>
+              <Route index element={<Navigate to="overview" replace />} />
+              <Route path="overview" element={<Overview />} />
+              <Route path="run-suite" element={<RunSuite />} />
+              <Route path="results" element={<WorkspaceResults />} />
+              <Route path="tests" element={<WorkspaceTests />} />
+              <Route path="live" element={<WorkspaceLive />} />
+              <Route path="output-files" element={<WorkspaceOutputFiles />} />
+              <Route path="recovery" element={<WorkspaceRecovery />} />
+              <Route path="test-accounts" element={<WorkspaceTestAccounts />} />
+              <Route path="files" element={<WorkspaceFiles />} />
+              <Route path="memory" element={<WorkspaceMemory />} />
+              <Route path="integrations" element={<WorkspaceIntegrations />} />
+              <Route path="settings" element={<Navigate to="/project-setup" replace />} />
+            </Route>
+            <Route path="overview" element={<CurrentProjectRedirect to="overview" />} />
+            <Route path="run-suite" element={<CurrentProjectRedirect to="run-suite" />} />
+            <Route path="test-cases" element={<CurrentProjectRedirect to="tests" />} />
+            <Route path="live-pipeline" element={<CurrentProjectRedirect to="live" />} />
             {/* Back-compat — old /theater bookmarks still work */}
-            <Route path="theater" element={<Navigate to="/live-pipeline" replace />} />
+            <Route path="theater" element={<CurrentProjectRedirect to="live" />} />
             <Route path="project-setup" element={<ProjectSetup />} />
-            <Route path="execution-log" element={<ExecutionLog />} />
-            <Route path="reports" element={<Reports />} />
+            {/* Execution Log was removed in May 2026 — Live Pipeline +
+                Reports cover its job. Redirect any lingering bookmarks
+                rather than 404'ing them. */}
+            <Route path="execution-log" element={<CurrentProjectRedirect to="live" />} />
+            <Route path="reports" element={<CurrentProjectRedirect to="results" />} />
             <Route path="reports/compare" element={<CompareView />} />
             <Route path="sprints/compare" element={<SprintCompare />} />
-            <Route path="blocked-items" element={<BlockedItems />} />
-            <Route path="governance" element={<Governance />} />
-            <Route path="knowledge-base" element={<KnowledgeBase />} />
-            <Route path="output-files" element={<OutputFiles />} />
+            <Route path="blocked-items" element={<CurrentProjectRedirect to="recovery" />} />
+            {/* Governance page removed June 2026 — the AI's MCP-derived
+                locators are the trust surface, so the human-review/merge
+                workflow was overhead. Generated specs now land directly
+                in Output Files. Old /governance bookmarks redirect. */}
+            <Route path="governance" element={<CurrentProjectRedirect to="output-files" />} />
+            <Route path="knowledge-base" element={<CurrentProjectRedirect to="memory" />} />
+            <Route path="output-files" element={<CurrentProjectRedirect to="output-files" />} />
 
             <Route path="settings" element={<Settings />}>
               <Route index element={<Navigate to="ai-provider" replace />} />
@@ -139,7 +185,7 @@ function MainLayout() {
             </Route>
 
             <Route path="profile" element={<Profile />} />
-            <Route path="*" element={<Navigate to="/overview" replace />} />
+            <Route path="*" element={<Navigate to="/project-setup" replace />} />
           </Routes>
         </RouteAwareBoundary>
       </main>

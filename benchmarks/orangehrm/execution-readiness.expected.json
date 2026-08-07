@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "qaai.reliability.benchmark.v1",
+  "id": "orangehrm-execution-readiness",
+  "items": [
+    {
+      "coverageRef": "login-dashboard",
+      "requiredFields": ["username", "password"],
+      "requiredOracles": [
+        { "kind": "url", "target": "url" }
+      ],
+      "dataRowIntents": ["positive"]
+    }
+  ]
+}

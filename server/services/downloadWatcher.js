@@ -111,6 +111,24 @@ function setCaseStart(session) {
   }
 }
 
+// Read-only live inventory for click-time event certification. RunResult rows
+// are created after case execution, so the event broker must compare the
+// watcher's stable in-memory files before/after the trigger and let the normal
+// attributeRecentDownloads path attach them to the persisted result later.
+function listLiveForSession(session) {
+  const state = session?._dlWatcher;
+  if (!state?.knownFiles) return [];
+  return Array.from(state.knownFiles.entries())
+    .filter(([, meta]) => meta?.recorded === true)
+    .map(([suggestedFilename, meta]) => ({
+      id: `${suggestedFilename}:${meta.size}:${meta.mtimeMs}`,
+      suggestedFilename,
+      sizeBytes: meta.size,
+      mimeType: guessMime(suggestedFilename),
+      capturedAt: meta.mtimeMs ? new Date(meta.mtimeMs) : null,
+    }));
+}
+
 /**
  * After the Conductor creates the RunResult row for a finished case,
  * back-fill the runResultId on any Download rows captured during this
@@ -229,6 +247,7 @@ module.exports = {
   startWatcher,
   setRunResult,
   setCaseStart,
+  listLiveForSession,
   attributeRecentDownloads,
   stopWatcher,
   listForRunResult,

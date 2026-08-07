@@ -62,3 +62,89 @@ export function formatTokens(n) {
   if (n >= 1_000)     return `${(n / 1_000).toFixed(1)}k`;
   return String(n);
 }
+
+/**
+ * Estimate the input + output token cost of executing a Conductor run.
+ *
+ * Math is conservative — assumes the bulk of cost is per-case turn loops
+ * dominated by the cached static system prefix + per-turn snapshot diff.
+ * Cached input is priced at 10% of standard; the static prefix is ~18kB
+ * (~4500 tokens) and identical across every turn after the first one.
+ *
+ * Per-turn cost components:
+ *   - First call per case: 4500 input tokens (cache WRITE: 1.25x mult)
+ *   - Subsequent calls:    4500 input cached (0.10x mult) + 1500 dynamic
+ *   - Tool result back:    ~1000 tokens (trimmed snapshot)
+ *   - Assistant output:    ~600 tokens (reasoning + tool calls)
+ *
+ * @param {object} opts
+ * @param {number} opts.caseCount       cases the run will attempt
+ * @param {'fast'|'thorough'} opts.execMode
+ * @returns {{ inputTokens, outputTokens, costUsd, costDisplay, secondsEstimate }}
+ */
+export function estimateConductorRunCost({ caseCount, execMode = 'fast' }) {
+  const safe = Math.max(0, Math.floor(Number(caseCount) || 0));
+  if (safe === 0) {
+    return {
+      inputTokens: 0, outputTokens: 0, costUsd: 0,
+      costDisplay: '$0.00', secondsEstimate: 0,
+      perCaseTokens: 0,
+    };
+  }
+
+  const profile = execMode === 'thorough'
+    ? { turns: 14, attempts: 2, supervisor: true,  criticEvery: 5 }
+    : { turns: 8,  attempts: 1, supervisor: false, criticEvery: 0 };
+  // ↑ "turns" is the AVERAGE active turn count, not the cap. Most cases
+  // finish in 5–10 turns even when the cap is 12 or 22.
+
+  // Static prefix that gets cached after the first call within a case.
+  const STATIC_PREFIX_TOKENS = 4500;
+  const DYNAMIC_PER_TURN     = 1500; // operator guidance + dynamic suffix
+  const TOOL_RESULT_TOKENS   = 1100; // trimmed snapshot returning to Claude
+  const ASSISTANT_OUTPUT     = 600;  // per turn
+
+  const CACHE_WRITE_MULT = 1.25;
+  const CACHE_READ_MULT  = 0.10;
+
+  // Per-case input:
+  const firstCallInput = STATIC_PREFIX_TOKENS * CACHE_WRITE_MULT + DYNAMIC_PER_TURN;
+  const laterCallInput = STATIC_PREFIX_TOKENS * CACHE_READ_MULT + DYNAMIC_PER_TURN + TOOL_RESULT_TOKENS;
+  const perCaseInputTokens = firstCallInput + (profile.turns - 1) * laterCallInput;
+  const perCaseOutputTokens = profile.turns * ASSISTANT_OUTPUT;
+
+  // Multiplier for retries — assumes worst case (every case fails and re-runs)
+  // dampened by 0.6 to reflect that only failing cases re-run.
+  const retryMultiplier = 1 + (profile.attempts - 1) * 0.6;
+
+  // Supervisor pass: one flagship call per failing case + one extra conductor wave.
+  // Approximate as 30% of perCaseInput * caseCount when enabled.
+  const supervisorOverhead = profile.supervisor
+    ? Math.round(perCaseInputTokens * 0.30) * safe
+    : 0;
+
+  // Inline Critic — flagship calls; Thorough fires every-N turns.
+  const inlineCriticTokens = profile.criticEvery > 0
+    ? Math.round(profile.turns / profile.criticEvery) * 2500 * safe
+    : 0;
+
+  const inputTokens = Math.round(perCaseInputTokens * safe * retryMultiplier + supervisorOverhead + inlineCriticTokens);
+  const outputTokens = Math.round(perCaseOutputTokens * safe * retryMultiplier);
+
+  const inputCost  = (inputTokens / 1_000_000) * INPUT_PRICE_PER_M;
+  const outputCost = (outputTokens / 1_000_000) * OUTPUT_PRICE_PER_M;
+  const costUsd = inputCost + outputCost;
+
+  // ~25s per case average wall-clock — dominated by MCP browser navigations,
+  // not LLM latency. Thorough adds the supervisor finalise pass.
+  const secondsEstimate = Math.round(safe * 25 * (profile.supervisor ? 1.4 : 1));
+
+  return {
+    inputTokens,
+    outputTokens,
+    costUsd,
+    costDisplay: formatUsd(costUsd),
+    secondsEstimate,
+    perCaseTokens: Math.round((inputTokens + outputTokens) / safe),
+  };
+}

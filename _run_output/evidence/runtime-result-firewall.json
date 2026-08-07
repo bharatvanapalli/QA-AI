@@ -1,0 +1,22 @@
+{
+  "schema": "qaai-runtime-result-firewall/1",
+  "invariant": "Website result verdict and generated-output readiness are separate state machines.",
+  "websiteResultState": {
+    "source": "RunResult statuses and verified assertion outcomes only",
+    "counts": {
+      "pass": 9,
+      "fail": 0,
+      "blocked": 2,
+      "skipped": 0,
+      "needs_human": 0
+    },
+    "verdict": "mixed"
+  },
+  "outputReadinessState": {
+    "source": "ReplayIR locator/codegen/package certification only",
+    "status": "repair_required",
+    "blockedExportItems": 9,
+    "packagePassed": null,
+    "certificationErrorCount": null
+  }
+}

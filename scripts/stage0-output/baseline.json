@@ -1,0 +1,39 @@
+{
+  "capturedAt": "2026-05-27T19:06:57.526Z",
+  "windowDays": 14,
+  "since": "2026-05-13T19:06:57.502Z",
+  "totals": {
+    "runs": 16,
+    "cases": 109,
+    "traceBytes": 91700
+  },
+  "byExecMode": {
+    "fast": {
+      "runs": 16,
+      "cases": 109,
+      "pass": 14,
+      "fail": 20,
+      "blocked": 75,
+      "skipped": 0,
+      "passRatePct": 12.8,
+      "avgDurationMs": 0,
+      "avgTraceBytesPerCase": 841
+    }
+  },
+  "topProjects": [
+    {
+      "projectId": "2ccb038c-22a0-46f5-a46a-47da40075822",
+      "name": "QAAI Test Run — Sprint 1",
+      "runs": 16,
+      "cases": 109,
+      "avgTraceBytesPerCase": 841
+    }
+  ],
+  "heaviestRun": {
+    "id": "d694d1af-2b6b-4ef0-a7e3-0ff65c68a750",
+    "projectName": "QAAI Test Run — Sprint 1",
+    "cases": 13,
+    "traceBytes": 28065,
+    "startedAt": "2026-05-26T09:16:43.067Z"
+  }
+}

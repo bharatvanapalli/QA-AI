@@ -6,6 +6,7 @@ import { useToast } from '../lib/useToast';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import SecretInput from '../components/ui/SecretInput';
+import { getWorkspaceShortcutRedirect } from '../lib/projectRoutes';
 
 // Surface a soft warning after this many consecutive failed sign-in attempts
 // so users with a typo see a hint before getting locked out at the server.
@@ -94,7 +95,8 @@ export default function LoginScreen() {
         });
         toast.success('Account created. Welcome to QAAI.');
       }
-      const dest = location.state?.from?.pathname || '/overview';
+      const fromPath = location.state?.from?.pathname;
+      const dest = getWorkspaceShortcutRedirect(fromPath) || fromPath || '/overview';
       navigate(dest, { replace: true });
       setFailedAttempts(0);
     } catch (err) {

@@ -123,6 +123,7 @@ router.post(
           lastName: user.lastName,
           role: user.role,
           organisation: user.organisation,
+          createdAt: user.createdAt,
         },
       });
     } catch (err) {
@@ -182,6 +183,7 @@ router.post(
           lastName: user.lastName,
           role: user.role,
           organisation: user.organisation,
+          createdAt: user.createdAt,
         },
       });
     } catch (err) {

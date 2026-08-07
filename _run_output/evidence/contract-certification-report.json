@@ -1,0 +1,1129 @@
+{
+  "schema": "qaai-contract-export-certification/1",
+  "contractFirstActive": true,
+  "packagePassed": false,
+  "errorCount": 67,
+  "warningCount": 0,
+  "findings": [
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "ea63081b-2e74-4cd0-b20c-0b1d9e43a75d",
+      "testCaseId": "f3555978-578d-4369-b57f-12479fc67c61",
+      "contractStepId": "f3555978-578d-4369-b57f-12479fc67c61:step:1:f8df55542860d03c",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:unscoped_locator",
+      "severity": "error",
+      "runResultId": "ea63081b-2e74-4cd0-b20c-0b1d9e43a75d",
+      "testCaseId": "f3555978-578d-4369-b57f-12479fc67c61",
+      "contractStepId": "f3555978-578d-4369-b57f-12479fc67c61:step:2:59ae777a58951c6a",
+      "message": "unscoped_locator: Add page/container scope and uniqueness proof to the locator recipe."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "ea63081b-2e74-4cd0-b20c-0b1d9e43a75d",
+      "testCaseId": "f3555978-578d-4369-b57f-12479fc67c61",
+      "contractStepId": "f3555978-578d-4369-b57f-12479fc67c61:step:2:59ae777a58951c6a",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "ea63081b-2e74-4cd0-b20c-0b1d9e43a75d",
+      "testCaseId": "f3555978-578d-4369-b57f-12479fc67c61",
+      "contractStepId": "f3555978-578d-4369-b57f-12479fc67c61:step:3:8a32b5473606e6b4",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "ea63081b-2e74-4cd0-b20c-0b1d9e43a75d",
+      "testCaseId": "f3555978-578d-4369-b57f-12479fc67c61",
+      "contractStepId": "f3555978-578d-4369-b57f-12479fc67c61:step:3:8a32b5473606e6b4",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:unscoped_locator",
+      "severity": "error",
+      "runResultId": "ea63081b-2e74-4cd0-b20c-0b1d9e43a75d",
+      "testCaseId": "f3555978-578d-4369-b57f-12479fc67c61",
+      "contractStepId": "f3555978-578d-4369-b57f-12479fc67c61:step:4:a5d1c3de2db19bb0",
+      "message": "unscoped_locator: Add page/container scope and uniqueness proof to the locator recipe."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "ea63081b-2e74-4cd0-b20c-0b1d9e43a75d",
+      "testCaseId": "f3555978-578d-4369-b57f-12479fc67c61",
+      "contractStepId": "f3555978-578d-4369-b57f-12479fc67c61:step:5:a73bc13908282522",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "183e4ccb-e947-4687-a22a-fa9a3987c3d7",
+      "testCaseId": "8bd867de-aa20-45a5-995c-be812cc6eb74",
+      "contractStepId": "8bd867de-aa20-45a5-995c-be812cc6eb74:step:1:c9fdad61a7e51f8a",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "183e4ccb-e947-4687-a22a-fa9a3987c3d7",
+      "testCaseId": "8bd867de-aa20-45a5-995c-be812cc6eb74",
+      "contractStepId": "8bd867de-aa20-45a5-995c-be812cc6eb74:step:2:e655ff9aa236118d",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:unscoped_locator",
+      "severity": "error",
+      "runResultId": "f52f9ac6-8b26-4a1d-a9f8-634e41f062d9",
+      "testCaseId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6",
+      "contractStepId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6:step:1:e4025d7851fa7ab0",
+      "message": "unscoped_locator: Add page/container scope and uniqueness proof to the locator recipe."
+    },
+    {
+      "rule": "contract_repair_required:unscoped_locator",
+      "severity": "error",
+      "runResultId": "f52f9ac6-8b26-4a1d-a9f8-634e41f062d9",
+      "testCaseId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6",
+      "contractStepId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6:step:2:ebd8295012e51075",
+      "message": "unscoped_locator: Add page/container scope and uniqueness proof to the locator recipe."
+    },
+    {
+      "rule": "contract_repair_required:unscoped_locator",
+      "severity": "error",
+      "runResultId": "f52f9ac6-8b26-4a1d-a9f8-634e41f062d9",
+      "testCaseId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6",
+      "contractStepId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6:step:3:bf1335c57d26ccd5",
+      "message": "unscoped_locator: Add page/container scope and uniqueness proof to the locator recipe."
+    },
+    {
+      "rule": "contract_repair_required:unscoped_locator",
+      "severity": "error",
+      "runResultId": "f52f9ac6-8b26-4a1d-a9f8-634e41f062d9",
+      "testCaseId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6",
+      "contractStepId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6:assertion:ASN-af19cf78",
+      "message": "unscoped_locator: Add page/container scope and uniqueness proof to the locator recipe."
+    },
+    {
+      "rule": "contract_repair_required:unscoped_locator",
+      "severity": "error",
+      "runResultId": "f52f9ac6-8b26-4a1d-a9f8-634e41f062d9",
+      "testCaseId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6",
+      "contractStepId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6:assertion:ASN-499034ba",
+      "message": "unscoped_locator: Add page/container scope and uniqueness proof to the locator recipe."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "325a89e3-05d4-418a-9705-4b473bcde80c",
+      "testCaseId": "6773b1db-c635-45fe-9bcf-34f857c2478f",
+      "contractStepId": "6773b1db-c635-45fe-9bcf-34f857c2478f:step:1:21e1ecc91c9461cb",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "325a89e3-05d4-418a-9705-4b473bcde80c",
+      "testCaseId": "6773b1db-c635-45fe-9bcf-34f857c2478f",
+      "contractStepId": "6773b1db-c635-45fe-9bcf-34f857c2478f:step:2:936b091c4356b036",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:assertion_translation_gap",
+      "severity": "error",
+      "runResultId": "325a89e3-05d4-418a-9705-4b473bcde80c",
+      "testCaseId": "6773b1db-c635-45fe-9bcf-34f857c2478f",
+      "contractStepId": "6773b1db-c635-45fe-9bcf-34f857c2478f:assertion:ASN-033627f9",
+      "message": "assertion_translation_gap: Translate the declared assertion into a certified Playwright/POM assertion method."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "890ab97f-adaf-441c-8a33-dbf953538061",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:1:93112ae4180330c3",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:unscoped_locator",
+      "severity": "error",
+      "runResultId": "890ab97f-adaf-441c-8a33-dbf953538061",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "message": "unscoped_locator: Add page/container scope and uniqueness proof to the locator recipe."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "890ab97f-adaf-441c-8a33-dbf953538061",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "890ab97f-adaf-441c-8a33-dbf953538061",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "890ab97f-adaf-441c-8a33-dbf953538061",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:unscoped_locator",
+      "severity": "error",
+      "runResultId": "890ab97f-adaf-441c-8a33-dbf953538061",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:4:9742c9fda0fcbb46",
+      "message": "unscoped_locator: Add page/container scope and uniqueness proof to the locator recipe."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "890ab97f-adaf-441c-8a33-dbf953538061",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:5:2a3974f9aad974b1",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "3cd7339d-7055-4000-b5c0-10427d03bba7",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:1:93112ae4180330c3",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "3cd7339d-7055-4000-b5c0-10427d03bba7",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "3cd7339d-7055-4000-b5c0-10427d03bba7",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "3cd7339d-7055-4000-b5c0-10427d03bba7",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "3cd7339d-7055-4000-b5c0-10427d03bba7",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "3cd7339d-7055-4000-b5c0-10427d03bba7",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:4:9742c9fda0fcbb46",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "3cd7339d-7055-4000-b5c0-10427d03bba7",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:5:2a3974f9aad974b1",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "2247150c-5cda-4e17-809b-8b8fa520b005",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:1:93112ae4180330c3",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "2247150c-5cda-4e17-809b-8b8fa520b005",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "2247150c-5cda-4e17-809b-8b8fa520b005",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "2247150c-5cda-4e17-809b-8b8fa520b005",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "2247150c-5cda-4e17-809b-8b8fa520b005",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "2247150c-5cda-4e17-809b-8b8fa520b005",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:4:9742c9fda0fcbb46",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "2247150c-5cda-4e17-809b-8b8fa520b005",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:5:2a3974f9aad974b1",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "d64dba2b-e629-4da6-a4bb-eb32335c85fa",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:1:93112ae4180330c3",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "d64dba2b-e629-4da6-a4bb-eb32335c85fa",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "d64dba2b-e629-4da6-a4bb-eb32335c85fa",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "d64dba2b-e629-4da6-a4bb-eb32335c85fa",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "d64dba2b-e629-4da6-a4bb-eb32335c85fa",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "d64dba2b-e629-4da6-a4bb-eb32335c85fa",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:4:9742c9fda0fcbb46",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "d64dba2b-e629-4da6-a4bb-eb32335c85fa",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:5:2a3974f9aad974b1",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "87e776f3-147b-474f-b94a-d8e4b1247cdd",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:1:93112ae4180330c3",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "87e776f3-147b-474f-b94a-d8e4b1247cdd",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "87e776f3-147b-474f-b94a-d8e4b1247cdd",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "87e776f3-147b-474f-b94a-d8e4b1247cdd",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "87e776f3-147b-474f-b94a-d8e4b1247cdd",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "87e776f3-147b-474f-b94a-d8e4b1247cdd",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:4:9742c9fda0fcbb46",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "87e776f3-147b-474f-b94a-d8e4b1247cdd",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:5:2a3974f9aad974b1",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "5086625c-6f26-409f-8548-84c3cdd3c2a2",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:1:93112ae4180330c3",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "5086625c-6f26-409f-8548-84c3cdd3c2a2",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "5086625c-6f26-409f-8548-84c3cdd3c2a2",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "5086625c-6f26-409f-8548-84c3cdd3c2a2",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "5086625c-6f26-409f-8548-84c3cdd3c2a2",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:4:9742c9fda0fcbb46",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "5086625c-6f26-409f-8548-84c3cdd3c2a2",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:5:2a3974f9aad974b1",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "92ff1e51-a334-4b6a-9501-e7640d8e59c7",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:1:93112ae4180330c3",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "92ff1e51-a334-4b6a-9501-e7640d8e59c7",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "92ff1e51-a334-4b6a-9501-e7640d8e59c7",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "92ff1e51-a334-4b6a-9501-e7640d8e59c7",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_data_binding",
+      "severity": "error",
+      "runResultId": "92ff1e51-a334-4b6a-9501-e7640d8e59c7",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "message": "missing_data_binding: Bind the value to an uploaded/declarative data column and render readData(row, column)."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "92ff1e51-a334-4b6a-9501-e7640d8e59c7",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:4:9742c9fda0fcbb46",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_repair_required:missing_locator_recipe",
+      "severity": "error",
+      "runResultId": "92ff1e51-a334-4b6a-9501-e7640d8e59c7",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:5:2a3974f9aad974b1",
+      "message": "missing_locator_recipe: Recapture action-time locator proof while the page is live."
+    },
+    {
+      "rule": "contract_step_parity_gap",
+      "severity": "error",
+      "path": "evidence/step-parity-report.json",
+      "message": "42 planned/executed step(s) still lack generated-code proof."
+    },
+    {
+      "rule": "contract_cardinality_mismatch",
+      "severity": "error",
+      "message": "Generated runnable test count (2) does not match executable result count (11)."
+    }
+  ],
+  "repairTasks": [
+    {
+      "category": "missing_data_binding",
+      "testCaseId": "f3555978-578d-4369-b57f-12479fc67c61",
+      "dataRowId": "AuthProfiles:0:Row 1 · admin",
+      "contractStepId": "f3555978-578d-4369-b57f-12479fc67c61:step:1:f8df55542860d03c",
+      "expectedFix": "Bind the value to an uploaded/declarative data column and render readData(row, column).",
+      "evidence": "Login form is visible with Username and Password fields",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "unscoped_locator",
+      "testCaseId": "f3555978-578d-4369-b57f-12479fc67c61",
+      "dataRowId": "AuthProfiles:0:Row 1 · admin",
+      "contractStepId": "f3555978-578d-4369-b57f-12479fc67c61:step:2:59ae777a58951c6a",
+      "expectedFix": "Add page/container scope and uniqueness proof to the locator recipe.",
+      "evidence": "Fill Username field",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_data_binding",
+      "testCaseId": "f3555978-578d-4369-b57f-12479fc67c61",
+      "dataRowId": "AuthProfiles:0:Row 1 · admin",
+      "contractStepId": "f3555978-578d-4369-b57f-12479fc67c61:step:2:59ae777a58951c6a",
+      "expectedFix": "Bind the value to an uploaded/declarative data column and render readData(row, column).",
+      "evidence": "Fill Username field",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_locator_recipe",
+      "testCaseId": "f3555978-578d-4369-b57f-12479fc67c61",
+      "dataRowId": "AuthProfiles:0:Row 1 · admin",
+      "contractStepId": "f3555978-578d-4369-b57f-12479fc67c61:step:3:8a32b5473606e6b4",
+      "expectedFix": "Recapture action-time locator proof while the page is live.",
+      "evidence": "Fill Password field",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_data_binding",
+      "testCaseId": "f3555978-578d-4369-b57f-12479fc67c61",
+      "dataRowId": "AuthProfiles:0:Row 1 · admin",
+      "contractStepId": "f3555978-578d-4369-b57f-12479fc67c61:step:3:8a32b5473606e6b4",
+      "expectedFix": "Bind the value to an uploaded/declarative data column and render readData(row, column).",
+      "evidence": "Fill Password field",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "unscoped_locator",
+      "testCaseId": "f3555978-578d-4369-b57f-12479fc67c61",
+      "dataRowId": "AuthProfiles:0:Row 1 · admin",
+      "contractStepId": "f3555978-578d-4369-b57f-12479fc67c61:step:4:a5d1c3de2db19bb0",
+      "expectedFix": "Add page/container scope and uniqueness proof to the locator recipe.",
+      "evidence": "User is redirected to the dashboard",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_locator_recipe",
+      "testCaseId": "f3555978-578d-4369-b57f-12479fc67c61",
+      "dataRowId": "AuthProfiles:0:Row 1 · admin",
+      "contractStepId": "f3555978-578d-4369-b57f-12479fc67c61:step:5:a73bc13908282522",
+      "expectedFix": "Recapture action-time locator proof while the page is live.",
+      "evidence": "Admin navigation link is visible on the dashboard",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_data_binding",
+      "testCaseId": "8bd867de-aa20-45a5-995c-be812cc6eb74",
+      "dataRowId": "RoleAccessControl:0:Row 1 · admin",
+      "contractStepId": "8bd867de-aa20-45a5-995c-be812cc6eb74:step:1:c9fdad61a7e51f8a",
+      "expectedFix": "Bind the value to an uploaded/declarative data column and render readData(row, column).",
+      "evidence": "PIM Employee List page loads and user is still authenticated",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_locator_recipe",
+      "testCaseId": "8bd867de-aa20-45a5-995c-be812cc6eb74",
+      "dataRowId": "RoleAccessControl:0:Row 1 · admin",
+      "contractStepId": "8bd867de-aa20-45a5-995c-be812cc6eb74:step:2:e655ff9aa236118d",
+      "expectedFix": "Recapture action-time locator proof while the page is live.",
+      "evidence": "Employee Information header visible — session persisted",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "unscoped_locator",
+      "testCaseId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6",
+      "dataRowId": "AuthProfiles:0:Row 1 · admin",
+      "contractStepId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6:step:1:e4025d7851fa7ab0",
+      "expectedFix": "Add page/container scope and uniqueness proof to the locator recipe.",
+      "evidence": "Profile dropdown opens with Logout option",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "unscoped_locator",
+      "testCaseId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6",
+      "dataRowId": "AuthProfiles:0:Row 1 · admin",
+      "contractStepId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6:step:2:ebd8295012e51075",
+      "expectedFix": "Add page/container scope and uniqueness proof to the locator recipe.",
+      "evidence": "User is redirected to /auth/login after logout",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "unscoped_locator",
+      "testCaseId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6",
+      "dataRowId": "AuthProfiles:0:Row 1 · admin",
+      "contractStepId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6:step:3:bf1335c57d26ccd5",
+      "expectedFix": "Add page/container scope and uniqueness proof to the locator recipe.",
+      "evidence": "Login form is displayed with Username field visible",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "unscoped_locator",
+      "testCaseId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6",
+      "dataRowId": "AuthProfiles:0:Row 1 · admin",
+      "contractStepId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6:assertion:ASN-af19cf78",
+      "expectedFix": "Add page/container scope and uniqueness proof to the locator recipe.",
+      "evidence": "ASN-af19cf78",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "unscoped_locator",
+      "testCaseId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6",
+      "dataRowId": "AuthProfiles:0:Row 1 · admin",
+      "contractStepId": "0e445403-9fb3-4d7e-b4c5-d584bd18d4d6:assertion:ASN-499034ba",
+      "expectedFix": "Add page/container scope and uniqueness proof to the locator recipe.",
+      "evidence": "ASN-499034ba",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_data_binding",
+      "testCaseId": "6773b1db-c635-45fe-9bcf-34f857c2478f",
+      "dataRowId": "AuthProfiles:0:Row 1 · ess",
+      "contractStepId": "6773b1db-c635-45fe-9bcf-34f857c2478f:step:1:21e1ecc91c9461cb",
+      "expectedFix": "Bind the value to an uploaded/declarative data column and render readData(row, column).",
+      "evidence": "Redirect to /auth/login because session is terminated",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_locator_recipe",
+      "testCaseId": "6773b1db-c635-45fe-9bcf-34f857c2478f",
+      "dataRowId": "AuthProfiles:0:Row 1 · ess",
+      "contractStepId": "6773b1db-c635-45fe-9bcf-34f857c2478f:step:2:936b091c4356b036",
+      "expectedFix": "Recapture action-time locator proof while the page is live.",
+      "evidence": "Login form is presented — session is confirmed cleared",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "assertion_translation_gap",
+      "testCaseId": "6773b1db-c635-45fe-9bcf-34f857c2478f",
+      "dataRowId": "AuthProfiles:0:Row 1 · ess",
+      "contractStepId": "6773b1db-c635-45fe-9bcf-34f857c2478f:assertion:ASN-033627f9",
+      "expectedFix": "Translate the declared assertion into a certified Playwright/POM assertion method.",
+      "evidence": "ASN-033627f9",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_data_binding",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:0:Row 1 · sqlInjection_OR",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:1:93112ae4180330c3",
+      "expectedFix": "Bind the value to an uploaded/declarative data column and render readData(row, column).",
+      "evidence": "Login form visible",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "unscoped_locator",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:0:Row 1 · sqlInjection_OR",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "expectedFix": "Add page/container scope and uniqueness proof to the locator recipe.",
+      "evidence": "Fill Username field",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_data_binding",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:0:Row 1 · sqlInjection_OR",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "expectedFix": "Bind the value to an uploaded/declarative data column and render readData(row, column).",
+      "evidence": "Fill Username field",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_locator_recipe",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:0:Row 1 · sqlInjection_OR",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "expectedFix": "Recapture action-time locator proof while the page is live.",
+      "evidence": "Fill Password field",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_data_binding",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:0:Row 1 · sqlInjection_OR",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "expectedFix": "Bind the value to an uploaded/declarative data column and render readData(row, column).",
+      "evidence": "Fill Password field",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "unscoped_locator",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:0:Row 1 · sqlInjection_OR",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:4:9742c9fda0fcbb46",
+      "expectedFix": "Add page/container scope and uniqueness proof to the locator recipe.",
+      "evidence": "SQL injection payload submitted",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_locator_recipe",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:0:Row 1 · sqlInjection_OR",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:5:2a3974f9aad974b1",
+      "expectedFix": "Recapture action-time locator proof while the page is live.",
+      "evidence": "User remains on login page; no DB error or crash",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_data_binding",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:1:Row 2 · sqlInjection_UNION",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:1:93112ae4180330c3",
+      "expectedFix": "Bind the value to an uploaded/declarative data column and render readData(row, column).",
+      "evidence": "Login form visible",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_locator_recipe",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:1:Row 2 · sqlInjection_UNION",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "expectedFix": "Recapture action-time locator proof while the page is live.",
+      "evidence": "Fill Username field",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_data_binding",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:1:Row 2 · sqlInjection_UNION",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "expectedFix": "Bind the value to an uploaded/declarative data column and render readData(row, column).",
+      "evidence": "Fill Username field",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_locator_recipe",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:1:Row 2 · sqlInjection_UNION",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "expectedFix": "Recapture action-time locator proof while the page is live.",
+      "evidence": "Fill Password field",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_data_binding",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:1:Row 2 · sqlInjection_UNION",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "expectedFix": "Bind the value to an uploaded/declarative data column and render readData(row, column).",
+      "evidence": "Fill Password field",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_locator_recipe",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:1:Row 2 · sqlInjection_UNION",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:4:9742c9fda0fcbb46",
+      "expectedFix": "Recapture action-time locator proof while the page is live.",
+      "evidence": "SQL injection payload submitted",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_locator_recipe",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:1:Row 2 · sqlInjection_UNION",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:5:2a3974f9aad974b1",
+      "expectedFix": "Recapture action-time locator proof while the page is live.",
+      "evidence": "User remains on login page; no DB error or crash",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_data_binding",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:2:Row 3 · sqlInjection_comment",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:1:93112ae4180330c3",
+      "expectedFix": "Bind the value to an uploaded/declarative data column and render readData(row, column).",
+      "evidence": "Login form visible",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_locator_recipe",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:2:Row 3 · sqlInjection_comment",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "expectedFix": "Recapture action-time locator proof while the page is live.",
+      "evidence": "Fill Username field",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_data_binding",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:2:Row 3 · sqlInjection_comment",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "expectedFix": "Bind the value to an uploaded/declarative data column and render readData(row, column).",
+      "evidence": "Fill Username field",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_locator_recipe",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:2:Row 3 · sqlInjection_comment",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "expectedFix": "Recapture action-time locator proof while the page is live.",
+      "evidence": "Fill Password field",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_data_binding",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:2:Row 3 · sqlInjection_comment",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "expectedFix": "Bind the value to an uploaded/declarative data column and render readData(row, column).",
+      "evidence": "Fill Password field",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_locator_recipe",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:2:Row 3 · sqlInjection_comment",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:4:9742c9fda0fcbb46",
+      "expectedFix": "Recapture action-time locator proof while the page is live.",
+      "evidence": "SQL injection payload submitted",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_locator_recipe",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:2:Row 3 · sqlInjection_comment",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:5:2a3974f9aad974b1",
+      "expectedFix": "Recapture action-time locator proof while the page is live.",
+      "evidence": "User remains on login page; no DB error or crash",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_data_binding",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:3:Row 4 · xss_scriptTag",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:1:93112ae4180330c3",
+      "expectedFix": "Bind the value to an uploaded/declarative data column and render readData(row, column).",
+      "evidence": "Login form visible",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_locator_recipe",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:3:Row 4 · xss_scriptTag",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "expectedFix": "Recapture action-time locator proof while the page is live.",
+      "evidence": "Fill Username field",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_data_binding",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:3:Row 4 · xss_scriptTag",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "expectedFix": "Bind the value to an uploaded/declarative data column and render readData(row, column).",
+      "evidence": "Fill Username field",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_locator_recipe",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:3:Row 4 · xss_scriptTag",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "expectedFix": "Recapture action-time locator proof while the page is live.",
+      "evidence": "Fill Password field",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_data_binding",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:3:Row 4 · xss_scriptTag",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "expectedFix": "Bind the value to an uploaded/declarative data column and render readData(row, column).",
+      "evidence": "Fill Password field",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_locator_recipe",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:3:Row 4 · xss_scriptTag",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:4:9742c9fda0fcbb46",
+      "expectedFix": "Recapture action-time locator proof while the page is live.",
+      "evidence": "SQL injection payload submitted",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_locator_recipe",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:3:Row 4 · xss_scriptTag",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:5:2a3974f9aad974b1",
+      "expectedFix": "Recapture action-time locator proof while the page is live.",
+      "evidence": "User remains on login page; no DB error or crash",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_data_binding",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:4:Row 5 · xss_imgTag",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:1:93112ae4180330c3",
+      "expectedFix": "Bind the value to an uploaded/declarative data column and render readData(row, column).",
+      "evidence": "Login form visible",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_locator_recipe",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:4:Row 5 · xss_imgTag",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "expectedFix": "Recapture action-time locator proof while the page is live.",
+      "evidence": "Fill Username field",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_data_binding",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:4:Row 5 · xss_imgTag",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "expectedFix": "Bind the value to an uploaded/declarative data column and render readData(row, column).",
+      "evidence": "Fill Username field",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_locator_recipe",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:4:Row 5 · xss_imgTag",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "expectedFix": "Recapture action-time locator proof while the page is live.",
+      "evidence": "Fill Password field",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_data_binding",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:4:Row 5 · xss_imgTag",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "expectedFix": "Bind the value to an uploaded/declarative data column and render readData(row, column).",
+      "evidence": "Fill Password field",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_locator_recipe",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:4:Row 5 · xss_imgTag",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:4:9742c9fda0fcbb46",
+      "expectedFix": "Recapture action-time locator proof while the page is live.",
+      "evidence": "SQL injection payload submitted",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_locator_recipe",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:4:Row 5 · xss_imgTag",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:5:2a3974f9aad974b1",
+      "expectedFix": "Recapture action-time locator proof while the page is live.",
+      "evidence": "User remains on login page; no DB error or crash",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_data_binding",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:5:Row 6 · xss_eventHandler",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:1:93112ae4180330c3",
+      "expectedFix": "Bind the value to an uploaded/declarative data column and render readData(row, column).",
+      "evidence": "Login form visible",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_data_binding",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:5:Row 6 · xss_eventHandler",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "expectedFix": "Bind the value to an uploaded/declarative data column and render readData(row, column).",
+      "evidence": "Fill Username field",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_locator_recipe",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:5:Row 6 · xss_eventHandler",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "expectedFix": "Recapture action-time locator proof while the page is live.",
+      "evidence": "Fill Password field",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_data_binding",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:5:Row 6 · xss_eventHandler",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "expectedFix": "Bind the value to an uploaded/declarative data column and render readData(row, column).",
+      "evidence": "Fill Password field",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_locator_recipe",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:5:Row 6 · xss_eventHandler",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:4:9742c9fda0fcbb46",
+      "expectedFix": "Recapture action-time locator proof while the page is live.",
+      "evidence": "SQL injection payload submitted",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_locator_recipe",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:5:Row 6 · xss_eventHandler",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:5:2a3974f9aad974b1",
+      "expectedFix": "Recapture action-time locator proof while the page is live.",
+      "evidence": "User remains on login page; no DB error or crash",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_data_binding",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:6:Row 7 · htmlEncoding",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:1:93112ae4180330c3",
+      "expectedFix": "Bind the value to an uploaded/declarative data column and render readData(row, column).",
+      "evidence": "Login form visible",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_locator_recipe",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:6:Row 7 · htmlEncoding",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "expectedFix": "Recapture action-time locator proof while the page is live.",
+      "evidence": "Fill Username field",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_data_binding",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:6:Row 7 · htmlEncoding",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:2:59ae777a58951c6a",
+      "expectedFix": "Bind the value to an uploaded/declarative data column and render readData(row, column).",
+      "evidence": "Fill Username field",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_locator_recipe",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:6:Row 7 · htmlEncoding",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "expectedFix": "Recapture action-time locator proof while the page is live.",
+      "evidence": "Fill Password field",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_data_binding",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:6:Row 7 · htmlEncoding",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:3:8a32b5473606e6b4",
+      "expectedFix": "Bind the value to an uploaded/declarative data column and render readData(row, column).",
+      "evidence": "Fill Password field",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_locator_recipe",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:6:Row 7 · htmlEncoding",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:4:9742c9fda0fcbb46",
+      "expectedFix": "Recapture action-time locator proof while the page is live.",
+      "evidence": "SQL injection payload submitted",
+      "owner": "qaai_platform"
+    },
+    {
+      "category": "missing_locator_recipe",
+      "testCaseId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57",
+      "dataRowId": "SecurityAuth:6:Row 7 · htmlEncoding",
+      "contractStepId": "e1fcc7a3-e2fe-49f8-a61d-66d5fe3d0a57:step:5:2a3974f9aad974b1",
+      "expectedFix": "Recapture action-time locator proof while the page is live.",
+      "evidence": "User remains on login page; no DB error or crash",
+      "owner": "qaai_platform"
+    }
+  ],
+  "executableResultCount": 11,
+  "generatedRunnableTestCount": 2
+}

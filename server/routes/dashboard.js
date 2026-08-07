@@ -4,6 +4,7 @@ const express = require('express');
 const prisma = require('../prisma');
 const { requireAuth } = require('../middleware/auth');
 const { requireOrg } = require('../middleware/org');
+const { aggregateVerdictDisagreement } = require('../services/verdictDashboard');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -32,10 +33,33 @@ router.get('/:projectId', async (req, res, next) => {
     });
     if (!project) return res.status(404).json({ success: false, code: 'NOT_FOUND' });
 
+    // Versioning — scope the whole dashboard to the active scenario generation
+    // (explicit ?generationId or the project's current). Both Run and TestCase
+    // carry generationId, so `genWhere` applies uniformly. Default = current
+    // generation; since the backfill put all pre-existing data in Generation 1
+    // (which is current for single-generation projects), this is a no-op for
+    // them and only diverges once a 2nd generation exists. Null = pre-versioning
+    // project → genWhere is empty and the dashboard behaves exactly as before.
+    let generationId = null;
+    {
+      const q = req.query?.generationId;
+      if (typeof q === 'string' && q) {
+        const g = await prisma.scenarioGeneration.findFirst({ where: { id: q, projectId }, select: { id: true } });
+        if (g) generationId = g.id;
+      }
+      if (!generationId) {
+        const cur = await prisma.scenarioGeneration.findFirst({
+          where: { projectId, isCurrent: true }, orderBy: { version: 'desc' }, select: { id: true },
+        });
+        generationId = cur?.id || null;
+      }
+    }
+    const genWhere = generationId ? { generationId } : {};
+
     // Discover the latest run id once so the BlockedItem scope and the
     // module-health "latest result" lookups agree on which run "now" means.
     const latestRunRow = await prisma.run.findFirst({
-      where: { projectId },
+      where: { projectId, ...genWhere },
       orderBy: { startedAt: 'desc' },
       select: { id: true },
     });
@@ -44,16 +68,16 @@ router.get('/:projectId', async (req, res, next) => {
     const [latestRun, totals, recentRunRows, distinctBlockedTcs, prCount, testCases, latestResults] =
       await Promise.all([
         prisma.run.findFirst({
-          where: { projectId },
+          where: { projectId, ...genWhere },
           orderBy: { startedAt: 'desc' },
         }),
         prisma.testCase.groupBy({
           by: ['status'],
-          where: { projectId },
+          where: { projectId, ...genWhere },
           _count: { status: true },
         }),
         prisma.run.findMany({
-          where: { projectId },
+          where: { projectId, ...genWhere },
           orderBy: { startedAt: 'desc' },
           take: 10,
           select: {
@@ -64,6 +88,7 @@ router.get('/:projectId', async (req, res, next) => {
             failed: true,
             blocked: true,
             skipped: true,
+            needsHuman: true,
             startedAt: true,
             completedAt: true,
             results: {
@@ -101,19 +126,19 @@ router.get('/:projectId', async (req, res, next) => {
         // regenerated test suites are no longer actionable, so don't
         // contribute to the "PRs pending" tile.
         prisma.governancePR.count({
-          where: { projectId, status: 'pending', testCase: { is: {} } },
+          where: { projectId, status: 'pending', testCase: generationId ? { generationId } : { is: {} } },
         }),
         prisma.testCase.findMany({
-          where: { projectId },
-          select: { id: true, module: true, status: true },
+          where: { projectId, ...genWhere },
+          select: { id: true, name: true, module: true, status: true, businessRisk: true },
         }),
         // Latest RunResult per test case in this project — drives the
         // pass/fail/blocked counts so we never read pass/fail off
         // TestCase.status (which no longer holds those values post-CRIT-6).
         prisma.runResult.findMany({
-          where: { testCase: { projectId } },
+          where: { testCase: { projectId, ...genWhere } },
           orderBy: [{ run: { startedAt: 'desc' } }],
-          select: { testCaseId: true, status: true, runId: true },
+          select: { testCaseId: true, status: true, runId: true, blockedReason: true },
         }),
       ]);
 
@@ -154,13 +179,15 @@ router.get('/:projectId', async (req, res, next) => {
     // Top-level KPI tiles — all derived from latest RunResult, not TC.status.
     let passed = 0;
     let failed = 0;
+    let notJudged = 0;
     let blockedFromResults = 0;
     let skippedFromResults = 0;
     for (const r of latestByTc.values()) {
-      if (r.status === 'pass')         passed++;
-      else if (r.status === 'fail')    failed++;
-      else if (r.status === 'blocked') blockedFromResults++;
-      else if (r.status === 'skipped') skippedFromResults++;
+      if (r.status === 'pass')                                passed++;
+      else if (r.status === 'fail')                           failed++;     // confirmed product failures ONLY
+      else if (r.status === 'needs_human')                    notJudged++;  // "not judged" — never folded into failed
+      else if (r.status === 'blocked')                        blockedFromResults++;
+      else if (r.status === 'skipped')                        skippedFromResults++;
     }
     // For the "blocked" tile, prefer the latest-run BlockedItem set (matches
     // the Blocked Items page UI). Fall back to result-derived blocked if we
@@ -176,10 +203,11 @@ router.get('/:projectId', async (req, res, next) => {
     const tcTotal = testCases.length;
 
     // Stability denominator: executed cases only (pass + fail + blocked).
-    // Unrun cases ("not yet measured") and pure skips are excluded — the
-    // previous formula passed/total reported 0% on a freshly-generated
-    // suite with no runs, which misled the recommendation engine.
-    const executed = passed + failed + blockedFromResults;
+    // Unrun cases ("not yet measured") and pure skips are excluded.
+    // notJudged stays in the executed denominator (a not-judged case DID run, it
+    // just couldn't be verified) so it never inflates the pass rate — but it is NOT
+    // counted as a product failure.
+    const executed = passed + failed + blockedFromResults + notJudged;
     const stability = executed > 0
       ? Math.round((passed / executed) * 1000) / 10
       : null;
@@ -226,6 +254,13 @@ router.get('/:projectId', async (req, res, next) => {
       recommendationReason = fragments.join('. ') + '.';
     }
 
+    // E3 — P0 risk gate. Pure, unit-tested helper (see applyP0RiskGate below)
+    // decides the override so the semantics are verifiable without a live run.
+    const gated = applyP0RiskGate(recommendation, recommendationReason, latestByTc, testCases);
+    recommendation = gated.recommendation;
+    recommendationReason = gated.recommendationReason;
+    const holdDetails = gated.holdDetails;
+
     // Enrich recent runs with distinct scenarios + test count for the cards.
     //
     // Hide all-zero runs (passed/failed/blocked/skipped all 0) UNLESS the run
@@ -255,7 +290,8 @@ router.get('/:projectId', async (req, res, next) => {
           sprintName: r.sprintName,
           status: r.status,
           passed: r.passed,
-          failed: r.failed,
+          failed: r.failed,             // confirmed product failures ONLY
+          needsHuman: r.needsHuman || 0, // "not judged" — never folded into failed
           blocked: r.blocked,
           skipped: r.skipped,
           startedAt: r.startedAt,
@@ -271,6 +307,7 @@ router.get('/:projectId', async (req, res, next) => {
         testCases: tcTotal,
         passed,
         failed,
+        notJudged, // "not judged" (needs_human) — surfaced separately, never inside failed
         blocked,
         skipped: skippedFromResults,
         // Backwards-compatible aliases for older clients that have not
@@ -288,6 +325,7 @@ router.get('/:projectId', async (req, res, next) => {
         coveragePercent,
         recommendation,
         recommendationReason,
+        holdDetails,
       },
       latestRun,
       recentRuns,
@@ -298,4 +336,120 @@ router.get('/:projectId', async (req, res, next) => {
   }
 });
 
+/**
+ * GET /api/dashboard/:projectId/verdict-disagreement?days=7
+ *
+ * Phase H M5 — the observable proof that "the report has stopped lying".
+ * Compares the AGENT-claimed verdict against the MECHANICAL verdict for
+ * every RunResult in a rolling N-day window, broken down by verdictVersion
+ * (legacy vs mechanical_v1) so the two ladders can be evaluated side by
+ * side without averaging across them.
+ *
+ * Per-direction columns (read [[verdict-layer-implementation-spec]]
+ * §flipDirection enum):
+ *   rescuedFalseFails      = FAIL_TO_PASS         (the win story)
+ *   surfacedUncheckables   = FAIL_TO_NEEDS_HUMAN  (also a win — was hidden as fail)
+ *   caughtOverclaimedPasses= PASS_TO_FAIL         (integrity story)
+ *   suspiciousPasses       = PASS_TO_NEEDS_HUMAN  (surfaces over-claim on uncheckables)
+ *
+ * Default window 7 days, configurable via ?days=N (clamped 1..90).
+ *
+ * Returns the empty-but-typed shape when no rows match — the UI hides the
+ * card on empty, but consumers still see a stable schema.
+ */
+router.get('/:projectId/verdict-disagreement', async (req, res, next) => {
+  try {
+    const projectId = req.params.projectId;
+    // Project ownership / org-scope check — same pattern as the main
+    // dashboard endpoint. Forged projectId in a different org returns 404.
+    const project = await prisma.project.findFirst({
+      where: { id: projectId, orgId: req.org.id },
+      select: { id: true },
+    });
+    if (!project) return res.status(404).json({ success: false, code: 'NOT_FOUND' });
+
+    const daysRaw = Number(req.query.days);
+    const days = Number.isFinite(daysRaw) && daysRaw > 0 ? Math.min(90, Math.floor(daysRaw)) : 7;
+    const sinceMs = Date.now() - days * 24 * 60 * 60 * 1000;
+    const since = new Date(sinceMs);
+
+    // Pull every RunResult in the window for this project. Project-scope
+    // via the Run side because RunResult doesn't have a direct projectId.
+    // SELECT is intentionally narrow — we only need the verdict columns.
+    const rows = await prisma.runResult.findMany({
+      where: {
+        createdAt: { gte: since },
+        run: { projectId },
+      },
+      select: {
+        verdictVersion: true,
+        verdictMode: true,
+        status: true,
+        flipDirection: true,
+        agentClaimedVerdict: true,
+      },
+    });
+
+    const { verdictVersions, headline } = aggregateVerdictDisagreement(rows, { windowDays: days });
+    res.json({
+      success: true,
+      windowDays: days,
+      since: since.toISOString(),
+      verdictVersions,
+      headline,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * E3 — P0 risk gate (pure, unit-tested). Decides the release override from the
+ * latest result per case + each case's businessRisk.
+ *
+ * Semantics (refined after seeing real cancelled-run data):
+ *   - P0 latest === 'fail'  → HARD NO_GO. The case ran and the app is broken.
+ *   - P0 latest is anything-else-not-pass (blocked / skipped / needs_human) →
+ *     HOLD (LOW_COVERAGE). We could NOT confirm the P0 path this run; "we don't
+ *     know" must never ship as GO, but it isn't a proven failure either.
+ *   - P0 latest === 'pass' → no effect.
+ * The override only ever DOWNGRADES from GO (never upgrades), so a base NO_GO /
+ * LOW_COVERAGE stands. holdDetails is always returned for the Overview panel.
+ *
+ * @param {string} recommendation        base recommendation
+ * @param {string} recommendationReason   base reason
+ * @param {Map<string,{status:string,blockedReason?:string}>} latestByTc
+ * @param {Array<{id:string,name:string,module?:string,businessRisk?:string}>} testCases
+ * @returns {{recommendation:string, recommendationReason:string, holdDetails:{p0Failures:Array,p0Uncheckable:Array}}}
+ */
+function applyP0RiskGate(recommendation, recommendationReason, latestByTc, testCases) {
+  const holdDetails = { p0Failures: [], p0Uncheckable: [] };
+  if (recommendation === 'GO' || recommendation === 'LOW_COVERAGE' || recommendation === 'NO_GO') {
+    const tcRiskMap = new Map(testCases.map((tc) => [tc.id, { name: tc.name, risk: tc.businessRisk || 'P1', module: tc.module }]));
+    for (const [tcId, result] of latestByTc) {
+      const tcInfo = tcRiskMap.get(tcId);
+      if (!tcInfo || tcInfo.risk !== 'P0') continue;
+      if (result.status === 'pass') continue;
+      const item = { caseId: tcId, caseName: tcInfo.name, module: tcInfo.module, status: result.status, blockedReason: result.blockedReason || null };
+      // Only a genuine FAIL is a hard NO_GO; everything else we couldn't
+      // confirm (blocked / did-not-run / needs-human) is a HOLD, not a failure.
+      if (result.status === 'fail') holdDetails.p0Failures.push(item);
+      else holdDetails.p0Uncheckable.push(item);
+    }
+    if (holdDetails.p0Failures.length > 0 && recommendation === 'GO') {
+      recommendation = 'NO_GO';
+      const names = holdDetails.p0Failures.slice(0, 2).map((f) => `"${f.caseName}"`).join(', ');
+      recommendationReason = `P0 failure${holdDetails.p0Failures.length > 1 ? 's' : ''} in ${names}${holdDetails.p0Failures.length > 2 ? ` (+${holdDetails.p0Failures.length - 2} more)` : ''} — unconditional NO_GO regardless of overall pass rate.`;
+    }
+    // P0 coverage incomplete: a P0 case we could NOT verify must not ship as GO.
+    if (holdDetails.p0Uncheckable.length > 0 && recommendation === 'GO') {
+      recommendation = 'LOW_COVERAGE';
+      const names = holdDetails.p0Uncheckable.slice(0, 2).map((f) => `"${f.caseName}"`).join(', ');
+      recommendationReason = `P0 coverage incomplete — ${holdDetails.p0Uncheckable.length} P0 case${holdDetails.p0Uncheckable.length > 1 ? 's' : ''} (${names}${holdDetails.p0Uncheckable.length > 2 ? ', …' : ''}) could not be verified this run. Resolve before making a release call.`;
+    }
+  }
+  return { recommendation, recommendationReason, holdDetails };
+}
+
 module.exports = router;
+module.exports.applyP0RiskGate = applyP0RiskGate;

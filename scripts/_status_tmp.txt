@@ -1,0 +1,15 @@
+status: running | pass: 12 | fail: 2 | blocked: 0 | total: 14
+  pass     [IR] Products page loads and displays product listing without authentication
+  pass     [IR] Search box is visible on the Products page
+  pass     [IR] Category filter list is visible with expected options on Products page
+  pass     [IR] Search 'Printed' returns products containing 'Printed' in name
+  pass     [IR] Each product in search results for 'Printed' contains the term in its name
+  pass     [IR] Selecting Women > Dress category shows only Women Dress products
+  pass     [IR] Selecting Men > Tshirts category shows only Men Tshirts products
+  pass     [IR] Search 'Printed' on Women Dress category page returns intersection
+  fail     [IR] SQL injection string in search box is rejected safely
+  pass     [IR] Search with numeric value returns matching products
+  pass     [IR] Clearing search input restores full product grid
+  pass     [IR] Navigating back to All Products after category filter restores full grid
+  pass     [IR] Selecting Polo brand shows only Polo brand products
+  fail     [IR] Search non-existent product name returns empty state

@@ -23,29 +23,28 @@ pnpm-debug.log*
 # Local SQLite DB — contains encrypted Claude/Gemini API keys + user data
 prisma/dev.db
 prisma/dev.db-journal
+prisma/dev.db-wal
+prisma/dev.db-shm
 prisma/*.db
 prisma/*.db-journal
+prisma/*.db-wal
+prisma/*.db-shm
 prisma/*.sqlite
 prisma/*.sqlite-journal
 dev.db
 *.db
+*.db-wal
+*.db-shm
 *.sqlite
 
-# Playwright runtime artifacts (per-run, not source)
-playwright/test-results/
-playwright/playwright-report/
-playwright/tests/
-playwright/pages/
-playwright/fixtures/
-playwright/utils/
-playwright/.cache/
-
-# Generated playwright scaffolding (rewritten on first conductor run)
-playwright/playwright.config.js
-playwright/playwright.config.ts
-playwright/package.json
-playwright/tsconfig.json
-playwright/node_modules/
+# Everything under playwright/ is runtime output, not source: per-run
+# evidence journals, generated scripts/BDD/telemetry keyed by real project
+# and run IDs, and scaffolding rewritten on the next conductor run. All of
+# it can contain real captured data from live target sites — never commit
+# any of it. If a genuine hand-written source file is ever added under
+# playwright/, add a narrow exception for it here rather than removing
+# this rule.
+playwright/
 
 # Server-side debug / one-shot scripts output
 server/scripts/*.output.json
@@ -80,3 +79,6 @@ coverage/
 
 # Claude Code local context (per-machine)
 .claude/
+
+# Generated runnable test execution folders
+playwright-runnable/

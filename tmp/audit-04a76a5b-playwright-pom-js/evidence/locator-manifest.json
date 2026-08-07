@@ -1,0 +1,122 @@
+[
+  {
+    "as": "el1",
+    "file": "productsPage",
+    "name": "searchProductInput",
+    "expr": "page.getByRole(\"textbox\", { name: \"Search Product\" })",
+    "pageKey": "products",
+    "source": "actionLocator",
+    "verificationSource": "verified_mcp_accessibility_snapshot",
+    "verified": true
+  },
+  {
+    "as": "el2",
+    "file": "productsPage",
+    "name": "searchButton",
+    "expr": "page.getByRole(\"button\", { name: \"\" })",
+    "pageKey": "products",
+    "source": "actionLocator",
+    "verificationSource": "verified_mcp_accessibility_snapshot",
+    "verified": true
+  },
+  {
+    "as": "el1",
+    "file": "productsPage",
+    "name": "womenCategoryHeadingLink",
+    "expr": "page.getByRole(\"link\", { name: \" Women\" })",
+    "pageKey": "products",
+    "source": "actionLocator",
+    "verificationSource": "verified_mcp_accessibility_snapshot",
+    "verified": true
+  },
+  {
+    "as": "el2",
+    "file": "productsPage",
+    "name": "dressLink",
+    "expr": "page.getByRole(\"link\", { name: \"Dress\" })",
+    "pageKey": "products",
+    "source": "actionLocator",
+    "verificationSource": "verified_mcp_accessibility_snapshot",
+    "verified": true
+  },
+  {
+    "as": "el1",
+    "file": "productsPage",
+    "name": "menCategoryHeadingLink",
+    "expr": "page.getByRole(\"link\", { name: \" Men\" })",
+    "pageKey": "products",
+    "source": "actionLocator",
+    "verificationSource": "verified_mcp_accessibility_snapshot",
+    "verified": true
+  },
+  {
+    "as": "el2",
+    "file": "productsPage",
+    "name": "tshirtsLink",
+    "expr": "page.getByRole(\"link\", { name: \"Tshirts\" })",
+    "pageKey": "products",
+    "source": "actionLocator",
+    "verificationSource": "verified_mcp_accessibility_snapshot",
+    "verified": true
+  },
+  {
+    "as": "el1",
+    "file": "categoryProductsPage",
+    "name": "productsLink",
+    "expr": "page.getByRole(\"link\", { name: \" Products\" })",
+    "pageKey": "category_products/:id",
+    "source": "actionLocator",
+    "verificationSource": "verified_mcp_accessibility_snapshot",
+    "verified": true
+  },
+  {
+    "as": "el1",
+    "file": "productsPage",
+    "name": "6PoloLink",
+    "expr": "page.getByRole(\"link\", { name: \"(6) Polo\" })",
+    "pageKey": "products",
+    "source": "actionLocator",
+    "verificationSource": "verified_mcp_accessibility_snapshot",
+    "verified": true
+  },
+  {
+    "as": "el1",
+    "file": "productsPage",
+    "name": "kidsLink",
+    "expr": "page.getByRole(\"link\", { name: \" Kids\" })",
+    "pageKey": "products",
+    "source": "actionLocator",
+    "verificationSource": "verified_mcp_accessibility_snapshot",
+    "verified": true
+  },
+  {
+    "as": "el3",
+    "file": "productsPage",
+    "name": "womenLink",
+    "expr": "page.getByRole(\"link\", { name: \" Women\" })",
+    "pageKey": "products",
+    "source": "actionLocator",
+    "verificationSource": "verified_mcp_accessibility_snapshot",
+    "verified": true
+  },
+  {
+    "as": "el1",
+    "file": "rootPage",
+    "name": "productsLink",
+    "expr": "page.getByRole(\"link\", { name: \" Products\" })",
+    "pageKey": "root",
+    "source": "actionLocator",
+    "verificationSource": "verified_mcp_accessibility_snapshot",
+    "verified": true
+  },
+  {
+    "as": "el2",
+    "file": "productsPage",
+    "name": "topsLink",
+    "expr": "page.getByRole(\"link\", { name: \"Tops\" })",
+    "pageKey": "products",
+    "source": "actionLocator",
+    "verificationSource": "verified_mcp_accessibility_snapshot",
+    "verified": true
+  }
+]

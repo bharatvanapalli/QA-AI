@@ -1,0 +1,492 @@
+{
+  "repairedAt": "2026-06-19T18:58:35.460Z",
+  "testCaseId": "cc13d9c4-862c-4243-ad7a-e348c37b9beb",
+  "reason": "Restore overwritten 5-step critic rewrite back to previous passing 25-step execution contract.",
+  "sourceRunResult": {
+    "id": "079be198-3486-4702-96d1-1833a63574b5",
+    "runId": "b1eed2ca-779b-448b-aa3f-e48eff16b6fc",
+    "createdAt": "2026-06-19T10:55:59.670Z",
+    "status": "pass",
+    "testCaseName": "Verify logout redirects Admin and ESS user to login page",
+    "restoredStepCount": 25
+  },
+  "before": {
+    "id": "cc13d9c4-862c-4243-ad7a-e348c37b9beb",
+    "projectId": "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+    "scenarioId": "5c52eeca-ccb6-4865-a149-64878226ecf0",
+    "name": "Verify logout redirects ESS user to login page (ess_logout iteration) — login fails with invalid credentials",
+    "type": "functional",
+    "module": "authentication",
+    "confidence": 80,
+    "status": "approved",
+    "assertions": "After submitting username 'ess_user_01' / password 'TestUser@123', an alert with paragraph text 'Invalid credentials' is visible; URL remains https://opensource-demo.orangehrmlive.com/web/index.php/auth/login; heading 'Login' (level 5) is visible; textbox 'Username' and textbox 'Password' are present; button 'Login' is present; no dashboard or sidebar content is shown",
+    "steps": "[{\"order\":1,\"action\":\"Navigate\",\"element\":\"OrangeHRM login page\",\"locator_hint\":null,\"value\":\"https://opensource-demo.orangehrmlive.com/web/index.php/auth/login\",\"expected\":\"Login form with heading 'Login' (level 5), textbox 'Username', textbox 'Password', and button 'Login' visible\",\"expectedKind\":null,\"operationCheck\":{\"kind\":\"page_ready\",\"expected\":\"Login form with heading 'Login' (level 5), textbox 'Username', textbox 'Password', and button 'Login' visible\",\"target\":\"OrangeHRM login page\"},\"verificationPoint\":false,\"oracleRef\":null,\"oracle\":null,\"target\":\"OrangeHRM login page\"},{\"order\":2,\"action\":\"Fill\",\"element\":\"Username textbox\",\"locator_hint\":\"textbox[name='Username']\",\"value\":\"ess_user_01\",\"expected\":\"Textbox 'Username' shows value 'ess_user_01'\",\"expectedKind\":null,\"operationCheck\":{\"kind\":\"input_accepted\",\"expected\":\"Username textbox accepts the provided value\",\"target\":\"Username textbox\"},\"verificationPoint\":false,\"oracleRef\":null,\"oracle\":null,\"target\":\"Username textbox\"},{\"order\":3,\"action\":\"Fill\",\"element\":\"Password textbox\",\"locator_hint\":\"textbox[name='Password']\",\"value\":\"TestUser@123\",\"expected\":\"Textbox 'Password' accepts value\",\"expectedKind\":null,\"operationCheck\":{\"kind\":\"input_accepted\",\"expected\":\"Password textbox accepts the provided value\",\"target\":\"Password textbox\"},\"verificationPoint\":false,\"oracleRef\":null,\"oracle\":null,\"target\":\"Password textbox\"},{\"order\":4,\"action\":\"Click\",\"element\":\"Login button\",\"locator_hint\":\"button[name='Login']\",\"value\":null,\"expected\":\"Login attempt is submitted\",\"expectedKind\":null,\"operationCheck\":{\"kind\":\"page_ready\",\"expected\":\"Login attempt is submitted\",\"target\":\"Login button\"},\"verificationPoint\":false,\"oracleRef\":null,\"oracle\":null,\"target\":\"Login button\"},{\"order\":5,\"action\":\"Verify\",\"element\":\"Invalid credentials alert\",\"locator_hint\":\"alert\",\"value\":null,\"expected\":\"An alert with text 'Invalid credentials' is visible; URL remains /web/index.php/auth/login; heading 'Login' (level 5) is still visible — login failed because the account 'ess_user_01' does not exist o\",\"expectedKind\":null,\"operationCheck\":{\"kind\":\"url_reached\",\"expected\":\"An alert with text 'Invalid credentials' is visible; URL remains /web/index.php/auth/login; heading 'Login' (level 5) is still visible — login failed because the account 'ess_user_01' does not exist o\",\"target\":\"Invalid credentials alert\"},\"verificationPoint\":false,\"oracleRef\":null,\"oracle\":null,\"target\":\"Invalid credentials alert\"}]",
+    "specCode": "// CODEGEN BLOCKED — certification gate failed.\n// [ast-parse-error] Generated spec could not be parsed as JavaScript/TypeScript: Duplicate declaration \"clickFirstVisible\" | [export_first_ambiguity] `.first()` detected in certified output. `.first()` silently suppresses strict-mode ambiguity — make the locator specific enough to \n// Rerun after fixing the underlying issue to regenerate a runnable spec.",
+    "userGuidance": null,
+    "dependsOnIds": null,
+    "producesData": null,
+    "requiresData": null,
+    "dataBindingJson": "{\"sheet\":\"AuthProfiles\",\"rowSelector\":\"ess_logout\"}",
+    "requirementRefs": "[\"REQ-53629bf8ff\"]",
+    "operationsJson": null,
+    "authProfile": null,
+    "automatability": "automatable",
+    "automatabilityReason": null,
+    "manualGuide": null,
+    "manualCompletedAt": null,
+    "declaredAssertions": "[{\"id\":\"ASN-ede179c4\",\"type\":\"PAGE\",\"criticality\":\"must\",\"provenance\":\"doc_quoted\",\"note\":\"BR-AUTH-01: credentials must be injected from AuthProfiles sheet — verified by data-driven execution producing a dashboard page.\",\"payload\":{\"pageName\":\"login_page\",\"expectedSignals\":{\"url\":[\"/web/index.php/auth/login\"],\"text\":[\"Login\",\"Username\",\"Password\"],\"role\":[{\"role\":\"button\",\"name\":\"Login\"},{\"role\":\"textbox\",\"name\":\"Username\"},{\"role\":\"textbox\",\"name\":\"Password\"}]},\"primaryIndicator\":{\"role\":\"button\",\"name\":\"Login\"},\"expectedUrlPattern\":\"/web/index.php/auth/login\",\"targetUrl\":\"/web/index.php/auth/login\"},\"targetUrl\":null,\"checkAt\":\"end\",\"source\":\"architect\",\"pageName\":\"login_page\",\"dataExpected\":\"expectedLandingPage\",\"dataBinding\":{\"isDataBound\":true,\"expectedColumn\":\"expectedLandingPage\",\"sourceColumn\":\"expectedLandingPage\",\"source\":\"persisted_case_repair\"}}]",
+    "businessRisk": "P0",
+    "generationId": "ec58007b-23e3-43a0-b5fd-8714b01dad8d",
+    "createdAt": "2026-06-12T18:56:58.322Z",
+    "updatedAt": "2026-06-19T18:28:28.563Z"
+  },
+  "restored": {
+    "name": "Verify logout redirects Admin and ESS user to login page",
+    "assertions": "URL is /web/index.php/auth/login; heading 'Login' (level 5) is visible; textbox 'Username' and textbox 'Password' are present; button 'Login' is present; no dashboard content is shown",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Navigate",
+        "element": "OrangeHRM login page",
+        "target": "OrangeHRM login page",
+        "locator_hint": null,
+        "value": "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+        "expected": "Login form with heading 'Login' (level 5), textbox 'Username', textbox 'Password', and button 'Login' visible",
+        "expectedKind": null,
+        "operationCheck": {
+          "kind": "page_ready",
+          "target": "OrangeHRM login page",
+          "expected": "Login form with heading 'Login' (level 5), textbox 'Username', textbox 'Password', and button 'Login' visible"
+        },
+        "verificationPoint": false,
+        "oracleRef": null,
+        "oracle": null
+      },
+      {
+        "order": 2,
+        "action": "Fill",
+        "element": "Username textbox",
+        "target": "Username textbox",
+        "locator_hint": "textbox[ref=e23]",
+        "value": "Admin",
+        "expected": "Textbox 'Username' shows value 'Admin'",
+        "expectedKind": null,
+        "operationCheck": {
+          "kind": "input_accepted",
+          "target": "Username textbox",
+          "expected": "Username textbox accepts the provided value"
+        },
+        "verificationPoint": false,
+        "oracleRef": null,
+        "oracle": null
+      },
+      {
+        "order": 3,
+        "action": "Fill",
+        "element": "Password textbox",
+        "target": "Password textbox",
+        "locator_hint": "textbox[ref=e30]",
+        "value": "admin123",
+        "expected": "Textbox 'Password' accepts value",
+        "expectedKind": null,
+        "operationCheck": {
+          "kind": "input_accepted",
+          "target": "Password textbox",
+          "expected": "Password textbox accepts the provided value"
+        },
+        "verificationPoint": false,
+        "oracleRef": null,
+        "oracle": null
+      },
+      {
+        "order": 4,
+        "action": "Click",
+        "element": "Login button",
+        "target": "Login button",
+        "locator_hint": "button[ref=e32]",
+        "value": null,
+        "expected": "Redirected to /web/index.php/dashboard/index as Admin",
+        "expectedKind": null,
+        "operationCheck": {
+          "kind": "page_ready",
+          "target": "Login button",
+          "expected": "Redirected to /web/index.php/dashboard/index as Admin"
+        },
+        "verificationPoint": false,
+        "oracleRef": null,
+        "oracle": null
+      },
+      {
+        "order": 5,
+        "action": "Navigate",
+        "element": "System Users admin page",
+        "target": "System Users admin page",
+        "locator_hint": null,
+        "value": "https://opensource-demo.orangehrmlive.com/web/index.php/admin/viewSystemUsers",
+        "expected": "System Users page is visible",
+        "expectedKind": null,
+        "operationCheck": {
+          "kind": "page_ready",
+          "target": "System Users admin page",
+          "expected": "System Users page is visible"
+        },
+        "verificationPoint": false,
+        "oracleRef": null,
+        "oracle": null
+      },
+      {
+        "order": 6,
+        "action": "Click",
+        "element": "Add button",
+        "target": "Add button",
+        "locator_hint": null,
+        "value": null,
+        "expected": "Add System User form is visible at /web/index.php/admin/saveSystemUser",
+        "expectedKind": null,
+        "operationCheck": {
+          "kind": "page_ready",
+          "target": "Add button",
+          "expected": "Add System User form is visible at /web/index.php/admin/saveSystemUser"
+        },
+        "verificationPoint": false,
+        "oracleRef": null,
+        "oracle": null
+      },
+      {
+        "order": 7,
+        "action": "Click",
+        "element": "User Role dropdown",
+        "target": "User Role dropdown",
+        "locator_hint": null,
+        "value": null,
+        "expected": "User Role dropdown opens showing options",
+        "expectedKind": null,
+        "operationCheck": {
+          "kind": "menu_opened",
+          "target": "User Role dropdown",
+          "expected": "User Role dropdown opens showing options"
+        },
+        "verificationPoint": false,
+        "oracleRef": null,
+        "oracle": null
+      },
+      {
+        "order": 8,
+        "action": "Click",
+        "element": "ESS option in User Role dropdown",
+        "target": "ESS option in User Role dropdown",
+        "locator_hint": null,
+        "value": null,
+        "expected": "ESS selected as User Role",
+        "expectedKind": null,
+        "operationCheck": {
+          "kind": "menu_opened",
+          "target": "ESS option in User Role dropdown",
+          "expected": "ESS selected as User Role"
+        },
+        "verificationPoint": false,
+        "oracleRef": null,
+        "oracle": null
+      },
+      {
+        "order": 9,
+        "action": "Type",
+        "element": "Employee Name textbox",
+        "target": "Employee Name textbox",
+        "locator_hint": "input[placeholder='Type for hints...']",
+        "value": "James",
+        "expected": "Autocomplete suggestions appear",
+        "expectedKind": null,
+        "operationCheck": {
+          "kind": "input_accepted",
+          "target": "Employee Name textbox",
+          "expected": "Employee Name textbox accepts the provided value"
+        },
+        "verificationPoint": false,
+        "oracleRef": null,
+        "oracle": null
+      },
+      {
+        "order": 10,
+        "action": "Click",
+        "element": "James Butler option in Employee Name autocomplete",
+        "target": "James Butler option in Employee Name autocomplete",
+        "locator_hint": null,
+        "value": null,
+        "expected": "James Butler selected as Employee Name",
+        "expectedKind": null,
+        "operationCheck": {
+          "kind": "action_completed",
+          "target": "James Butler option in Employee Name autocomplete",
+          "expected": "James Butler selected as Employee Name"
+        },
+        "verificationPoint": false,
+        "oracleRef": null,
+        "oracle": null
+      },
+      {
+        "order": 11,
+        "action": "Click",
+        "element": "Status dropdown",
+        "target": "Status dropdown",
+        "locator_hint": null,
+        "value": null,
+        "expected": "Status dropdown opens",
+        "expectedKind": null,
+        "operationCheck": {
+          "kind": "menu_opened",
+          "target": "Status dropdown",
+          "expected": "Status dropdown opens"
+        },
+        "verificationPoint": false,
+        "oracleRef": null,
+        "oracle": null
+      },
+      {
+        "order": 12,
+        "action": "Click",
+        "element": "Enabled option in Status dropdown",
+        "target": "Enabled option in Status dropdown",
+        "locator_hint": null,
+        "value": null,
+        "expected": "Enabled selected as Status",
+        "expectedKind": null,
+        "operationCheck": {
+          "kind": "menu_opened",
+          "target": "Enabled option in Status dropdown",
+          "expected": "Enabled selected as Status"
+        },
+        "verificationPoint": false,
+        "oracleRef": null,
+        "oracle": null
+      },
+      {
+        "order": 13,
+        "action": "Fill",
+        "element": "Username input field on Add System User form",
+        "target": "Username input field on Add System User form",
+        "locator_hint": "input:not([type='password']):not([placeholder='Type for hints...'])",
+        "value": "ess_user_01",
+        "expected": "ess_user_01 entered in Username field",
+        "expectedKind": null,
+        "operationCheck": {
+          "kind": "input_accepted",
+          "target": "Username input field on Add System User form",
+          "expected": "Username input field on Add System User form accepts the provided value"
+        },
+        "verificationPoint": false,
+        "oracleRef": null,
+        "oracle": null
+      },
+      {
+        "order": 14,
+        "action": "Fill",
+        "element": "Password input field on Add System User form",
+        "target": "Password input field on Add System User form",
+        "locator_hint": "input[type='password']:nth-of-type(1)",
+        "value": "TestUser@123",
+        "expected": "Password entered",
+        "expectedKind": null,
+        "operationCheck": {
+          "kind": "input_accepted",
+          "target": "Password input field on Add System User form",
+          "expected": "Password input field on Add System User form accepts the provided value"
+        },
+        "verificationPoint": false,
+        "oracleRef": null,
+        "oracle": null
+      },
+      {
+        "order": 15,
+        "action": "Fill",
+        "element": "Confirm Password input field on Add System User form",
+        "target": "Confirm Password input field on Add System User form",
+        "locator_hint": "input[type='password']:nth-of-type(2)",
+        "value": "TestUser@123",
+        "expected": "Confirm Password matches Password",
+        "expectedKind": null,
+        "operationCheck": {
+          "kind": "input_accepted",
+          "target": "Confirm Password input field on Add System User form",
+          "expected": "Confirm Password input field on Add System User form accepts the provided value"
+        },
+        "verificationPoint": false,
+        "oracleRef": null,
+        "oracle": null
+      },
+      {
+        "order": 16,
+        "action": "Click",
+        "element": "Save button",
+        "target": "Save button",
+        "locator_hint": null,
+        "value": null,
+        "expected": "ESS user ess_user_01 saved successfully; redirected to System Users list",
+        "expectedKind": null,
+        "operationCheck": {
+          "kind": "action_completed",
+          "target": "Save button",
+          "expected": "ESS user ess_user_01 saved successfully; redirected to System Users list"
+        },
+        "verificationPoint": false,
+        "oracleRef": null,
+        "oracle": null
+      },
+      {
+        "order": 17,
+        "action": "Click",
+        "element": "user dropdown trigger in top navigation",
+        "target": "user dropdown trigger in top navigation",
+        "locator_hint": "img.oxd-userdropdown-img",
+        "value": null,
+        "expected": "User dropdown menu opens showing Logout option",
+        "expectedKind": null,
+        "operationCheck": {
+          "kind": "menu_opened",
+          "target": "user dropdown trigger in top navigation",
+          "expected": "User dropdown menu opens showing Logout option"
+        },
+        "verificationPoint": false,
+        "oracleRef": null,
+        "oracle": null
+      },
+      {
+        "order": 18,
+        "action": "Click",
+        "element": "Logout menu item",
+        "target": "Logout menu item",
+        "locator_hint": null,
+        "value": null,
+        "expected": "Logged out as Admin; redirected to /web/index.php/auth/login",
+        "expectedKind": null,
+        "operationCheck": {
+          "kind": "menu_opened",
+          "target": "Logout menu item",
+          "expected": "Logged out as Admin; redirected to /web/index.php/auth/login"
+        },
+        "verificationPoint": false,
+        "oracleRef": null,
+        "oracle": null
+      },
+      {
+        "order": 19,
+        "action": "Verify",
+        "element": "Login heading",
+        "target": "Login heading",
+        "locator_hint": "heading[level=5]",
+        "value": null,
+        "expected": "URL is /web/index.php/auth/login; heading 'Login' (level 5) is visible; textbox 'Username' and textbox 'Password' are present; button 'Login' is present",
+        "expectedKind": null,
+        "operationCheck": null,
+        "verificationPoint": false,
+        "oracleRef": null,
+        "oracle": null
+      },
+      {
+        "order": 20,
+        "action": "Fill",
+        "element": "Username textbox",
+        "target": "Username textbox",
+        "locator_hint": "textbox[ref=e23]",
+        "value": "ess_user_01",
+        "expected": "ess_user_01 entered in Username field",
+        "expectedKind": null,
+        "operationCheck": {
+          "kind": "input_accepted",
+          "target": "Username textbox",
+          "expected": "Username textbox accepts the provided value"
+        },
+        "verificationPoint": false,
+        "oracleRef": null,
+        "oracle": null
+      },
+      {
+        "order": 21,
+        "action": "Fill",
+        "element": "Password textbox",
+        "target": "Password textbox",
+        "locator_hint": "textbox[ref=e30]",
+        "value": "TestUser@123",
+        "expected": "TestUser@123 entered in Password field",
+        "expectedKind": null,
+        "operationCheck": {
+          "kind": "input_accepted",
+          "target": "Password textbox",
+          "expected": "Password textbox accepts the provided value"
+        },
+        "verificationPoint": false,
+        "oracleRef": null,
+        "oracle": null
+      },
+      {
+        "order": 22,
+        "action": "Click",
+        "element": "Login button",
+        "target": "Login button",
+        "locator_hint": "button[ref=e32]",
+        "value": null,
+        "expected": "Redirected to /web/index.php/dashboard/index as ESS user ess_user_01",
+        "expectedKind": null,
+        "operationCheck": {
+          "kind": "page_ready",
+          "target": "Login button",
+          "expected": "Redirected to /web/index.php/dashboard/index as ESS user ess_user_01"
+        },
+        "verificationPoint": false,
+        "oracleRef": null,
+        "oracle": null
+      },
+      {
+        "order": 23,
+        "action": "Click",
+        "element": "user dropdown trigger in top navigation",
+        "target": "user dropdown trigger in top navigation",
+        "locator_hint": "img.oxd-userdropdown-img",
+        "value": null,
+        "expected": "User dropdown menu opens showing Logout option",
+        "expectedKind": null,
+        "operationCheck": {
+          "kind": "menu_opened",
+          "target": "user dropdown trigger in top navigation",
+          "expected": "User dropdown menu opens showing Logout option"
+        },
+        "verificationPoint": false,
+        "oracleRef": null,
+        "oracle": null
+      },
+      {
+        "order": 24,
+        "action": "Click",
+        "element": "Logout menu item",
+        "target": "Logout menu item",
+        "locator_hint": null,
+        "value": null,
+        "expected": "Logged out as ess_user_01; redirected to /web/index.php/auth/login",
+        "expectedKind": null,
+        "operationCheck": {
+          "kind": "menu_opened",
+          "target": "Logout menu item",
+          "expected": "Logged out as ess_user_01; redirected to /web/index.php/auth/login"
+        },
+        "verificationPoint": false,
+        "oracleRef": null,
+        "oracle": null
+      },
+      {
+        "order": 25,
+        "action": "Verify",
+        "element": "Login heading",
+        "target": "Login heading",
+        "locator_hint": "heading[level=5]",
+        "value": null,
+        "expected": "URL is /web/index.php/auth/login; heading 'Login' (level 5) is visible; textbox 'Username' and textbox 'Password' are present; button 'Login' is present; no dashboard content is shown",
+        "expectedKind": null,
+        "operationCheck": null,
+        "verificationPoint": false,
+        "oracleRef": null,
+        "oracle": null
+      }
+    ],
+    "stepCount": 25
+  }
+}

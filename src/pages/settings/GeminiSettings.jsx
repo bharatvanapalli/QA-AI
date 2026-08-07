@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { Save, ShieldCheck, Trash2, BadgeCheck } from 'lucide-react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { Save, ShieldCheck, Trash2, BadgeCheck, AlertTriangle } from 'lucide-react';
 import api, { ApiError } from '../../lib/apiClient';
 import useDirtyForm, { useUnsavedChangesWarning } from '../../lib/useDirtyForm';
 import { useToast } from '../../lib/useToast';
@@ -10,6 +10,32 @@ import Select from '../../components/ui/Select';
 import StatusBadge from '../../components/ui/StatusBadge';
 
 const KEY_PREFIX = 'AIza';
+
+// Human-readable labels and tier info for the models we actively support.
+// Ordered by preference — this order is preserved in the dropdown.
+const CURATED_MODELS = [
+  { id: 'gemini-2.5-pro',          label: 'Gemini 2.5 Pro',          note: 'Best quality · requires paid billing',  tier: 'paid' },
+  { id: 'gemini-2.5-flash',        label: 'Gemini 2.5 Flash',        note: 'Fast & balanced · works on free tier',  tier: 'free' },
+  { id: 'gemini-2.5-flash-lite',   label: 'Gemini 2.5 Flash Lite',   note: 'Lightweight · free tier',               tier: 'free' },
+  { id: 'gemini-2.0-flash',        label: 'Gemini 2.0 Flash',        note: 'Stable · free tier',                    tier: 'free' },
+  { id: 'gemini-1.5-pro',          label: 'Gemini 1.5 Pro',          note: 'Reliable · requires paid billing',      tier: 'paid' },
+  { id: 'gemini-1.5-flash',        label: 'Gemini 1.5 Flash',        note: 'Fast · free tier',                      tier: 'free' },
+];
+
+const CURATED_IDS = new Set(CURATED_MODELS.map((m) => m.id));
+
+function buildModelOptions(available) {
+  const availableSet = new Set(available || []);
+  // Curated models that Google says are available for this key (preserves priority order)
+  const curated = CURATED_MODELS
+    .filter((m) => availableSet.has(m.id) || available.length === 0)
+    .map((m) => ({ value: m.id, label: `${m.label} — ${m.note}` }));
+  // Any additional non-curated models returned by Google's API (edge case: new/preview models)
+  const extras = (available || [])
+    .filter((id) => !CURATED_IDS.has(id) && id.startsWith('gemini-') && !id.includes('embedding') && !id.includes('vision'))
+    .map((id) => ({ value: id, label: id }));
+  return curated.length ? [...curated, ...extras] : CURATED_MODELS.map((m) => ({ value: m.id, label: `${m.label} — ${m.note}` }));
+}
 
 /**
  * Settings → Gemini API.
@@ -129,6 +155,17 @@ export default function GeminiSettings() {
       setValidating(false);
     }
   }, [canValidate, cleanedKey, serverInfo.configured, f, toast]);
+
+  // Build the dropdown list: curated models first (with notes), then any
+  // extras that Google's API returns but aren't in our curated list.
+  const modelOptions = useMemo(
+    () => buildModelOptions(serverInfo.modelsAvailable || []),
+    [serverInfo.modelsAvailable],
+  );
+
+  // Determine if the currently selected model requires a paid billing account.
+  const selectedMeta = CURATED_MODELS.find((m) => m.id === f.values.model);
+  const selectedNeedsBilling = selectedMeta?.tier === 'paid';
 
   const handleSave = useCallback(async () => {
     if (!canSave) return;
@@ -258,9 +295,19 @@ export default function GeminiSettings() {
           label="Default Model"
           value={f.values.model}
           onChange={(e) => f.set('model', e.target.value)}
-          options={(serverInfo.modelsAvailable || []).map((m) => ({ value: m, label: m }))}
-          hint="Used by every agent when this project's provider is Gemini."
+          options={modelOptions}
+          hint="All agents use this model when the project's provider is set to Gemini."
         />
+        {selectedNeedsBilling && (
+          <div className="rounded-md bg-warn-50 border border-warn-200 text-warn-900 text-xs p-3 flex items-start gap-2">
+            <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+            <span>
+              <strong>{selectedMeta?.label}</strong> requires a Google Cloud project with billing enabled.
+              Free AI Studio keys will hit a 429 rate-limit error when running tests.
+              To enable billing, visit <strong>console.cloud.google.com</strong> → Billing.
+            </span>
+          </div>
+        )}
 
         {validation && !validation.valid && (
           <div className="rounded-md bg-danger-50 border border-danger-200 text-danger-800 text-xs p-3">
@@ -310,15 +357,45 @@ export default function GeminiSettings() {
         </div>
       </div>
 
-      {validation?.valid && (
+      {validation?.valid && validation.canGenerate === false && (
+        <div className="rounded-md bg-danger-50 border border-danger-200 text-danger-900 text-xs p-3 flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+          <div className="space-y-1">
+            <div className="font-semibold">Key authenticated but generation is rate-limited right now.</div>
+            <div className="opacity-80">
+              {validation.isFreeQuota
+                ? 'This is a free-tier AI Studio key (5–15 RPM limit). It will fail during test runs which make many rapid requests. To remove limits, link your Google Cloud project to a billing account at console.cloud.google.com → Billing.'
+                : 'Your quota is exhausted. Wait for the limit window to reset, or raise your quota at console.cloud.google.com/apis/api/generativelanguage.googleapis.com.'}
+            </div>
+          </div>
+        </div>
+      )}
+      {validation?.valid && validation.canGenerate === true && (
         <div className="rounded-md bg-success-50 border border-success-200 text-success-900 text-xs p-3 flex items-start gap-2">
-          <BadgeCheck className="w-4 h-4 mt-0.5" />
-          <div>
+          <BadgeCheck className="w-4 h-4 mt-0.5 shrink-0" />
+          <div className="space-y-1">
+            <div className="font-semibold">Key authenticated and generation test passed.</div>
+            <div className="opacity-80">
+              Your key can make generation calls right now. If you hit limits during sustained test runs, check your quota at console.cloud.google.com.
+            </div>
+            <div className="opacity-60">
+              {(validation.modelsAvailable || []).filter((id) => CURATED_IDS.has(id)).slice(0, 5).join(' · ')}
+              {(validation.modelsAvailable || []).filter((id) => CURATED_IDS.has(id)).length > 5 ? ' …' : ''}
+            </div>
+          </div>
+        </div>
+      )}
+      {validation?.valid && validation.canGenerate === null && (
+        <div className="rounded-md bg-success-50 border border-success-200 text-success-900 text-xs p-3 flex items-start gap-2">
+          <BadgeCheck className="w-4 h-4 mt-0.5 shrink-0" />
+          <div className="space-y-1">
             <div className="font-semibold">Key authenticated against Google.</div>
             <div className="opacity-80">
-              {validation.modelsAvailable?.length || 0} models accessible:{' '}
-              {(validation.modelsAvailable || []).slice(0, 4).join(', ')}
-              {validation.modelsAvailable?.length > 4 ? '…' : ''}
+              Generation probe timed out — authentication passed but quota status is unknown. If you hit rate-limit errors when running, ensure billing is enabled on your GCP project.
+            </div>
+            <div className="opacity-60">
+              {(validation.modelsAvailable || []).filter((id) => CURATED_IDS.has(id)).slice(0, 5).join(' · ')}
+              {(validation.modelsAvailable || []).filter((id) => CURATED_IDS.has(id)).length > 5 ? ' …' : ''}
             </div>
           </div>
         </div>

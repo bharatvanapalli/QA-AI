@@ -1,0 +1,635 @@
+{
+  "schema": "qaai-replayir-export/1",
+  "generatedAt": "2026-06-17T13:18:16.743Z",
+  "projectId": "4cc6772c-ea93-4c26-b478-48d779d1fccb",
+  "runId": "04a76a5b-3591-498c-9383-85667be51ae0",
+  "adapterId": "playwright-pom-js",
+  "adapterVersion": "playwright-pom-js-1",
+  "allBlocked": false,
+  "packagePassed": false,
+  "entries": [
+    {
+      "adapterId": "playwright-pom-js",
+      "adapterVersion": "playwright-pom-js-1",
+      "scenarioId": "eb080bbc-9024-4d4f-8f3f-9f7aeef830b1",
+      "scenarioName": "Products Page Load and Search Box Visibility",
+      "runResultIds": [
+        "867e4bd0-2be5-4f4e-b996-26ec9ce11c49",
+        "d7ecd978-d429-408f-b9d9-cae08723e800",
+        "23184a6a-8a04-4dc8-8244-376ddcd956c2"
+      ],
+      "testCaseIds": [
+        "a1a8df47-69b4-4d12-bd82-404886313c37",
+        "ff39ffb2-98af-4b19-9fae-f21f98f31847",
+        "aadb4252-d6c0-49cc-88d8-7bec1de6565b"
+      ],
+      "irHashes": [
+        "4bed57189ecea2acff8a24929a67521fcae271c30b92b7e0a8f9258bd91a3d4d",
+        "bd230d5b22def87b1642d1e60278ff3b93f4bdebff301960bbc7a74c8e2c5e97",
+        "59a472fa8aa4342b43fa603910129e63c2242b109fce10c3da7eba1651da977d"
+      ],
+      "expectedVerdict": "pass",
+      "complete": true,
+      "files": [
+        "tests/products/products-page-load-and-search-box-visibility.spec.js",
+        "evidence/locator-manifest.json",
+        "evidence/pom-architect-report.json",
+        "evidence/certification-report.json"
+      ],
+      "fileHashes": {
+        "tests/products/products-page-load-and-search-box-visibility.spec.js": "dd8c1361ac73569f347f8dd9152750b2645a080818d792276bb549972bd9b52b"
+      },
+      "validationFindings": [],
+      "composedLoginPrecondition": false,
+      "composedLogoutPrecondition": false
+    },
+    {
+      "adapterId": "playwright-pom-js",
+      "adapterVersion": "playwright-pom-js-1",
+      "scenarioId": "98561a85-57d1-4bbf-8ea3-f59718857437",
+      "scenarioName": "Product Search by Name — Happy Path",
+      "runResultIds": [
+        "5207139d-6e95-40f2-8d34-0655383d4491",
+        "533505fa-5320-41fe-8041-67c91361460d"
+      ],
+      "testCaseIds": [
+        "a3df6292-2e57-44cb-a08b-65683b701bac",
+        "3edc779e-7466-463e-a119-bb8116b395d4"
+      ],
+      "irHashes": [
+        "6b6bf768a5a2e92de2867deff4adb8fa4cefcd89ce8e3d15b6d152f35dc0e73b",
+        "3660c7f1584160098bfc967a56a8ffaf396c3290ac86a836b813556eaf7f45e0"
+      ],
+      "expectedVerdict": "pass",
+      "complete": true,
+      "files": [
+        "tests/search/product-search-by-name-happy-path.spec.js",
+        "locators/generated/productsPage.generated.locators.js",
+        "locators/productsPage.locators.js",
+        "pages/ProductsPage.js",
+        "evidence/locator-manifest.json",
+        "evidence/pom-architect-report.json",
+        "evidence/dom-atlas.json",
+        "tests/data/search-printed-returns-products-containing-printed-in-name.json",
+        "tests/data/each-product-in-search-results-for-printed-contains-the-term-in-its-name.json",
+        "evidence/certification-report.json"
+      ],
+      "fileHashes": {
+        "tests/search/product-search-by-name-happy-path.spec.js": "17ab5b44f0bb899e95d4874933301406c5ca0636fb28a8e11527e74d704e15c6"
+      },
+      "validationFindings": [],
+      "composedLoginPrecondition": false,
+      "composedLogoutPrecondition": false
+    },
+    {
+      "adapterId": "playwright-pom-js",
+      "adapterVersion": "playwright-pom-js-1",
+      "scenarioId": "cad2f0f4-3b25-42c5-81d2-a6ee746b8781",
+      "scenarioName": "Category Filter — Happy Path",
+      "runResultIds": [
+        "4da64e07-b1df-4a31-915b-67d13ba38b7d",
+        "7b921c07-a6c9-487a-9d86-9a1c6b57289f"
+      ],
+      "testCaseIds": [
+        "4df039bc-01f7-4399-9fdb-e7aeb1cf7399",
+        "fdc8c509-c3b7-4215-9341-628d1da59543"
+      ],
+      "irHashes": [
+        "49f6ef11240ffbea7873c3a6e08a92d1157ebd72bd8d1d17f289b29c3d4cfb40",
+        "e55dbd49f09b93bbeb207a142999ee202cd03cf29fc537bdb31805b4eacb099f"
+      ],
+      "expectedVerdict": "pass",
+      "complete": true,
+      "files": [
+        "tests/products/category-filter-happy-path.spec.js",
+        "locators/generated/productsPage.generated.locators.js",
+        "locators/productsPage.locators.js",
+        "pages/ProductsPage.js",
+        "evidence/locator-manifest.json",
+        "evidence/pom-architect-report.json",
+        "evidence/dom-atlas.json",
+        "evidence/certification-report.json"
+      ],
+      "fileHashes": {
+        "tests/products/category-filter-happy-path.spec.js": "2368d1a64c50f657b51e225c05b02f05174c336541b0c3f94fb2f2c264f8a1eb"
+      },
+      "validationFindings": [],
+      "composedLoginPrecondition": false,
+      "composedLogoutPrecondition": false
+    },
+    {
+      "adapterId": "playwright-pom-js",
+      "adapterVersion": "playwright-pom-js-1",
+      "scenarioId": "cbfbaf10-f84b-49dd-b03a-6f68e1aeb185",
+      "scenarioName": "Combined Search and Category Filter",
+      "runResultIds": [
+        "7098b31e-eebb-4738-a36a-0a04688883a9"
+      ],
+      "testCaseIds": [
+        "b07fd71c-502e-43f8-ba30-f15d807416ad"
+      ],
+      "irHashes": [
+        "2abf588cba741b5c7e9a5181f302469c05e2831d2fc3f6130cd795dbd96c58ae"
+      ],
+      "expectedVerdict": "pass",
+      "complete": true,
+      "files": [
+        "tests/search/combined-search-and-category-filter.spec.js",
+        "locators/generated/productsPage.generated.locators.js",
+        "locators/productsPage.locators.js",
+        "pages/ProductsPage.js",
+        "evidence/locator-manifest.json",
+        "evidence/pom-architect-report.json",
+        "evidence/dom-atlas.json",
+        "tests/data/search-printed-on-women-dress-category-page-returns-intersection.json",
+        "evidence/certification-report.json"
+      ],
+      "fileHashes": {
+        "tests/search/combined-search-and-category-filter.spec.js": "cd942f63ae7bb012a1d31a40a8e6e9a0b7d168574e92c8094ce074d7b3e9ac9d"
+      },
+      "validationFindings": [],
+      "composedLoginPrecondition": false,
+      "composedLogoutPrecondition": false
+    },
+    {
+      "adapterId": "playwright-pom-js",
+      "adapterVersion": "playwright-pom-js-1",
+      "scenarioId": "8d119bb4-8d7a-42f5-9388-ff11777c9ab3",
+      "scenarioName": "Search Security — SQL Injection and XSS",
+      "runResultIds": [
+        "6db691f0-cbc2-4d78-9736-677b1614817e"
+      ],
+      "testCaseIds": [
+        "e5d8ada1-ed4d-4e30-8f68-bd4e1e488a50"
+      ],
+      "irHashes": [
+        "0d9782fafc4d0c8a77c26b72c181a039604f654028d0d8ba5151022af5a5b2ed"
+      ],
+      "expectedVerdict": "pass",
+      "complete": true,
+      "files": [
+        "tests/search/search-security-sql-injection-and-xss.spec.js",
+        "locators/generated/productsPage.generated.locators.js",
+        "locators/productsPage.locators.js",
+        "pages/ProductsPage.js",
+        "evidence/locator-manifest.json",
+        "evidence/pom-architect-report.json",
+        "evidence/dom-atlas.json",
+        "tests/data/sql-injection-string-in-search-box-is-rejected-safely.json",
+        "evidence/certification-report.json"
+      ],
+      "fileHashes": {
+        "tests/search/search-security-sql-injection-and-xss.spec.js": "55146923d3e64eb9a01f1def9fe23f0db5c3e9d7401d2a89cb87c1e0b2ddc9ec"
+      },
+      "validationFindings": [],
+      "composedLoginPrecondition": false,
+      "composedLogoutPrecondition": false
+    },
+    {
+      "adapterId": "playwright-pom-js",
+      "adapterVersion": "playwright-pom-js-1",
+      "scenarioId": "5ace7e3f-d53c-45f4-940c-694ca992ce69",
+      "scenarioName": "Product Search — Numeric and Special-Value Inputs",
+      "runResultIds": [
+        "da48b3f8-1cd3-4d66-96f0-95b1b1910952"
+      ],
+      "testCaseIds": [
+        "c6c0a615-fb28-4c65-97fe-89d887abba14"
+      ],
+      "irHashes": [
+        "ad1fac69208008d8fbe8e6ca788ec49a3539f55c50f0596410f9dc67b6f14a50"
+      ],
+      "expectedVerdict": "pass",
+      "complete": true,
+      "files": [
+        "tests/search/product-search-numeric-and-special-value-inputs.spec.js",
+        "locators/generated/productsPage.generated.locators.js",
+        "locators/productsPage.locators.js",
+        "pages/ProductsPage.js",
+        "evidence/locator-manifest.json",
+        "evidence/pom-architect-report.json",
+        "evidence/dom-atlas.json",
+        "tests/data/search-with-numeric-value-returns-matching-products.json",
+        "evidence/certification-report.json"
+      ],
+      "fileHashes": {
+        "tests/search/product-search-numeric-and-special-value-inputs.spec.js": "3bb3082f53e7cf715f43a8c317dc01d4cf8a1c709b083a0279037c4a5e298131"
+      },
+      "validationFindings": [],
+      "composedLoginPrecondition": false,
+      "composedLogoutPrecondition": false
+    },
+    {
+      "adapterId": "playwright-pom-js",
+      "adapterVersion": "playwright-pom-js-1",
+      "scenarioId": "dfe5ed44-86c1-4e0d-9a49-b8c9e01991dc",
+      "scenarioName": "Search Clear Resets Product Grid",
+      "runResultIds": [
+        "35808dcd-85e2-4424-a278-550514d21b6d"
+      ],
+      "testCaseIds": [
+        "e8d7f201-c4b4-43e2-ba82-72681c90ffe7"
+      ],
+      "irHashes": [
+        "b91ec043f38204e3119838bead9c786ebfb2460b9844b297a649999f060b27a7"
+      ],
+      "expectedVerdict": "pass",
+      "complete": true,
+      "files": [
+        "tests/search/search-clear-resets-product-grid.spec.js",
+        "locators/generated/productsPage.generated.locators.js",
+        "locators/productsPage.locators.js",
+        "pages/ProductsPage.js",
+        "evidence/locator-manifest.json",
+        "evidence/pom-architect-report.json",
+        "evidence/dom-atlas.json",
+        "tests/data/clearing-search-input-restores-full-product-grid.json",
+        "evidence/certification-report.json"
+      ],
+      "fileHashes": {
+        "tests/search/search-clear-resets-product-grid.spec.js": "1794b46c9ecd6ae7dc1ebb051210aee712c01fddf8006a6636bea1c80b042c23"
+      },
+      "validationFindings": [],
+      "composedLoginPrecondition": false,
+      "composedLogoutPrecondition": false
+    },
+    {
+      "adapterId": "playwright-pom-js",
+      "adapterVersion": "playwright-pom-js-1",
+      "scenarioId": "e42935cb-5a6b-4898-ba9f-fde1f68b232e",
+      "scenarioName": "Category Filter — Clear Restores Full Grid",
+      "runResultIds": [
+        "9dbc3f52-9647-4343-8676-33a2099f4525"
+      ],
+      "testCaseIds": [
+        "3ef7cddf-7948-4937-8842-4fd0d0fc484d"
+      ],
+      "irHashes": [
+        "cb53440d3ef11f8fa5d9284645ca64fdd9271e2ff4418da72c3fe0c87788ae24"
+      ],
+      "expectedVerdict": "pass",
+      "complete": true,
+      "files": [
+        "tests/products/category-filter-clear-restores-full-grid.spec.js",
+        "locators/generated/categoryProductsPage.generated.locators.js",
+        "locators/categoryProductsPage.locators.js",
+        "pages/CategoryProductsPage.js",
+        "evidence/locator-manifest.json",
+        "evidence/pom-architect-report.json",
+        "evidence/dom-atlas.json",
+        "evidence/certification-report.json"
+      ],
+      "fileHashes": {
+        "tests/products/category-filter-clear-restores-full-grid.spec.js": "52984e8b727f53e5da4854068ec68cfff917c5ec2ca949fb335db222ace7b262"
+      },
+      "validationFindings": [],
+      "composedLoginPrecondition": false,
+      "composedLogoutPrecondition": false
+    },
+    {
+      "adapterId": "playwright-pom-js",
+      "adapterVersion": "playwright-pom-js-1",
+      "scenarioId": "fd758ad2-36ea-463d-9f84-477c3cad667e",
+      "scenarioName": "Brand Filter — Category by Brand",
+      "runResultIds": [
+        "f9d0ca1c-1d55-4536-83a1-a6de7a352b01"
+      ],
+      "testCaseIds": [
+        "62821c2b-85c2-47b5-ae17-713807623b70"
+      ],
+      "irHashes": [
+        "654e1b9bc0f409d5c6dc2edc02740345fc6b84e492afdf444d3ed6b058bf18d3"
+      ],
+      "expectedVerdict": "pass",
+      "complete": true,
+      "files": [
+        "tests/products/brand-filter-category-by-brand.spec.js",
+        "locators/generated/productsPage.generated.locators.js",
+        "locators/productsPage.locators.js",
+        "pages/ProductsPage.js",
+        "evidence/locator-manifest.json",
+        "evidence/pom-architect-report.json",
+        "evidence/dom-atlas.json",
+        "evidence/certification-report.json"
+      ],
+      "fileHashes": {
+        "tests/products/brand-filter-category-by-brand.spec.js": "2a9727ae3f512567e23c178b3c91d75362eb9e3037d338cd15e93bf2d91add2b"
+      },
+      "validationFindings": [],
+      "composedLoginPrecondition": false,
+      "composedLogoutPrecondition": false
+    },
+    {
+      "adapterId": "playwright-pom-js",
+      "adapterVersion": "playwright-pom-js-1",
+      "scenarioId": "64f06e1d-dd15-47fa-9c64-c51acccbc1b5",
+      "scenarioName": "Search Negative — Non-Existent Product",
+      "runResultIds": [
+        "fff6d249-c7a7-40e2-94fb-38ad7584bd28"
+      ],
+      "testCaseIds": [
+        "e694182e-78d3-4c35-9704-9f0f809c7620"
+      ],
+      "irHashes": [
+        "da06f9e312cd7845617134fd8895773f35e8ca4bd21cd1095e9a1d2ad7bd9371"
+      ],
+      "expectedVerdict": "pass",
+      "complete": true,
+      "files": [
+        "tests/search/search-negative-non-existent-product.spec.js",
+        "locators/generated/productsPage.generated.locators.js",
+        "locators/productsPage.locators.js",
+        "pages/ProductsPage.js",
+        "evidence/locator-manifest.json",
+        "evidence/pom-architect-report.json",
+        "evidence/dom-atlas.json",
+        "tests/data/search-non-existent-product-name-returns-empty-state.json",
+        "evidence/certification-report.json"
+      ],
+      "fileHashes": {
+        "tests/search/search-negative-non-existent-product.spec.js": "f4ea0aee4def4dc64d339cc37aa5322b314d0d56cdb5b69be8529c670879964c"
+      },
+      "validationFindings": [],
+      "composedLoginPrecondition": false,
+      "composedLogoutPrecondition": false
+    },
+    {
+      "adapterId": "playwright-pom-js",
+      "adapterVersion": "playwright-pom-js-1",
+      "scenarioId": "8864992f-1f7d-43f9-8718-7dc440408a8c",
+      "scenarioName": "Search Edge Cases — Special Characters and Oversized Input",
+      "runResultIds": [
+        "d098228d-ab13-49d5-9979-e130fe7f9fc1"
+      ],
+      "testCaseIds": [
+        "285658ff-589d-430d-b83b-e127e9705ac4"
+      ],
+      "irHashes": [
+        "7f8a10ee22293f184246de5248be3ac980d947304765f1e0fc36a13d11b9095a"
+      ],
+      "expectedVerdict": "pass",
+      "complete": true,
+      "files": [
+        "tests/search/search-edge-cases-special-characters-and-oversized-input.spec.js",
+        "locators/generated/productsPage.generated.locators.js",
+        "locators/productsPage.locators.js",
+        "pages/ProductsPage.js",
+        "evidence/locator-manifest.json",
+        "evidence/pom-architect-report.json",
+        "evidence/dom-atlas.json",
+        "tests/data/special-characters-in-search-box-return-empty-state-gracefully.json",
+        "evidence/certification-report.json"
+      ],
+      "fileHashes": {
+        "tests/search/search-edge-cases-special-characters-and-oversized-input.spec.js": "c78fa555c910c465e47621f195ef8ff4e941b905450f6881f249445840d523f9"
+      },
+      "validationFindings": [],
+      "composedLoginPrecondition": false,
+      "composedLogoutPrecondition": false
+    },
+    {
+      "adapterId": "playwright-pom-js",
+      "adapterVersion": "playwright-pom-js-1",
+      "scenarioId": "100275d4-7599-478b-aab9-f85002e34c7a",
+      "scenarioName": "Category Filter — Empty Category State",
+      "runResultIds": [
+        "e941ba6d-9e9b-48ff-a352-7508752a28b9"
+      ],
+      "testCaseIds": [
+        "216b0b6f-b635-4f90-b0c6-0187c7e40f09"
+      ],
+      "irHashes": [
+        "0f4b94d0b84ee1e74652b9fe2ac48b00756e6b4ff5caf97a815c537193298ec1"
+      ],
+      "expectedVerdict": "pass",
+      "complete": true,
+      "files": [
+        "tests/products/category-filter-empty-category-state.spec.js",
+        "locators/generated/productsPage.generated.locators.js",
+        "locators/productsPage.locators.js",
+        "pages/ProductsPage.js",
+        "evidence/locator-manifest.json",
+        "evidence/pom-architect-report.json",
+        "evidence/dom-atlas.json",
+        "evidence/certification-report.json"
+      ],
+      "fileHashes": {
+        "tests/products/category-filter-empty-category-state.spec.js": "e4e9affd259b8596f1ef1d7ced6f42b8fd5e683b1c0f1eb8c95e1c22de9535f5"
+      },
+      "validationFindings": [],
+      "composedLoginPrecondition": false,
+      "composedLogoutPrecondition": false
+    },
+    {
+      "adapterId": "playwright-pom-js",
+      "adapterVersion": "playwright-pom-js-1",
+      "scenarioId": "793dfbab-bc81-41e4-9899-da405ef58f60",
+      "scenarioName": "Triple Filter Combination — Zero Matches Empty State",
+      "runResultIds": [
+        "7d76e4a4-642a-424a-a247-a445dfc37b54"
+      ],
+      "testCaseIds": [
+        "a6fa82ba-a9d2-4417-a182-57a60bfff160"
+      ],
+      "irHashes": [
+        "0fb93b0e2a56523978555dd19f7f634969a39b89c23327c4fd74151d4579a5e2"
+      ],
+      "expectedVerdict": "pass",
+      "complete": true,
+      "files": [
+        "tests/search/triple-filter-combination-zero-matches-empty-state.spec.js",
+        "locators/generated/productsPage.generated.locators.js",
+        "locators/productsPage.locators.js",
+        "pages/ProductsPage.js",
+        "evidence/locator-manifest.json",
+        "evidence/pom-architect-report.json",
+        "evidence/dom-atlas.json",
+        "tests/data/category-link-navigates-to-category-page-independently-of-prior-search-term.json",
+        "evidence/certification-report.json"
+      ],
+      "fileHashes": {
+        "tests/search/triple-filter-combination-zero-matches-empty-state.spec.js": "3a87f907b89c67a5c339e048fcef46a7ea93b91d61fd24bdd578466253702f1c"
+      },
+      "validationFindings": [],
+      "composedLoginPrecondition": false,
+      "composedLogoutPrecondition": false
+    },
+    {
+      "adapterId": "playwright-pom-js",
+      "adapterVersion": "playwright-pom-js-1",
+      "scenarioId": "ba7a24f4-1fc4-4f1e-9a36-9eba8d92814d",
+      "scenarioName": "Product Search Result Details",
+      "runResultIds": [
+        "8ce252b6-35f9-44bb-955a-3b590b8ce897"
+      ],
+      "testCaseIds": [
+        "13a89c84-e811-4000-b8cc-f263f03f301e"
+      ],
+      "irHashes": [
+        "85befc9cfc3cee2dc25f4280248194d6c0fdd68222c7b9d375242b1d2c19b63b"
+      ],
+      "expectedVerdict": "pass",
+      "complete": true,
+      "files": [
+        "tests/search/product-search-result-details.spec.js",
+        "locators/generated/productsPage.generated.locators.js",
+        "locators/productsPage.locators.js",
+        "pages/ProductsPage.js",
+        "evidence/locator-manifest.json",
+        "evidence/pom-architect-report.json",
+        "evidence/dom-atlas.json",
+        "tests/data/search-result-cards-display-product-name-and-price.json",
+        "evidence/certification-report.json"
+      ],
+      "fileHashes": {
+        "tests/search/product-search-result-details.spec.js": "c2b6ddeb74c9576f657bcf3c55f952cb3dde5c98050e5259807e7189bcaf2925"
+      },
+      "validationFindings": [],
+      "composedLoginPrecondition": false,
+      "composedLogoutPrecondition": false
+    },
+    {
+      "adapterId": "playwright-pom-js",
+      "adapterVersion": "playwright-pom-js-1",
+      "scenarioId": "ac640b52-64cc-416f-b640-5bca424476aa",
+      "scenarioName": "Filter UI Controls Visibility",
+      "runResultIds": [
+        "858ade45-9964-4a1c-9da5-b204f33150b1"
+      ],
+      "testCaseIds": [
+        "328248b4-16c2-4e79-92a2-d6739ab3dec2"
+      ],
+      "irHashes": [
+        "d6c8a1e4fd4f5ca2ed5ffbd919d1391844165110dbc78ea3c3bb5bfca41499cb"
+      ],
+      "expectedVerdict": "pass",
+      "complete": true,
+      "files": [
+        "tests/products/filter-ui-controls-visibility.spec.js",
+        "evidence/locator-manifest.json",
+        "evidence/pom-architect-report.json",
+        "evidence/certification-report.json"
+      ],
+      "fileHashes": {
+        "tests/products/filter-ui-controls-visibility.spec.js": "68e4c915dfd6f62a606d822bea4e5943231819bf2977520490dbb38812039e89"
+      },
+      "validationFindings": [],
+      "composedLoginPrecondition": false,
+      "composedLogoutPrecondition": false
+    },
+    {
+      "adapterId": "playwright-pom-js",
+      "adapterVersion": "playwright-pom-js-1",
+      "scenarioId": "3aff6603-b3b2-4ead-8deb-02bde7472cd0",
+      "scenarioName": "Homepage Product Browsing",
+      "runResultIds": [
+        "3cdbf881-c1d2-4b8b-8696-2c9958a3cfcf"
+      ],
+      "testCaseIds": [
+        "97f40985-cb1b-41a0-89fb-f437ee5f213c"
+      ],
+      "irHashes": [
+        "cc7b5e6e309e8e66ad721dab729c05396d318b08e13257f8732e27b6b31829c1"
+      ],
+      "expectedVerdict": "pass",
+      "complete": true,
+      "files": [
+        "tests/products/homepage-product-browsing.spec.js",
+        "locators/generated/rootPage.generated.locators.js",
+        "locators/rootPage.locators.js",
+        "pages/RootPage.js",
+        "evidence/locator-manifest.json",
+        "evidence/pom-architect-report.json",
+        "evidence/dom-atlas.json",
+        "evidence/certification-report.json"
+      ],
+      "fileHashes": {
+        "tests/products/homepage-product-browsing.spec.js": "2f5a0d0e45b11a1268fbc5f7b3a51a1a2aea1ecfc3e8fe282cc85f52750258bc"
+      },
+      "validationFindings": [],
+      "composedLoginPrecondition": false,
+      "composedLogoutPrecondition": false
+    },
+    {
+      "adapterId": "playwright-pom-js",
+      "adapterVersion": "playwright-pom-js-1",
+      "scenarioId": "517e4e43-9331-4173-9476-5d3a666ea07d",
+      "scenarioName": "Filter Application Synchronous Update",
+      "runResultIds": [
+        "0b101d6a-b1eb-4181-b679-819a0806f549"
+      ],
+      "testCaseIds": [
+        "7a7c1f6e-5271-43fc-9276-3680f71ca69c"
+      ],
+      "irHashes": [
+        "8e0e6de88fafadc82eadaf4e8d7792d1b129d657d4228e3b9f9fde073683eebb"
+      ],
+      "expectedVerdict": "pass",
+      "complete": true,
+      "files": [
+        "tests/products/filter-application-synchronous-update.spec.js",
+        "locators/generated/productsPage.generated.locators.js",
+        "locators/productsPage.locators.js",
+        "pages/ProductsPage.js",
+        "evidence/locator-manifest.json",
+        "evidence/pom-architect-report.json",
+        "evidence/dom-atlas.json",
+        "evidence/certification-report.json"
+      ],
+      "fileHashes": {
+        "tests/products/filter-application-synchronous-update.spec.js": "714ebb4025d31032875d5ee65725f2eb4f89e223c98cfe3e5f757ce55069095c"
+      },
+      "validationFindings": [],
+      "composedLoginPrecondition": false,
+      "composedLogoutPrecondition": false
+    }
+  ],
+  "validation": {
+    "packagePassed": false,
+    "checked": true,
+    "skipped": false,
+    "errorCount": 1,
+    "warningCount": 0,
+    "findings": [
+      {
+        "rule": "step_compilation_parity_gap",
+        "severity": "error",
+        "message": "8 planned/executed step(s) could not be proven through ReplayIR and generated output.",
+        "path": "evidence/step-parity-report.json"
+      }
+    ],
+    "commands": [
+      {
+        "cmd": "playwright test --list",
+        "status": 0,
+        "output": "Listing tests:\n  products\\brand-filter-category-by-brand.spec.js:8:3 › Brand Filter — Category by Brand › Selecting Polo brand shows only Polo brand products\n  products\\category-filter-clear-restores-full-grid.spec.js:8:3 › Category Filter — Clear Restores Full Grid › Navigating back to All Products after category filter restores full grid\n  products\\category-filter-empty-category-state.spec.js:8:3 › Category Filter — Empty Category State › Kids Dress category page loads with products and does not crash\n  products\\category-filter-happy-path.spec.js:8:3 › Category Filter — Happy Path › Selecting Women > Dress category shows only Women Dress products\n  products\\category-filter-happy-path.spec.js:18:3 › Category Filter — Happy Path › Selecting Men > Tshirts category shows only Men Tshirts products\n  products\\filter-application-synchronous-update.spec.js:8:3 › Filter Application Synchronous Update › Applying category filter updates product grid without full page reload\n  products\\filter-ui-controls-visibility.spec.js:7:3 › Filter UI Controls Visibility › Brand filter sidebar visible with brand names and product counts\n  products\\homepage-product-browsing.spec.js:8:3 › Homepage Product Browsing › Homepage shows featured products with prices and navigation to Products page works\n  products\\products-page-load-and-search-box-visibility.spec.js:7:3 › Products Page Load and Search Box Visibility › Products page loads and displays product listing without authentication\n  products\\products-page-load-and-search-box-visibility.spec.js:14:3 › Products Page Load and Search Box Visibility › Search box is visible on the Products page\n  products\\products-page-load-and-search-box-visibility.spec.js:20:3 › Products Page Load and Search Box Visibility › Category filter list is visible with expected options on Products page\n  search\\combined-search-and-category-filter.spec.js:10:5 › Combined Search and Category Filter › Search 'Printed' on Women Dress category page returns intersection [R"
+      }
+    ],
+    "repaired": false,
+    "repairAttempts": 0,
+    "repairs": []
+  },
+  "secretFindings": [],
+  "assertionCardinalityFindings": [],
+  "assertionCoverageFindings": [],
+  "sanitizerRewrites": [],
+  "stepCompilationLedger": {
+    "totalCases": 21,
+    "totalPlannedSteps": 80,
+    "totalReplaySteps": 85,
+    "exported": 84,
+    "skippedNoise": 0,
+    "blockedInternal": 8,
+    "replayOnly": 12,
+    "duplicateActionsPruned": 1
+  },
+  "stepCompilationFindings": [
+    {
+      "rule": "step_compilation_parity_gap",
+      "severity": "error",
+      "message": "8 planned/executed step(s) could not be proven through ReplayIR and generated output.",
+      "path": "evidence/step-parity-report.json"
+    }
+  ],
+  "exportValid": false
+}

@@ -1,0 +1,102 @@
+[
+  {
+    "runResultId": "16649a77-d178-4800-804c-68085dc05703",
+    "runId": "15e9adc3-f769-4764-83c6-51dea4a85547",
+    "startedAt": "2026-05-27T17:26:39.459Z",
+    "projectName": "QAAI Test Run — Sprint 1",
+    "testCaseName": "Valid credentials authentication",
+    "status": "fail",
+    "errorPreview": "assertion_check failed for \"Page URL is https://practice.expandtesting.com/secure\": expectedUrlPattern \"https://practice.expandtesting.com/secure\" did not match current URL \"https://practice.expandtesting.com/login\"",
+    "traceBytes": 1577
+  },
+  {
+    "runResultId": "374bf86e-11c8-4a82-9cf5-17ff7630fe7d",
+    "runId": "c9e9072f-a73f-415b-a6fd-7a707fbdbe56",
+    "startedAt": "2026-05-27T16:55:46.908Z",
+    "projectName": "QAAI Test Run — Sprint 1",
+    "testCaseName": "Valid credentials authentication",
+    "status": "fail",
+    "errorPreview": "assertion_check failed for \"Page URL is https://practice.expandtesting.com/secure\": expectedUrlPattern \"https://practice.expandtesting.com/secure\" did not match current URL \"https://practice.expandtesting.com/login\" (+ 1 more failed check)",
+    "traceBytes": 1727
+  },
+  {
+    "runResultId": "b099408a-8d97-4ba7-a7e1-f040f3e0f58d",
+    "runId": "15e9adc3-f769-4764-83c6-51dea4a85547",
+    "startedAt": "2026-05-27T17:26:39.459Z",
+    "projectName": "QAAI Test Run — Sprint 1",
+    "testCaseName": "Register user with unique inputs",
+    "status": "blocked",
+    "errorPreview": "Hit 25-turn ceiling without finishing.",
+    "traceBytes": 2308
+  },
+  {
+    "runResultId": "e66cbb9a-18e6-4550-8900-206b4d1ddb3e",
+    "runId": "c9e9072f-a73f-415b-a6fd-7a707fbdbe56",
+    "startedAt": "2026-05-27T16:55:46.908Z",
+    "projectName": "QAAI Test Run — Sprint 1",
+    "testCaseName": "Register user with unique inputs",
+    "status": "fail",
+    "errorPreview": "assertion_check failed for \"Page URL is https://practice.expandtesting.com/login after registration\": expectedUrlPattern \"practice\\.expandtesting\\.com/login\" did not match current URL \"https://practice.expandtesting.com/register\" (+ 1 more ",
+    "traceBytes": 2585
+  },
+  {
+    "runResultId": "5d46f77e-2b50-4a36-83e5-3bd54b8de544",
+    "runId": "15e9adc3-f769-4764-83c6-51dea4a85547",
+    "startedAt": "2026-05-27T17:26:39.459Z",
+    "projectName": "QAAI Test Run — Sprint 1",
+    "testCaseName": "Edit an existing note",
+    "status": "pass",
+    "errorPreview": "",
+    "traceBytes": 1922
+  },
+  {
+    "runResultId": "5286cce5-b66d-4019-88f9-d73ba287293e",
+    "runId": "c9e9072f-a73f-415b-a6fd-7a707fbdbe56",
+    "startedAt": "2026-05-27T16:55:46.908Z",
+    "projectName": "QAAI Test Run — Sprint 1",
+    "testCaseName": "Edit an existing note",
+    "status": "fail",
+    "errorPreview": "assertion_check failed for \"Edit form shows pre-populated values from existing note\": expectedText \"My Sprint Title\" not found in page text or recent browser_evaluate result",
+    "traceBytes": 1320
+  },
+  {
+    "runResultId": "76b0191a-1120-4673-821c-9ed3eef0064a",
+    "runId": "15e9adc3-f769-4764-83c6-51dea4a85547",
+    "startedAt": "2026-05-27T17:26:39.459Z",
+    "projectName": "QAAI Test Run — Sprint 1",
+    "testCaseName": "Validate note privacy isolation",
+    "status": "pass",
+    "errorPreview": "",
+    "traceBytes": 1592
+  },
+  {
+    "runResultId": "89946b4e-bf9a-4ce5-afd9-b0cfc5d3b321",
+    "runId": "c9e9072f-a73f-415b-a6fd-7a707fbdbe56",
+    "startedAt": "2026-05-27T16:55:46.908Z",
+    "projectName": "QAAI Test Run — Sprint 1",
+    "testCaseName": "Validate note privacy isolation",
+    "status": "fail",
+    "errorPreview": "assertion_check failed for \"All notes in API response have user_id matching current logged-in user\": expectedText \"6a17230d51ccbd0297d33c1f\" not found in page text or recent browser_evaluate result",
+    "traceBytes": 2888
+  },
+  {
+    "runResultId": "6b48ce5c-cd4e-445c-a7b4-86041dc168fa",
+    "runId": "15e9adc3-f769-4764-83c6-51dea4a85547",
+    "startedAt": "2026-05-27T17:26:39.459Z",
+    "projectName": "QAAI Test Run — Sprint 1",
+    "testCaseName": "Logout session termination and block check",
+    "status": "fail",
+    "errorPreview": "assertion_check failed for \"Navigating to /secure while logged out redirects to /login\": expectedUrlPattern \"/login\" did not match current URL \"https://practice.expandtesting.com/secure\"",
+    "traceBytes": 1819
+  },
+  {
+    "runResultId": "9f822160-6d91-4a60-83ec-2a848f702e20",
+    "runId": "c9e9072f-a73f-415b-a6fd-7a707fbdbe56",
+    "startedAt": "2026-05-27T16:55:46.908Z",
+    "projectName": "QAAI Test Run — Sprint 1",
+    "testCaseName": "Logout session termination and block check",
+    "status": "fail",
+    "errorPreview": "assertion_check failed for \"Navigating to /secure while logged out redirects to /login\": expectedUrlPattern \"/login\" did not match current URL \"https://practice.expandtesting.com/secure\"",
+    "traceBytes": 1889
+  }
+]

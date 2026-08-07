@@ -1,0 +1,46 @@
+{
+  "schema": "qaai-value-binding-map/1",
+  "summary": {
+    "entries": 6,
+    "dataColumns": 4,
+    "envVars": 0
+  },
+  "entries": [
+    {
+      "file": "tests/authentication/logout-redirect-and-session-termination.spec.js",
+      "line": 10,
+      "kind": "data_file",
+      "path": "tests/data/admin-logout-redirects-to-auth-login-page.json"
+    },
+    {
+      "file": "tests/authentication/logout-redirect-and-session-termination.spec.js",
+      "line": 29,
+      "kind": "data_file",
+      "path": "tests/data/post-logout-direct-navigation-to-dashboard-redirects-to-login.json"
+    },
+    {
+      "file": "tests/authentication/logout-redirect-and-session-termination.spec.js",
+      "line": 17,
+      "kind": "data_column",
+      "key": "username"
+    },
+    {
+      "file": "tests/authentication/logout-redirect-and-session-termination.spec.js",
+      "line": 18,
+      "kind": "data_column",
+      "key": "password"
+    },
+    {
+      "file": "tests/authentication/logout-redirect-and-session-termination.spec.js",
+      "line": 24,
+      "kind": "data_column",
+      "key": "expectedLandingPage"
+    },
+    {
+      "file": "tests/authentication/logout-redirect-and-session-termination.spec.js",
+      "line": 37,
+      "kind": "data_column",
+      "key": "expectedLandingPage"
+    }
+  ]
+}

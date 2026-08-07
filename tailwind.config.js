@@ -19,6 +19,15 @@ export default {
           'Menlo',
           'monospace',
         ],
+        // Display serif used by Overview V2 for the verdict word ("HOLD",
+        // "GO"). Loaded via @import in index.css. Italic by default.
+        display: [
+          'Instrument Serif',
+          'ui-serif',
+          'Georgia',
+          'Times New Roman',
+          'serif',
+        ],
       },
       fontSize: {
         // Tight, intentional scale

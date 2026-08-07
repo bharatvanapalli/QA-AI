@@ -9,6 +9,9 @@ const LS_KEY = 'qaai.currentProjectId';
 // `qaai.currentSprintId:<projectId>` so switching projects restores each
 // project's last-chosen sprint independently.
 const sprintLsKey = (projectId) => `qaai.currentSprintId:${projectId}`;
+// Persist the active scenario generation per project (versioning). Selecting a
+// past generation re-skins Test Cases / Overview / Reports to that batch.
+const genLsKey = (projectId) => `qaai.currentGenerationId:${projectId}`;
 
 /**
  * Small in-memory fallback so this module still works when localStorage is
@@ -16,14 +19,18 @@ const sprintLsKey = (projectId) => `qaai.currentSprintId:${projectId}`;
  * or any browser that throws on access). All previous code paths that hit
  * localStorage directly are routed through these helpers.
  */
-const memoryStore = { value: null };
+// Map-based fallback so multiple distinct keys (project id, sprint id per
+// project) don't overwrite each other — the old single-value slot caused
+// safeStorageGet(LS_KEY) to return the sprint id after safeStorageSet was
+// called for a sprint key in Safari private mode.
+const memoryStore = new Map();
 function safeStorageGet(key) {
   try {
     if (typeof window !== 'undefined' && window.localStorage) {
       return window.localStorage.getItem(key);
     }
   } catch (_) { /* private mode / blocked storage */ }
-  return memoryStore.value;
+  return memoryStore.get(key) ?? null;
 }
 function safeStorageSet(key, value) {
   try {
@@ -32,7 +39,7 @@ function safeStorageSet(key, value) {
       return;
     }
   } catch (_) { /* swallow */ }
-  memoryStore.value = value;
+  memoryStore.set(key, value);
 }
 function safeStorageRemove(key) {
   try {
@@ -41,7 +48,7 @@ function safeStorageRemove(key) {
       return;
     }
   } catch (_) { /* swallow */ }
-  memoryStore.value = null;
+  memoryStore.delete(key);
 }
 
 export function ProjectProvider({ children }) {
@@ -54,6 +61,11 @@ export function ProjectProvider({ children }) {
   // project; `currentSprint` is the active selection (null = "all data").
   const [sprints, setSprints] = useState([]);
   const [currentSprintId, setCurrentSprintId] = useState(null);
+  // Scenario-generation state (versioning). `generations` is the list for the
+  // current project; `currentGenerationId` is the active selection that scopes
+  // Test Cases / Overview / Reports. null = "current generation" (the default).
+  const [generations, setGenerations] = useState([]);
+  const [currentGenerationId, setCurrentGenerationId] = useState(null);
   // Remember which project we last actively pointed at so we can detect the
   // "active project just disappeared from the list" case across re-loads.
   const previousCurrentRef = useRef(null);
@@ -70,7 +82,7 @@ export function ProjectProvider({ children }) {
     setLoading(true);
     try {
       const res = await api.get('/projects');
-      const list = res.projects || [];
+      const list = res?.projects || [];
       setProjects(list);
 
       const saved = safeStorageGet(LS_KEY);
@@ -121,6 +133,8 @@ export function ProjectProvider({ children }) {
         // effect below re-fetches for the newly-active project.
         setSprints([]);
         setCurrentSprintId(null);
+        setGenerations([]);
+        setCurrentGenerationId(null);
       }
     },
     [projects]
@@ -138,7 +152,7 @@ export function ProjectProvider({ children }) {
     }
     try {
       const res = await api.get(`/projects/${current.id}/sprints`);
-      const list = res.sprints || [];
+      const list = res?.sprints || [];
       setSprints(list);
       // Pick a default active sprint: persisted choice if still valid;
       // otherwise the most recently-updated in_progress sprint; otherwise
@@ -177,6 +191,51 @@ export function ProjectProvider({ children }) {
     [sprints, currentSprintId]
   );
 
+  // Refetch the current project's scenario generations. Always defaults to the
+  // backend-authoritative isCurrent generation — localStorage is NOT consulted
+  // here because a stale localStorage pointer silently filters out all runs
+  // from newer generations. Users who want to view history use the picker
+  // (switchGeneration below), which is session-only and doesn't persist.
+  const refreshGenerations = useCallback(async () => {
+    if (!current) {
+      setGenerations([]);
+      setCurrentGenerationId(null);
+      return;
+    }
+    try {
+      const res = await api.get(`/projects/${current.id}/scenarios/generations`);
+      const list = res?.generations || [];
+      setGenerations(list);
+      // Clear any stale localStorage entry so it can never re-pin the wrong gen.
+      safeStorageRemove(genLsKey(current.id));
+      const next = list.find((g) => g.isCurrent) || list[0] || null;
+      setCurrentGenerationId(next?.id || null);
+    } catch (err) {
+      console.error('[project] refreshGenerations failed', err);
+      setGenerations([]);
+      setCurrentGenerationId(null);
+    }
+  }, [current]);
+
+  useEffect(() => {
+    refreshGenerations();
+  }, [refreshGenerations]);
+
+  const switchGeneration = useCallback(
+    (generationId) => {
+      // Session-only — does not persist to localStorage. On next page load the
+      // store always resets to isCurrent (the default above). This prevents the
+      // "viewed v1 once → all v2 runs disappeared forever" class of bug.
+      setCurrentGenerationId(generationId || null);
+    },
+    []
+  );
+
+  const currentGeneration = useMemo(
+    () => (currentGenerationId ? generations.find((g) => g.id === currentGenerationId) || null : null),
+    [generations, currentGenerationId]
+  );
+
   // Memoise so consumers' useCallback(load, [..., current]) doesn't refire on
   // unrelated re-renders. setProjects/setCurrent identities are stable from
   // useState; the rest depend on the listed memo deps.
@@ -184,8 +243,10 @@ export function ProjectProvider({ children }) {
     () => ({
       projects, current, loading, switchTo, refresh, setProjects, setCurrent,
       sprints, currentSprint, currentSprintId, switchSprint, refreshSprints,
+      generations, currentGeneration, currentGenerationId, switchGeneration, refreshGenerations,
     }),
-    [projects, current, loading, switchTo, refresh, sprints, currentSprint, currentSprintId, switchSprint, refreshSprints]
+    [projects, current, loading, switchTo, refresh, sprints, currentSprint, currentSprintId, switchSprint, refreshSprints,
+     generations, currentGeneration, currentGenerationId, switchGeneration, refreshGenerations]
   );
   return <ProjectCtx.Provider value={value}>{children}</ProjectCtx.Provider>;
 }

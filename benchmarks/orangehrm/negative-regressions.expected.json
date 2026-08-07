@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "qaai.reliability.benchmark.v1",
+  "id": "orangehrm-negative-regressions",
+  "regressions": [
+    {
+      "id": "double-encoded-steps",
+      "expectedDefectCodes": ["double_encoded_steps"]
+    },
+    {
+      "id": "generic-weak-oracle",
+      "expectedDefectCodes": ["weak_oracle"]
+    },
+    {
+      "id": "verify-kind-none",
+      "expectedDefectCodes": ["verify_kind_none"]
+    },
+    {
+      "id": "login-business-token-collision",
+      "expectedDefectCodes": ["token_collision"]
+    },
+    {
+      "id": "missing-row-execution-plan",
+      "expectedDefectCodes": ["missing_row_execution_plan"]
+    }
+  ]
+}

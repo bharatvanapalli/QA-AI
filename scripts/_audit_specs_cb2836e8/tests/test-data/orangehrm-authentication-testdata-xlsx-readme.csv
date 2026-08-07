@@ -1,0 +1,40 @@
+OrangeHRM Authentication & Post-Login Access Control TestData
+PURPOSE
+"This TestData.xlsx drives QAAI autonomous validation of OrangeHRM login functionality, role-based access control, and session management."
+"CRITICAL: This is SINGLE-MODULE testing. Focus is ONLY on Authentication — not PIM, Admin, Leave, etc."
+SHEET GUIDE
+AuthProfiles → Login credentials for Admin and ESS roles; expected dashboard landing pages
+"FormValidation → Form field validation test data (empty fields, oversized input, etc.)"
+"NegativeAuth → Invalid login scenarios (wrong password, non-existent user, brute force)"
+"SecurityAuth → Security test cases (SQL injection, XSS, command injection, password masking)"
+RoleAccessControl → Post-login RBAC assertions (which menu items visible for which role)
+"ExpectedResults → What QAAI must assert per test case (URL, error message, visible element)"
+README → This sheet; instructions and setup guide
+SETUP PREREQUISITES
+1. Target URL: https://opensource-demo.orangehrmlive.com
+"2. Admin credentials: Admin / admin123 (fixed, shown on login page)"
+3. ESS user MUST be created BEFORE running ESS tests:
+- Login as Admin
+- Navigate to Admin > User Management > Add User
+"- Create user: username=ess_user_01, role=ESS, password=TestUser@123"
+4. No CAPTCHA or bot protection on this demo
+TEST EXECUTION ORDER
+"1. AuthProfiles tests: TC-AUTH-01, TC-AUTH-02 (positive login flows first)"
+2. FormValidation tests: TC-FORM-01 through TC-FORM-09 (form validations)
+3. NegativeAuth tests: TC-NEG-01 through TC-NEG-09 (invalid logins)
+"4. SecurityAuth tests: TC-SEC-01 through TC-SEC-12 (SQL injection, XSS, etc.)"
+5. RoleAccessControl tests: TC-RBAC-01 through TC-RBAC-04 (RBAC assertions post-login)
+"6. Logout tests: TC-AUTH-03, TC-AUTH-04 (session cleanup)"
+KEY ASSUMPTIONS
+• Passwords in AuthProfiles are marked SENSITIVE and should NOT be committed to public repos
+• Test data is NOT encrypted in this Excel file — handle appropriately
+• ESS user creation is a prerequisite manual step before running ESS test cases
+• Session timeout is >30 mins so tests don't time out mid-execution
+COVERAGE SUMMARY
+• 4 valid login scenarios (Admin + ESS × login + logout)
+• 9 form validation test cases
+"• 9 negative login scenarios (invalid creds, brute force)"
+"• 12 security test cases (SQL injection, XSS, password masking, etc.)"
+• 4 RBAC test cases (role-specific menu visibility)
+• 11 expected result assertions
+Total: ~40+ test cases for comprehensive Authentication validation

@@ -1,0 +1,13 @@
+testCaseID,attackType,usernamePayload,passwordPayload,expectedOutcome,shouldCrash,shouldRender,notes
+TC-SEC-01,sqlInjection_OR,' OR '1'='1,admin123,Rejected safely,No,No,SQL injection with OR clause - expect safe rejection
+TC-SEC-02,sqlInjection_UNION,' UNION SELECT * FROM users --,password,Rejected safely,No,No,SQL injection with UNION - expect safe rejection
+TC-SEC-03,sqlInjection_comment,admin'--,admin123,Rejected safely,No,No,SQL injection with comment - expect safe rejection
+TC-SEC-04,xss_scriptTag,<script>alert('xss')</script>,password,Payload not executed,No,No,"XSS script tag - payload treated as text, not executed"
+TC-SEC-05,xss_imgTag,"<img src=x onerror=""alert(1)"">",password,Payload not executed,No,No,XSS img tag with onerror - not executed
+TC-SEC-06,xss_eventHandler,' onload=alert(1),password,Payload not executed,No,No,XSS event handler - not executed
+TC-SEC-07,htmlEncoding,<b>admin</b>,password,Treated as text,No,No,"HTML tags treated as literal text, not rendered"
+TC-SEC-08,pathTraversal,../../etc/passwd,password,Rejected,No,No,Path traversal attempt - expect safe rejection
+TC-SEC-09,commandInjection,; whoami,password,Rejected,No,No,Command injection attempt - expect safe rejection
+TC-SEC-10,passwordNotMasked,Admin,admin123 (visible),Masking verified,No,Yes,Password field should mask input - verify HTML type='password' used
+TC-SEC-11,bruteForce_1,invalid,invalid,Rejected,No,No,1st failed attempt - rejected with error
+TC-SEC-12,bruteForce_5,invalid,invalid,Rejected or Locked,No,No,5th failed attempt - may show account locked

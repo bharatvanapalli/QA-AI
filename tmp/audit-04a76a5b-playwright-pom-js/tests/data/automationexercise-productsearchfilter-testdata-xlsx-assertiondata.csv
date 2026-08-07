@@ -1,0 +1,11 @@
+testCaseID,linkedStory,assertionType,assertField,assertOperator,expectedValue,assertRowCount,assertVisibleText,assertHiddenText,notes
+TC-FILTER-01,US-PS-01,text_contains,productName,contains,Printed,5+,,,Verify all results contain search term
+TC-FILTER-02,US-PS-01,text_contains,productName,contains,Blue,3+,,,Blue appears in product names
+TC-FILTER-03,US-PS-07,empty_state,emptyStateMsg,equals,No products found,0,No products found,,Empty state message visible
+TC-FILTER-06,US-PS-02,category_match,productCategory,equals,Dresses,5+,,Non-Dress products,Only dresses shown
+TC-FILTER-09,US-PS-03,price_range,productPrice,between,"50,150",8+,,,All prices between min-max
+TC-FILTER-12,US-PS-04,multi_criteria,"productName,productCategory","contains,equals","Printed,Dresses",2+,,,Both criteria honored
+TC-FILTER-14,US-PS-05,triple_filter,"productName,productCategory,productPrice","contains,equals,between","Blue,Tops,100,150",1+,,,All 3 criteria matched
+TC-NEG-01,US-PS-08,security_injection,searchField,rejects,' OR 1=1 --,0,No products found,,SQL injection safely rejected
+TC-NEG-02,US-PS-08,security_xss,searchField,renders_as_text,<script>alert(1)</script>,0,,<script>,XSS not rendered as code
+TC-NEG-04,US-PS-03,edge_case,priceRange,handles,min>max,,Error or Reset,,Invalid range handling

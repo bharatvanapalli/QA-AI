@@ -126,7 +126,7 @@ async function chat({ apiKey, model, context, history, userMessage, projectGuida
   return { reply };
 }
 
-function buildPrimer({ testCase, result }) {
+function buildPrimer({ testCase, result, learnedPatterns }) {
   const lines = [];
   lines.push('I want to discuss a Playwright test failure with you.');
   lines.push('');
@@ -152,6 +152,25 @@ function buildPrimer({ testCase, result }) {
     if (result.rcaFix)  lines.push(`- Suggested fix: ${result.rcaFix}`);
     if (result.rcaClass) lines.push(`- Classification: ${result.rcaClass}`);
     if (typeof result.rcaConfidence === 'number') lines.push(`- Confidence: ${result.rcaConfidence}%`);
+  }
+  // Phase G — cross-run pattern matches surfaced by failurePatterns.matchPatternsForResult.
+  // These tell the chat agent which TRAPS on this project have caused similar
+  // failures before. When the user asks "why did this fail" the agent can
+  // ground the answer in real history ("we've seen 'redirect-race' on this
+  // project 4 times; resolution is browser_evaluate after navigation clicks")
+  // instead of generic ChatGPT advice.
+  if (Array.isArray(learnedPatterns) && learnedPatterns.length) {
+    lines.push('');
+    lines.push('## Patterns previously seen on THIS project (use these to ground your answer)');
+    for (const p of learnedPatterns) {
+      const occ = p.occurrences > 1 ? ` — seen ${p.occurrences}× before` : '';
+      lines.push(`- **${p.title}**${occ}`);
+      if (p.description) lines.push(`  - What it is: ${String(p.description).slice(0, 280)}`);
+      if (p.trigger)     lines.push(`  - Trigger: ${String(p.trigger).slice(0, 200)}`);
+      if (p.resolution)  lines.push(`  - Known resolution: ${String(p.resolution).slice(0, 320)}`);
+    }
+    lines.push('');
+    lines.push('When one of these patterns matches the current failure, SAY SO EXPLICITLY in your reply and recommend the known resolution. If none match, say "no prior pattern matches" rather than inventing a generic answer.');
   }
   return lines.join('\n');
 }

@@ -13,7 +13,7 @@
  */
 
 const { getProvider } = require('../../lib/llmProvider');
-const { composeSystemPrompt } = require('../../lib/promptCompose');
+const { composeSystemPrompt, composeSystemPromptCached } = require('../../lib/promptCompose');
 const { parseJsonResponse } = require('../../lib/parseJsonResponse');
 const { resolveModelForTier } = require('../../lib/modelRouter');
 
@@ -116,7 +116,7 @@ async function detectDiscrepancies({ apiKey, model, documents, onLog = async () 
       apiKey,
       model: routedModel,
       maxTokens: 4000,
-      system: composeSystemPrompt(DISCREPANCY_SYSTEM, extraGuidance),
+      system: composeSystemPromptCached(DISCREPANCY_SYSTEM, extraGuidance),
       messages: [{ role: 'user', content: userText }],
       signal,
       onRateLimit,
@@ -178,7 +178,7 @@ async function selectImpactedScenarios({ apiKey, model, scenarios, releaseNotesT
       apiKey,
       model: routedModel,
       maxTokens: 3000,
-      system: composeSystemPrompt(IMPACT_SYSTEM, extraGuidance),
+      system: composeSystemPromptCached(IMPACT_SYSTEM, extraGuidance),
       messages: [{ role: 'user', content: userText }],
       signal,
       onRateLimit,

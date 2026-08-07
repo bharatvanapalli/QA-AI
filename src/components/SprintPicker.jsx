@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Check, Flag, Calendar, Archive, PlayCircle, Pencil } from 'lucide-react';
 import { useProject } from '../store/project';
 
@@ -24,6 +25,7 @@ function lifecycleMeta(l) { return LIFECYCLE_META[l] || LIFECYCLE_META.in_progre
 export default function SprintPicker() {
   const { sprints, currentSprint, switchSprint } = useProject();
   const [open, setOpen] = useState(false);
+  const [menuRect, setMenuRect] = useState(null);
   const btnRef = useRef(null);
   const listRef = useRef(null);
 
@@ -38,6 +40,28 @@ export default function SprintPicker() {
     return () => {
       document.removeEventListener('mousedown', onClick);
       document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const updateRect = () => {
+      const rect = btnRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const width = 320;
+      setMenuRect({
+        top: Math.min(window.innerHeight - 96, rect.bottom + 8),
+        left: Math.max(12, Math.min(rect.right - width, window.innerWidth - width - 12)),
+        width,
+        maxHeight: Math.max(180, window.innerHeight - rect.bottom - 24),
+      });
+    };
+    updateRect();
+    window.addEventListener('resize', updateRect);
+    window.addEventListener('scroll', updateRect, true);
+    return () => {
+      window.removeEventListener('resize', updateRect);
+      window.removeEventListener('scroll', updateRect, true);
     };
   }, [open]);
 
@@ -69,11 +93,12 @@ export default function SprintPicker() {
         <ChevronDown className="w-3.5 h-3.5 text-ink-400" aria-hidden="true" />
       </button>
 
-      {open && (
+      {open && menuRect && createPortal(
         <div
           ref={listRef}
           role="listbox"
-          className="absolute right-0 mt-1.5 w-80 max-h-96 overflow-y-auto rounded-card border border-ink-200 bg-white shadow-card z-30"
+          className="fixed z-[1000] overflow-y-auto rounded-lg border border-ink-200 bg-white shadow-pop"
+          style={{ top: menuRect.top, left: menuRect.left, width: menuRect.width, maxHeight: menuRect.maxHeight }}
         >
           <button
             type="button"
@@ -125,7 +150,8 @@ export default function SprintPicker() {
               </button>
             );
           })}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

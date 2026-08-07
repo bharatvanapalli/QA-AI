@@ -1,0 +1,87 @@
+﻿══════════════════════════════════════════════════════════════════════════════
+PROJECT  SauseDemo Testing
+RUN      12ba999d-f712-46bb-a37a-5fa6cdeddcda  (cancelled)
+STARTED  Fri May 29 2026 20:45:30 GMT+0530 (India Standard Time)
+DRILL    5 non-pass case(s)
+══════════════════════════════════════════════════════════════════════════════
+
+──────────────────────────────────────────────────────────────────────────────
+[1/5]  BLOCKED  ·  —  ·  verdict: consecutive_errors
+  Scenario: Checkout Step 2 and Order Confirmation - Full E2E
+  Case    : Checkout step 2 shows correct subtotal, tax, and total with tolerance
+  Module  : checkout      Type: functional
+
+  ── error ──
+    mechanical_v1: consecutive_errors
+
+  ── declared assertions ──
+    ? ASN-be4895b4                             uncheckable:transient_window_missed  [post_loop]
+    ? ASN-8e69fcad                             uncheckable:transient_window_missed  [post_loop]
+    ? ASN-a4dfedab                             uncheckable:transient_window_missed  [post_loop]
+    ? ASN-41125dfb                             uncheckable:transient_window_missed  [post_loop]
+
+──────────────────────────────────────────────────────────────────────────────
+[2/5]  FAIL  ·  —  ·  verdict: assertion_not_matched
+  Scenario: Checkout Step 2 and Order Confirmation - Full E2E
+  Case    : Clicking Finish on checkout step 2 shows order confirmation page
+  Module  : checkout      Type: functional
+
+  ── error ──
+    mechanical_v1: assertion_not_matched
+
+  ── declared assertions ──
+    ✓ ASN-8152d203                             matched  [agent]
+    ✓ ASN-7e67168a                             matched  [agent]
+    ✗ ASN-53d117cf                             not_matched:criteria_failed  [agent]
+    ✓ ASN-89b5eb9a                             matched  [post_loop]
+        ↳ forbidden-text:OK ("undefined" correctly absent)
+    ✓ ASN-5e99c15b                             matched  [post_loop]
+        ↳ forbidden-text:OK ("null" correctly absent)
+
+──────────────────────────────────────────────────────────────────────────────
+[3/5]  FAIL  ·  —  ·  verdict: step_failed
+  Scenario: Multi-User Account Login Verification
+  Case    : performance_glitch_user login completes within 15-second threshold
+  Module  : authentication      Type: functional
+
+  ── error ──
+    mechanical_v1: step_failed
+
+  ── declared assertions ──
+    ✓ ASN-dd53de53                             matched  [agent]
+    ✓ ASN-4d4441c4                             matched  [agent]
+    ✓ ASN-05c033f3                             matched  [agent]
+
+──────────────────────────────────────────────────────────────────────────────
+[4/5]  FAIL  ·  —  ·  verdict: step_failed
+  Scenario: Product Catalog Display and Sorting
+  Case    : Sort by Name A-Z and Z-A reorders products correctly
+  Module  : catalog      Type: functional
+
+  ── error ──
+    mechanical_v1: step_failed
+
+  ── declared assertions ──
+    ✗ ASN-dae9aad2                             not_matched:criteria_failed  [agent]
+    ✗ ASN-4806eb9c                             not_matched:criteria_failed  [agent]
+    ✓ ASN-1d031f90                             matched  [agent]
+    ✓ ASN-285b7378                             matched  [agent]
+
+──────────────────────────────────────────────────────────────────────────────
+[5/5]  FAIL  ·  —  ·  verdict: assertion_not_matched
+  Scenario: Product Detail Page Navigation
+  Case    : XSS attempt in inventory URL parameter is safely handled
+  Module  : catalog      Type: security
+
+  ── error ──
+    mechanical_v1: assertion_not_matched
+
+  ── declared assertions ──
+    ✗ ASN-243927ae                             not_matched:criteria_failed  [agent]
+    ✓ ASN-dd7b5ba9                             matched  [agent]
+    ✓ ASN-60e153bf                             matched  [agent]
+    ✓ ASN-b68a776c                             matched  [agent]
+
+══════════════════════════════════════════════════════════════════════════════
+Done — 5 case(s) drilled.
+══════════════════════════════════════════════════════════════════════════════

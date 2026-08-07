@@ -1,0 +1,96 @@
+{
+  "schema": "qaai-output-artifact-graph/1",
+  "adapterId": "playwright-pom-js",
+  "summary": {
+    "specs": 1,
+    "pages": 2,
+    "locatorFiles": 2,
+    "generatedPlaywrightTests": 2
+  },
+  "specs": [
+    {
+      "file": "tests/authentication/logout-redirect-and-session-termination.spec.js",
+      "testCount": 2,
+      "calls": [
+        {
+          "object": "describe",
+          "method": "skip",
+          "line": 7
+        },
+        {
+          "object": "describe",
+          "method": "configure",
+          "line": 8
+        },
+        {
+          "object": "loginPage",
+          "method": "fillUsername",
+          "line": 17
+        },
+        {
+          "object": "loginPage",
+          "method": "fillPassword",
+          "line": 18
+        },
+        {
+          "object": "loginPage",
+          "method": "clickLogin",
+          "line": 19
+        },
+        {
+          "object": "dashboardPage",
+          "method": "clickLogout",
+          "line": 21
+        },
+        {
+          "object": "loginPage",
+          "method": "expectProductGridToContain",
+          "line": 24
+        },
+        {
+          "object": "annotations",
+          "method": "push",
+          "line": 36
+        }
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "file": "pages/DashboardPage.js",
+      "methods": [
+        "clickLogout",
+        "constructor",
+        "logoutMenuItem"
+      ]
+    },
+    {
+      "file": "pages/LoginPage.js",
+      "methods": [
+        "clickLogin",
+        "constructor",
+        "fillPassword",
+        "fillUsername",
+        "loginButton",
+        "passwordInput",
+        "usernameInput"
+      ]
+    }
+  ],
+  "locators": [
+    {
+      "file": "locators/generated/dashboardPage.generated.locators.js",
+      "keys": [
+        "logoutMenuItem"
+      ]
+    },
+    {
+      "file": "locators/generated/loginPage.generated.locators.js",
+      "keys": [
+        "loginButton",
+        "passwordInput",
+        "usernameInput"
+      ]
+    }
+  ]
+}

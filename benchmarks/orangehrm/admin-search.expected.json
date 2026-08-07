@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "qaai.reliability.benchmark.v1",
+  "id": "orangehrm-admin-search",
+  "items": [
+    {
+      "coverageRef": "admin-system-user-search",
+      "requiredFields": ["username", "role", "employee name", "status"],
+      "requiredOracles": [
+        { "kind": "text", "target": "Result row" }
+      ],
+      "dataRowIntents": ["positive"]
+    }
+  ]
+}

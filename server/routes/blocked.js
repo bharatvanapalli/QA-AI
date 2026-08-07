@@ -9,12 +9,38 @@ const { requireCsrf } = require('../middleware/csrf');
 const { rateLimit } = require('../middleware/rateLimit');
 const { decodeArray, decodeJson } = require('../services/jsonField');
 const { resolveAiCredentials } = require('../lib/resolveAiCredentials');
+const { buildCaseNumbering } = require('../lib/caseNumbering');
 const blockageAnalyzer = require('../services/agents/blockageAnalyzer');
 const cancelRegistry = require('../services/cancelRegistry');
+const runs = require('../services/runs');
+const budget = require('../services/budget');
+const { compileStoredCase } = require('../services/caseCompiler');
+const {
+  runConductorWithRetries,
+  reloadScenariosForFailingCases,
+  singleWavePlan,
+  loadSprintGuidance,
+} = require('../services/agents/conductorRunner');
 
 const router = express.Router({ mergeParams: true });
 router.use(requireAuth);
 router.use(requireOrg);
+
+async function assertRunBudgetAvailable(req, res) {
+  try {
+    await budget.assertWithinLimit(req.user.id);
+    return true;
+  } catch (err) {
+    if (err?.code !== 'BUDGET_EXCEEDED') throw err;
+    res.status(429).json({
+      success: false,
+      code: 'BUDGET_EXCEEDED',
+      message: err.message,
+      budget: err.budget || null,
+    });
+    return false;
+  }
+}
 
 // Severity sort order — high first, then normal, then low.
 const SEVERITY_RANK = { high: 0, normal: 1, low: 2 };
@@ -87,11 +113,68 @@ router.get('/', async (req, res, next) => {
           where: { id: { in: tcIds } },
           select: {
             id: true, name: true, module: true, type: true, scenarioId: true,
+            dependsOnIds: true,
             scenario: { select: { id: true, name: true, priority: true, category: true } },
           },
         })
       : [];
     const tcById = new Map(tcs.map((t) => [t.id, t]));
+
+    // For each blocker's case, transitively walk dependsOnIds so the UI's
+    // Rerun confirm dialog can preview which prerequisite cases the engine
+    // will auto-include. BFS in batches to keep this cheap even for deep
+    // chains across the project's case set.
+    const allDepIds = new Set();
+    for (const tc of tcs) {
+      const ds = decodeJson(tc.dependsOnIds, []) || [];
+      ds.forEach((id) => allDepIds.add(id));
+    }
+    // Follow each dependency hop until the closure stops growing — capped
+    // at 5 hops as a safety net against pathological cycles (the writer
+    // also detects cycles, but this is the read path).
+    let depTcs = [];
+    if (allDepIds.size) {
+      depTcs = await prisma.testCase.findMany({
+        where: { id: { in: Array.from(allDepIds) } },
+        select: { id: true, name: true, dependsOnIds: true },
+      });
+      let frontier = depTcs.flatMap((t) => decodeJson(t.dependsOnIds, []) || []);
+      let hop = 0;
+      while (frontier.length && hop < 5) {
+        const unknown = frontier.filter((id) => !depTcs.some((t) => t.id === id) && !tcById.has(id));
+        if (!unknown.length) break;
+        const more = await prisma.testCase.findMany({
+          where: { id: { in: unknown } },
+          select: { id: true, name: true, dependsOnIds: true },
+        });
+        depTcs.push(...more);
+        frontier = more.flatMap((t) => decodeJson(t.dependsOnIds, []) || []);
+        hop += 1;
+      }
+    }
+    const depNameById = new Map();
+    for (const t of depTcs) depNameById.set(t.id, t.name);
+    for (const t of tcs) depNameById.set(t.id, t.name);
+
+    // Build the rerun preview per case: an ordered list of upstream
+    // case names (closest dep first, deepest last) the engine will
+    // execute before the blocker's own case.
+    function rerunPreviewFor(tcId) {
+      if (!tcId) return [];
+      const visited = new Set();
+      const order = [];
+      const walk = (id) => {
+        if (visited.has(id)) return;
+        visited.add(id);
+        const row = depTcs.find((t) => t.id === id) || tcs.find((t) => t.id === id);
+        if (!row) return;
+        const upstream = decodeJson(row.dependsOnIds, []) || [];
+        for (const up of upstream) walk(up);
+        if (id !== tcId && depNameById.has(id)) order.push({ id, name: depNameById.get(id) });
+      };
+      walk(tcId);
+      return order;
+    }
 
     const resultPairs = items
       .filter((i) => i.runId && i.testCaseId)
@@ -99,7 +182,7 @@ router.get('/', async (req, res, next) => {
     const results = resultPairs.length
       ? await prisma.runResult.findMany({
           where: { OR: resultPairs },
-          select: { runId: true, testCaseId: true, screenshots: true, error: true, durationMs: true },
+          select: { runId: true, testCaseId: true, screenshots: true, error: true, durationMs: true, stepResults: true },
         })
       : [];
     const resultByKey = new Map(results.map((r) => [`${r.runId}|${r.testCaseId}`, r]));
@@ -147,10 +230,35 @@ router.get('/', async (req, res, next) => {
       if (k.selector) kbByLocator.set(k.selector, k);
     }
 
+    // Stable hierarchical case labels (S2 · C5) — same numbering as Test Cases
+    // and Reports so a blocker is traceable to its exact case. Best-effort.
+    let caseLabelById = new Map();
+    try {
+      const numScenarios = await prisma.testScenario.findMany({
+        where: { projectId: project.id },
+        select: { id: true, generationId: true, priority: true, createdAt: true, cases: { select: { id: true, createdAt: true } } },
+      });
+      caseLabelById = buildCaseNumbering(numScenarios).caseLabelById;
+    } catch (_) { /* labels are a nicety — never break the blocked list */ }
+
     const enriched = items.map((it) => {
       const tc = it.testCaseId ? tcById.get(it.testCaseId) : null;
       const rr = (it.runId && it.testCaseId) ? resultByKey.get(`${it.runId}|${it.testCaseId}`) : null;
       const shots = rr ? decodeArray(rr.screenshots) : [];
+      // Find the step where execution actually died — the last step in
+      // stepResults that has a non-pending status. The UI uses this for
+      // "Stopped at step N: <action>" context so the user doesn't have
+      // to open Reports to know where the run blew up.
+      const stepResults = rr ? decodeJson(rr.stepResults, []) || [] : [];
+      const lastStep = (() => {
+        if (!Array.isArray(stepResults) || !stepResults.length) return null;
+        // Walk backwards, find the last non-pending entry.
+        for (let i = stepResults.length - 1; i >= 0; i--) {
+          const s = stepResults[i];
+          if (s && s.status && s.status !== 'pending') return { ...s, total: stepResults.length };
+        }
+        return null;
+      })();
       return {
         id: it.id,
         runId: it.runId,
@@ -166,6 +274,7 @@ router.get('/', async (req, res, next) => {
           ? { id: tc.id, name: tc.name, module: tc.module, type: tc.type }
           : null,
         scenario: tc?.scenario || null,
+        caseLabel: it.testCaseId ? (caseLabelById.get(it.testCaseId) || null) : null,
         // First screenshot (if any) for visual context; the rest are
         // accessible via the Reports page if the user wants them.
         screenshot: shots[0] || null,
@@ -187,6 +296,13 @@ router.get('/', async (req, res, next) => {
         kbLocator: it.aiCategory === 'selector_drift' && it.locator
           ? kbByLocator.get(it.locator) || null
           : null,
+        // Phase D — preview of prerequisite cases the run engine will
+        // auto-include when the user clicks Rerun. Empty array means the
+        // blocked case is fully standalone (the common case).
+        rerunWillInclude: rerunPreviewFor(it.testCaseId),
+        // Step where execution stopped (from RunResult.stepResults). Null
+        // for legacy runs or blockers without a linked RunResult.
+        lastStep,
       };
     });
 
@@ -222,8 +338,13 @@ router.post('/:id/resolve', requireCsrf, async (req, res, next) => {
     // If a new selector was supplied, upsert it into the knowledge base
     if (newSelector && existing.locator) {
       const elementKey = existing.locator.slice(0, 200);
-      const kbExisting = await prisma.knowledgeBaseLocator.findUnique({
-        where: { projectId_element: { projectId: project.id, element: elementKey } },
+      // P3-4: KB unique key is now (projectId, element, pageUrl). The
+      // blocked-items resolve UI doesn't know the page, so target the
+      // healthiest existing row (almost always one — the operator resolved
+      // a specific BlockedItem so the element history concentrates there).
+      const kbExisting = await prisma.knowledgeBaseLocator.findFirst({
+        where: { projectId: project.id, element: elementKey },
+        orderBy: [{ healthScore: 'desc' }, { occurrences: 'desc' }],
       });
       if (kbExisting) {
         await prisma.knowledgeBaseLocator.update({
@@ -371,6 +492,164 @@ router.patch('/:id', requireCsrf, async (req, res, next) => {
       req,
     });
     res.json({ success: true, item: updated });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * POST /api/projects/:projectId/blocked/:id/rerun
+ *
+ * Re-attempt the TestCase that produced this blocker. Goes through the
+ * regular run engine (services/runs.js) which transitively expands the
+ * case's `dependsOnIds` and topo-sorts them — so a stateful flow (Login
+ * → Add to cart → Checkout) re-runs its prerequisites in a fresh browser
+ * instead of starting cold and failing again on missing session state.
+ *
+ * On success the blocker is marked `resolved` immediately — the rerun's
+ * own RunResult is the new source of truth. If the rerun fails again
+ * the next conductor pass will produce a new BlockedItem row.
+ *
+ * 4xx codes:
+ *   404 NOT_FOUND               — blocker doesn't exist or not in this org
+ *   409 RUN_IN_PROGRESS         — a run is already streaming for this project
+ *   400 PREREQUISITE_REJECTED   — a prereq case is in 'rejected' status
+ *   400 DEPENDENCY_CYCLE        — A → B → A among the case's prereqs
+ *   400 NO_TEST_CASE_LINKED     — historical blocker rows with testCaseId=null
+ */
+router.post('/:id/rerun', requireCsrf, rateLimit({ windowMs: 60_000, max: 12 }), async (req, res, next) => {
+  try {
+    const project = await ownProject(req);
+    if (!project) return res.status(404).json({ success: false, code: 'NOT_FOUND' });
+    const existing = await prisma.blockedItem.findFirst({
+      where: { id: req.params.id, projectId: project.id },
+    });
+    if (!existing) return res.status(404).json({ success: false, code: 'NOT_FOUND' });
+    if (!existing.testCaseId) {
+      return res.status(400).json({
+        success: false,
+        code: 'NO_TEST_CASE_LINKED',
+        message: 'This blocker is not linked to a test case. Triage manually.',
+      });
+    }
+    // Append user note to guidance before conductor runs (same pattern as
+    // POST /agents/runs/:runId/cases/:caseId/rerun in agents.js).
+    const note = (req.body?.note && typeof req.body.note === 'string') ? req.body.note.trim() : '';
+    const { provider, apiKey, model } = await resolveAiCredentials(req.user.id, project);
+    if (!apiKey) {
+      return res.status(400).json({
+        success: false,
+        code: 'AI_PROVIDER_NOT_CONFIGURED',
+        message: `${provider} API key not configured. Visit Settings â†’ API.`,
+      });
+    }
+    if (!(await assertRunBudgetAvailable(req, res))) return;
+
+    // Promotion gate — refuse to rerun a BLOCKED case BEFORE auto-approving it or
+    // marking the blocker resolved. Otherwise a broken case would be silently
+    // "resolved" by a rerun the compiler would exclude anyway (the blocked-rerun
+    // bypass). The compiler is the single authority; the rerun obeys it too.
+    {
+      const tcForGate = await prisma.testCase.findUnique({
+        where: { id: existing.testCaseId },
+        select: { id: true, name: true, status: true, automatability: true, module: true, assertions: true, steps: true, declaredAssertions: true, dataBindingJson: true, operationsJson: true },
+      });
+      if (tcForGate) {
+        const verdict = compileStoredCase(tcForGate);
+        if (verdict.state === 'blocked') {
+          return res.status(422).json({
+            success: false,
+            code: 'CASE_BLOCKED',
+            message: `Cannot rerun "${tcForGate.name}" — it has blocking defects: ${verdict.blockers.map((b) => b.code).join(', ')}. Fix the generation / data binding (or regenerate) first.`,
+            blockers: verdict.blockers,
+          });
+        }
+      }
+    }
+
+    const updates = { status: 'approved' };
+    if (note) {
+      const tc = await prisma.testCase.findUnique({
+        where: { id: existing.testCaseId }, select: { userGuidance: true },
+      });
+      const prior = (tc?.userGuidance || '').trim();
+      updates.userGuidance = prior
+        ? `${prior}\n\n[${new Date().toISOString().slice(0, 10)}] ${note}`
+        : note;
+    }
+    await prisma.testCase.update({ where: { id: existing.testCaseId }, data: updates });
+
+    {
+    const { provider, apiKey, model } = await resolveAiCredentials(req.user.id, project);
+    if (!apiKey) {
+      return res.status(400).json({
+        success: false,
+        code: 'AI_PROVIDER_NOT_CONFIGURED',
+        message: `${provider} API key not configured. Visit Settings → API.`,
+      });
+    }
+
+    }
+
+    const scenariosForRerun = await reloadScenariosForFailingCases([existing.testCaseId], project.id);
+    if (scenariosForRerun.length === 0) {
+      return res.status(400).json({ success: false, code: 'NO_SCENARIOS',
+        message: 'Blocked case could not be loaded for rerun.' });
+    }
+
+    // The blocker knows which run produced it — rerun in-place so the
+    // original run's result updates rather than spawning a new run entry.
+    const existingRunId = existing.runId || null;
+
+    const broadcast = req.app.locals.broadcastToUser;
+    const send = (msg) => broadcast && broadcast(req.user.id, msg);
+    const onLog = (phase) => async (level, message) =>
+      send({ type: 'agent.phase.log', phase, level, message });
+
+    // Optimistically clear the blocker before the conductor starts.
+    await prisma.blockedItem.update({
+      where: { id: existing.id },
+      data: { resolved: true, resolvedAt: new Date(), resolveNote: 'Rerun via conductor queued' },
+    });
+
+    await audit.log({
+      userId: req.user.id,
+      action: 'blocked.rerun',
+      target: existing.id,
+      metadata: { testCaseId: existing.testCaseId, runId: existingRunId, hadNote: !!note },
+      req,
+    });
+
+    // Respond immediately — conductor runs async exactly like the agents route.
+    res.status(202).json({ success: true, runId: existingRunId, mode: 'inplace' });
+
+    const rerunSprintId = existing.sprintId || null;
+    const rerunSprintGuidance = await loadSprintGuidance(rerunSprintId);
+    const allRequirements = await prisma.requirement.findMany({ where: { projectId: project.id } });
+    const cancelToken = cancelRegistry.create(req.user.id);
+    (async () => {
+      try {
+        await runConductorWithRetries({
+          project,
+          sprintId: rerunSprintId,
+          sprintGuidance: rerunSprintGuidance,
+          scenarios: scenariosForRerun,
+          plan: singleWavePlan(scenariosForRerun),
+          apiKey, model, provider,
+          send,
+          userId: req.user.id,
+          requirements: allRequirements,
+          onLog,
+          cancelToken,
+          existingRunId,
+        });
+      } catch (err) {
+        console.error('[blocked] rerun conductor error', err);
+        send({ type: 'agent.phase.log', phase: 'pipeline', level: 'error', message: err.message });
+      } finally {
+        cancelRegistry.clear(req.user.id);
+      }
+    })();
   } catch (err) {
     next(err);
   }

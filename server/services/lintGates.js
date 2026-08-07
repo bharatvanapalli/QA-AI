@@ -22,6 +22,7 @@
  */
 
 const specAst = require('../lib/specAst');
+const { assessParity } = require('./codegen/_parity');
 
 const RULES = [
   // ── Imports & frame ──────────────────────────────────────
@@ -29,12 +30,25 @@ const RULES = [
     id: 'requires-playwright-import',
     severity: 'error',
     test(lines, joined) {
-      return /from\s+['"]@playwright\/test['"]/.test(joined)
+      // Accept BOTH the TypeScript ESM import and the JavaScript CommonJS
+      // require — the JS generator emits `const { test } = require(...)`.
+      const hasImport = /from\s+['"]@playwright\/test['"]/.test(joined)
+        || /require\(\s*['"]@playwright\/test['"]\s*\)/.test(joined);
+      return hasImport
         ? null
         : {
             line: 1,
-            message: 'Missing `import { test, expect } from "@playwright/test"`',
+            message: 'Missing `@playwright/test` import (import { test, expect } from … or require(…)).',
           };
+    },
+  },
+  {
+    id: 'no-raw-codegen-json-envelope',
+    severity: 'error',
+    test(_lines, joined) {
+      return /^\s*\{\s*["'](?:pageObject|test|feature|steps)["']\s*:/.test(joined)
+        ? { line: 1, message: 'Raw codegen JSON envelope was written as source instead of split into real files.' }
+        : null;
     },
   },
   {
@@ -56,6 +70,15 @@ const RULES = [
     },
     message:
       'page.waitForTimeout() is forbidden — use locator.waitFor / expect.toBeVisible({timeout}) instead.',
+  },
+  {
+    id: 'no-waitForResponse',
+    severity: 'error',
+    line(lines) {
+      return findLine(lines, /\.\s*waitForResponse\s*\(/);
+    },
+    message:
+      'page.waitForResponse() is forbidden in generated specs unless an exact observed response is replayed. Assert the visible outcome instead.',
   },
   {
     id: 'no-console-log',
@@ -120,6 +143,14 @@ const RULES = [
     },
     message: 'XPath locator detected — prefer getByRole / getByTestId.',
   },
+  {
+    id: 'avoid-getByLabel-without-proof',
+    severity: 'warning',
+    line(lines) {
+      return findLine(lines, /\.getByLabel\s*\(/);
+    },
+    message: 'getByLabel() often fails on apps whose inputs only have placeholder/name attributes. Prefer runtime-resolved locators or getByPlaceholder unless a real label was observed.',
+  },
 
   // ── Credential & secret hygiene ──────────────────────────
   {
@@ -181,10 +212,74 @@ const RULES = [
     id: 'has-at-least-one-expect',
     severity: 'error',
     test(lines, joined) {
-      return /\bexpect\s*\(/.test(joined)
+      // Accept expect(...), expect.soft(...), and expect.poll(...).
+      return /\bexpect\s*[.(]/.test(joined)
         ? null
         : { line: 1, message: 'Spec contains no expect() assertion.' };
     },
+  },
+
+  // ── End-to-end completeness (warnings — surfaced for review, never block) ──
+  {
+    id: 'missing-navigation',
+    severity: 'warning',
+    test(lines, joined) {
+      // A self-contained E2E spec should drive navigation itself rather than
+      // assume the page is already where it needs to be.
+      const navigates = /\.\s*goto\s*\(/.test(joined)
+        || /\.\s*waitForURL\s*\(/.test(joined)
+        || /navigateTo\w*\s*\(/.test(joined);   // POM navigation helper
+      return navigates ? null : { line: 1, message: 'No navigation (page.goto / waitForURL / navigate*) — spec may assume external state.' };
+    },
+  },
+  {
+    id: 'missing-final-screenshot',
+    severity: 'warning',
+    test(lines, joined) {
+      return /\.\s*screenshot\s*\(/.test(joined)
+        ? null
+        : { line: 1, message: 'No page.screenshot() — add a final screenshot for evidence/debugging.' };
+    },
+  },
+  {
+    id: 'explicit-wait-without-timeout',
+    severity: 'warning',
+    line(lines) {
+      // Flag locator.waitFor(...) / page.waitForSelector(...) calls that do NOT
+      // pass a timeout on the same line — those hang on slow environments
+      // instead of failing fast. A waitFor that includes `timeout:` is fine.
+      for (let i = 0; i < lines.length; i++) {
+        const raw = lines[i];
+        if (/^\s*(\/\/|\*)/.test(raw)) continue;
+        if (/\.\s*waitFor(?:Selector)?\s*\(/.test(raw) && !/timeout\s*:/.test(raw)) {
+          return { line: i + 1, snippet: raw.trim().slice(0, 120) };
+        }
+      }
+      return null;
+    },
+    message: 'Explicit wait without a { timeout } — slow environments will hang rather than fail clearly.',
+  },
+
+  // ── Codegen hygiene — patterns the LLM should never emit ─
+  {
+    id: 'no-leaked-mcp-tool-name',
+    severity: 'error',
+    line(lines) {
+      // Catches MCP tool names written as function calls or identifiers in generated code.
+      // These are internal QAAI execution tool names, not Playwright APIs.
+      return findLine(lines, /\bbrowser_(?:click|double_click|triple_click|type|fill_form|navigate(?:_back|_forward)?|select_option|press_key|hover|drag|scroll|file_upload|handle_dialog|resize|close)\s*[({]/);
+    },
+    message: 'MCP tool name leaked into generated code — map to Playwright primitives (browser_click → locator.click(), browser_triple_click → locator.click({ clickCount: 3 }), etc.).',
+  },
+  {
+    id: 'no-swallowed-navigation-catch',
+    severity: 'error',
+    line(lines) {
+      // .catch(() => {}) after waitForURL silently swallows navigation failures.
+      // Legitimate popup guard is: isVisible(...).catch(() => false) — different shape.
+      return findLine(lines, /\bwaitForURL\s*\([^)]+\)\s*\.catch\s*\(\s*\(\s*\)\s*=>\s*\{\s*\}\s*\)/);
+    },
+    message: '.catch(() => {}) after waitForURL swallows navigation failures — remove it so the timeout surfaces as a real test failure.',
   },
 ];
 
@@ -199,12 +294,56 @@ function findLine(lines, re) {
   return null;
 }
 
+function normalizeBddStep(text) {
+  return String(text || '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .replace(/^[\s"'`.,;:!?()[\]{}-]+|[\s"'`.,;:!?()[\]{}-]+$/g, '')
+    .trim();
+}
+
+function duplicateStepFindings(lines) {
+  const seen = new Map();
+
+  lines.forEach((raw, index) => {
+    const match = raw.match(/^\s*(Given|When|Then|And|But)\s+(.+?)\s*$/i);
+    if (!match) return;
+
+    const normalized = normalizeBddStep(match[2]);
+    if (!normalized) return;
+
+    const entry = seen.get(normalized) || {
+      count: 0,
+      firstLine: index + 1,
+      firstSnippet: raw.trim().slice(0, 120),
+    };
+    entry.count += 1;
+    entry.lastLine = index + 1;
+    entry.lastSnippet = raw.trim().slice(0, 120);
+    seen.set(normalized, entry);
+  });
+
+  const findings = [];
+  for (const [step, entry] of seen.entries()) {
+    if (entry.count < 2) continue;
+    findings.push({
+      rule: 'duplicate_step',
+      severity: 'warning',
+      line: entry.lastLine || entry.firstLine,
+      message: `Duplicate BDD step sentence "${step}" appears ${entry.count} times.`,
+      snippet: entry.lastSnippet || entry.firstSnippet,
+    });
+  }
+  return findings;
+}
+
 /**
  * Run all rules against `code` and return findings + lintPassed.
  * @param {string} code
+ * @param {{ framework?: string, caseStatus?: string }} [opts]
  * @returns {{ lintPassed: boolean, findings: Array, errorCount: number, warningCount: number }}
  */
-function lint(code) {
+function lint(code, opts = {}) {
   if (typeof code !== 'string' || code.length === 0) {
     return {
       lintPassed: false,
@@ -252,6 +391,22 @@ function lint(code) {
     }
   }
 
+  for (const finding of duplicateStepFindings(lines)) findings.push(finding);
+
+  const parity = assessParity({
+    framework: opts.framework,
+    caseStatus: opts.caseStatus,
+    code,
+  });
+  if (!parity.enforced) {
+    findings.push({
+      rule: 'parity_inversion',
+      severity: 'error',
+      line: 1,
+      message: parity.reason || 'Non-pass live case export does not contain a hard failing assertion.',
+    });
+  }
+
   // Phase E6 — merge AST-engine findings. The AST engine's scope-aware
   // rules (per-test expect, missing-await on locator, etc.) extend what
   // the regex engine can see without overlapping with it. A parse error
@@ -259,6 +414,15 @@ function lint(code) {
   // `parseError`; we don't surface the parser failure as a lint finding
   // because malformed code already trips the regex rules on its own.
   const astResult = specAst.lintAst(code);
+  if (astResult?.parseError) {
+    findings.push({
+      rule: 'ast-parse-error',
+      severity: 'error',
+      line: 1,
+      message: `Generated spec could not be parsed as JavaScript/TypeScript: ${String(astResult.parseError).slice(0, 180)}`,
+      engine: 'ast',
+    });
+  }
   if (Array.isArray(astResult?.findings) && astResult.findings.length) {
     for (const f of astResult.findings) findings.push(f);
   }
@@ -274,4 +438,41 @@ function lint(code) {
   };
 }
 
-module.exports = { lint, RULES };
+function isGeneratedTestFile(relPath) {
+  const p = String(relPath || '').replace(/\\/g, '/');
+  return /\.(?:spec|test)\.[cm]?[jt]sx?$/i.test(p)
+    || /(?:^|\/)(?:tests?|specs?)\/.+\.[cm]?[jt]sx?$/i.test(p);
+}
+
+function lintFiles(files, opts = {}) {
+  const entries = Object.entries(files || {})
+    .filter(([relPath, content]) => /\.(?:[cm]?[jt]sx?)$/i.test(relPath) && typeof content === 'string' && content.trim());
+  if (!entries.length) return lint('', opts);
+
+  const targets = entries.filter(([relPath]) => isGeneratedTestFile(relPath));
+  const lintTargets = targets.length ? targets : entries.slice(0, 1);
+  const findings = [];
+  let astParseError = null;
+  for (const [relPath, content] of lintTargets) {
+    const result = lint(content, opts);
+    if (result.astParseError && !astParseError) astParseError = result.astParseError;
+    for (const finding of result.findings || []) {
+      findings.push({
+        path: relPath,
+        relPath,
+        ...finding,
+      });
+    }
+  }
+  const errorCount = findings.filter((f) => f.severity === 'error').length;
+  const warningCount = findings.filter((f) => f.severity === 'warning').length;
+  return {
+    lintPassed: errorCount === 0,
+    findings,
+    errorCount,
+    warningCount,
+    astParseError,
+  };
+}
+
+module.exports = { lint, lintFiles, RULES };

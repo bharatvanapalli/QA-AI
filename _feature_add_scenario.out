@@ -1,0 +1,3 @@
+BEFORE current gen: v8 id=c377609c-9ca5-466e-9103-4ca97a8d3346 scenarios=10 cases=29
+POST /scenarios/generate {appendToCurrent:true, journey:true} … (architect LLM, may take ~1-3 min)
+generate ERR This operation was aborted

@@ -1,0 +1,1068 @@
+{
+  "schemaVersion": "qaai.reliability.benchmark.report.v1",
+  "generatedAt": "2026-07-06T16:37:16.409Z",
+  "source": "database_generation",
+  "sourceFile": null,
+  "generation": {
+    "id": "37668353-8a47-463b-b8d4-d71a28844552",
+    "projectId": "6a68412b-2d91-4ec5-b15a-2e1bf8fd744e",
+    "version": 22,
+    "isCurrent": true,
+    "createdAt": "2026-07-06T16:36:11.814Z"
+  },
+  "skipped": false,
+  "skipReason": null,
+  "scenarioCount": 14,
+  "caseCount": 28,
+  "benchmarkId": "orangehrm-scenario-generation",
+  "pass": false,
+  "missingCoverageRefs": [],
+  "missingRequiredFields": [
+    {
+      "code": "benchmark_missing_required_field",
+      "coverageRef": "cov::req-26307b78cb::standard",
+      "field": "first name",
+      "message": "Required field \"first name\" is not exercised for \"cov::req-26307b78cb::standard\"."
+    },
+    {
+      "code": "benchmark_missing_required_field",
+      "coverageRef": "cov::req-26307b78cb::standard",
+      "field": "middle name",
+      "message": "Required field \"middle name\" is not exercised for \"cov::req-26307b78cb::standard\"."
+    },
+    {
+      "code": "benchmark_missing_required_field",
+      "coverageRef": "cov::req-26307b78cb::standard",
+      "field": "last name",
+      "message": "Required field \"last name\" is not exercised for \"cov::req-26307b78cb::standard\"."
+    },
+    {
+      "code": "benchmark_missing_required_field",
+      "coverageRef": "cov::req-26307b78cb::standard",
+      "field": "employee id",
+      "message": "Required field \"employee id\" is not exercised for \"cov::req-26307b78cb::standard\"."
+    },
+    {
+      "code": "benchmark_missing_required_field",
+      "coverageRef": "cov::req-26307b78cb::standard",
+      "field": "employee id",
+      "message": "Required field \"employee id\" is not exercised for \"cov::req-26307b78cb::standard\"."
+    },
+    {
+      "code": "benchmark_missing_required_field",
+      "coverageRef": "cov::req-7bd76ad38e::standard",
+      "field": "username",
+      "message": "Required field \"username\" is not exercised for \"cov::req-7bd76ad38e::standard\"."
+    },
+    {
+      "code": "benchmark_missing_required_field",
+      "coverageRef": "cov::req-7bd76ad38e::standard",
+      "field": "password",
+      "message": "Required field \"password\" is not exercised for \"cov::req-7bd76ad38e::standard\"."
+    }
+  ],
+  "missingOracles": [
+    {
+      "code": "benchmark_missing_required_oracle",
+      "coverageRef": "cov::req-cfb62c0008::standard",
+      "oracle": {
+        "kind": "text",
+        "target": "Result row"
+      },
+      "message": "Required oracle text:Result row is missing for \"cov::req-cfb62c0008::standard\"."
+    },
+    {
+      "code": "benchmark_missing_required_oracle",
+      "coverageRef": "adv::req-76681f5c3a::leave-assignrequests",
+      "oracle": {
+        "kind": "validation_message",
+        "target": "Claim validation message"
+      },
+      "message": "Required oracle validation_message:Claim validation message is missing for \"adv::req-76681f5c3a::leave-assignrequests\"."
+    },
+    {
+      "code": "benchmark_missing_required_oracle",
+      "coverageRef": "cov::req-7bd76ad38e::standard",
+      "oracle": {
+        "kind": "url",
+        "target": "url"
+      },
+      "message": "Required oracle url:url is missing for \"cov::req-7bd76ad38e::standard\"."
+    }
+  ],
+  "missingRowIntents": [
+    {
+      "code": "benchmark_missing_row_intent",
+      "coverageRef": "cov::req-cfb62c0008::standard",
+      "intent": "positive",
+      "message": "Required data row intent \"positive\" is missing for \"cov::req-cfb62c0008::standard\"."
+    },
+    {
+      "code": "benchmark_missing_row_intent",
+      "coverageRef": "cov::req-26307b78cb::standard",
+      "intent": "positive",
+      "message": "Required data row intent \"positive\" is missing for \"cov::req-26307b78cb::standard\"."
+    },
+    {
+      "code": "benchmark_missing_row_intent",
+      "coverageRef": "cov::req-26307b78cb::standard",
+      "intent": "positive",
+      "message": "Required data row intent \"positive\" is missing for \"cov::req-26307b78cb::standard\"."
+    },
+    {
+      "code": "benchmark_missing_row_intent",
+      "coverageRef": "cov::req-26307b78cb::standard",
+      "intent": "boundary",
+      "message": "Required data row intent \"boundary\" is missing for \"cov::req-26307b78cb::standard\"."
+    },
+    {
+      "code": "benchmark_missing_row_intent",
+      "coverageRef": "cov::req-7bd76ad38e::standard",
+      "intent": "positive",
+      "message": "Required data row intent \"positive\" is missing for \"cov::req-7bd76ad38e::standard\"."
+    }
+  ],
+  "contractDefects": [
+    {
+      "code": "benchmark_contract_defect",
+      "coverageRef": "cov::req-cfb62c0008::standard",
+      "defectCode": "weak_oracle",
+      "message": "Case \"US-OHRM-003: Admin user search finds enabled Admin users and supports filters\" is missing required business oracle \"Result row\".",
+      "evidence": {
+        "requiredOracle": {
+          "kind": "text",
+          "target": "Result row"
+        },
+        "coverageRefs": [
+          "cov::req-cfb62c0008::standard"
+        ]
+      }
+    },
+    {
+      "code": "benchmark_contract_defect",
+      "coverageRef": "cov::req-cfb62c0008::standard",
+      "defectCode": "weak_oracle",
+      "message": "Case \"US-OHRM-003: Admin user search finds enabled Admin users and supports filters no matching result\" is missing required business oracle \"Result row\".",
+      "evidence": {
+        "requiredOracle": {
+          "kind": "text",
+          "target": "Result row"
+        },
+        "coverageRefs": [
+          "cov::req-cfb62c0008::standard"
+        ]
+      }
+    },
+    {
+      "code": "benchmark_contract_defect",
+      "coverageRef": "cov::req-26307b78cb::standard",
+      "defectCode": "missing_required_story_field",
+      "message": "Case \"Save and verify the Personal Details page opens for the created employee.\" does not exercise required field \"first name\".",
+      "evidence": {
+        "field": "first name",
+        "coverageRefs": [
+          "cov::req-26307b78cb::standard"
+        ]
+      }
+    },
+    {
+      "code": "benchmark_contract_defect",
+      "coverageRef": "cov::req-26307b78cb::standard",
+      "defectCode": "missing_required_story_field",
+      "message": "Case \"Save and verify the Personal Details page opens for the created employee.\" does not exercise required field \"middle name\".",
+      "evidence": {
+        "field": "middle name",
+        "coverageRefs": [
+          "cov::req-26307b78cb::standard"
+        ]
+      }
+    },
+    {
+      "code": "benchmark_contract_defect",
+      "coverageRef": "cov::req-26307b78cb::standard",
+      "defectCode": "missing_required_story_field",
+      "message": "Case \"Save and verify the Personal Details page opens for the created employee.\" does not exercise required field \"last name\".",
+      "evidence": {
+        "field": "last name",
+        "coverageRefs": [
+          "cov::req-26307b78cb::standard"
+        ]
+      }
+    },
+    {
+      "code": "benchmark_contract_defect",
+      "coverageRef": "cov::req-26307b78cb::standard",
+      "defectCode": "missing_required_story_field",
+      "message": "Case \"Save and verify the Personal Details page opens for the created employee.\" does not exercise required field \"employee id\".",
+      "evidence": {
+        "field": "employee id",
+        "coverageRefs": [
+          "cov::req-26307b78cb::standard"
+        ]
+      }
+    },
+    {
+      "code": "benchmark_contract_defect",
+      "coverageRef": "cov::req-26307b78cb::standard",
+      "defectCode": "missing_required_story_field",
+      "message": "Case \"Save and verify the Personal Details page opens for the created employee. required field validation\" does not exercise required field \"first name\".",
+      "evidence": {
+        "field": "first name",
+        "coverageRefs": [
+          "cov::req-26307b78cb::standard"
+        ]
+      }
+    },
+    {
+      "code": "benchmark_contract_defect",
+      "coverageRef": "cov::req-26307b78cb::standard",
+      "defectCode": "missing_required_story_field",
+      "message": "Case \"Save and verify the Personal Details page opens for the created employee. required field validation\" does not exercise required field \"middle name\".",
+      "evidence": {
+        "field": "middle name",
+        "coverageRefs": [
+          "cov::req-26307b78cb::standard"
+        ]
+      }
+    },
+    {
+      "code": "benchmark_contract_defect",
+      "coverageRef": "cov::req-26307b78cb::standard",
+      "defectCode": "missing_required_story_field",
+      "message": "Case \"Save and verify the Personal Details page opens for the created employee. required field validation\" does not exercise required field \"last name\".",
+      "evidence": {
+        "field": "last name",
+        "coverageRefs": [
+          "cov::req-26307b78cb::standard"
+        ]
+      }
+    },
+    {
+      "code": "benchmark_contract_defect",
+      "coverageRef": "cov::req-26307b78cb::standard",
+      "defectCode": "missing_required_story_field",
+      "message": "Case \"Save and verify the Personal Details page opens for the created employee. required field validation\" does not exercise required field \"employee id\".",
+      "evidence": {
+        "field": "employee id",
+        "coverageRefs": [
+          "cov::req-26307b78cb::standard"
+        ]
+      }
+    },
+    {
+      "code": "benchmark_contract_defect",
+      "coverageRef": "cov::req-26307b78cb::standard",
+      "defectCode": "missing_required_story_field",
+      "message": "Case \"Save and verify the Personal Details page opens for the created employee.\" does not exercise required field \"employee id\".",
+      "evidence": {
+        "field": "employee id",
+        "coverageRefs": [
+          "cov::req-26307b78cb::standard"
+        ]
+      }
+    },
+    {
+      "code": "benchmark_contract_defect",
+      "coverageRef": "cov::req-26307b78cb::standard",
+      "defectCode": "missing_required_story_field",
+      "message": "Case \"Save and verify the Personal Details page opens for the created employee. required field validation\" does not exercise required field \"employee id\".",
+      "evidence": {
+        "field": "employee id",
+        "coverageRefs": [
+          "cov::req-26307b78cb::standard"
+        ]
+      }
+    },
+    {
+      "code": "benchmark_contract_defect",
+      "coverageRef": "cov::req-7bd76ad38e::standard",
+      "defectCode": "weak_oracle",
+      "message": "Case \"Navigate to OrangeHRM Login Page and Verify UI\" is missing required business oracle \"url\".",
+      "evidence": {
+        "requiredOracle": {
+          "kind": "url",
+          "target": "url"
+        },
+        "coverageRefs": [
+          "cov::req-7bd76ad38e::standard"
+        ]
+      }
+    },
+    {
+      "code": "benchmark_contract_defect",
+      "coverageRef": "cov::req-7bd76ad38e::standard",
+      "defectCode": "weak_oracle",
+      "message": "Final step \"case_step_7\" has a weak or missing oracle.",
+      "evidence": {
+        "expected": "{{expected_login_heading_text}}"
+      }
+    },
+    {
+      "code": "benchmark_contract_defect",
+      "coverageRef": "cov::req-7bd76ad38e::standard",
+      "defectCode": "missing_required_story_field",
+      "message": "Case \"Navigate to OrangeHRM Login Page and Verify UI\" does not exercise required field \"username\".",
+      "evidence": {
+        "field": "username",
+        "coverageRefs": [
+          "cov::req-7bd76ad38e::standard"
+        ]
+      }
+    },
+    {
+      "code": "benchmark_contract_defect",
+      "coverageRef": "cov::req-7bd76ad38e::standard",
+      "defectCode": "missing_required_story_field",
+      "message": "Case \"Navigate to OrangeHRM Login Page and Verify UI\" does not exercise required field \"password\".",
+      "evidence": {
+        "field": "password",
+        "coverageRefs": [
+          "cov::req-7bd76ad38e::standard"
+        ]
+      }
+    }
+  ],
+  "regressionDetectionResults": [
+    {
+      "id": "double-encoded-steps",
+      "ok": true,
+      "expectedDefectCodes": [
+        "double_encoded_steps"
+      ],
+      "actualDefectCodes": [
+        "double_encoded_steps",
+        "missing_structured_oracle",
+        "weak_oracle"
+      ],
+      "missingDefectCodes": []
+    },
+    {
+      "id": "generic-weak-oracle",
+      "ok": true,
+      "expectedDefectCodes": [
+        "weak_oracle"
+      ],
+      "actualDefectCodes": [
+        "missing_structured_oracle",
+        "weak_oracle"
+      ],
+      "missingDefectCodes": []
+    },
+    {
+      "id": "verify-kind-none",
+      "ok": true,
+      "expectedDefectCodes": [
+        "verify_kind_none"
+      ],
+      "actualDefectCodes": [
+        "missing_structured_oracle",
+        "verify_kind_none"
+      ],
+      "missingDefectCodes": []
+    },
+    {
+      "id": "login-business-token-collision",
+      "ok": true,
+      "expectedDefectCodes": [
+        "token_collision"
+      ],
+      "actualDefectCodes": [
+        "missing_required_story_field",
+        "missing_structured_oracle",
+        "token_collision",
+        "weak_oracle"
+      ],
+      "missingDefectCodes": []
+    },
+    {
+      "id": "missing-row-execution-plan",
+      "ok": true,
+      "expectedDefectCodes": [
+        "missing_row_execution_plan"
+      ],
+      "actualDefectCodes": [
+        "missing_data_lineage",
+        "missing_row_execution_plan"
+      ],
+      "missingDefectCodes": []
+    }
+  ],
+  "fixtureResults": [
+    {
+      "fixture": "admin-search.expected.json",
+      "benchmarkId": "orangehrm-admin-search",
+      "pass": false,
+      "missingCoverageRefs": [],
+      "missingRequiredFields": [],
+      "missingOracles": [
+        {
+          "code": "benchmark_missing_required_oracle",
+          "coverageRef": "cov::req-cfb62c0008::standard",
+          "oracle": {
+            "kind": "text",
+            "target": "Result row"
+          },
+          "message": "Required oracle text:Result row is missing for \"cov::req-cfb62c0008::standard\"."
+        }
+      ],
+      "missingRowIntents": [
+        {
+          "code": "benchmark_missing_row_intent",
+          "coverageRef": "cov::req-cfb62c0008::standard",
+          "intent": "positive",
+          "message": "Required data row intent \"positive\" is missing for \"cov::req-cfb62c0008::standard\"."
+        }
+      ],
+      "contractDefects": [
+        {
+          "code": "benchmark_contract_defect",
+          "coverageRef": "cov::req-cfb62c0008::standard",
+          "defectCode": "weak_oracle",
+          "message": "Case \"US-OHRM-003: Admin user search finds enabled Admin users and supports filters\" is missing required business oracle \"Result row\".",
+          "evidence": {
+            "requiredOracle": {
+              "kind": "text",
+              "target": "Result row"
+            },
+            "coverageRefs": [
+              "cov::req-cfb62c0008::standard"
+            ]
+          }
+        },
+        {
+          "code": "benchmark_contract_defect",
+          "coverageRef": "cov::req-cfb62c0008::standard",
+          "defectCode": "weak_oracle",
+          "message": "Case \"US-OHRM-003: Admin user search finds enabled Admin users and supports filters no matching result\" is missing required business oracle \"Result row\".",
+          "evidence": {
+            "requiredOracle": {
+              "kind": "text",
+              "target": "Result row"
+            },
+            "coverageRefs": [
+              "cov::req-cfb62c0008::standard"
+            ]
+          }
+        }
+      ],
+      "failures": [
+        {
+          "code": "benchmark_missing_required_oracle",
+          "coverageRef": "cov::req-cfb62c0008::standard",
+          "oracle": {
+            "kind": "text",
+            "target": "Result row"
+          },
+          "message": "Required oracle text:Result row is missing for \"cov::req-cfb62c0008::standard\"."
+        },
+        {
+          "code": "benchmark_missing_row_intent",
+          "coverageRef": "cov::req-cfb62c0008::standard",
+          "intent": "positive",
+          "message": "Required data row intent \"positive\" is missing for \"cov::req-cfb62c0008::standard\"."
+        },
+        {
+          "code": "benchmark_contract_defect",
+          "coverageRef": "cov::req-cfb62c0008::standard",
+          "defectCode": "weak_oracle",
+          "message": "Case \"US-OHRM-003: Admin user search finds enabled Admin users and supports filters\" is missing required business oracle \"Result row\".",
+          "evidence": {
+            "requiredOracle": {
+              "kind": "text",
+              "target": "Result row"
+            },
+            "coverageRefs": [
+              "cov::req-cfb62c0008::standard"
+            ]
+          }
+        },
+        {
+          "code": "benchmark_contract_defect",
+          "coverageRef": "cov::req-cfb62c0008::standard",
+          "defectCode": "weak_oracle",
+          "message": "Case \"US-OHRM-003: Admin user search finds enabled Admin users and supports filters no matching result\" is missing required business oracle \"Result row\".",
+          "evidence": {
+            "requiredOracle": {
+              "kind": "text",
+              "target": "Result row"
+            },
+            "coverageRefs": [
+              "cov::req-cfb62c0008::standard"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "fixture": "claim-validation.expected.json",
+      "benchmarkId": "orangehrm-claim-validation",
+      "pass": false,
+      "missingCoverageRefs": [],
+      "missingRequiredFields": [],
+      "missingOracles": [
+        {
+          "code": "benchmark_missing_required_oracle",
+          "coverageRef": "adv::req-76681f5c3a::leave-assignrequests",
+          "oracle": {
+            "kind": "validation_message",
+            "target": "Claim validation message"
+          },
+          "message": "Required oracle validation_message:Claim validation message is missing for \"adv::req-76681f5c3a::leave-assignrequests\"."
+        }
+      ],
+      "missingRowIntents": [],
+      "contractDefects": [],
+      "failures": [
+        {
+          "code": "benchmark_missing_required_oracle",
+          "coverageRef": "adv::req-76681f5c3a::leave-assignrequests",
+          "oracle": {
+            "kind": "validation_message",
+            "target": "Claim validation message"
+          },
+          "message": "Required oracle validation_message:Claim validation message is missing for \"adv::req-76681f5c3a::leave-assignrequests\"."
+        }
+      ]
+    },
+    {
+      "fixture": "data-binding.expected.json",
+      "benchmarkId": "orangehrm-data-binding",
+      "pass": false,
+      "missingCoverageRefs": [],
+      "missingRequiredFields": [
+        {
+          "code": "benchmark_missing_required_field",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "field": "first name",
+          "message": "Required field \"first name\" is not exercised for \"cov::req-26307b78cb::standard\"."
+        },
+        {
+          "code": "benchmark_missing_required_field",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "field": "middle name",
+          "message": "Required field \"middle name\" is not exercised for \"cov::req-26307b78cb::standard\"."
+        },
+        {
+          "code": "benchmark_missing_required_field",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "field": "last name",
+          "message": "Required field \"last name\" is not exercised for \"cov::req-26307b78cb::standard\"."
+        },
+        {
+          "code": "benchmark_missing_required_field",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "field": "employee id",
+          "message": "Required field \"employee id\" is not exercised for \"cov::req-26307b78cb::standard\"."
+        }
+      ],
+      "missingOracles": [],
+      "missingRowIntents": [
+        {
+          "code": "benchmark_missing_row_intent",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "intent": "positive",
+          "message": "Required data row intent \"positive\" is missing for \"cov::req-26307b78cb::standard\"."
+        }
+      ],
+      "contractDefects": [
+        {
+          "code": "benchmark_contract_defect",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "defectCode": "missing_required_story_field",
+          "message": "Case \"Save and verify the Personal Details page opens for the created employee.\" does not exercise required field \"first name\".",
+          "evidence": {
+            "field": "first name",
+            "coverageRefs": [
+              "cov::req-26307b78cb::standard"
+            ]
+          }
+        },
+        {
+          "code": "benchmark_contract_defect",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "defectCode": "missing_required_story_field",
+          "message": "Case \"Save and verify the Personal Details page opens for the created employee.\" does not exercise required field \"middle name\".",
+          "evidence": {
+            "field": "middle name",
+            "coverageRefs": [
+              "cov::req-26307b78cb::standard"
+            ]
+          }
+        },
+        {
+          "code": "benchmark_contract_defect",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "defectCode": "missing_required_story_field",
+          "message": "Case \"Save and verify the Personal Details page opens for the created employee.\" does not exercise required field \"last name\".",
+          "evidence": {
+            "field": "last name",
+            "coverageRefs": [
+              "cov::req-26307b78cb::standard"
+            ]
+          }
+        },
+        {
+          "code": "benchmark_contract_defect",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "defectCode": "missing_required_story_field",
+          "message": "Case \"Save and verify the Personal Details page opens for the created employee.\" does not exercise required field \"employee id\".",
+          "evidence": {
+            "field": "employee id",
+            "coverageRefs": [
+              "cov::req-26307b78cb::standard"
+            ]
+          }
+        },
+        {
+          "code": "benchmark_contract_defect",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "defectCode": "missing_required_story_field",
+          "message": "Case \"Save and verify the Personal Details page opens for the created employee. required field validation\" does not exercise required field \"first name\".",
+          "evidence": {
+            "field": "first name",
+            "coverageRefs": [
+              "cov::req-26307b78cb::standard"
+            ]
+          }
+        },
+        {
+          "code": "benchmark_contract_defect",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "defectCode": "missing_required_story_field",
+          "message": "Case \"Save and verify the Personal Details page opens for the created employee. required field validation\" does not exercise required field \"middle name\".",
+          "evidence": {
+            "field": "middle name",
+            "coverageRefs": [
+              "cov::req-26307b78cb::standard"
+            ]
+          }
+        },
+        {
+          "code": "benchmark_contract_defect",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "defectCode": "missing_required_story_field",
+          "message": "Case \"Save and verify the Personal Details page opens for the created employee. required field validation\" does not exercise required field \"last name\".",
+          "evidence": {
+            "field": "last name",
+            "coverageRefs": [
+              "cov::req-26307b78cb::standard"
+            ]
+          }
+        },
+        {
+          "code": "benchmark_contract_defect",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "defectCode": "missing_required_story_field",
+          "message": "Case \"Save and verify the Personal Details page opens for the created employee. required field validation\" does not exercise required field \"employee id\".",
+          "evidence": {
+            "field": "employee id",
+            "coverageRefs": [
+              "cov::req-26307b78cb::standard"
+            ]
+          }
+        }
+      ],
+      "failures": [
+        {
+          "code": "benchmark_missing_required_field",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "field": "first name",
+          "message": "Required field \"first name\" is not exercised for \"cov::req-26307b78cb::standard\"."
+        },
+        {
+          "code": "benchmark_missing_required_field",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "field": "middle name",
+          "message": "Required field \"middle name\" is not exercised for \"cov::req-26307b78cb::standard\"."
+        },
+        {
+          "code": "benchmark_missing_required_field",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "field": "last name",
+          "message": "Required field \"last name\" is not exercised for \"cov::req-26307b78cb::standard\"."
+        },
+        {
+          "code": "benchmark_missing_required_field",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "field": "employee id",
+          "message": "Required field \"employee id\" is not exercised for \"cov::req-26307b78cb::standard\"."
+        },
+        {
+          "code": "benchmark_missing_row_intent",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "intent": "positive",
+          "message": "Required data row intent \"positive\" is missing for \"cov::req-26307b78cb::standard\"."
+        },
+        {
+          "code": "benchmark_contract_defect",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "defectCode": "missing_required_story_field",
+          "message": "Case \"Save and verify the Personal Details page opens for the created employee.\" does not exercise required field \"first name\".",
+          "evidence": {
+            "field": "first name",
+            "coverageRefs": [
+              "cov::req-26307b78cb::standard"
+            ]
+          }
+        },
+        {
+          "code": "benchmark_contract_defect",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "defectCode": "missing_required_story_field",
+          "message": "Case \"Save and verify the Personal Details page opens for the created employee.\" does not exercise required field \"middle name\".",
+          "evidence": {
+            "field": "middle name",
+            "coverageRefs": [
+              "cov::req-26307b78cb::standard"
+            ]
+          }
+        },
+        {
+          "code": "benchmark_contract_defect",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "defectCode": "missing_required_story_field",
+          "message": "Case \"Save and verify the Personal Details page opens for the created employee.\" does not exercise required field \"last name\".",
+          "evidence": {
+            "field": "last name",
+            "coverageRefs": [
+              "cov::req-26307b78cb::standard"
+            ]
+          }
+        },
+        {
+          "code": "benchmark_contract_defect",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "defectCode": "missing_required_story_field",
+          "message": "Case \"Save and verify the Personal Details page opens for the created employee.\" does not exercise required field \"employee id\".",
+          "evidence": {
+            "field": "employee id",
+            "coverageRefs": [
+              "cov::req-26307b78cb::standard"
+            ]
+          }
+        },
+        {
+          "code": "benchmark_contract_defect",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "defectCode": "missing_required_story_field",
+          "message": "Case \"Save and verify the Personal Details page opens for the created employee. required field validation\" does not exercise required field \"first name\".",
+          "evidence": {
+            "field": "first name",
+            "coverageRefs": [
+              "cov::req-26307b78cb::standard"
+            ]
+          }
+        },
+        {
+          "code": "benchmark_contract_defect",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "defectCode": "missing_required_story_field",
+          "message": "Case \"Save and verify the Personal Details page opens for the created employee. required field validation\" does not exercise required field \"middle name\".",
+          "evidence": {
+            "field": "middle name",
+            "coverageRefs": [
+              "cov::req-26307b78cb::standard"
+            ]
+          }
+        },
+        {
+          "code": "benchmark_contract_defect",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "defectCode": "missing_required_story_field",
+          "message": "Case \"Save and verify the Personal Details page opens for the created employee. required field validation\" does not exercise required field \"last name\".",
+          "evidence": {
+            "field": "last name",
+            "coverageRefs": [
+              "cov::req-26307b78cb::standard"
+            ]
+          }
+        },
+        {
+          "code": "benchmark_contract_defect",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "defectCode": "missing_required_story_field",
+          "message": "Case \"Save and verify the Personal Details page opens for the created employee. required field validation\" does not exercise required field \"employee id\".",
+          "evidence": {
+            "field": "employee id",
+            "coverageRefs": [
+              "cov::req-26307b78cb::standard"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "fixture": "multi-row.expected.json",
+      "benchmarkId": "orangehrm-multi-row",
+      "pass": false,
+      "missingCoverageRefs": [],
+      "missingRequiredFields": [
+        {
+          "code": "benchmark_missing_required_field",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "field": "employee id",
+          "message": "Required field \"employee id\" is not exercised for \"cov::req-26307b78cb::standard\"."
+        }
+      ],
+      "missingOracles": [],
+      "missingRowIntents": [
+        {
+          "code": "benchmark_missing_row_intent",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "intent": "positive",
+          "message": "Required data row intent \"positive\" is missing for \"cov::req-26307b78cb::standard\"."
+        },
+        {
+          "code": "benchmark_missing_row_intent",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "intent": "boundary",
+          "message": "Required data row intent \"boundary\" is missing for \"cov::req-26307b78cb::standard\"."
+        }
+      ],
+      "contractDefects": [
+        {
+          "code": "benchmark_contract_defect",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "defectCode": "missing_required_story_field",
+          "message": "Case \"Save and verify the Personal Details page opens for the created employee.\" does not exercise required field \"employee id\".",
+          "evidence": {
+            "field": "employee id",
+            "coverageRefs": [
+              "cov::req-26307b78cb::standard"
+            ]
+          }
+        },
+        {
+          "code": "benchmark_contract_defect",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "defectCode": "missing_required_story_field",
+          "message": "Case \"Save and verify the Personal Details page opens for the created employee. required field validation\" does not exercise required field \"employee id\".",
+          "evidence": {
+            "field": "employee id",
+            "coverageRefs": [
+              "cov::req-26307b78cb::standard"
+            ]
+          }
+        }
+      ],
+      "failures": [
+        {
+          "code": "benchmark_missing_required_field",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "field": "employee id",
+          "message": "Required field \"employee id\" is not exercised for \"cov::req-26307b78cb::standard\"."
+        },
+        {
+          "code": "benchmark_missing_row_intent",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "intent": "positive",
+          "message": "Required data row intent \"positive\" is missing for \"cov::req-26307b78cb::standard\"."
+        },
+        {
+          "code": "benchmark_missing_row_intent",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "intent": "boundary",
+          "message": "Required data row intent \"boundary\" is missing for \"cov::req-26307b78cb::standard\"."
+        },
+        {
+          "code": "benchmark_contract_defect",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "defectCode": "missing_required_story_field",
+          "message": "Case \"Save and verify the Personal Details page opens for the created employee.\" does not exercise required field \"employee id\".",
+          "evidence": {
+            "field": "employee id",
+            "coverageRefs": [
+              "cov::req-26307b78cb::standard"
+            ]
+          }
+        },
+        {
+          "code": "benchmark_contract_defect",
+          "coverageRef": "cov::req-26307b78cb::standard",
+          "defectCode": "missing_required_story_field",
+          "message": "Case \"Save and verify the Personal Details page opens for the created employee. required field validation\" does not exercise required field \"employee id\".",
+          "evidence": {
+            "field": "employee id",
+            "coverageRefs": [
+              "cov::req-26307b78cb::standard"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "fixture": "execution-readiness.expected.json",
+      "benchmarkId": "orangehrm-execution-readiness",
+      "pass": false,
+      "missingCoverageRefs": [],
+      "missingRequiredFields": [
+        {
+          "code": "benchmark_missing_required_field",
+          "coverageRef": "cov::req-7bd76ad38e::standard",
+          "field": "username",
+          "message": "Required field \"username\" is not exercised for \"cov::req-7bd76ad38e::standard\"."
+        },
+        {
+          "code": "benchmark_missing_required_field",
+          "coverageRef": "cov::req-7bd76ad38e::standard",
+          "field": "password",
+          "message": "Required field \"password\" is not exercised for \"cov::req-7bd76ad38e::standard\"."
+        }
+      ],
+      "missingOracles": [
+        {
+          "code": "benchmark_missing_required_oracle",
+          "coverageRef": "cov::req-7bd76ad38e::standard",
+          "oracle": {
+            "kind": "url",
+            "target": "url"
+          },
+          "message": "Required oracle url:url is missing for \"cov::req-7bd76ad38e::standard\"."
+        }
+      ],
+      "missingRowIntents": [
+        {
+          "code": "benchmark_missing_row_intent",
+          "coverageRef": "cov::req-7bd76ad38e::standard",
+          "intent": "positive",
+          "message": "Required data row intent \"positive\" is missing for \"cov::req-7bd76ad38e::standard\"."
+        }
+      ],
+      "contractDefects": [
+        {
+          "code": "benchmark_contract_defect",
+          "coverageRef": "cov::req-7bd76ad38e::standard",
+          "defectCode": "weak_oracle",
+          "message": "Case \"Navigate to OrangeHRM Login Page and Verify UI\" is missing required business oracle \"url\".",
+          "evidence": {
+            "requiredOracle": {
+              "kind": "url",
+              "target": "url"
+            },
+            "coverageRefs": [
+              "cov::req-7bd76ad38e::standard"
+            ]
+          }
+        },
+        {
+          "code": "benchmark_contract_defect",
+          "coverageRef": "cov::req-7bd76ad38e::standard",
+          "defectCode": "weak_oracle",
+          "message": "Final step \"case_step_7\" has a weak or missing oracle.",
+          "evidence": {
+            "expected": "{{expected_login_heading_text}}"
+          }
+        },
+        {
+          "code": "benchmark_contract_defect",
+          "coverageRef": "cov::req-7bd76ad38e::standard",
+          "defectCode": "missing_required_story_field",
+          "message": "Case \"Navigate to OrangeHRM Login Page and Verify UI\" does not exercise required field \"username\".",
+          "evidence": {
+            "field": "username",
+            "coverageRefs": [
+              "cov::req-7bd76ad38e::standard"
+            ]
+          }
+        },
+        {
+          "code": "benchmark_contract_defect",
+          "coverageRef": "cov::req-7bd76ad38e::standard",
+          "defectCode": "missing_required_story_field",
+          "message": "Case \"Navigate to OrangeHRM Login Page and Verify UI\" does not exercise required field \"password\".",
+          "evidence": {
+            "field": "password",
+            "coverageRefs": [
+              "cov::req-7bd76ad38e::standard"
+            ]
+          }
+        }
+      ],
+      "failures": [
+        {
+          "code": "benchmark_missing_required_field",
+          "coverageRef": "cov::req-7bd76ad38e::standard",
+          "field": "username",
+          "message": "Required field \"username\" is not exercised for \"cov::req-7bd76ad38e::standard\"."
+        },
+        {
+          "code": "benchmark_missing_required_field",
+          "coverageRef": "cov::req-7bd76ad38e::standard",
+          "field": "password",
+          "message": "Required field \"password\" is not exercised for \"cov::req-7bd76ad38e::standard\"."
+        },
+        {
+          "code": "benchmark_missing_required_oracle",
+          "coverageRef": "cov::req-7bd76ad38e::standard",
+          "oracle": {
+            "kind": "url",
+            "target": "url"
+          },
+          "message": "Required oracle url:url is missing for \"cov::req-7bd76ad38e::standard\"."
+        },
+        {
+          "code": "benchmark_missing_row_intent",
+          "coverageRef": "cov::req-7bd76ad38e::standard",
+          "intent": "positive",
+          "message": "Required data row intent \"positive\" is missing for \"cov::req-7bd76ad38e::standard\"."
+        },
+        {
+          "code": "benchmark_contract_defect",
+          "coverageRef": "cov::req-7bd76ad38e::standard",
+          "defectCode": "weak_oracle",
+          "message": "Case \"Navigate to OrangeHRM Login Page and Verify UI\" is missing required business oracle \"url\".",
+          "evidence": {
+            "requiredOracle": {
+              "kind": "url",
+              "target": "url"
+            },
+            "coverageRefs": [
+              "cov::req-7bd76ad38e::standard"
+            ]
+          }
+        },
+        {
+          "code": "benchmark_contract_defect",
+          "coverageRef": "cov::req-7bd76ad38e::standard",
+          "defectCode": "weak_oracle",
+          "message": "Final step \"case_step_7\" has a weak or missing oracle.",
+          "evidence": {
+            "expected": "{{expected_login_heading_text}}"
+          }
+        },
+        {
+          "code": "benchmark_contract_defect",
+          "coverageRef": "cov::req-7bd76ad38e::standard",
+          "defectCode": "missing_required_story_field",
+          "message": "Case \"Navigate to OrangeHRM Login Page and Verify UI\" does not exercise required field \"username\".",
+          "evidence": {
+            "field": "username",
+            "coverageRefs": [
+              "cov::req-7bd76ad38e::standard"
+            ]
+          }
+        },
+        {
+          "code": "benchmark_contract_defect",
+          "coverageRef": "cov::req-7bd76ad38e::standard",
+          "defectCode": "missing_required_story_field",
+          "message": "Case \"Navigate to OrangeHRM Login Page and Verify UI\" does not exercise required field \"password\".",
+          "evidence": {
+            "field": "password",
+            "coverageRefs": [
+              "cov::req-7bd76ad38e::standard"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "fixturesLoaded": [
+    "admin-search.expected.json",
+    "claim-validation.expected.json",
+    "data-binding.expected.json",
+    "multi-row.expected.json",
+    "execution-readiness.expected.json",
+    "negative-regressions.expected.json"
+  ]
+}

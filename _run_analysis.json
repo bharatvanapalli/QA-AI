@@ -1,0 +1,503 @@
+{
+  "RUN_ID": "5f7d4e52-2a5f-443e-99b1-e99b56f4b144",
+  "runStatus": "cancelled",
+  "tally": {
+    "memoryReused": 0,
+    "liveRefDispatch": 0,
+    "verifiedSnapshot": 0,
+    "codegenExcavated": 0,
+    "quarantined": 0
+  },
+  "reusedElements": [],
+  "checkpointFlips": [
+    {
+      "stepIndex": 2,
+      "sequence": [
+        "pass",
+        "fail",
+        "fail",
+        "pass",
+        "fail",
+        "pass",
+        "pass",
+        "pass",
+        "pass"
+      ]
+    },
+    {
+      "stepIndex": 3,
+      "sequence": [
+        "pass",
+        "blocked",
+        "pass",
+        "pass",
+        "pass",
+        "pass",
+        "pass"
+      ]
+    },
+    {
+      "stepIndex": 4,
+      "sequence": [
+        "fail",
+        "blocked",
+        "pass",
+        "pass",
+        "pass"
+      ]
+    },
+    {
+      "stepIndex": 5,
+      "sequence": [
+        "blocked",
+        "blocked",
+        "pass"
+      ]
+    }
+  ],
+  "completeStatusByStep": {
+    "1": [
+      "pass",
+      "pass",
+      "pass",
+      "pass",
+      "pass",
+      "pass",
+      "pass"
+    ],
+    "2": [
+      "pass",
+      "fail",
+      "fail",
+      "pass",
+      "fail",
+      "pass",
+      "pass",
+      "pass",
+      "pass"
+    ],
+    "3": [
+      "pass",
+      "blocked",
+      "pass",
+      "pass",
+      "pass",
+      "pass",
+      "pass"
+    ],
+    "4": [
+      "fail",
+      "blocked",
+      "pass",
+      "pass",
+      "pass"
+    ],
+    "5": [
+      "blocked",
+      "blocked",
+      "pass"
+    ]
+  },
+  "irReport": [
+    {
+      "runResultId": "f52f9ac6-8b26-4a1d-a9f8-634e41f062d9",
+      "status": "blocked",
+      "complete": false,
+      "stepCount": 15,
+      "resolveCount": 4,
+      "gapCount": 2,
+      "gapCodes": [
+        "assertion_contract_defect",
+        "locator_gap"
+      ],
+      "sources": {
+        "gold": 4,
+        "exportSafeUnverified": 0,
+        "none": 0
+      },
+      "stepDetail": [
+        {
+          "as": "el1",
+          "label": "Username",
+          "src": "gold",
+          "expr": "getByRole(\"textbox\", { name: \"Username\" })"
+        },
+        {
+          "as": "el2",
+          "label": "Password",
+          "src": "gold",
+          "expr": "getByRole(\"textbox\", { name: \"Password\" })"
+        },
+        {
+          "as": "el3",
+          "label": "Login button",
+          "src": "gold",
+          "expr": "getByRole(\"button\", { name: \"Login\" })"
+        },
+        {
+          "as": "el4",
+          "label": "Logout menu item",
+          "src": "gold",
+          "expr": "getByRole(\"menuitem\", { name: \"Logout\" })"
+        }
+      ]
+    },
+    {
+      "runResultId": "325a89e3-05d4-418a-9705-4b473bcde80c",
+      "status": "blocked",
+      "complete": false,
+      "stepCount": 4,
+      "resolveCount": 0,
+      "gapCount": 1,
+      "gapCodes": [
+        "assertion_contract_defect"
+      ],
+      "sources": {
+        "gold": 0,
+        "exportSafeUnverified": 0,
+        "none": 0
+      },
+      "stepDetail": []
+    },
+    {
+      "runResultId": "183e4ccb-e947-4687-a22a-fa9a3987c3d7",
+      "status": "pass",
+      "complete": true,
+      "stepCount": 2,
+      "resolveCount": 0,
+      "gapCount": 0,
+      "gapCodes": [],
+      "sources": {
+        "gold": 0,
+        "exportSafeUnverified": 0,
+        "none": 0
+      },
+      "stepDetail": []
+    },
+    {
+      "runResultId": "890ab97f-adaf-441c-8a33-dbf953538061",
+      "status": "pass",
+      "complete": true,
+      "stepCount": 9,
+      "resolveCount": 3,
+      "gapCount": 0,
+      "gapCodes": [],
+      "sources": {
+        "gold": 2,
+        "exportSafeUnverified": 1,
+        "none": 0
+      },
+      "stepDetail": [
+        {
+          "as": "el1",
+          "label": "Username field",
+          "src": "gold",
+          "expr": "getByRole(\"textbox\", { name: \"Username\" })"
+        },
+        {
+          "as": "el2",
+          "label": "Password field",
+          "src": "exportSafeUnverified",
+          "expr": null
+        },
+        {
+          "as": "el3",
+          "label": "Login button",
+          "src": "gold",
+          "expr": "getByRole(\"button\", { name: \"Login\" })"
+        }
+      ]
+    },
+    {
+      "runResultId": "3cd7339d-7055-4000-b5c0-10427d03bba7",
+      "status": "pass",
+      "complete": true,
+      "stepCount": 9,
+      "resolveCount": 3,
+      "gapCount": 0,
+      "gapCodes": [],
+      "sources": {
+        "gold": 0,
+        "exportSafeUnverified": 3,
+        "none": 0
+      },
+      "stepDetail": [
+        {
+          "as": "el1",
+          "label": "Username field",
+          "src": "exportSafeUnverified",
+          "expr": null
+        },
+        {
+          "as": "el2",
+          "label": "Password field",
+          "src": "exportSafeUnverified",
+          "expr": null
+        },
+        {
+          "as": "el3",
+          "label": "Login button",
+          "src": "exportSafeUnverified",
+          "expr": null
+        }
+      ]
+    },
+    {
+      "runResultId": "2247150c-5cda-4e17-809b-8b8fa520b005",
+      "status": "pass",
+      "complete": true,
+      "stepCount": 9,
+      "resolveCount": 3,
+      "gapCount": 0,
+      "gapCodes": [],
+      "sources": {
+        "gold": 0,
+        "exportSafeUnverified": 3,
+        "none": 0
+      },
+      "stepDetail": [
+        {
+          "as": "el1",
+          "label": "Username field",
+          "src": "exportSafeUnverified",
+          "expr": null
+        },
+        {
+          "as": "el2",
+          "label": "Password field",
+          "src": "exportSafeUnverified",
+          "expr": null
+        },
+        {
+          "as": "el3",
+          "label": "Login button",
+          "src": "exportSafeUnverified",
+          "expr": null
+        }
+      ]
+    },
+    {
+      "runResultId": "d64dba2b-e629-4da6-a4bb-eb32335c85fa",
+      "status": "pass",
+      "complete": true,
+      "stepCount": 9,
+      "resolveCount": 3,
+      "gapCount": 0,
+      "gapCodes": [],
+      "sources": {
+        "gold": 0,
+        "exportSafeUnverified": 3,
+        "none": 0
+      },
+      "stepDetail": [
+        {
+          "as": "el1",
+          "label": "Username field",
+          "src": "exportSafeUnverified",
+          "expr": null
+        },
+        {
+          "as": "el2",
+          "label": "Password field",
+          "src": "exportSafeUnverified",
+          "expr": null
+        },
+        {
+          "as": "el3",
+          "label": "Login button",
+          "src": "exportSafeUnverified",
+          "expr": null
+        }
+      ]
+    },
+    {
+      "runResultId": "87e776f3-147b-474f-b94a-d8e4b1247cdd",
+      "status": "pass",
+      "complete": true,
+      "stepCount": 9,
+      "resolveCount": 3,
+      "gapCount": 0,
+      "gapCodes": [],
+      "sources": {
+        "gold": 0,
+        "exportSafeUnverified": 3,
+        "none": 0
+      },
+      "stepDetail": [
+        {
+          "as": "el1",
+          "label": "Username field",
+          "src": "exportSafeUnverified",
+          "expr": null
+        },
+        {
+          "as": "el2",
+          "label": "Password field",
+          "src": "exportSafeUnverified",
+          "expr": null
+        },
+        {
+          "as": "el3",
+          "label": "Login button",
+          "src": "exportSafeUnverified",
+          "expr": null
+        }
+      ]
+    },
+    {
+      "runResultId": "5086625c-6f26-409f-8548-84c3cdd3c2a2",
+      "status": "pass",
+      "complete": true,
+      "stepCount": 10,
+      "resolveCount": 3,
+      "gapCount": 0,
+      "gapCodes": [],
+      "sources": {
+        "gold": 0,
+        "exportSafeUnverified": 3,
+        "none": 0
+      },
+      "stepDetail": [
+        {
+          "as": "el1",
+          "label": "Username field",
+          "src": "exportSafeUnverified",
+          "expr": null
+        },
+        {
+          "as": "el2",
+          "label": "Password field",
+          "src": "exportSafeUnverified",
+          "expr": null
+        },
+        {
+          "as": "el3",
+          "label": "Login button",
+          "src": "exportSafeUnverified",
+          "expr": null
+        }
+      ]
+    },
+    {
+      "runResultId": "92ff1e51-a334-4b6a-9501-e7640d8e59c7",
+      "status": "pass",
+      "complete": true,
+      "stepCount": 9,
+      "resolveCount": 3,
+      "gapCount": 0,
+      "gapCodes": [],
+      "sources": {
+        "gold": 0,
+        "exportSafeUnverified": 3,
+        "none": 0
+      },
+      "stepDetail": [
+        {
+          "as": "el1",
+          "label": "Username field",
+          "src": "exportSafeUnverified",
+          "expr": null
+        },
+        {
+          "as": "el2",
+          "label": "Password field",
+          "src": "exportSafeUnverified",
+          "expr": null
+        },
+        {
+          "as": "el3",
+          "label": "Login button",
+          "src": "exportSafeUnverified",
+          "expr": null
+        }
+      ]
+    },
+    {
+      "runResultId": "ea63081b-2e74-4cd0-b20c-0b1d9e43a75d",
+      "status": "pass",
+      "complete": true,
+      "stepCount": 10,
+      "resolveCount": 3,
+      "gapCount": 0,
+      "gapCodes": [],
+      "sources": {
+        "gold": 2,
+        "exportSafeUnverified": 1,
+        "none": 0
+      },
+      "stepDetail": [
+        {
+          "as": "el1",
+          "label": "Username field",
+          "src": "gold",
+          "expr": "getByRole(\"textbox\", { name: \"Username\" })"
+        },
+        {
+          "as": "el2",
+          "label": "Password field",
+          "src": "exportSafeUnverified",
+          "expr": null
+        },
+        {
+          "as": "el3",
+          "label": "Login button",
+          "src": "gold",
+          "expr": "getByRole(\"button\", { name: \"Login\" })"
+        }
+      ]
+    }
+  ],
+  "exportInfo": {
+    "ok": true,
+    "fileCount": 38,
+    "allBlocked": false,
+    "files": [
+      "package.json",
+      "playwright.config.ts",
+      "tests/support/replayir.js",
+      "utils/test-helpers.js",
+      "qaai.preflight.cjs",
+      ".env",
+      ".env.example",
+      "README.md",
+      "tests/authentication/logout-redirect-and-session-termination.spec.js",
+      "tests/data/admin-logout-redirects-to-auth-login-page.json",
+      "tests/data/post-logout-direct-navigation-to-dashboard-redirects-to-login.json",
+      "locators/generated/dashboardPage.generated.locators.js",
+      "locators/dashboardPage.locators.js",
+      "pages/DashboardPage.js",
+      "locators/generated/loginPage.generated.locators.js",
+      "locators/loginPage.locators.js",
+      "pages/LoginPage.js",
+      "evidence/locator-manifest.json",
+      "evidence/dom-atlas.json",
+      "evidence/pom-architect-report.json",
+      "evidence/certification-report.json",
+      "tests/data/orangehrm-authentication-testdata-xlsx-authprofiles.csv",
+      "tests/data/orangehrm-authentication-testdata-xlsx-formvalidation.csv",
+      "tests/data/orangehrm-authentication-testdata-xlsx-negativeauth.csv",
+      "tests/data/orangehrm-authentication-testdata-xlsx-securityauth.csv",
+      "tests/data/orangehrm-authentication-testdata-xlsx-roleaccesscontrol.csv",
+      "tests/data/orangehrm-authentication-testdata-xlsx-expectedresults.csv",
+      "tests/data/orangehrm-authentication-testdata-xlsx-readme.csv",
+      "tests/data/orangehrm-authentication-testdata-xlsx.xlsx",
+      "evidence/step-parity-report.json",
+      "evidence/contract-certification-report.json",
+      "evidence/action-authoring-ledger.json",
+      "evidence/value-binding-map.json",
+      "evidence/artifact-graph.json",
+      "evidence/target-parity-report.json",
+      "evidence/traceability-matrix.json",
+      "evidence/runtime-result-firewall.json",
+      "EXPORT_MANIFEST.json"
+    ],
+    "specFiles": [
+      "tests/authentication/logout-redirect-and-session-termination.spec.js"
+    ],
+    "pageFiles": [
+      "pages/DashboardPage.js",
+      "pages/LoginPage.js"
+    ]
+  },
+  "outputDir": "C:\\Users\\2461898\\Downloads\\qaai_fixed\\qaai_fixed\\qaai_fixed\\_run_output"
+}

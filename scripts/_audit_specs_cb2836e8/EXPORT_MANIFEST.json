@@ -1,0 +1,588 @@
+{
+  "schema": "qaai-replayir-export/1",
+  "generatedAt": "2026-06-14T07:44:02.186Z",
+  "projectId": "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+  "runId": "cb2836e8-5b06-4044-8328-a4a506d9b98c",
+  "adapterId": "playwright-reference-js",
+  "adapterVersion": "playwright-reference-js-1",
+  "allBlocked": false,
+  "packagePassed": null,
+  "entries": [
+    {
+      "runId": "cb2836e8-5b06-4044-8328-a4a506d9b98c",
+      "runResultId": "56755c4b-bfea-4ccf-9d2c-7b93859a133f",
+      "testCaseId": "6edf9a3d-6e8f-445c-808d-04f935a7f3d5",
+      "dataRowIndex": null,
+      "dataRowLabel": null,
+      "adapterId": "playwright-reference-js",
+      "adapterVersion": "playwright-reference-js-1",
+      "emitterVersion": "p6-emitter-1",
+      "irHash": "d685a4ff46010bfe8b7452b92e9b2cae3274cd9faddf6772d390fc6d7eccb232",
+      "expectedVerdict": "pass",
+      "complete": true,
+      "gaps": [],
+      "requirementRefs": [
+        "REQ-5271e574ca",
+        "REQ-422c6c3d03",
+        "REQ-7028e15f8e",
+        "REQ-34e348c4ce"
+      ],
+      "authProfile": null,
+      "dataBinding": null,
+      "dataRowsUsed": false,
+      "files": [],
+      "validationFindings": [
+        {
+          "rule": "replayir_no_replayable_locator",
+          "severity": "error",
+          "stepIndex": 1,
+          "message": "resolve 'el1' has no replayable locator candidates after normalization."
+        }
+      ],
+      "fileHashes": {},
+      "status": "blocked",
+      "blockReason": "replayir_locator_unreplayable"
+    },
+    {
+      "runId": "cb2836e8-5b06-4044-8328-a4a506d9b98c",
+      "runResultId": "7c10e3ce-0a36-476f-8772-f9d407823b51",
+      "testCaseId": "acdeaac4-5feb-4b8c-bd40-df7fc6cfdc32",
+      "dataRowIndex": null,
+      "dataRowLabel": null,
+      "adapterId": "playwright-reference-js",
+      "adapterVersion": "playwright-reference-js-1",
+      "emitterVersion": "p6-emitter-1",
+      "irHash": "56faac0c0e50cdec87f794e46bda974861860835aafe1cbdbfa7b27d89b80b3f",
+      "expectedVerdict": "pass",
+      "complete": true,
+      "gaps": [],
+      "requirementRefs": [
+        "REQ-39d1dd1b17",
+        "REQ-e5b66d704e",
+        "REQ-37bada5326"
+      ],
+      "authProfile": null,
+      "dataBinding": null,
+      "dataRowsUsed": false,
+      "files": [],
+      "validationFindings": [
+        {
+          "rule": "replayir_no_replayable_locator",
+          "severity": "error",
+          "stepIndex": 7,
+          "message": "resolve 'el4' has no replayable locator candidates after normalization."
+        }
+      ],
+      "fileHashes": {},
+      "status": "blocked",
+      "blockReason": "replayir_locator_unreplayable"
+    },
+    {
+      "runId": "cb2836e8-5b06-4044-8328-a4a506d9b98c",
+      "runResultId": "7e97f445-a616-43db-b8f5-f013184182b1",
+      "testCaseId": "a9052c9f-d49a-4140-ad63-e33184160d56",
+      "dataRowIndex": null,
+      "dataRowLabel": null,
+      "adapterId": "playwright-reference-js",
+      "adapterVersion": "playwright-reference-js-1",
+      "emitterVersion": "p6-emitter-1",
+      "irHash": "e96610cc44e969db2fe08e92a3380533c0f0aaf58a96caef862db381bc6e0844",
+      "expectedVerdict": "pass",
+      "complete": true,
+      "gaps": [],
+      "requirementRefs": [
+        "REQ-f34a68261e",
+        "REQ-12e8f4c996"
+      ],
+      "authProfile": null,
+      "dataBinding": null,
+      "dataRowsUsed": false,
+      "files": [],
+      "validationFindings": [
+        {
+          "rule": "replayir_no_replayable_locator",
+          "severity": "error",
+          "stepIndex": 1,
+          "message": "resolve 'el1' has no replayable locator candidates after normalization."
+        }
+      ],
+      "fileHashes": {},
+      "status": "blocked",
+      "blockReason": "replayir_locator_unreplayable"
+    },
+    {
+      "runId": "cb2836e8-5b06-4044-8328-a4a506d9b98c",
+      "runResultId": "230b9889-a9e7-4a39-a377-b719d51b1926",
+      "testCaseId": "cc13d9c4-862c-4243-ad7a-e348c37b9beb",
+      "dataRowIndex": 0,
+      "dataRowLabel": "Row 1 · admin",
+      "adapterId": "playwright-reference-js",
+      "adapterVersion": "playwright-reference-js-1",
+      "emitterVersion": "p6-emitter-1",
+      "irHash": "dc94425b53a99deffb3c83212637190a598db38aa4285fd26f18d516e37ff329",
+      "expectedVerdict": "pass",
+      "complete": true,
+      "gaps": [],
+      "requirementRefs": [
+        "REQ-53629bf8ff"
+      ],
+      "authProfile": null,
+      "dataBinding": {
+        "sheet": "AuthProfiles",
+        "rowSelector": "positive"
+      },
+      "dataRowsUsed": true,
+      "files": [],
+      "validationFindings": [
+        {
+          "rule": "replayir_no_replayable_locator",
+          "severity": "error",
+          "stepIndex": 7,
+          "message": "resolve 'el4' has no replayable locator candidates after normalization."
+        },
+        {
+          "rule": "replayir_no_replayable_locator",
+          "severity": "error",
+          "stepIndex": 15,
+          "message": "resolve 'el8' has no replayable locator candidates after normalization."
+        },
+        {
+          "rule": "replayir_no_replayable_locator",
+          "severity": "error",
+          "stepIndex": 27,
+          "message": "resolve 'el14' has no replayable locator candidates after normalization."
+        }
+      ],
+      "fileHashes": {},
+      "status": "blocked",
+      "blockReason": "replayir_locator_unreplayable"
+    },
+    {
+      "runId": "cb2836e8-5b06-4044-8328-a4a506d9b98c",
+      "runResultId": "3c3896d5-19f7-4802-abc7-3befe9175dfe",
+      "testCaseId": "cc13d9c4-862c-4243-ad7a-e348c37b9beb",
+      "dataRowIndex": 1,
+      "dataRowLabel": "Row 2 · ess",
+      "adapterId": "playwright-reference-js",
+      "adapterVersion": "playwright-reference-js-1",
+      "emitterVersion": "p6-emitter-1",
+      "irHash": "1f37f1927c9a8e61b5fe9b1c3a98dc96d7e4f6582421aabb56c282db52f456ed",
+      "expectedVerdict": "pass",
+      "complete": true,
+      "gaps": [],
+      "requirementRefs": [
+        "REQ-53629bf8ff"
+      ],
+      "authProfile": null,
+      "dataBinding": {
+        "sheet": "AuthProfiles",
+        "rowSelector": "positive"
+      },
+      "dataRowsUsed": true,
+      "files": [],
+      "validationFindings": [
+        {
+          "rule": "replayir_no_replayable_locator",
+          "severity": "error",
+          "stepIndex": 1,
+          "message": "resolve 'el1' has no replayable locator candidates after normalization."
+        }
+      ],
+      "fileHashes": {},
+      "status": "blocked",
+      "blockReason": "replayir_locator_unreplayable"
+    },
+    {
+      "runId": "cb2836e8-5b06-4044-8328-a4a506d9b98c",
+      "runResultId": "dd8845ce-bc5b-420a-a7c8-96e3041b20ae",
+      "testCaseId": "cc13d9c4-862c-4243-ad7a-e348c37b9beb",
+      "dataRowIndex": 2,
+      "dataRowLabel": "Row 3 · admin_logout",
+      "adapterId": "playwright-reference-js",
+      "adapterVersion": "playwright-reference-js-1",
+      "emitterVersion": "p6-emitter-1",
+      "irHash": "2220fd9da1e01c17d51684775018cc5d0794ae081a04ecf2730dcb06ce1b9737",
+      "expectedVerdict": "fail",
+      "complete": true,
+      "gaps": [],
+      "requirementRefs": [
+        "REQ-53629bf8ff"
+      ],
+      "authProfile": null,
+      "dataBinding": {
+        "sheet": "AuthProfiles",
+        "rowSelector": "positive"
+      },
+      "dataRowsUsed": true,
+      "files": [],
+      "validationFindings": [
+        {
+          "rule": "replayir_no_replayable_locator",
+          "severity": "error",
+          "stepIndex": 1,
+          "message": "resolve 'el1' has no replayable locator candidates after normalization."
+        },
+        {
+          "rule": "replayir_no_replayable_locator",
+          "severity": "error",
+          "stepIndex": 11,
+          "message": "resolve 'el6' has no replayable locator candidates after normalization."
+        }
+      ],
+      "fileHashes": {},
+      "status": "blocked",
+      "blockReason": "replayir_locator_unreplayable"
+    },
+    {
+      "runId": "cb2836e8-5b06-4044-8328-a4a506d9b98c",
+      "runResultId": "d3055a59-5866-4437-8b32-3fea27b3ebc9",
+      "testCaseId": "cc13d9c4-862c-4243-ad7a-e348c37b9beb",
+      "dataRowIndex": 3,
+      "dataRowLabel": "Row 4 · ess_logout",
+      "adapterId": "playwright-reference-js",
+      "adapterVersion": "playwright-reference-js-1",
+      "emitterVersion": "p6-emitter-1",
+      "irHash": "29e3bb0653cc5251d814d03692c5cc5b0b62b5c34f86788519d2f28d9e42d696",
+      "expectedVerdict": "fail",
+      "complete": true,
+      "gaps": [],
+      "requirementRefs": [
+        "REQ-53629bf8ff"
+      ],
+      "authProfile": null,
+      "dataBinding": {
+        "sheet": "AuthProfiles",
+        "rowSelector": "positive"
+      },
+      "dataRowsUsed": true,
+      "files": [],
+      "validationFindings": [
+        {
+          "rule": "replayir_no_replayable_locator",
+          "severity": "error",
+          "stepIndex": 7,
+          "message": "resolve 'el4' has no replayable locator candidates after normalization."
+        }
+      ],
+      "fileHashes": {},
+      "status": "blocked",
+      "blockReason": "replayir_locator_unreplayable"
+    },
+    {
+      "adapterId": "playwright-reference-js",
+      "adapterVersion": "playwright-reference-js-1",
+      "scenarioId": "ea3abd10-874d-45c4-af9c-dfbddf024e9c",
+      "scenarioName": "Admin Successful Login and Dashboard Redirect",
+      "runResultIds": [
+        "c5736791-f909-41c7-940c-22ba6ef14e65",
+        "3ea0f94a-bc74-42ff-bb6c-fb428b65bcae"
+      ],
+      "testCaseIds": [
+        "05d8b666-50eb-484c-ab00-42ceadb46d32",
+        "ea49563b-3d55-4cce-aca1-73368335ca7c"
+      ],
+      "irHashes": [
+        "cde6b23f4989a5444a0770024829b881a1abe867f791fd01804905c29de98f60",
+        "9b57654a7cfd2ecd347f0311f7c029ea57e136d5991942cf9866bc07851a8482"
+      ],
+      "expectedVerdict": "pass",
+      "complete": true,
+      "files": [
+        "tests/authentication/admin-successful-login-and-dashboard-redirect.spec.js"
+      ],
+      "fileHashes": {
+        "tests/authentication/admin-successful-login-and-dashboard-redirect.spec.js": "135e8ff4a31af7bcda6b942446f783f08a0221bcb67f0f11b3bacd7dadc08ec0"
+      },
+      "validationFindings": [],
+      "composedLoginPrecondition": false,
+      "composedLogoutPrecondition": false
+    },
+    {
+      "adapterId": "playwright-reference-js",
+      "adapterVersion": "playwright-reference-js-1",
+      "scenarioId": "e835e49b-30cf-4b5f-a183-35a9b0acec17",
+      "scenarioName": "Login Form Empty Field Validation",
+      "runResultIds": [
+        "a2b0a186-dfb1-4c8f-a3b2-ed1638d82c8b",
+        "93f05758-3dc4-4f09-a58d-d80fec81673b",
+        "ad91f9a0-824d-4607-b8b5-75180a02edc5"
+      ],
+      "testCaseIds": [
+        "2e96cee0-96b3-4ad8-a814-2a6979c935ba",
+        "d0c54826-acb2-43bf-bf3d-472b71ab2d7b",
+        "bfcb1edc-f87c-48b5-be69-ebded892d2d3"
+      ],
+      "irHashes": [
+        "43c7c55d21fc6558695db3827fea784946e4c8180fddb5525b15bb326374f6e1",
+        "ffebf2cdf93a0124f2de0b6c9d2f727fc6ad9e13ebe236f5998ece52623c7dd0",
+        "57140bb66f92a0617eaf62638658ed3c088282eb9266ab35aee85f9a78d9ab3d"
+      ],
+      "expectedVerdict": "pass",
+      "complete": true,
+      "files": [
+        "tests/authentication/login-form-empty-field-validation.spec.js"
+      ],
+      "fileHashes": {
+        "tests/authentication/login-form-empty-field-validation.spec.js": "b94fbae23e77c3a54d67c8a89378f258426080d112c8fd2f47d7b4b3728a8a33"
+      },
+      "validationFindings": [],
+      "composedLoginPrecondition": false,
+      "composedLogoutPrecondition": false
+    },
+    {
+      "adapterId": "playwright-reference-js",
+      "adapterVersion": "playwright-reference-js-1",
+      "scenarioId": "88908904-a927-4f14-9971-00e5d0b89bcd",
+      "scenarioName": "Invalid Credentials Handling",
+      "runResultIds": [
+        "901d0014-f77d-4ada-b36a-2ba5b382f577",
+        "bd7f2e13-dd2b-4c55-823f-64055346a445",
+        "c3a7e14f-bb5d-49f1-8929-cf6a97d2c90d",
+        "713465a6-371b-40f7-93fd-77bc91cb87ee"
+      ],
+      "testCaseIds": [
+        "a98261c3-fee4-42aa-bb6c-9755248f3afe",
+        "81add9c9-a722-4e2c-8810-5bb627124405",
+        "aa6f8327-a80c-4290-8122-6bd4738bdee1",
+        "17155fc7-e2f8-4438-a81a-ab12b1081608"
+      ],
+      "irHashes": [
+        "f66f7f4ac8b967991cafd4f0ee5ad8eb55fcba4082cfc5e30db6a79bd6deaf20",
+        "5de9be22e45089ce018326da910f45d21693c0fe5ef580b9c1e7b13159561b43",
+        "0592a67478cb862f5e456b37f71e6ed4665f765e4e18089b32c24811f5f5809d",
+        "32b8ee244132957dba4782ea68a08198198a60f26d53ba1dad616c20a97d5507"
+      ],
+      "expectedVerdict": "pass",
+      "complete": true,
+      "files": [
+        "tests/authentication/invalid-credentials-handling.spec.js"
+      ],
+      "fileHashes": {
+        "tests/authentication/invalid-credentials-handling.spec.js": "413099e387dfc43a9a934724fb04987dd2812bf9eb0bb188d86022479a1add06"
+      },
+      "validationFindings": [],
+      "composedLoginPrecondition": false,
+      "composedLogoutPrecondition": false
+    },
+    {
+      "adapterId": "playwright-reference-js",
+      "adapterVersion": "playwright-reference-js-1",
+      "scenarioId": "638a4031-305b-497f-9a52-615acefca5f2",
+      "scenarioName": "SQL Injection in Login Username Field",
+      "runResultIds": [
+        "b98c3912-1a0d-48e1-8659-ef73a10f8581",
+        "b2438095-e120-40e0-a949-11e7bf84962d"
+      ],
+      "testCaseIds": [
+        "d5fc5609-c9e9-4ffb-a818-030ff06d44b1",
+        "feb239e5-36d5-4e82-a359-2c56e444e149"
+      ],
+      "irHashes": [
+        "6c38fc322a9f3eaa8bc92e40107855afab8439b73342f09b36d3aa46ea9a135d",
+        "ae95890bc0d93b2cce9eecc20934e2644f2eec37c62a173169e915c60f4d6fa5"
+      ],
+      "expectedVerdict": "pass",
+      "complete": true,
+      "files": [
+        "tests/authentication/sql-injection-in-login-username-field.spec.js"
+      ],
+      "fileHashes": {
+        "tests/authentication/sql-injection-in-login-username-field.spec.js": "b1592909a235d8076e3aa02e98a1e0d5ae5ff1144cc253a85b22578284eb836f"
+      },
+      "validationFindings": [],
+      "composedLoginPrecondition": false,
+      "composedLogoutPrecondition": false
+    },
+    {
+      "adapterId": "playwright-reference-js",
+      "adapterVersion": "playwright-reference-js-1",
+      "scenarioId": "8287be64-a4b8-4b42-a65f-003ad67e8008",
+      "scenarioName": "XSS Payload in Login Username Field",
+      "runResultIds": [
+        "31b4bc29-0c82-4746-a9d0-49b8bcebc374",
+        "396f1118-9bc1-4224-92f0-cd9a366b2ab5"
+      ],
+      "testCaseIds": [
+        "f385a169-0416-4f7c-8655-68217404587a",
+        "57019e00-add1-446b-997e-3570b91c454c"
+      ],
+      "irHashes": [
+        "ece16992c02d2de34813038865094f9a75e393f934387cc49a16a467ee132652",
+        "9bbf265ad86faf3b5f4432e40aa28906fbead2c594b4cdf335c4da0fd25b1fac"
+      ],
+      "expectedVerdict": "pass",
+      "complete": true,
+      "files": [
+        "tests/authentication/xss-payload-in-login-username-field.spec.js"
+      ],
+      "fileHashes": {
+        "tests/authentication/xss-payload-in-login-username-field.spec.js": "fc3ed6d633894c5f3aea11a80955c78fa7839cf54dc2333bf2a56306dd6ab1bc"
+      },
+      "validationFindings": [],
+      "composedLoginPrecondition": false,
+      "composedLogoutPrecondition": false
+    },
+    {
+      "adapterId": "playwright-reference-js",
+      "adapterVersion": "playwright-reference-js-1",
+      "scenarioId": "f89d2895-cc9c-4672-ade8-d5fec806319f",
+      "scenarioName": "Logout and Session Termination",
+      "runResultIds": [
+        "33970f2c-5b5c-4a71-8e48-4c97f82c82f7"
+      ],
+      "testCaseIds": [
+        "5ff9362f-f107-4c25-88a3-d8f9941f3b5b"
+      ],
+      "irHashes": [
+        "34e180e5b00c0dc1e6570b6448f4a224ea68249b1205395191fbac265a5a176b"
+      ],
+      "expectedVerdict": "pass",
+      "complete": true,
+      "files": [
+        "tests/authentication/logout-and-session-termination.spec.js"
+      ],
+      "fileHashes": {
+        "tests/authentication/logout-and-session-termination.spec.js": "8f169f1b094c61999010537f2496be7cbbd56eab96c100cd89aea0f2d342f21c"
+      },
+      "validationFindings": [],
+      "composedLoginPrecondition": false,
+      "composedLogoutPrecondition": false
+    },
+    {
+      "adapterId": "playwright-reference-js",
+      "adapterVersion": "playwright-reference-js-1",
+      "scenarioId": "adf638e2-2c60-41de-a2e6-25b8fa6b46e6",
+      "scenarioName": "Admin Navigation and Role-Based Menu Visibility",
+      "runResultIds": [
+        "890bb3a1-e0c3-4375-ae95-99194a7d5dd2"
+      ],
+      "testCaseIds": [
+        "bd17af40-2454-4c79-b59e-56182471f7f4"
+      ],
+      "irHashes": [
+        "739e08bf9c5166b792f8d7242e632be4eccd86ac126159faa8e05d21918509b9"
+      ],
+      "expectedVerdict": "pass",
+      "complete": true,
+      "files": [
+        "tests/authentication/admin-navigation-and-role-based-menu-visibility.spec.js"
+      ],
+      "fileHashes": {
+        "tests/authentication/admin-navigation-and-role-based-menu-visibility.spec.js": "e16a8cbb91cf8c77f6f1295b09e3235be9ed62239cdb8f4936a7d62c9a17385b"
+      },
+      "validationFindings": [],
+      "composedLoginPrecondition": false,
+      "composedLogoutPrecondition": false
+    },
+    {
+      "adapterId": "playwright-reference-js",
+      "adapterVersion": "playwright-reference-js-1",
+      "scenarioId": "be0b8b65-62f1-487e-888b-7abd49f8e1fb",
+      "scenarioName": "Password Field Masking",
+      "runResultIds": [
+        "da5ce46b-5bed-4137-9aab-3486f15b91a7"
+      ],
+      "testCaseIds": [
+        "1e499e53-f41d-435f-ae5c-b1d7f2743234"
+      ],
+      "irHashes": [
+        "e5916111398d82c5b35b5c4b2170b229957625a0880217b5d5e967d7367106a2"
+      ],
+      "expectedVerdict": "pass",
+      "complete": true,
+      "files": [
+        "tests/authentication/password-field-masking.spec.js"
+      ],
+      "fileHashes": {
+        "tests/authentication/password-field-masking.spec.js": "61c5e59a0b2a49d028efa9ce79c58c5ffcfd5b0575f577a72b3daf0550e93219"
+      },
+      "validationFindings": [],
+      "composedLoginPrecondition": false,
+      "composedLogoutPrecondition": false
+    },
+    {
+      "adapterId": "playwright-reference-js",
+      "adapterVersion": "playwright-reference-js-1",
+      "scenarioId": "e42ca97c-85f4-4918-b1b8-055f416e170f",
+      "scenarioName": "Account Lockout After Repeated Failed Attempts",
+      "runResultIds": [
+        "d367257f-0472-49f9-83c7-5350bb50e629"
+      ],
+      "testCaseIds": [
+        "411f5c0d-0022-4173-80cc-39d1f5261fee"
+      ],
+      "irHashes": [
+        "7890bb6374dbb419069700571afd02490820d39b68a2cc133bcc5317ffac35ab"
+      ],
+      "expectedVerdict": "pass",
+      "complete": true,
+      "files": [
+        "tests/authentication/account-lockout-after-repeated-failed-attempts.spec.js"
+      ],
+      "fileHashes": {
+        "tests/authentication/account-lockout-after-repeated-failed-attempts.spec.js": "d8a0c14ddac6ca732105c5ff5412544bf3245cb040b3d4ffd49ea44b92851731"
+      },
+      "validationFindings": [],
+      "composedLoginPrecondition": false,
+      "composedLogoutPrecondition": false
+    },
+    {
+      "adapterId": "playwright-reference-js",
+      "adapterVersion": "playwright-reference-js-1",
+      "scenarioId": "433e1113-0571-4dfa-9aae-0bf4da280205",
+      "scenarioName": "Login Form Security — No Sensitive Information Exposure",
+      "runResultIds": [
+        "ae7085ba-19ce-4706-9095-da7c3679fd38",
+        "ddbac346-3e78-4016-9a5e-cfc6e63560ff"
+      ],
+      "testCaseIds": [
+        "8807fa48-d0b2-45c2-a175-9731e3f4f749",
+        "57b5394e-2a55-4f03-a256-f610f351afcd"
+      ],
+      "irHashes": [
+        "eeed194244f6c1386ed48fd0c6468bd313826a8c2c8d09bf4cdd2d5b4d7aff09",
+        "1e6a00e495e1080f23d61f117ec064d54bcc05bfe9df4fa6c2f07464ec7db660"
+      ],
+      "expectedVerdict": "pass",
+      "complete": true,
+      "files": [
+        "tests/authentication/login-form-security-no-sensitive-information-exposure.spec.js"
+      ],
+      "fileHashes": {
+        "tests/authentication/login-form-security-no-sensitive-information-exposure.spec.js": "d5d010ecc4aa0f712213e3a1614555ab9f37ab2777dc3187430efdf767171799"
+      },
+      "validationFindings": [],
+      "composedLoginPrecondition": false,
+      "composedLogoutPrecondition": false
+    },
+    {
+      "adapterId": "playwright-reference-js",
+      "adapterVersion": "playwright-reference-js-1",
+      "scenarioId": "6d82ac86-2172-43c3-bd86-5619048be11f",
+      "scenarioName": "Admin Session Persistence Across Page Navigations",
+      "runResultIds": [
+        "8970c622-f207-4c5b-88a7-20fffbb7f171"
+      ],
+      "testCaseIds": [
+        "c7ff92c6-252b-4e50-b420-bf6afa48e8ea"
+      ],
+      "irHashes": [
+        "d14a67149c9ca9041b4e07023f9dd4d2d0735e71e50d90d2fb7fe61474724af4"
+      ],
+      "expectedVerdict": "pass",
+      "complete": true,
+      "files": [
+        "tests/authentication/admin-session-persistence-across-page-navigations.spec.js"
+      ],
+      "fileHashes": {
+        "tests/authentication/admin-session-persistence-across-page-navigations.spec.js": "9d80331704a5d3457f68b753519390d26d82836d8c72196436b322715c4c50fd"
+      },
+      "validationFindings": [],
+      "composedLoginPrecondition": false,
+      "composedLogoutPrecondition": false
+    }
+  ],
+  "validation": null,
+  "secretFindings": [],
+  "exportValid": false
+}

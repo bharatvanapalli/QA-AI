@@ -14,6 +14,7 @@ export default function useDirtyForm(initial) {
   const baselineRef = useRef({ ...initial });
   const [values, setValues] = useState({ ...initial });
   const [errors, setErrors] = useState({});
+  const [baselineVersion, setBaselineVersion] = useState(0);
 
   const set = useCallback((key, value) => {
     setValues((prev) => ({ ...prev, [key]: value }));
@@ -44,6 +45,7 @@ export default function useDirtyForm(initial) {
       baselineRef.current = next ? { ...next } : { ...values };
       if (next) setValues({ ...next });
       setErrors({});
+      setBaselineVersion((v) => v + 1);
     },
     [values]
   );
@@ -70,7 +72,8 @@ export default function useDirtyForm(initial) {
       }
     }
     return false;
-  }, [values]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [values, baselineVersion]);
 
   return { values, errors, set, setMany, setError, clearErrors, reset, commit, rebase, isDirty };
 }

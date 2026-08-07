@@ -1,0 +1,73 @@
+{
+  "fidelityPlan": "AS_IS_FIDELITY_PLAN §4 Class G Phase 3",
+  "spec": {
+    "status": "internal-error",
+    "qualityIssues": [],
+    "validation": {
+      "packagePassed": false,
+      "checked": true,
+      "skipped": false,
+      "errorCount": 1,
+      "warningCount": 0
+    },
+    "validationFindings": [
+      {
+        "rule": "step_compilation_parity_gap",
+        "severity": "error",
+        "message": "8 planned/executed step(s) could not be proven through ReplayIR and generated output.",
+        "path": "evidence/step-parity-report.json"
+      }
+    ]
+  },
+  "data": {
+    "fileCount": 15,
+    "files": [
+      "tests/data/automationexercise-productsearchfilter-testdata-xlsx-assertiondata.csv",
+      "tests/data/automationexercise-productsearchfilter-testdata-xlsx-filterdata.csv",
+      "tests/data/automationexercise-productsearchfilter-testdata-xlsx-negativefilter.csv",
+      "tests/data/automationexercise-productsearchfilter-testdata-xlsx-readme.csv",
+      "tests/data/automationexercise-productsearchfilter-testdata-xlsx.xlsx",
+      "tests/data/category-link-navigates-to-category-page-independently-of-prior-search-term.json",
+      "tests/data/clearing-search-input-restores-full-product-grid.json",
+      "tests/data/each-product-in-search-results-for-printed-contains-the-term-in-its-name.json",
+      "tests/data/search-non-existent-product-name-returns-empty-state.json",
+      "tests/data/search-printed-on-women-dress-category-page-returns-intersection.json",
+      "tests/data/search-printed-returns-products-containing-printed-in-name.json",
+      "tests/data/search-result-cards-display-product-name-and-price.json",
+      "tests/data/search-with-numeric-value-returns-matching-products.json",
+      "tests/data/special-characters-in-search-box-return-empty-state-gracefully.json",
+      "tests/data/sql-injection-string-in-search-box-is-rejected-safely.json"
+    ]
+  },
+  "locators": {
+    "locators/generated/categoryProductsPage.generated.locators.js": {
+      "status": "runnable",
+      "locatorCount": 1
+    },
+    "locators/generated/productsPage.generated.locators.js": {
+      "status": "runnable",
+      "locatorCount": 10
+    },
+    "locators/generated/rootPage.generated.locators.js": {
+      "status": "runnable",
+      "locatorCount": 1
+    }
+  },
+  "evidence": {
+    "locator-manifest.json": {
+      "status": "present",
+      "entryCount": 12
+    },
+    "locator-conflicts.json": {
+      "status": "absent",
+      "conflictCount": 0
+    },
+    "dom-atlas.json": {
+      "status": "present"
+    },
+    "pom-architect-report.json": {
+      "status": "present",
+      "methodCount": 3
+    }
+  }
+}

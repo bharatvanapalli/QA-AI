@@ -1,0 +1,78 @@
+[error] 
+Invalid `prisma.requirement.findMany()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\routes\testCases.js:599:53
+
+  596   message: 'Applying your improvement guidance.',
+  597 });
+  598 
+→ 599 const requirements = await prisma.requirement.findMany({
+        where: {
+          projectId: "f8168938-ac0a-42fe-9c30-2f820aaee9dd"
+        },
+        orderBy: {
+          createdAt: "asc",
+          ~~~~~~~~~
+      ?   id?: SortOrder,
+      ?   projectId?: SortOrder,
+      ?   sprintId?: SortOrder | SortOrderInput,
+      ?   sourceType?: SortOrder,
+      ?   sourceIdentifier?: SortOrder | SortOrderInput,
+      ?   title?: SortOrder | SortOrderInput,
+      ?   content?: SortOrder,
+      ?   category?: SortOrder,
+      ?   pulledAt?: SortOrder,
+      ?   project?: ProjectOrderByWithRelationInput
+        },
+        take: 30,
+        select: {
+          title: true,
+          category: true,
+          content: true
+        }
+      })
+
+Unknown argument `createdAt`. Available options are marked with ?. PrismaClientValidationError: 
+Invalid `prisma.requirement.findMany()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\routes\testCases.js:599:53
+
+  596   message: 'Applying your improvement guidance.',
+  597 });
+  598 
+→ 599 const requirements = await prisma.requirement.findMany({
+        where: {
+          projectId: "f8168938-ac0a-42fe-9c30-2f820aaee9dd"
+        },
+        orderBy: {
+          createdAt: "asc",
+          ~~~~~~~~~
+      ?   id?: SortOrder,
+      ?   projectId?: SortOrder,
+      ?   sprintId?: SortOrder | SortOrderInput,
+      ?   sourceType?: SortOrder,
+      ?   sourceIdentifier?: SortOrder | SortOrderInput,
+      ?   title?: SortOrder | SortOrderInput,
+      ?   content?: SortOrder,
+      ?   category?: SortOrder,
+      ?   pulledAt?: SortOrder,
+      ?   project?: ProjectOrderByWithRelationInput
+        },
+        take: 30,
+        select: {
+          title: true,
+          category: true,
+          content: true
+        }
+      })
+
+Unknown argument `createdAt`. Available options are marked with ?.
+    at wn (C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\routes\testCases.js:599:28
+[scenarios.generate user=a5d916cd-4178-4bcc-b409-c885a389e843 proj=f8168938-ac0a-42fe-9c30-2f820aaee9dd] post-persist contract verification defect counts: {
+  "coverage_owner_unknown": 2,
+  "unregistered_browser_action": 4,
+  "non_exportable_action": 2
+}

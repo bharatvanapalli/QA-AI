@@ -1,13 +1,18 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Loader2, Sparkles, GitBranch, Bot, BrainCircuit, X, CheckCircle2, AlertOctagon,
   AlertCircle, Crosshair, StopCircle, Ban,
 } from 'lucide-react';
-import { useRunStream } from '../store/runStream';
+import { useRunStream, usePipelineState } from '../store/runStream';
 import { useProject } from '../store/project';
 import { useToast } from '../lib/useToast';
 import api, { ApiError } from '../lib/apiClient';
+
+// One-shot agents: when their phase.complete fires, the whole run is done.
+// Per-case agents (Conductor / Critic / Supervisor / Healer / InstructionReader)
+// fire phase.complete per case — for those we wait for run.complete instead.
+const TERMINAL_ON_PHASE_COMPLETE = new Set(['architect', 'analyst', 'reporter']);
 
 const PHASE_META = {
   architect:  { label: 'Scenario Architect',   icon: Sparkles,     route: '/live-pipeline' },
@@ -18,6 +23,8 @@ const PHASE_META = {
   analyst:    { label: 'Document Analyst',     icon: BrainCircuit, route: '/test-cases' },
   reporter:   { label: 'Reporter',             icon: BrainCircuit, route: '/reports' },
 };
+
+const LIVE_INDICATOR_PHASES = new Set(['planner', 'conductor', 'critic', 'supervisor', 'healer', 'instructionReader']);
 
 /**
  * Compact pill that mirrors any active or recently-completed agent phase.
@@ -42,17 +49,40 @@ const PHASE_META = {
 export default function AgentRunningIndicator() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { subscribe } = useRunStream();
+  const { subscribe, latestSummary, running } = useRunStream();
+  const { pipelineState } = usePipelineState();
   const { current } = useProject();
   const toast = useToast();
-  const [phase, setPhase] = useState(null);
-  const [status, setStatus] = useState('idle');   // idle | running | cancelling | cancelled | complete | error
+
+  // Seed initial state from global pipelineState so navigating BACK to any
+  // page while a phase is running immediately shows the indicator in the right
+  // state rather than waiting for the next WS event to arrive.
+  const [phase, setPhase] = useState(() => {
+    const entry = Object.entries(pipelineState?.phaseStatus || {}).find(([p, s]) => s === 'running' && LIVE_INDICATOR_PHASES.has(p));
+    return entry ? entry[0] : null;
+  });
+  const [status, setStatus] = useState(() => {
+    const anyRunning = Object.entries(pipelineState?.phaseStatus || {}).some(([p, s]) => s === 'running' && LIVE_INDICATOR_PHASES.has(p));
+    return anyRunning ? 'running' : 'idle';
+  });   // idle | running | cancelling | cancelled | complete | error
   const [lastLog, setLastLog] = useState('');
   const [output, setOutput] = useState(null);
   const [error, setError] = useState(null);
   const [startedAt, setStartedAt] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [dismissed, setDismissed] = useState(false);
+  // Drag-to-reposition: null = default bottom-right anchor; once the operator
+  // drags the chip it becomes {left, top} absolute pixels. The chip can cover a
+  // page's own buttons, so letting it be moved anywhere is a real need.
+  const [dragPos, setDragPos] = useState(null);
+  const cardRef = useRef(null);
+  const dragOffset = useRef(null);
+  // Ref mirrors startedAt so the subscribe callback (captured once per
+  // current?.id change) reads the mutable value, not the stale closure.
+  // Previously the closure always saw startedAt=0, so every agent.phase.log
+  // event reset the timer to Date.now() — the elapsed counter showed 1–2s
+  // instead of the actual time since phase start.
+  const startedAtRef = useRef(0);
 
   // Reset state on project switch so the indicator never flips between
   // projects' phase states. Concurrent runs in two projects previously
@@ -60,44 +90,81 @@ export default function AgentRunningIndicator() {
   useEffect(() => {
     setPhase(null); setStatus('idle'); setLastLog(''); setOutput(null);
     setError(null); setStartedAt(0); setElapsed(0); setDismissed(false);
+    startedAtRef.current = 0;
   }, [current?.id]);
 
   useEffect(() => {
     const unsub = subscribe((msg) => {
-      // Project scope: many WS messages carry projectId; if it does not match
-      // the active project, ignore to prevent cross-project contamination.
-      if (msg.projectId && current?.id && msg.projectId !== current.id) return;
+      // Require a loaded project before processing any event — if current is
+      // null (page load before project fetch completes), the projectId guard
+      // below would be a no-op and every WS message would contaminate state.
+      if (!current?.id) return;
+      // Project scope: ignore events from a different project.
+      if (msg.projectId && msg.projectId !== current.id) return;
 
       if (msg.type === 'agent.phase.start') {
+        if (!LIVE_INDICATOR_PHASES.has(msg.phase)) return;
+        const now = Date.now();
+        startedAtRef.current = now;
         setPhase(msg.phase);
         setStatus('running');
         setLastLog('');
         setOutput(null);
         setError(null);
-        setStartedAt(Date.now());
+        setStartedAt(now);
         setDismissed(false);
       } else if (msg.type === 'agent.phase.log') {
+        if (msg.phase && !LIVE_INDICATOR_PHASES.has(msg.phase)) return;
         if (msg.phase) setPhase(msg.phase);
         if (msg.message) setLastLog(msg.message);
         setStatus((prev) => (prev === 'idle' ? 'running' : prev));
-        if (!startedAt) setStartedAt(Date.now());
+        // Use ref to avoid stale closure — the effect is only recreated on
+        // current?.id change, so reading `startedAt` state here would always
+        // see the initial value (0) and reset the timer on every log event.
+        if (!startedAtRef.current) {
+          const now = Date.now();
+          startedAtRef.current = now;
+          setStartedAt(now);
+        }
       } else if (msg.type === 'agent.phase.complete') {
+        if (msg.phase && !LIVE_INDICATOR_PHASES.has(msg.phase)) return;
         if (msg.phase) setPhase(msg.phase);
-        // Distinguish cancelled vs failed: the server now sets msg.cancelled:true
-        // when the abort was triggered by the user; show neutral "Cancelled"
-        // not an alarming red error pill.
+        // Distinguish cancelled vs failed: the server sets msg.cancelled=true
+        // when the abort was triggered by the user; show neutral "Cancelled".
         if (msg.cancelled || msg.error === 'cancelled') {
           setStatus('cancelled');
           setError(null);
         } else if (msg.error) {
           setStatus('error');
           setError(msg.error);
-        } else {
+        } else if (TERMINAL_ON_PHASE_COMPLETE.has(msg.phase)) {
+          // Architect / Analyst / Reporter are one-shot agents — phase.complete
+          // IS the run end. Per-case agents (conductor / critic / supervisor /
+          // healer / instructionReader) fire phase.complete per case, with
+          // more cases potentially to follow; for those we DON'T flip status
+          // here, otherwise the Terminate button blinks out between cases and
+          // operators report "I clicked stop and nothing happened". Wait for
+          // run.complete instead.
           setStatus('complete');
           setOutput(msg.output || null);
         }
+      } else if (msg.type === 'run.cancelling') {
+        // Cancel was initiated from anywhere (Theater button, /agents/cancel
+        // POST, /cancel API call) — reflect immediately. Previously the
+        // indicator stayed 'running' through the 30-60 s teardown window
+        // even though the cancel was already in flight.
+        setStatus((prev) => (prev === 'running' || prev === 'cancelling' ? 'cancelling' : prev));
       } else if (msg.type === 'run.complete') {
-        setStatus((prev) => (prev === 'running' || prev === 'cancelling' ? 'complete' : prev));
+        // Definitive end of run. If the run was cancelled (we observed
+        // run.cancelling first, or the summary carries cancelled=true), land
+        // on 'cancelled'; otherwise 'complete'. This is the ONLY path that
+        // moves the indicator out of running/cancelling for a multi-phase run.
+        const cancelled = !!(msg.summary && (msg.summary.cancelled === true || msg.summary.status === 'cancelled'));
+        if (cancelled) {
+          setStatus('cancelled');
+        } else {
+          setStatus((prev) => (prev === 'running' || prev === 'cancelling' ? 'complete' : prev));
+        }
         setOutput(msg.summary || null);
       }
     });
@@ -105,21 +172,101 @@ export default function AgentRunningIndicator() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current?.id]);
 
+  // Backstop for the "stuck cancelling card" bug: a cancel can be requested
+  // after the run has already completed, or this component can miss the
+  // terminal WS frame while route state still has the final run summary. In
+  // either case the card must not sit in "Cancelling..." forever.
+  useEffect(() => {
+    if (status !== 'cancelling') return;
+    const summary = pipelineState?.runSummary || latestSummary;
+    if (pipelineState?.cancelling || running || !summary) return;
+    const cancelled = summary.cancelled === true || summary.status === 'cancelled';
+    setStatus(cancelled ? 'cancelled' : 'complete');
+    setOutput(summary);
+  }, [status, pipelineState?.cancelling, pipelineState?.runSummary, latestSummary, running]);
+
+  useEffect(() => {
+    if (status !== 'cancelling') return undefined;
+    const summary = pipelineState?.runSummary || latestSummary;
+    if (pipelineState?.cancelling || running || summary) return undefined;
+    const timer = setTimeout(() => {
+      setStatus('idle');
+      setDismissed(true);
+    }, 8_000);
+    return () => clearTimeout(timer);
+  }, [status, pipelineState?.cancelling, pipelineState?.runSummary, latestSummary, running]);
+
+  // Backstop for missed run.complete: if we're still in 'running' state but the
+  // server says no pipeline is active, the WS event was dropped (e.g. server
+  // restart mid-run, reconnect timing gap). Poll /agents/status every 8s while
+  // running; on run.complete arriving normally this effect cleans up immediately
+  // because status flips away from 'running'.
+  useEffect(() => {
+    if (status !== 'running' || !current?.id) return undefined;
+    // Give the run a 10-second grace window before the first poll so we don't
+    // race against the bootstrap phase (AgentRun.create lag after cancelRegistry.create).
+    let intervalId;
+    const graceTimer = setTimeout(() => {
+      const poll = () => {
+        api.get(`/projects/${current.id}/agents/status`).then((data) => {
+          if (data.running || data.cancelRequested) return;
+          // Server has no live token — run ended. Resolve to the appropriate terminal state.
+          const summary = pipelineState?.runSummary || latestSummary;
+          if (summary) {
+            const cancelled = summary.cancelled === true || summary.status === 'cancelled';
+            setStatus(cancelled ? 'cancelled' : 'complete');
+            setOutput(summary);
+          } else {
+            // No summary available yet — flip to complete; the auto-dismiss will clean up.
+            setStatus('complete');
+          }
+        }).catch(() => {
+          // API unreachable — leave the indicator alone; don't flip to a terminal state on transient failures.
+        });
+      };
+      poll(); // immediate first poll after grace period
+      intervalId = setInterval(poll, 8_000);
+    }, 10_000);
+    return () => {
+      clearTimeout(graceTimer);
+      clearInterval(intervalId);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, current?.id]);
+
   const handleCancel = useCallback(async () => {
-    if (!current || status !== 'running') return;
-    // Optimistic UI: switch to "cancelling" immediately so the user gets
-    // feedback in the same frame as the click. Server confirms via
-    // `agent.phase.complete { cancelled: true }` which then moves us to
-    // the final "cancelled" state.
+    if (!current) {
+      toast.error('No active project — refresh and try again.', { title: 'Cannot cancel' });
+      return;
+    }
+    // Previously this returned silently when status !== 'running', which
+    // produced the "I click Terminate and nothing happens" report. Cancel
+    // is idempotent server-side — repeated clicks are harmless. We always
+    // send the POST and give the operator visible feedback either way.
+    const wasRunning = status === 'running';
     setStatus('cancelling');
     try {
-      await api.post(`/projects/${current.id}/agents/cancel`, {});
-      // No toast — the inline status change is the confirmation. The previous
-      // giant "Cancelling…" toast competed visually with the indicator itself.
+      const res = await api.post(`/projects/${current.id}/agents/cancel`, {});
+      if (!res?.cancelled && !res?.runId) {
+        setStatus('idle');
+        setDismissed(true);
+        toast.info('No active pipeline is running.', { title: 'Nothing to cancel' });
+        return;
+      }
+      // Server broadcasts run.cancelling → run.complete; those move us to
+      // the terminal state. Inline status change is the confirmation. If
+      // there was no live run, the API returns 200 with a no-op message —
+      // still confirm visibly.
+      if (!wasRunning) {
+        toast.success('Cancellation signal sent.', { title: 'Stop requested' });
+      }
     } catch (err) {
       const msg = err instanceof ApiError ? err.payload?.message || err.message : err.message;
       toast.error(msg, { title: 'Could not cancel' });
-      setStatus('running');
+      // Roll back to whatever state we were in. If we were running we
+      // genuinely failed to cancel; otherwise restore the prior terminal
+      // state so the UI doesn't lie.
+      setStatus(wasRunning ? 'running' : 'idle');
     }
   }, [current, status, toast]);
 
@@ -140,19 +287,76 @@ export default function AgentRunningIndicator() {
     return () => clearTimeout(t);
   }, [status]);
 
+  // ── Drag-to-reposition ──────────────────────────────────────────────
+  // Pointer-based so it works with mouse, pen and touch. Dragging starts only
+  // on non-interactive areas (the closest() guard) so the Terminate / Open /
+  // Dismiss buttons still click normally. Position is clamped to the viewport.
+  const onDragMove = useCallback((e) => {
+    const off = dragOffset.current;
+    if (!off) return;
+    const el = cardRef.current;
+    const w = el?.offsetWidth || 320;
+    const h = el?.offsetHeight || 80;
+    let left = Math.max(8, Math.min(e.clientX - off.x, window.innerWidth - w - 8));
+    let top = Math.max(8, Math.min(e.clientY - off.y, window.innerHeight - h - 8));
+    setDragPos({ left, top });
+  }, []);
+
+  const onDragEnd = useCallback(() => {
+    dragOffset.current = null;
+    window.removeEventListener('pointermove', onDragMove);
+    window.removeEventListener('pointerup', onDragEnd);
+    document.body.style.userSelect = '';
+  }, [onDragMove]);
+
+  const onDragStart = useCallback((e) => {
+    // Let clicks on the action buttons / links behave normally.
+    if (e.target.closest('button, a')) return;
+    const el = cardRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    dragOffset.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    // Anchor to the current pixel position first so there's no jump when we
+    // switch from the bottom-right anchor to absolute left/top.
+    setDragPos({ left: rect.left, top: rect.top });
+    document.body.style.userSelect = 'none';
+    window.addEventListener('pointermove', onDragMove);
+    window.addEventListener('pointerup', onDragEnd);
+  }, [onDragMove, onDragEnd]);
+
+  // Safety cleanup if the chip unmounts mid-drag.
+  useEffect(() => () => {
+    window.removeEventListener('pointermove', onDragMove);
+    window.removeEventListener('pointerup', onDragEnd);
+    document.body.style.userSelect = '';
+  }, [onDragMove, onDragEnd]);
+
   if (dismissed || status === 'idle' || !phase) return null;
 
-  // Suppress on pages that already show this state inline — Test Cases and
-  // Run Suite own architect/analyst visibility, Live Pipeline owns the
-  // conductor / critic / supervisor. Falling back to "show" on unrecognised
-  // routes so persistence across navigation still works.
-  const onTestCases = location.pathname.startsWith('/test-cases');
-  const onRunSuite = location.pathname.startsWith('/run-suite');
-  const onLivePipeline = location.pathname.startsWith('/live-pipeline') || location.pathname.startsWith('/theater');
-  const ownedByPage =
-    ((onTestCases || onRunSuite) && (phase === 'architect' || phase === 'analyst')) ||
-    (onLivePipeline && status === 'running');
-  if (ownedByPage && status === 'running') return null;
+  // Suppress on pages that already render a RICH inline console for the CURRENT
+  // phase — showing the floating chip there would duplicate the same status.
+  //
+  // Suppression is PHASE-AWARE: each page owns only the phases it actually
+  // surfaces inline. Previously Live Pipeline suppressed the chip for ALL
+  // phases, including architect/analyst — but a scenario *generation* is not an
+  // execution, so the Theater has nothing live to show for it. That left a dead
+  // zone: leave Run Suite toward Live Pipeline mid-generation and you saw
+  // neither an inline view nor the chip ("it disappears when moving out"). Now
+  // the chip is the single persistent cross-page status surface everywhere a
+  // page isn't already showing the same phase inline.
+  //   • Run Suite     → LiveTheatre "Working…" card  (architect)
+  //   • Test Cases    → PhaseBanner                  (architect, analyst)
+  //   • Live Pipeline → Theater                      (the execution pipeline only)
+  const path = location.pathname;
+  const PAGE_OWNED_PHASES = {
+    '/run-suite':     ['architect'],
+    '/test-cases':    ['architect', 'analyst'],
+    '/live-pipeline': ['planner', 'conductor', 'critic', 'supervisor', 'reporter'],
+    '/theater':       ['planner', 'conductor', 'critic', 'supervisor', 'reporter'],
+  };
+  const ownerKey = Object.keys(PAGE_OWNED_PHASES).find((p) => path.startsWith(p));
+  const ownedByPage = ownerKey ? PAGE_OWNED_PHASES[ownerKey].includes(phase) : false;
+  if (ownedByPage) return null;
 
   const meta = PHASE_META[phase] || { label: phase, icon: Loader2, route: '/' };
   const Icon = meta.icon;
@@ -173,9 +377,12 @@ export default function AgentRunningIndicator() {
 
   return (
     <div
+      ref={cardRef}
       role="status"
       aria-live="polite"
-      className="fixed bottom-4 right-4 z-50 w-[320px] max-w-[calc(100vw-2rem)] pointer-events-auto"
+      onPointerDown={onDragStart}
+      style={dragPos ? { left: dragPos.left, top: dragPos.top } : undefined}
+      className={`fixed z-50 w-[320px] max-w-[calc(100vw-2rem)] pointer-events-auto cursor-grab active:cursor-grabbing select-none touch-none ${dragPos ? '' : 'bottom-4 right-4'}`}
     >
       <div className={`relative overflow-hidden rounded-lg border shadow-card ${tone}`}>
         {/* Left accent stripe — subtle colour cue without painting the whole card */}

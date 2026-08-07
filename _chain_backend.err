@@ -1,0 +1,4622 @@
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Password textbox",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Password textbox",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Username textbox",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Username textbox",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+(node:28764) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "4cc6772c-ea93-4c26-b478-48d779d1fccb",
+             element: "Products nav link",
+             pageUrl: "https://automationexercise.com/category_products/1",
+             selector: null,
+             strategy: "text",
+             intent: "Products nav link",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "4cc6772c-ea93-4c26-b478-48d779d1fccb",
+             element: "Polo brand link in Brands sidebar",
+             pageUrl: "https://automationexercise.com/products",
+             selector: null,
+             strategy: "text",
+             intent: "Polo brand link in Brands sidebar",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "4cc6772c-ea93-4c26-b478-48d779d1fccb",
+             element: "Kids Dress subcategory link",
+             pageUrl: "https://automationexercise.com/products",
+             selector: null,
+             strategy: "text",
+             intent: "Kids Dress subcategory link",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "User profile dropdown",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+             selector: null,
+             strategy: "text",
+             intent: "User profile dropdown",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Logout menu item",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+             selector: null,
+             strategy: "text",
+             intent: "Logout menu item",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Password textbox",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Password textbox",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Username textbox",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Username textbox",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Password textbox",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Password textbox",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Username textbox",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Username textbox",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "User dropdown in top-right",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+             selector: null,
+             strategy: "text",
+             intent: "User dropdown in top-right",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Logout menu item",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+             selector: null,
+             strategy: "text",
+             intent: "Logout menu item",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "User profile menu",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+             selector: null,
+             strategy: "text",
+             intent: "User profile menu",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Logout menu item",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+             selector: null,
+             strategy: "text",
+             intent: "Logout menu item",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Password textbox",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Password textbox",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Password textbox",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Password textbox",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Password textbox",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Password textbox",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Password textbox",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Password textbox",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "PIM nav link",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+             selector: null,
+             strategy: "text",
+             intent: "PIM nav link",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Dashboard nav link",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/pim/viewEmployeeList",
+             selector: null,
+             strategy: "text",
+             intent: "Dashboard nav link",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Profile picture / user menu trigger",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+             selector: null,
+             strategy: "text",
+             intent: "Profile picture / user menu trigger",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Logout menu item",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+             selector: null,
+             strategy: "text",
+             intent: "Logout menu item",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Username search textbox",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/admin/viewSystemUsers",
+             selector: null,
+             strategy: "text",
+             intent: "Username search textbox",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Search button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/admin/viewSystemUsers",
+             selector: null,
+             strategy: "text",
+             intent: "Search button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Add button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/admin/viewSystemUsers",
+             selector: null,
+             strategy: "text",
+             intent: "Add button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "User Role dropdown",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/admin/saveSystemUser",
+             selector: null,
+             strategy: "text",
+             intent: "User Role dropdown",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "ESS option in User Role dropdown",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/admin/saveSystemUser",
+             selector: null,
+             strategy: "text",
+             intent: "ESS option in User Role dropdown",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Employee Name type-ahead textbox",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/admin/saveSystemUser",
+             selector: null,
+             strategy: "text",
+             intent: "Employee Name type-ahead textbox",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Qwerty Qwerty LName option in Employee Name dropdown",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/admin/saveSystemUser",
+             selector: null,
+             strategy: "text",
+             intent: "Qwerty Qwerty LName option in Employee Name dropdown",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Status dropdown",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/admin/saveSystemUser",
+             selector: null,
+             strategy: "text",
+             intent: "Status dropdown",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Enabled option in Status dropdown",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/admin/saveSystemUser",
+             selector: null,
+             strategy: "text",
+             intent: "Enabled option in Status dropdown",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Username",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/admin/saveSystemUser",
+             selector: null,
+             strategy: "text",
+             intent: "Username",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Save button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/admin/saveSystemUser",
+             selector: null,
+             strategy: "text",
+             intent: "Save button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Profile user menu trigger",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/admin/saveSystemUser",
+             selector: null,
+             strategy: "text",
+             intent: "Profile user menu trigger",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Logout menu item",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/admin/viewSystemUsers",
+             selector: null,
+             strategy: "text",
+             intent: "Logout menu item",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Profile user menu trigger",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+             selector: null,
+             strategy: "text",
+             intent: "Profile user menu trigger",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Logout menu item",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+             selector: null,
+             strategy: "text",
+             intent: "Logout menu item",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Profile user menu trigger",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+             selector: null,
+             strategy: "text",
+             intent: "Profile user menu trigger",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Logout menu item",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+             selector: null,
+             strategy: "text",
+             intent: "Logout menu item",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "User profile menu",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+             selector: null,
+             strategy: "text",
+             intent: "User profile menu",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Logout menu item",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+             selector: null,
+             strategy: "text",
+             intent: "Logout menu item",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Password textbox",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Password textbox",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Username textbox",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Username textbox",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Username textbox",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Username textbox",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Password textbox",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Password textbox",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Username textbox",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Username textbox",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "User dropdown in top-right (Joseph Ware profile)",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+             selector: null,
+             strategy: "text",
+             intent: "User dropdown in top-right (Joseph Ware profile)",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Logout menu item",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+             selector: null,
+             strategy: "text",
+             intent: "Logout menu item",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "User profile menu",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+             selector: null,
+             strategy: "text",
+             intent: "User profile menu",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Logout menu item",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+             selector: null,
+             strategy: "text",
+             intent: "Logout menu item",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Password textbox",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Password textbox",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Password textbox",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Password textbox",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Password textbox",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Password textbox",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Password textbox",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Password textbox",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "PIM nav link",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+             selector: null,
+             strategy: "text",
+             intent: "PIM nav link",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Dashboard nav link",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/pim/viewEmployeeList",
+             selector: null,
+             strategy: "text",
+             intent: "Dashboard nav link",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Username search textbox",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/admin/viewSystemUsers",
+             selector: null,
+             strategy: "text",
+             intent: "Username search textbox",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Search button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/admin/viewSystemUsers",
+             selector: null,
+             strategy: "text",
+             intent: "Search button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Add button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/admin/viewSystemUsers",
+             selector: null,
+             strategy: "text",
+             intent: "Add button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "User Role dropdown",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/admin/saveSystemUser",
+             selector: null,
+             strategy: "text",
+             intent: "User Role dropdown",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "ESS option in User Role dropdown",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/admin/saveSystemUser",
+             selector: null,
+             strategy: "text",
+             intent: "ESS option in User Role dropdown",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Employee Name type-ahead textbox",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/admin/saveSystemUser",
+             selector: null,
+             strategy: "text",
+             intent: "Employee Name type-ahead textbox",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Qwerty Qwerty LName option in Employee Name dropdown",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/admin/saveSystemUser",
+             selector: null,
+             strategy: "text",
+             intent: "Qwerty Qwerty LName option in Employee Name dropdown",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Status dropdown",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/admin/saveSystemUser",
+             selector: null,
+             strategy: "text",
+             intent: "Status dropdown",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Enabled option in Status dropdown",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/admin/saveSystemUser",
+             selector: null,
+             strategy: "text",
+             intent: "Enabled option in Status dropdown",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Username",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/admin/saveSystemUser",
+             selector: null,
+             strategy: "text",
+             intent: "Username",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Save button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/admin/saveSystemUser",
+             selector: null,
+             strategy: "text",
+             intent: "Save button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "User menu trigger (top-right profile icon)",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/admin/saveSystemUser",
+             selector: null,
+             strategy: "text",
+             intent: "User menu trigger (top-right profile icon)",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Logout menu item",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/admin/viewSystemUsers",
+             selector: null,
+             strategy: "text",
+             intent: "Logout menu item",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "User menu trigger (top-right profile icon)",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+             selector: null,
+             strategy: "text",
+             intent: "User menu trigger (top-right profile icon)",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Logout menu item",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+             selector: null,
+             strategy: "text",
+             intent: "Logout menu item",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "User menu trigger (top-right profile icon)",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+             selector: null,
+             strategy: "text",
+             intent: "User menu trigger (top-right profile icon)",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Logout menu item",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+             selector: null,
+             strategy: "text",
+             intent: "Logout menu item",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "User menu trigger (top-right profile icon)",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+             selector: null,
+             strategy: "text",
+             intent: "User menu trigger (top-right profile icon)",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Logout menu item",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+             selector: null,
+             strategy: "text",
+             intent: "Logout menu item",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Login button",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+             selector: null,
+             strategy: "text",
+             intent: "Login button",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "User menu trigger (top-right profile icon)",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+             selector: null,
+             strategy: "text",
+             intent: "User menu trigger (top-right profile icon)",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.
+[kb] recordSuccessfulLocator failed: PrismaClientValidationError 
+Invalid `prisma.knowledgeBaseLocator.create()` invocation in
+C:\Users\2461898\Downloads\qaai_fixed\qaai_fixed\qaai_fixed\server\services\agents\conductor.js:2947:47
+
+  2944 if (!exactExisting) {
+  2945   // First sighting for this (element, page) combo. If a ghost row was
+  2946   // merged, carry its stats forward; otherwise start fresh.
+→ 2947   row = await prisma.knowledgeBaseLocator.create({
+           data: {
+             projectId: "465f2d08-c8b5-469a-af41-9c0ba2a2ce93",
+             element: "Logout menu item",
+             pageUrl: "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+             selector: null,
+             strategy: "text",
+             intent: "Logout menu item",
+             accessibleName: null,
+             role: null,
+             domAnchor: null,
+             occurrences: 1,
+             healthScore: 100,
+             failureCount: 0,
+             lastHealedAt: null,
+             lastFailedAt: null,
+             healHistory: null,
+         +   project: {
+         +     create: ProjectCreateWithoutLocatorsInput | ProjectUncheckedCreateWithoutLocatorsInput,
+         +     connectOrCreate: ProjectCreateOrConnectWithoutLocatorsInput,
+         +     connect: ProjectWhereUniqueInput
+         +   }
+           }
+         })
+
+Argument `project` is missing.

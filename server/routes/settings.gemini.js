@@ -53,7 +53,8 @@ router.post(
         });
       }
 
-      const result = await validateApiKey(apiKey.trim());
+      const { model } = req.body || {};
+      const result = await validateApiKey(apiKey.trim(), model);
 
       await audit.log({
         userId: req.user.id,
@@ -81,7 +82,10 @@ router.post(
   rateLimit({ windowMs: 60_000, max: 10 }),
   async (req, res, next) => {
     try {
-      const apiKey = await vault.get(req.user.id, SECRET_NAME);
+      const [apiKey, integration] = await Promise.all([
+        vault.get(req.user.id, SECRET_NAME),
+        integrations.get(req.user.id, INT_TYPE),
+      ]);
       if (!apiKey) {
         return res.status(404).json({
           success: false,
@@ -90,7 +94,8 @@ router.post(
           message: 'No Gemini API key is configured for this account.',
         });
       }
-      const result = await validateApiKey(apiKey);
+      const savedModel = integration?.config?.model;
+      const result = await validateApiKey(apiKey, savedModel);
       await integrations.upsert(req.user.id, INT_TYPE, {
         status: result.valid ? 'valid' : 'invalid',
         lastValidatedAt: new Date(),
@@ -122,7 +127,7 @@ router.post('/save', requireCsrf, async (req, res, next) => {
       ? model
       : 'gemini-2.5-pro';
 
-    const result = await validateApiKey(apiKey.trim());
+    const result = await validateApiKey(apiKey.trim(), finalModel);
     if (!result.valid) {
       return res.status(400).json({ success: false, ...result });
     }

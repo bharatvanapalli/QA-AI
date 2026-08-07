@@ -30,7 +30,7 @@
  */
 
 const { getProvider } = require('../../lib/llmProvider');
-const { composeSystemPrompt } = require('../../lib/promptCompose');
+const { composeSystemPrompt, composeSystemPromptCached } = require('../../lib/promptCompose');
 const { parseJsonResponse } = require('../../lib/parseJsonResponse');
 const { resolveModelForTier } = require('../../lib/modelRouter');
 
@@ -42,12 +42,26 @@ const TIER = 'mid';
 const SYSTEM_PROMPT = `You are a Playwright locator-healing agent. The current Playwright run hit a locator failure (timeout / element-not-found). Your job: read the FRESH page snapshot (Playwright MCP accessibility tree) and propose a single Playwright locator that targets the user's intended element on THIS DOM.
 
 Inputs you receive (as user message JSON):
-  - "intent"        : semantic description of the target ("primary login submit button")
-  - "brokenLocator" : the selector that just failed (for reference, do NOT just return it)
-  - "brokenStrategy": its strategy ('role' | 'testid' | 'css' | 'xpath' | null)
-  - "freshSnapshot" : the current accessibility-tree text from browser_snapshot
-  - "history"       : past heals on this locator (may be empty) — avoid repeating
-                       suggestions that previously failed
+  - "intent"             : semantic description of the target ("primary login submit button")
+  - "brokenLocator"      : the selector that just failed (for reference, do NOT just return it)
+  - "brokenStrategy"     : its strategy ('role' | 'testid' | 'css' | 'xpath' | null)
+  - "verifiedSelector"   : OPTIONAL. A selector for this element recorded by a live
+                           site-calibration crawl (ground truth for how the page is
+                           built). When present, STRONGLY prefer resolving to the
+                           element it names — confirm it against the snapshot and,
+                           if the matching element is there, return it (high
+                           confidence). Only diverge if it clearly isn't in this
+                           snapshot (the page changed since the crawl).
+  - "domAnchorContext"   : OPTIONAL. The ±3 lines of the accessibility tree that
+                           surrounded this element when it was last successfully
+                           used. Use this as the primary clue when the element has
+                           no accessible name (e.g. icon-only buttons in a table
+                           row). If domAnchorContext shows the element was the 2nd
+                           button inside a row labeled "Pavankalyani", target the
+                           2nd button in that row in the fresh snapshot.
+  - "freshSnapshot"      : the current accessibility-tree text from browser_snapshot
+  - "history"            : past heals on this locator (may be empty) — avoid repeating
+                           suggestions that previously failed
 
 Output a SINGLE JSON object — no markdown, no preamble:
 {
@@ -123,6 +137,7 @@ function normaliseResult(raw) {
  * @param {string} opts.intent           semantic description of the target
  * @param {string} opts.brokenLocator    selector that just failed
  * @param {string} [opts.brokenStrategy] strategy of the broken locator
+ * @param {string} [opts.verifiedSelector] selector recorded by the calibration crawl (strong hint)
  * @param {string} opts.freshSnapshot    Playwright-MCP accessibility tree text
  * @param {Array}  [opts.history]        prior heal attempts (from healHistory)
  * @param {function} [opts.onLog]
@@ -134,6 +149,8 @@ function normaliseResult(raw) {
 async function healLocator({
   apiKey, model, provider: providerName,
   intent, brokenLocator, brokenStrategy, freshSnapshot,
+  verifiedSelector = null,
+  domAnchor = null,
   history = [],
   onLog = async () => {}, signal, onRateLimit, extraGuidance,
 } = {}) {
@@ -158,12 +175,21 @@ async function healLocator({
   const provider = getProvider(providerName);
   const routedModel = resolveModelForTier({ provider: providerName, requestedModel: model, tier: TIER });
 
-  // Cap snapshot to ~16k chars so a noisy page doesn't blow the budget; the
-  // most recent slice is the most useful because MCP emits the visible tree
-  // top-to-bottom and bottom-up failures (sticky footers, modals) get cut
-  // first under this cap. 16k of YAML accessibility tree is typically the
-  // entire visible page.
-  const snapshot = String(freshSnapshot).slice(0, 16_000);
+  // P1-5 — keep the TAIL of the snapshot, not the head. MCP emits the
+  // accessibility tree top-to-bottom; the bottom-of-page region (modals,
+  // sticky footers, recently-revealed CTAs) is where heals most often need
+  // to look. Previously `.slice(0, 16_000)` kept the static chrome and
+  // dropped the interesting part. The TAIL DIRECTION is the structural
+  // win; the cap stays at 16 KB so the healer has the same context window
+  // it had pre-change — the earlier reduction to 12 KB was a budget
+  // compromise that risked starving the healer of context on long pages
+  // and was reverted per the "no compromise on verdict integrity" directive.
+  //
+  // Generic rule: snapshot truncation preserves the failure site. Default
+  // to last-N bytes, not first-N.
+  const SNAPSHOT_CAP = 16_000;
+  const fullSnap = String(freshSnapshot);
+  const snapshot = fullSnap.length > SNAPSHOT_CAP ? fullSnap.slice(-SNAPSHOT_CAP) : fullSnap;
 
   // History is the structured `healHistory` array — keep the most recent 5
   // attempts so the model knows what NOT to repeat.
@@ -177,7 +203,7 @@ async function healLocator({
       apiKey,
       model: routedModel,
       maxTokens: 1200,
-      system: composeSystemPrompt(SYSTEM_PROMPT, extraGuidance),
+      system: composeSystemPromptCached(SYSTEM_PROMPT, extraGuidance),
       messages: [
         {
           role: 'user',
@@ -188,6 +214,8 @@ async function healLocator({
                 intent: intent || null,
                 brokenLocator: brokenLocator || null,
                 brokenStrategy: brokenStrategy || null,
+                verifiedSelector: verifiedSelector || null,
+                domAnchorContext: domAnchor || null,
                 history: recent,
               }, null, 2),
             },
@@ -225,6 +253,30 @@ async function healLocator({
     await onLog('warn', 'Healer output failed schema validation.');
     return null;
   }
+
+  // Ambiguity guard: count how many times the proposed accessible name (for
+  // role strategy) or selector text (for text/label) appears in the snapshot.
+  // Multiple matches means the selector is not unique — cap confidence at 50
+  // so the Conductor won't accept a heal that targets the wrong element.
+  if (result.strategy === 'role' && result.selector?.name) {
+    // Snapshot lines look like: - button "Sign In" [ref=e14]
+    const namePattern = new RegExp(`"${result.selector.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`, 'gi');
+    const matches = (snapshot.match(namePattern) || []).length;
+    if (matches > 1) {
+      result.confidence = Math.min(result.confidence, 50);
+      result.reasoning = `${result.reasoning} (ambiguous: ~${matches} elements share this accessible name)`;
+      await onLog('warn', `Healer: "${result.selector.name}" appears ${matches}× in snapshot — capped confidence to ${result.confidence}.`);
+    }
+  } else if ((result.strategy === 'text' || result.strategy === 'label') && typeof result.selector === 'string') {
+    const escaped = result.selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const matches = (snapshot.match(new RegExp(escaped, 'gi')) || []).length;
+    if (matches > 1) {
+      result.confidence = Math.min(result.confidence, 50);
+      result.reasoning = `${result.reasoning} (ambiguous: ~${matches} matches in snapshot)`;
+      await onLog('warn', `Healer: "${result.selector}" appears ${matches}× in snapshot — capped confidence to ${result.confidence}.`);
+    }
+  }
+
   await onLog('info', `Healer proposed ${result.strategy} → ${typeof result.selector === 'string' ? result.selector : JSON.stringify(result.selector)} (confidence ${result.confidence}).`);
   return result;
 }

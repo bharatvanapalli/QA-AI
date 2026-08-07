@@ -1,0 +1,42 @@
+[
+  {
+    "as": "el1",
+    "file": "loginPage",
+    "name": "usernameInput",
+    "expr": "page.getByRole(\"textbox\", { name: \"Username\" })",
+    "pageKey": "auth/login",
+    "source": "actionLocator",
+    "verificationSource": "verified_mcp_accessibility_snapshot",
+    "verified": true
+  },
+  {
+    "as": "el2",
+    "file": "loginPage",
+    "name": "passwordInput",
+    "expr": "page.getByRole(\"textbox\", { name: \"Password\" })",
+    "pageKey": "auth/login",
+    "source": "actionLocator",
+    "verificationSource": "verified_mcp_accessibility_snapshot",
+    "verified": true
+  },
+  {
+    "as": "el3",
+    "file": "loginPage",
+    "name": "loginButton",
+    "expr": "page.getByRole(\"button\", { name: \"Login\" })",
+    "pageKey": "auth/login",
+    "source": "actionLocator",
+    "verificationSource": "verified_mcp_accessibility_snapshot",
+    "verified": true
+  },
+  {
+    "as": "el4",
+    "file": "dashboardPage",
+    "name": "logoutMenuItem",
+    "expr": "page.getByRole(\"menuitem\", { name: \"Logout\" })",
+    "pageKey": "dashboard",
+    "source": "actionLocator",
+    "verificationSource": "verified_mcp_accessibility_snapshot",
+    "verified": true
+  }
+]

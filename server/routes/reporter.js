@@ -14,6 +14,8 @@ const audit = require('../services/audit');
 const { resolveAiCredentials } = require('../lib/resolveAiCredentials');
 const reporter = require('../services/agents/reporter');
 const rcaChat = require('../services/agents/rcaChat');
+const postMortem = require('../services/agents/postMortem');
+const failurePatterns = require('../services/failurePatterns');
 const issueCreator = require('../services/issueCreator');
 const { decodeJson, encodeJson } = require('../services/jsonField');
 const { requireAuth } = require('../middleware/auth');
@@ -125,15 +127,70 @@ router.post(
         updated++;
       }
 
+      // Phase G — Cross-run learning. Now that the Reporter has produced
+      // per-failure RCA, hand the freshly-classified failures to the
+      // postMortem agent which extracts REUSABLE patterns and upserts them
+      // into the project's FailurePattern store. The next conductor run
+      // for this project will read those patterns out of the store and
+      // inject them into its system prompt — so traps caught here don't
+      // catch the agent again. Best-effort: failure here never fails the
+      // analyze endpoint, since the RCAs are already persisted.
+      let patternStats = { created: 0, updated: 0 };
+      try {
+        const enriched = failures.map((f) => {
+          const a = idToAnalysis.get(f.id) || {};
+          return {
+            id: f.id,
+            testCaseName: f.testCase?.name || null,
+            status: f.status,
+            error: f.error,
+            trace: f.trace,
+            rcaWhat: a.what || null,
+            rcaWhy: a.why || null,
+            rcaFix: a.fix || null,
+            rcaClass: a.classification || null,
+          };
+        }).filter((f) => f.rcaWhat); // only classify ones the Reporter spoke to
+
+        if (enriched.length) {
+          const existing = await failurePatterns.loadProjectPatterns(run.projectId, { limit: 40 });
+          const pm = await postMortem.run({
+            apiKey, model, provider,
+            failures: enriched,
+            existingPatterns: existing,
+            onLog: async (level, message) =>
+              send({ type: 'agent.phase.log', phase: 'post-mortem', level, message }),
+            onRateLimit: (info) => send({ type: 'claude.rate-limit', ...info }),
+            extraGuidance: projectRow?.aiGuidance || null,
+          });
+          patternStats = await failurePatterns.upsertPatterns(run.projectId, pm.patterns || []);
+          send({
+            type: 'agent.phase.log', phase: 'post-mortem', level: 'info',
+            message: `Patterns: ${patternStats.created} new, ${patternStats.updated} reinforced. Next run on this project will see them in the conductor prompt.`,
+          });
+        }
+      } catch (pmErr) {
+        send({
+          type: 'agent.phase.log', phase: 'post-mortem', level: 'warn',
+          message: `Post-mortem skipped: ${pmErr.message}`,
+        });
+      }
+
       await audit.log({
         userId: req.user.id,
         action: 'reporter.analyze',
         target: run.id,
-        metadata: { analyzed: updated, total: failures.length },
+        metadata: { analyzed: updated, total: failures.length, patternsCreated: patternStats.created, patternsUpdated: patternStats.updated },
         req,
       });
 
-      res.json({ success: true, analyzed: updated, total: failures.length, analyses: result.analyses });
+      res.json({
+        success: true,
+        analyzed: updated,
+        total: failures.length,
+        analyses: result.analyses,
+        patterns: patternStats,
+      });
     } catch (err) {
       next(err);
     }
@@ -275,6 +332,23 @@ router.post(
       const broadcast = req.app.locals.broadcastToUser;
       const send = (msg) => broadcast && broadcast(req.user.id, msg);
 
+      // Phase G — Surface project-history pattern matches in the chat
+      // primer so user questions like "why did this fail" get answered
+      // against THIS project's accumulated learnings, not generic advice.
+      // Best-effort: an empty/failed match just means the user gets the
+      // original primer back, never a 500.
+      let learnedPatterns = [];
+      try {
+        learnedPatterns = await failurePatterns.matchPatternsForResult(run.projectId, {
+          error: result.error,
+          rcaWhy: result.rcaWhy,
+          rcaFix: result.rcaFix,
+          rcaClass: result.rcaClass,
+        });
+      } catch (_) {
+        learnedPatterns = [];
+      }
+
       let reply;
       try {
         const out = await rcaChat.chat({
@@ -295,6 +369,7 @@ router.post(
               rcaClass: result.rcaClass,
               rcaConfidence: result.rcaConfidence,
             },
+            learnedPatterns,
           },
           history,
           userMessage: message,

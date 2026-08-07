@@ -1,0 +1,10 @@
+testCaseID,scenario,usernameInput,passwordInput,expectedBehavior,expectedErrorMessage,userRemainsOnLoginPage,notes
+TC-NEG-01,invalidUsername,nonexistent_user,admin123,Rejected,Invalid credentials,Yes,Non-existent username - expect generic error (no user enumeration)
+TC-NEG-02,invalidPassword,Admin,WrongPassword@123,Rejected,Invalid credentials,Yes,Valid username wrong password - expect generic error
+TC-NEG-03,bothInvalid,fake_user,fake_pass,Rejected,Invalid credentials,Yes,Both username and password invalid - expect generic error
+TC-NEG-04,almostValidUsername,admin,admin123,Rejected,Invalid credentials,Yes,Case-sensitive username test - 'admin' (lowercase) vs 'Admin' (actual)
+TC-NEG-05,caseSensitivePassword,Admin,ADMIN123,Rejected,Invalid credentials,Yes,Case-sensitive password test - 'ADMIN123' (uppercase) vs 'admin123'
+TC-NEG-06,specialCharInUsername,Admin!@#,admin123,Rejected,Invalid credentials,Yes,Special characters in username
+TC-NEG-07,specialCharInPassword,Admin,admin@123#,Rejected,Invalid credentials,Yes,Special characters in password (if not in actual password)
+TC-NEG-08,multipleFails_1stAttempt,invalid,invalid,Rejected,Invalid credentials,Yes,First failed login attempt
+TC-NEG-09,multipleFails_5thAttempt,invalid,invalid,Rejected/Locked,Invalid credentials or Account locked,Yes,Fifth failed login attempt - may trigger account lock (depends on policy)

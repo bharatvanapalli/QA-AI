@@ -14,7 +14,7 @@
  */
 
 const { getProvider } = require('../../lib/llmProvider');
-const { composeSystemPrompt } = require('../../lib/promptCompose');
+const { composeSystemPrompt, composeSystemPromptCached } = require('../../lib/promptCompose');
 const { parseJsonResponse } = require('../../lib/parseJsonResponse');
 const { resolveModelForTier } = require('../../lib/modelRouter');
 
@@ -83,11 +83,16 @@ async function run({ apiKey, model, failures, onLog = async () => {}, onRateLimi
   }));
 
   const routedModel = resolveModelForTier({ provider: providerName, requestedModel: model, tier: TIER });
+  // P1-8 REVERTED — fixed 4000-token ceiling. The earlier adaptive sizing
+  // (min(4000, 500*n + 1000)) saved tokens on small failure counts but
+  // could truncate the RCA narrative for a single complex failure. The
+  // user lifted the budget concern; restoring the ceiling guarantees a
+  // complete narrative regardless of failure count.
   const resp = await provider.complete({
     apiKey,
     model: routedModel,
     maxTokens: 4000,
-    system: composeSystemPrompt(SYSTEM_PROMPT, extraGuidance),
+    system: composeSystemPromptCached(SYSTEM_PROMPT, extraGuidance),
     messages: [{ role: 'user', content: JSON.stringify(compactFailures, null, 2) }],
     onRateLimit,
     responseFormat: 'json',

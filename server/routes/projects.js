@@ -7,6 +7,8 @@ const vault = require('../services/vault');
 const github = require('../services/git/github');
 const codeDiffAnalyzer = require('../services/agents/codeDiffAnalyzer');
 const cancelRegistry = require('../services/cancelRegistry');
+const enterpriseGate = require('../services/enterpriseMode');
+const locatorIntelligenceV2 = require('../services/locatorIntelligenceV2');
 const { resolveAiCredentials } = require('../lib/resolveAiCredentials');
 const { requireAuth } = require('../middleware/auth');
 const { requireOrg } = require('../middleware/org');
@@ -21,6 +23,94 @@ router.use(requireOrg);
 
 const VALID_GIT_PROVIDERS = ['github'];
 
+function parseJsonObject(value, fallback = {}) {
+  if (!value) return fallback;
+  if (typeof value === 'object' && !Array.isArray(value)) return value;
+  if (typeof value !== 'string') return fallback;
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+const DEFAULT_TRIGGER_CONFIG = Object.freeze({
+  schema: 'qaai.trigger-config/1',
+  runScope: 'approved',
+  runMode: 'grouped',
+});
+
+function normalizeTriggerConfig(input, { stamp = false } = {}) {
+  const raw = parseJsonObject(input, input && typeof input === 'object' ? input : {});
+  const runScope = raw.runScope === 'smoke' ? 'smoke' : 'approved';
+  const runMode = raw.runMode === 'sequential' ? 'sequential' : 'grouped';
+  const locatorV2Enabled = locatorIntelligenceV2.projectLocatorV2Enabled(raw);
+  return {
+    ...DEFAULT_TRIGGER_CONFIG,
+    runScope,
+    runMode,
+    locatorIntelligenceV2: locatorV2Enabled,
+    ...(raw.updatedAt ? { updatedAt: raw.updatedAt } : {}),
+    ...(stamp ? { updatedAt: new Date().toISOString() } : {}),
+  };
+}
+
+function countStoredCredentials(testCredentials) {
+  const credentials = parseJsonObject(testCredentials, {});
+  return Object.values(credentials).filter((value) => {
+    if (value == null) return false;
+    if (typeof value === 'string') return value.trim().length > 0;
+    return true;
+  }).length;
+}
+
+function classifyExportState(result) {
+  const meta = parseJsonObject(result?.exportMeta, {});
+  const state = String(meta.state || meta.readiness || meta.status || '').toLowerCase();
+  const replayIr = parseJsonObject(result?.replayIrJson, null);
+
+  if (state.includes('ready') || meta.exportEligible === true || meta.generated === true) return 'ready';
+  if (state.includes('repair') || state.includes('recapture') || state.includes('reacquisition')) return 'repairing';
+  if (state.includes('incomplete') || state.includes('blocked') || state.includes('missing')) return 'incomplete';
+  if (replayIr && replayIr.complete !== false) return 'generated';
+  return 'pending';
+}
+
+function summarizeOutputReadiness(results = []) {
+  const summary = {
+    total: results.length,
+    ready: 0,
+    generated: 0,
+    repairing: 0,
+    incomplete: 0,
+    pending: 0,
+    notAutomatable: 0,
+  };
+
+  for (const result of results) {
+    const meta = parseJsonObject(result?.exportMeta, {});
+    if (meta.nonAutomatable === true || meta.environmentPrecondition === true) {
+      summary.notAutomatable += 1;
+      continue;
+    }
+    const state = classifyExportState(result);
+    summary[state] = (summary[state] || 0) + 1;
+  }
+
+  const complete = summary.ready + summary.generated;
+  summary.prepared = complete;
+  summary.remaining = Math.max(0, summary.total - complete - summary.notAutomatable);
+  summary.status = summary.total === 0
+    ? 'idle'
+    : summary.remaining === 0
+      ? 'ready'
+      : summary.repairing > 0
+        ? 'repairing'
+        : 'preparing';
+  return summary;
+}
+
 // ── GET /api/projects ─────────────────────────────────────
 router.get('/', async (req, res, next) => {
   try {
@@ -34,6 +124,12 @@ router.get('/', async (req, res, next) => {
         framework: true,
         targetUrl: true,
         aiProvider: true,
+        // execMode + vscodeWorkspacePath are edited in the settings form, which
+        // initialises from this list. Omitting them made a save reset them to
+        // defaults (execMode→'fast', path→null). Include them so the form
+        // round-trips correctly.
+        execMode: true,
+        vscodeWorkspacePath: true,
         createdAt: true,
         updatedAt: true,
         _count: {
@@ -46,7 +142,8 @@ router.get('/', async (req, res, next) => {
         },
       },
     });
-    res.json({ success: true, projects });
+    const withEnterpriseMode = await enterpriseGate.attachProjectsEnterpriseMode(prisma, projects);
+    res.json({ success: true, projects: withEnterpriseMode });
   } catch (err) {
     next(err);
   }
@@ -55,7 +152,7 @@ router.get('/', async (req, res, next) => {
 // ── POST /api/projects ────────────────────────────────────
 router.post('/', requireCsrf, async (req, res, next) => {
   try {
-    const { name, environment, framework, targetUrl } = req.body || {};
+    const { name, environment, framework, targetUrl, enterpriseMode } = req.body || {};
     if (!name || typeof name !== 'string' || name.trim().length < 2) {
       return res
         .status(400)
@@ -76,6 +173,9 @@ router.post('/', requireCsrf, async (req, res, next) => {
         targetUrl: targetUrl || null,
       },
     });
+    const projectWithEnterpriseMode = enterpriseMode === true
+      ? { ...project, enterpriseMode: await enterpriseGate.writeProjectEnterpriseMode(prisma, project.id, true) }
+      : await enterpriseGate.attachProjectEnterpriseMode(prisma, project);
     await audit.log({
       userId: req.user.id,
       action: 'project.create',
@@ -83,13 +183,315 @@ router.post('/', requireCsrf, async (req, res, next) => {
       metadata: { name },
       req,
     });
-    res.status(201).json({ success: true, project });
+    res.status(201).json({ success: true, project: projectWithEnterpriseMode });
   } catch (err) {
     next(err);
   }
 });
 
 // ── GET /api/projects/:id ─────────────────────────────────
+router.get('/:id/workspace-summary', async (req, res, next) => {
+  try {
+    const project = await prisma.project.findFirst({
+      where: { id: req.params.id, orgId: req.org.id },
+      select: {
+        id: true,
+        name: true,
+        environment: true,
+        framework: true,
+        targetUrl: true,
+        aiProvider: true,
+        execMode: true,
+        enterpriseMode: true,
+        repoUrl: true,
+        gitProvider: true,
+        defaultBranch: true,
+        defaultAuthFixtureId: true,
+        testCredentials: true,
+        exportStrictness: true,
+        updatedAt: true,
+        _count: {
+          select: {
+            requirements: true,
+            testCases: true,
+            runs: true,
+            documents: true,
+            testDataSets: true,
+            authFixtures: true,
+            authProfiles: true,
+            actionMemories: true,
+          },
+        },
+      },
+    });
+    if (!project) return res.status(404).json({ success: false, code: 'NOT_FOUND' });
+
+    const latestRun = await prisma.run.findFirst({
+      where: { projectId: project.id },
+      orderBy: { startedAt: 'desc' },
+      select: {
+        id: true,
+        status: true,
+        verdictMode: true,
+        sprintName: true,
+        generationId: true,
+        passed: true,
+        failed: true,
+        blocked: true,
+        skipped: true,
+        needsHuman: true,
+        startedAt: true,
+        completedAt: true,
+      },
+    });
+
+    const latestRunResults = latestRun
+      ? await prisma.runResult.findMany({
+          where: { runId: latestRun.id },
+          select: {
+            id: true,
+            status: true,
+            exportMeta: true,
+            replayIrJson: true,
+          },
+        })
+      : [];
+
+    const memoryGroups = await prisma.projectActionMemory.groupBy({
+      by: ['trustState'],
+      where: { projectId: project.id },
+      _count: { _all: true },
+    }).catch(() => []);
+
+    const memoryHealth = memoryGroups.reduce((acc, row) => {
+      const key = row.trustState || 'unknown';
+      acc[key] = row._count?._all || 0;
+      return acc;
+    }, {});
+
+    const projectPayload = { ...project };
+    delete projectPayload.testCredentials;
+
+    res.json({
+      success: true,
+      summary: {
+        project: projectPayload,
+        counts: {
+          requirements: project._count.requirements,
+          testCases: project._count.testCases,
+          runs: project._count.runs,
+          documents: project._count.documents,
+          testDataSets: project._count.testDataSets,
+        },
+        latestRun,
+        outputReadiness: summarizeOutputReadiness(latestRunResults),
+        auth: {
+          storedCredentialCount: countStoredCredentials(project.testCredentials),
+          profileCount: project._count.authProfiles,
+          fixtureCount: project._count.authFixtures,
+          hasDefaultFixture: Boolean(project.defaultAuthFixtureId),
+        },
+        memory: {
+          total: project._count.actionMemories,
+          trustStateCounts: memoryHealth,
+          status: memoryHealth.trusted > 0
+            ? 'trusted'
+            : project._count.actionMemories > 0
+              ? 'needs_review'
+              : 'empty',
+        },
+        integrations: {
+          sourceControlConnected: Boolean(project.repoUrl),
+          gitProvider: project.gitProvider || null,
+          repoUrl: project.repoUrl || null,
+          defaultBranch: project.defaultBranch || null,
+        },
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/:id/action-memory', async (req, res, next) => {
+  try {
+    const project = await prisma.project.findFirst({
+      where: { id: req.params.id, orgId: req.org.id },
+      select: { id: true },
+    });
+    if (!project) return res.status(404).json({ success: false, code: 'NOT_FOUND' });
+
+    const memories = await prisma.projectActionMemory.findMany({
+      where: { projectId: project.id },
+      orderBy: [{ trustState: 'asc' }, { updatedAt: 'desc' }],
+      take: 200,
+      select: {
+        id: true,
+        testCaseId: true,
+        scenarioId: true,
+        module: true,
+        stepOrdinal: true,
+        stepIntentHash: true,
+        stepIntentPartsJson: true,
+        actionType: true,
+        toolName: true,
+        routeKey: true,
+        pageUrl: true,
+        elementKey: true,
+        elementLabel: true,
+        selectorExpression: true,
+        frameworkExpressionsJson: true,
+        actionLocatorJson: true,
+        targetFactsJson: true,
+        contextJson: true,
+        healthScore: true,
+        trustState: true,
+        successCount: true,
+        failureCount: true,
+        lastRunId: true,
+        lastRunResultId: true,
+        lastUsedAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    const testCaseIds = [...new Set(memories.map((memory) => memory.testCaseId).filter(Boolean))];
+    const scenarioIds = [...new Set(memories.map((memory) => memory.scenarioId).filter(Boolean))];
+    const runResultIds = [...new Set(memories.map((memory) => memory.lastRunResultId).filter(Boolean))];
+    const runIds = [...new Set(memories.map((memory) => memory.lastRunId).filter(Boolean))];
+
+    const [testCases, scenarios, runResults, runs] = await Promise.all([
+      testCaseIds.length
+        ? prisma.testCase.findMany({
+            where: { id: { in: testCaseIds }, projectId: project.id },
+            select: { id: true, name: true, type: true, module: true, status: true, dataBindingJson: true, authProfile: true },
+          })
+        : [],
+      scenarioIds.length
+        ? prisma.testScenario.findMany({
+            where: { id: { in: scenarioIds }, projectId: project.id },
+            select: { id: true, name: true, module: true, priority: true, category: true },
+          })
+        : [],
+      runResultIds.length
+        ? prisma.runResult.findMany({
+            where: { id: { in: runResultIds }, run: { projectId: project.id } },
+            select: {
+              id: true,
+              runId: true,
+              testCaseId: true,
+              status: true,
+              dataRowIndex: true,
+              dataRowLabel: true,
+              dataSetName: true,
+              createdAt: true,
+              testCase: {
+                select: {
+                  id: true,
+                  name: true,
+                  type: true,
+                  module: true,
+                  status: true,
+                  authProfile: true,
+                  scenario: {
+                    select: { id: true, name: true, module: true, priority: true, category: true },
+                  },
+                },
+              },
+              run: {
+                select: { id: true, status: true, sprintName: true, startedAt: true, completedAt: true },
+              },
+            },
+          })
+        : [],
+      runIds.length
+        ? prisma.run.findMany({
+            where: { id: { in: runIds }, projectId: project.id },
+            select: { id: true, status: true, sprintName: true, startedAt: true, completedAt: true },
+          })
+        : [],
+    ]);
+
+    const testCaseById = new Map(testCases.map((testCase) => [testCase.id, testCase]));
+    const scenarioById = new Map(scenarios.map((scenario) => [scenario.id, scenario]));
+    const resultById = new Map(runResults.map((result) => [result.id, result]));
+    const runById = new Map(runs.map((run) => [run.id, run]));
+    const trustStateCounts = memories.reduce((counts, memory) => {
+      const state = memory.trustState || 'unknown';
+      counts[state] = (counts[state] || 0) + 1;
+      return counts;
+    }, {});
+
+    const enriched = memories.map((memory) => {
+      const result = resultById.get(memory.lastRunResultId);
+      const testCase = testCaseById.get(memory.testCaseId) || result?.testCase || null;
+      const scenario = scenarioById.get(memory.scenarioId) || result?.testCase?.scenario || null;
+      const run = runById.get(memory.lastRunId || result?.runId) || result?.run;
+      return {
+        ...memory,
+        source: {
+          testCase: testCase
+            ? {
+                id: testCase.id,
+                name: testCase.name,
+                type: testCase.type,
+                module: testCase.module,
+                status: testCase.status,
+                authProfile: testCase.authProfile,
+              }
+            : null,
+          scenario: scenario
+            ? {
+                id: scenario.id,
+                name: scenario.name,
+                module: scenario.module,
+                priority: scenario.priority,
+                category: scenario.category,
+              }
+            : null,
+          runResult: result
+            ? {
+                id: result.id,
+                status: result.status,
+                dataRowIndex: result.dataRowIndex,
+                dataRowLabel: result.dataRowLabel,
+                dataSetName: result.dataSetName,
+                createdAt: result.createdAt,
+              }
+            : null,
+          run: run
+            ? {
+                id: run.id,
+                status: run.status,
+                sprintName: run.sprintName,
+                startedAt: run.startedAt,
+                completedAt: run.completedAt,
+              }
+            : null,
+        },
+      };
+    });
+
+    res.json({
+      success: true,
+      memories: enriched,
+      summary: {
+        total: memories.length,
+        trustStateCounts,
+        routeCount: new Set(memories.map((memory) => memory.routeKey || memory.pageUrl).filter(Boolean)).size,
+        actionTypes: memories.reduce((counts, memory) => {
+          const actionType = memory.actionType || memory.toolName || 'action';
+          counts[actionType] = (counts[actionType] || 0) + 1;
+          return counts;
+        }, {}),
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get('/:id', async (req, res, next) => {
   try {
     const project = await prisma.project.findFirst({
@@ -107,7 +509,54 @@ router.get('/:id', async (req, res, next) => {
       },
     });
     if (!project) return res.status(404).json({ success: false, code: 'NOT_FOUND' });
-    res.json({ success: true, project });
+    res.json({ success: true, project: await enterpriseGate.attachProjectEnterpriseMode(prisma, project) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── GET /api/projects/:id/trigger-config ───────────────────
+router.get('/:id/trigger-config', async (req, res, next) => {
+  try {
+    const project = await prisma.project.findFirst({
+      where: { id: req.params.id, orgId: req.org.id },
+      select: { id: true, triggerConfigJson: true },
+    });
+    if (!project) return res.status(404).json({ success: false, code: 'NOT_FOUND' });
+    res.json({
+      success: true,
+      config: project.triggerConfigJson
+        ? normalizeTriggerConfig(project.triggerConfigJson)
+        : DEFAULT_TRIGGER_CONFIG,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── PUT /api/projects/:id/trigger-config ───────────────────
+router.put('/:id/trigger-config', requireCsrf, async (req, res, next) => {
+  try {
+    const existing = await prisma.project.findFirst({
+      where: { id: req.params.id, orgId: req.org.id },
+      select: { id: true },
+    });
+    if (!existing) return res.status(404).json({ success: false, code: 'NOT_FOUND' });
+
+    const config = normalizeTriggerConfig(req.body?.config || req.body || {}, { stamp: true });
+    const project = await prisma.project.update({
+      where: { id: existing.id },
+      data: { triggerConfigJson: JSON.stringify(config) },
+      select: { id: true, triggerConfigJson: true },
+    });
+    await audit.log({
+      userId: req.user.id,
+      action: 'project.trigger_config.update',
+      target: project.id,
+      metadata: { runScope: config.runScope, runMode: config.runMode },
+      req,
+    });
+    res.json({ success: true, config });
   } catch (err) {
     next(err);
   }
@@ -121,12 +570,35 @@ router.put('/:id', requireCsrf, async (req, res, next) => {
     });
     if (!existing) return res.status(404).json({ success: false, code: 'NOT_FOUND' });
 
-    const { name, environment, framework, targetUrl } = req.body || {};
+    const { name, environment, framework, targetUrl, execMode, enterpriseMode, vscodeWorkspacePath } = req.body || {};
     if (targetUrl !== undefined && targetUrl !== null && targetUrl !== '' && !/^https?:\/\/.+/.test(targetUrl)) {
       return res
         .status(400)
         .json({ success: false, code: 'INVALID_URL', message: 'targetUrl must be http(s)' });
     }
+    // VS Code workspace folder — absolute local path used by "Open in VS Code".
+    // Reject shell-dangerous characters up front (it is later passed to a
+    // detached `code` launch); '' clears it. undefined leaves it unchanged.
+    let nextVscodePath = existing.vscodeWorkspacePath;
+    if (vscodeWorkspacePath !== undefined) {
+      if (vscodeWorkspacePath === null || vscodeWorkspacePath === '') {
+        nextVscodePath = null;
+      } else if (typeof vscodeWorkspacePath !== 'string' || /["'`;&|$\n\r]/.test(vscodeWorkspacePath)) {
+        return res.status(400).json({ success: false, code: 'INVALID_PATH', message: 'Folder path contains characters that are not allowed.' });
+      } else {
+        nextVscodePath = vscodeWorkspacePath.trim();
+      }
+    }
+    // execMode whitelist — silently fall back to existing on bad input rather
+    // than 400, because this field arrives from a Select that should be
+    // constrained, and a typo shouldn't block the rest of the patch.
+    const nextExecMode = (execMode === 'fast' || execMode === 'thorough')
+      ? execMode
+      : existing.execMode;
+    const currentEnterpriseMode = await enterpriseGate.readProjectEnterpriseMode(prisma, existing.id, existing);
+    const nextEnterpriseMode = typeof enterpriseMode === 'boolean'
+      ? enterpriseMode
+      : currentEnterpriseMode;
 
     const project = await prisma.project.update({
       where: { id: existing.id },
@@ -135,15 +607,21 @@ router.put('/:id', requireCsrf, async (req, res, next) => {
         environment: environment || existing.environment,
         framework: framework || existing.framework,
         targetUrl: targetUrl === '' ? null : targetUrl ?? existing.targetUrl,
+        execMode: nextExecMode,
+        vscodeWorkspacePath: nextVscodePath,
       },
     });
+    if (typeof enterpriseMode === 'boolean') {
+      await enterpriseGate.writeProjectEnterpriseMode(prisma, project.id, nextEnterpriseMode);
+    }
+    const projectWithEnterpriseMode = { ...project, enterpriseMode: nextEnterpriseMode };
     await audit.log({
       userId: req.user.id,
       action: 'project.update',
       target: project.id,
       req,
     });
-    res.json({ success: true, project });
+    res.json({ success: true, project: projectWithEnterpriseMode });
   } catch (err) {
     next(err);
   }
@@ -182,6 +660,72 @@ router.put('/:id/guidance', requireCsrf, async (req, res, next) => {
       req,
     });
     res.json({ success: true, project });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── PUT /api/projects/:id/assertion-equivalences ─────────
+// Project-scoped synonym map fed to the deterministic assertion verifier.
+// Body shape:
+//   { equivalences: [{ canonical: string, variants: string[] }] }
+// Stored as JSON on Project.assertionEquivalences. Posting an empty array
+// clears the map. Saved automatically when the user accepts a semantic
+// rescue via the Blocked page modal, OR edited directly in Settings.
+router.put('/:id/assertion-equivalences', requireCsrf, async (req, res, next) => {
+  try {
+    const existing = await prisma.project.findFirst({
+      where: { id: req.params.id, orgId: req.org.id },
+      select: { id: true, assertionEquivalences: true },
+    });
+    if (!existing) return res.status(404).json({ success: false, code: 'NOT_FOUND' });
+
+    const raw = req.body?.equivalences;
+    if (!Array.isArray(raw)) {
+      return res.status(400).json({ success: false, code: 'INVALID_BODY',
+        message: 'equivalences must be an array.' });
+    }
+    if (raw.length > 200) {
+      return res.status(400).json({ success: false, code: 'TOO_MANY',
+        message: 'Up to 200 equivalence entries supported.' });
+    }
+    // Validate each entry: { canonical: non-empty string, variants: string[] }.
+    const cleaned = [];
+    for (const entry of raw) {
+      if (!entry || typeof entry !== 'object') continue;
+      const canonical = typeof entry.canonical === 'string' ? entry.canonical.trim() : '';
+      if (!canonical || canonical.length > 400) continue;
+      const variants = Array.isArray(entry.variants)
+        ? entry.variants
+            .filter((v) => typeof v === 'string' && v.trim().length > 0 && v.length <= 400)
+            .map((v) => v.trim())
+            .slice(0, 50)
+        : [];
+      if (!variants.length) continue;
+      cleaned.push({ canonical, variants });
+    }
+    const payload = cleaned.length ? JSON.stringify(cleaned) : null;
+
+    const project = await prisma.project.update({
+      where: { id: existing.id },
+      data: { assertionEquivalences: payload },
+      select: { id: true, assertionEquivalences: true },
+    });
+    await audit.log({
+      userId: req.user.id,
+      action: 'project.assertionEquivalences.update',
+      target: project.id,
+      metadata: { count: cleaned.length },
+      req,
+    });
+    // Return parsed shape so the frontend can re-render directly.
+    res.json({
+      success: true,
+      project: {
+        id: project.id,
+        assertionEquivalences: cleaned,
+      },
+    });
   } catch (err) {
     next(err);
   }
@@ -388,22 +932,25 @@ router.get('/:id/browser-context', async (req, res, next) => {
         contextUserAgent: true, contextColorScheme: true, contextPermissions: true,
         contextGeolocation: true, contextHttpCredentials: true, contextExtraHeaders: true,
         contextIgnoreHttpsErrors: true, contextProxyServer: true, contextProxyBypass: true,
-        autoAcceptDialogs: true,
+        autoAcceptDialogs: true, triggerConfigJson: true,
       },
     });
     if (!project) return res.status(404).json({ success: false, code: 'NOT_FOUND' });
-    res.json({ success: true, context: project });
+
+    let contextHeadless = false;
+    if (project.triggerConfigJson) {
+      try {
+        const parsed = JSON.parse(project.triggerConfigJson);
+        if (typeof parsed?.contextHeadless === 'boolean') contextHeadless = parsed.contextHeadless;
+      } catch (_) {}
+    }
+
+    res.json({ success: true, context: { ...project, contextHeadless } });
   } catch (err) { next(err); }
 });
 
 // ── PUT /api/projects/:id/browser-context ─────────────────
-// Replaces the browser-context configuration. All fields optional; passing
-// null clears a field (back to MCP defaults). Validation is minimal — bad
-// JSON in geolocation/credentials/headers is caught at MCP boot time and
-// surfaced via the broadcast warn channel; we don't reject early because
-// the editor stores user-supplied JSON strings and the strictest check is
-// "does it run".
-router.put('/:id/browser-context', requireCsrf, async (req, res, next) => {
+router.put('/:id/browser-context', async (req, res, next) => {
   try {
     const b = req.body || {};
     const data = {};
@@ -421,9 +968,19 @@ router.put('/:id/browser-context', requireCsrf, async (req, res, next) => {
 
     const existing = await prisma.project.findFirst({
       where: { id: req.params.id, orgId: req.org.id },
-      select: { id: true },
+      select: { id: true, triggerConfigJson: true },
     });
     if (!existing) return res.status(404).json({ success: false, code: 'NOT_FOUND' });
+
+    let triggerConfig = {};
+    if (existing.triggerConfigJson) {
+      try { triggerConfig = JSON.parse(existing.triggerConfigJson) || {}; } catch (_) {}
+    }
+
+    if ('contextHeadless' in b) {
+      triggerConfig.contextHeadless = b.contextHeadless === null ? null : !!b.contextHeadless;
+      data.triggerConfigJson = JSON.stringify(triggerConfig);
+    }
 
     const updated = await prisma.project.update({
       where: { id: req.params.id },
@@ -434,17 +991,94 @@ router.put('/:id/browser-context', requireCsrf, async (req, res, next) => {
         contextUserAgent: true, contextColorScheme: true, contextPermissions: true,
         contextGeolocation: true, contextHttpCredentials: true, contextExtraHeaders: true,
         contextIgnoreHttpsErrors: true, contextProxyServer: true, contextProxyBypass: true,
-        autoAcceptDialogs: true,
+        autoAcceptDialogs: true, triggerConfigJson: true,
       },
+    });
+
+    if (req.user?.id && req.org?.id) {
+      await audit.log({
+        userId: req.user.id,
+        orgId: req.org.id,
+        action: 'project.browser_context.update',
+        target: req.params.id,
+        metadata: { fields: Object.keys(data) },
+      }).catch(() => {});
+    }
+
+    const contextHeadless = triggerConfig.contextHeadless ?? false;
+    res.json({ success: true, context: { ...updated, contextHeadless } });
+  } catch (err) { next(err); }
+});
+
+// ── GET /api/projects/:id/known-popups ───────────────────
+// Returns the project's declared popup list. Empty array if none.
+router.get('/:id/known-popups', async (req, res, next) => {
+  try {
+    const project = await prisma.project.findFirst({
+      where: { id: req.params.id, orgId: req.org.id },
+      select: { id: true, knownPopups: true },
+    });
+    if (!project) return res.status(404).json({ success: false, code: 'NOT_FOUND' });
+    let popups = [];
+    try { popups = project.knownPopups ? JSON.parse(project.knownPopups) : []; }
+    catch (_) { popups = []; }
+    res.json({ success: true, popups: Array.isArray(popups) ? popups : [] });
+  } catch (err) { next(err); }
+});
+
+// ── PUT /api/projects/:id/known-popups ───────────────────
+// Replaces the project's popup config. Body: { popups: [{ name, matcher, scope, afterDismiss }] }
+// Validates against the knownPopups schema; invalid records are dropped
+// from the response with an `issues` array so the UI can surface them.
+router.put('/:id/known-popups', requireCsrf, async (req, res, next) => {
+  try {
+    const { normalize } = require('../services/knownPopups');
+    const incoming = Array.isArray(req.body?.popups) ? req.body.popups : [];
+    const { normalized, issues } = normalize(incoming);
+    const existing = await prisma.project.findFirst({
+      where: { id: req.params.id, orgId: req.org.id },
+      select: { id: true },
+    });
+    if (!existing) return res.status(404).json({ success: false, code: 'NOT_FOUND' });
+    await prisma.project.update({
+      where: { id: req.params.id },
+      data: { knownPopups: normalized.length ? JSON.stringify(normalized) : null },
     });
     await audit.log({
       userId: req.user.id,
       orgId: req.org.id,
-      action: 'project.browser_context.update',
+      action: 'project.known_popups.update',
       target: req.params.id,
-      metadata: { fields: Object.keys(data) },
+      metadata: { count: normalized.length, issues: issues.length },
     });
-    res.json({ success: true, context: updated });
+    res.json({ success: true, popups: normalized, issues });
+  } catch (err) { next(err); }
+});
+
+// ── PUT /api/projects/:id/default-auth-fixture ───────────
+// Set or clear the default auth fixture for SSO injection (E2).
+// Body: { fixtureId: string | null }
+router.put('/:id/default-auth-fixture', requireCsrf, async (req, res, next) => {
+  try {
+    const { fixtureId } = req.body || {};
+    const existing = await prisma.project.findFirst({
+      where: { id: req.params.id, orgId: req.org.id },
+      select: { id: true },
+    });
+    if (!existing) return res.status(404).json({ success: false, code: 'NOT_FOUND' });
+    // Validate fixtureId belongs to this project if provided
+    if (fixtureId) {
+      const fixture = await prisma.authFixture.findFirst({
+        where: { id: fixtureId, projectId: existing.id },
+        select: { id: true },
+      });
+      if (!fixture) return res.status(404).json({ success: false, code: 'FIXTURE_NOT_FOUND' });
+    }
+    await prisma.project.update({
+      where: { id: existing.id },
+      data: { defaultAuthFixtureId: fixtureId || null },
+    });
+    res.json({ success: true, defaultAuthFixtureId: fixtureId || null });
   } catch (err) { next(err); }
 });
 

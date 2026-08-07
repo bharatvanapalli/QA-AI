@@ -1,0 +1,11 @@
+testCaseID,scenarioName,filterField,inputValue,attemptType,expectedBehavior,expectedMessage,shouldCrash,severity,notes
+TC-NEG-01,SQL Injection in search,search,' OR 1=1 --,injection,Rejected gracefully,No products found,No,Critical,Security
+TC-NEG-02,XSS in search field,search,<script>alert(1)</script>,injection,"Treated as plain text, not rendered",No products found,No,Critical,Security
+TC-NEG-03,Long string oversized,search,AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA,boundary,Handled gracefully or returns empty,,No,High,Boundary condition
+TC-NEG-04,Price min > max,price,"500 min, 100 max",edge,Error message or auto-reset,,No,High,Invalid range
+TC-NEG-05,Negative price,price,-50,edge,Rejected or treated as 0,,No,Medium,Negative value
+TC-NEG-06,Unicode special chars,search,éàüñ,input,Search executes or returns empty,,No,Medium,Unicode handling
+TC-NEG-07,Rapid filter changes,multi,Multiple filters applied quickly,edge,Results stay consistent,,No,Medium,Rapid click stress test
+TC-NEG-08,Category with 0 products,category,(Non-existent category),edge,Empty state shown,No products found,No,Medium,Empty category
+TC-NEG-09,Whitespace-only search,search,,input,Treated as empty or returns all,,No,Low,Whitespace
+TC-NEG-10,NULL or undefined input,search,null,edge,Handled gracefully,,No,High,NULL handling

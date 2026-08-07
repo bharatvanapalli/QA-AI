@@ -36,9 +36,15 @@ router.put('/documents/:id/category', requireCsrf, async (req, res, next) => {
       where: { id: req.params.id, projectId: project.id },
       data: { category },
     });
-    // Mirror onto requirements that reference this doc
+    // Mirror onto the requirement that references this doc. The upload flow
+    // stores requirement.sourceIdentifier = document.id (see
+    // requirements.js — `sourceIdentifier: doc.id`), so match on the id
+    // directly. The previous code matched on document.NAME, which never hit
+    // (sourceIdentifier is the id, not the name) — so a user's manual
+    // re-categorisation silently failed to update the requirement the
+    // Architect actually reads. Match on id fixes that.
     await prisma.requirement.updateMany({
-      where: { projectId: project.id, sourceIdentifier: { equals: (await prisma.document.findUnique({ where: { id: req.params.id }, select: { name: true } }))?.name } },
+      where: { projectId: project.id, sourceIdentifier: req.params.id },
       data: { category },
     });
     res.json({ success: true, updated: doc.count });

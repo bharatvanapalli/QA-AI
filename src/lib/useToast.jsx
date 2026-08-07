@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
-import { CheckCircle2, XCircle, Info, X } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, XCircle, Info, X } from 'lucide-react';
+import { sanitizeUiMessage } from './userFacingMessages';
 
 const ToastCtx = createContext(null);
 
@@ -9,6 +10,10 @@ const MAX_TOASTS = 5;
 
 let _id = 0;
 const nextId = () => ++_id;
+
+function cleanToastMessage(message, opts = {}) {
+  return sanitizeUiMessage(message, opts);
+}
 
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
@@ -20,14 +25,20 @@ export function ToastProvider({ children }) {
   const push = useCallback(
     (kind, message, opts = {}) => {
       const id = nextId();
-      const t = { id, kind, message, title: opts.title };
+      const t = { id, kind, message: cleanToastMessage(message, opts), title: opts.title };
       setToasts((all) => {
+        if (kind === 'error') {
+          const newest = all[all.length - 1];
+          if (newest && newest.kind === kind && newest.message === t.message && newest.title === t.title) {
+            return all;
+          }
+        }
         const next = [...all, t];
         return next.length > MAX_TOASTS ? next.slice(next.length - MAX_TOASTS) : next;
       });
       // Errors stay longer so screen readers and humans both have time to catch
       // them; success/info auto-dismiss faster. ttl: 0 keeps the toast pinned.
-      const ttl = opts.ttl ?? (kind === 'error' ? 8000 : 4000);
+      const ttl = opts.ttl ?? (kind === 'error' ? 8000 : kind === 'warning' ? 6000 : 4000);
       if (ttl > 0) setTimeout(() => dismiss(id), ttl);
       return id;
     },
@@ -42,6 +53,7 @@ export function ToastProvider({ children }) {
     () => ({
       success: (m, o) => push('success', m, o),
       error: (m, o) => push('error', m, o),
+      warning: (m, o) => push('warning', m, o),
       info: (m, o) => push('info', m, o),
       dismiss,
     }),
@@ -62,13 +74,16 @@ export function ToastProvider({ children }) {
       >
         {toasts.map((t) => {
           const isError = t.kind === 'error';
+          const isWarning = t.kind === 'warning';
           const colors =
             t.kind === 'success'
               ? 'bg-success-50 border-success-200 text-success-900'
               : isError
               ? 'bg-danger-50 border-danger-200 text-danger-900'
+              : isWarning
+              ? 'bg-warn-50 border-warn-200 text-warn-900'
               : 'bg-info-50 border-info-200 text-info-900';
-          const Icon = t.kind === 'success' ? CheckCircle2 : isError ? XCircle : Info;
+          const Icon = t.kind === 'success' ? CheckCircle2 : isError ? XCircle : isWarning ? AlertTriangle : Info;
           return (
             <div
               key={t.id}

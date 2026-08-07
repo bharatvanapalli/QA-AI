@@ -1,0 +1,18 @@
+testCaseID,scenarioName,filterType,searchName,category,priceMin,priceMax,expectedResultCount,expectedContainsProductName,expectedDoesNotContainProduct,assertProductPrice,assertProductCategory,expectedEmptyState,notes
+TC-FILTER-01,Search Printed Tshirt,search,Printed,,,,5+,Printed,,,,No,Search by product name
+TC-FILTER-02,Search Blue Top,search,Blue,,,,3+,Blue,,,,No,Search partial name
+TC-FILTER-03,Search non-existent xyz123,search,xyz123_notfound,,,,0,,,,,Yes,Non-existent product
+TC-FILTER-04,Search special characters,search,@#$%^,,,,0,,,,,Yes,Special chars graceful handling
+TC-FILTER-05,Search numbers only,search,12345,,,,0,,,,,Yes,Numbers in search
+TC-FILTER-06,Filter category Dresses,category,,Dresses,,,5+,,Non-Dress,,Dresses,No,Category filter single
+TC-FILTER-07,Filter category Tops,category,,Tops,,,3+,,Non-Top,,Tops,No,Category filter
+TC-FILTER-08,Filter category Men,category,,Men,,,4+,,,,Men,No,Men category products
+TC-FILTER-09,Filter price 50-150,price,,,50,150,8+,,,(>=50 AND <=150),,No,Price range filter
+TC-FILTER-10,Filter price 100-200,price,,,100,200,4+,,,(>=100 AND <=200),,No,Price filter higher range
+TC-FILTER-11,Filter price 500-1000,price,,,500,1000,0,,,,,Yes,Price range no results
+TC-FILTER-12,Search Printed + Dresses category,multi,Printed,Dresses,,,2+,Printed,,,Dresses,No,Search + category combined
+TC-FILTER-13,Category Dresses + Price 50-150,multi,,Dresses,50,150,2+,,,(>=50 AND <=150),Dresses,No,Category + price combined
+TC-FILTER-14,Search Blue + Tops + Price 100-150,multi,Blue,Tops,100,150,1+,Blue,,(>=100 AND <=150),Tops,No,Search + category + price
+TC-FILTER-15,Category Dresses + Price 500-1000,multi,,Dresses,500,1000,0,,,,,Yes,Multi-filter zero results
+TC-FILTER-16,Clear search returns all,search,,,,,ALL,,,,,No,"After clearing search, full list shows"
+TC-FILTER-17,Clear category filter,category,,(none),,,ALL,,,,,No,Clear category shows all

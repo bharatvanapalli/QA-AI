@@ -1,0 +1,643 @@
+PROJECT
+Name: letcode
+Application URL: https://letcode.in/test
+
+GENERATION INTENT
+Create exactly one scenario for each Scenario section below.
+Create the listed Test Cases inside that scenario.
+Convert every numbered action into an executable test step in the same order.
+Keep all inline test data with the step that uses it.
+Keep every Expected Result as a validation or assertion.
+Do not create a scenario for Page Object Model (POM).
+
+Scenario 01: Edit Fields
+Path: /edit
+
+Test Data:
+- fullName: Ada Lovelace
+- appendText: and I enjoy automation
+
+Test Case 01.1: Enter a full name
+Precondition: Open https://letcode.in/edit.
+Steps:
+1. Enter "Ada Lovelace" in the "Enter your full Name" field.
+Expected Results:
+- Verify the full name field contains "Ada Lovelace".
+
+Test Case 01.2: Append text and press Tab
+Precondition: Open https://letcode.in/edit.
+Steps:
+1. Append " and I enjoy automation" to the field whose current value is "I am good".
+2. Press the Tab key.
+Expected Results:
+- Verify the field contains "I am good and I enjoy automation".
+- Verify focus moves away from the edited field.
+
+Test Case 01.3: Read the value inside a text box
+Precondition: Open https://letcode.in/edit.
+Steps:
+1. Read the value from the "What is inside the text box" field.
+Expected Results:
+- Verify the value is "ortonikc".
+
+Test Case 01.4: Clear a text field
+Precondition: Open https://letcode.in/edit.
+Steps:
+1. Clear the "Clear the text" field.
+Expected Results:
+- Verify the field is empty.
+
+Test Case 01.5: Verify a disabled field
+Precondition: Open https://letcode.in/edit.
+Steps:
+1. Inspect the "Confirm edit field is disabled" field.
+Expected Results:
+- Verify the field is disabled and cannot be edited.
+
+Test Case 01.6: Verify a read-only field
+Precondition: Open https://letcode.in/edit.
+Steps:
+1. Inspect the "Confirm text is readonly" field.
+Expected Results:
+- Verify the field is read-only.
+- Verify its value is "This text is readonly".
+
+Scenario 02: Click Actions
+Path: /button
+
+Test Case 02.1: Open Home and return
+Precondition: Open https://letcode.in/button.
+Steps:
+1. Click the "Goto Home" button.
+2. Verify the Home page is displayed.
+3. Navigate back to the Click Actions page.
+Expected Results:
+- Verify the browser returns to https://letcode.in/button.
+
+Test Case 02.2: Read button coordinates
+Precondition: Open https://letcode.in/button.
+Steps:
+1. Read the X and Y coordinates of the "Find Location" button.
+Expected Results:
+- Verify both coordinates are numeric values.
+
+Test Case 02.3: Read button color
+Precondition: Open https://letcode.in/button.
+Steps:
+1. Read the background color of the "What is my color?" button.
+Expected Results:
+- Verify a non-empty color value is returned.
+
+Test Case 02.4: Read button dimensions
+Precondition: Open https://letcode.in/button.
+Steps:
+1. Read the height and width of the "How tall & fat I am?" button.
+Expected Results:
+- Verify height and width are greater than zero.
+
+Test Case 02.5: Verify a disabled button
+Precondition: Open https://letcode.in/button.
+Steps:
+1. Inspect the disabled button.
+Expected Results:
+- Verify the button is disabled and cannot be clicked.
+
+Test Case 02.6: Click and hold a button
+Precondition: Open https://letcode.in/button.
+Steps:
+1. Click and hold the "Button Hold" button until its status changes.
+Expected Results:
+- Verify the hold action is recognized by the page.
+
+Scenario 03: Drop-Down
+Path: /dropdowns
+
+Test Data:
+- fruit: Apple
+- superheroes: Batman, Iron Man, Wonder Woman
+- country: India
+
+Test Case 03.1: Select a fruit by visible text
+Precondition: Open https://letcode.in/dropdowns.
+Steps:
+1. Select "Apple" from the fruits drop-down by visible text.
+Expected Results:
+- Verify "Apple" is selected.
+
+Test Case 03.2: Select multiple superheroes
+Precondition: Open https://letcode.in/dropdowns.
+Steps:
+1. Select "Batman", "Iron Man", and "Wonder Woman" from the superheroes multi-select.
+Expected Results:
+- Verify all three superheroes remain selected.
+
+Test Case 03.3: Select the last programming language
+Precondition: Open https://letcode.in/dropdowns.
+Steps:
+1. Read all options from the programming-language drop-down.
+2. Select the last option, "C#".
+Expected Results:
+- Verify "C#" is selected.
+- Verify the available options include JavaScript, Java, Python, Swift, and C#.
+
+Test Case 03.4: Select a country by value
+Precondition: Open https://letcode.in/dropdowns.
+Steps:
+1. Select "India" from the country drop-down using value "India".
+Expected Results:
+- Verify the selected country text is "India".
+
+Scenario 04: Dialog Box
+Path: /alert
+
+Test Data:
+- promptName: Ada Lovelace
+
+Test Case 04.1: Accept a simple alert
+Precondition: Open https://letcode.in/alert.
+Steps:
+1. Click the button that opens the simple alert.
+2. Read the alert message.
+3. Accept the alert.
+Expected Results:
+- Verify the alert appears and closes after acceptance.
+
+Test Case 04.2: Dismiss a confirmation alert
+Precondition: Open https://letcode.in/alert.
+Steps:
+1. Click the button that opens the confirm alert.
+2. Read the confirmation message.
+3. Dismiss the alert.
+Expected Results:
+- Verify the confirmation alert closes after dismissal.
+
+Test Case 04.3: Complete a prompt alert
+Precondition: Open https://letcode.in/alert.
+Steps:
+1. Click the button that opens the prompt alert.
+2. Enter "Ada Lovelace" in the prompt.
+3. Accept the prompt.
+Expected Results:
+- Verify the page displays the submitted name "Ada Lovelace".
+
+Test Case 04.4: Close a modern alert
+Precondition: Open https://letcode.in/alert.
+Steps:
+1. Open the modern or sweet alert.
+2. Close the modal using its close control.
+Expected Results:
+- Verify the modal is no longer visible.
+
+Scenario 05: Nested Frames
+Path: /frame
+
+Test Data:
+- firstName: Ada
+- lastName: Lovelace
+- email: ada.lovelace@example.test
+
+Test Case 05.1: Enter first name in the outer frame
+Precondition: Open https://letcode.in/frame.
+Steps:
+1. Switch to the outer frame.
+2. Enter "Ada" in the first-name field.
+Expected Results:
+- Verify the first-name field contains "Ada".
+
+Test Case 05.2: Enter last name in the outer frame
+Precondition: Open https://letcode.in/frame.
+Steps:
+1. Switch to the outer frame.
+2. Enter "Lovelace" in the last-name field.
+Expected Results:
+- Verify the last-name field contains "Lovelace".
+
+Test Case 05.3: Enter email in the nested inner frame
+Precondition: Open https://letcode.in/frame.
+Steps:
+1. Switch to the outer frame.
+2. Switch to the nested inner frame.
+3. Enter "ada.lovelace@example.test" in the email field.
+Expected Results:
+- Verify the nested email field contains "ada.lovelace@example.test".
+
+Scenario 06: Toggle States
+Path: /radio
+
+Test Case 06.1: Select either radio option
+Precondition: Open https://letcode.in/radio.
+Steps:
+1. Select "Yes" in the first Yes or No radio group.
+Expected Results:
+- Verify "Yes" is selected.
+
+Test Case 06.2: Confirm only one radio remains selected
+Precondition: Open https://letcode.in/radio.
+Steps:
+1. Select "One" in the One or Two radio group.
+2. Select "Two" in the same group.
+Expected Results:
+- Verify "Two" is selected.
+- Verify "One" is not selected.
+
+Test Case 06.3: Find the radio-button grouping bug
+Precondition: Open https://letcode.in/radio.
+Steps:
+1. Select "Yes" in the Find the bug group.
+2. Select "No" in the Find the bug group.
+Expected Results:
+- Verify both choices can remain selected, demonstrating the grouping bug.
+
+Test Case 06.4: Detect the preselected radio option
+Precondition: Open https://letcode.in/radio.
+Steps:
+1. Inspect both options in the preselected radio group.
+Expected Results:
+- Verify exactly one option is preselected.
+- Record the selected option.
+
+Test Case 06.5: Verify the last radio field is disabled
+Precondition: Open https://letcode.in/radio.
+Steps:
+1. Inspect the last option in the Going, Not going, Maybe group.
+Expected Results:
+- Verify the "Maybe" option is disabled.
+
+Test Case 06.6: Inspect a checkbox state
+Precondition: Open https://letcode.in/radio.
+Steps:
+1. Inspect the "Remember me" checkbox.
+Expected Results:
+- Record whether the checkbox is selected.
+- Verify the state can be read without changing it.
+
+Test Case 06.7: Accept terms and conditions
+Precondition: Open https://letcode.in/radio.
+Steps:
+1. Select the "Accept T&C" checkbox.
+Expected Results:
+- Verify the checkbox is selected.
+
+Scenario 07: Tabs Handler
+Path: /window
+
+Test Case 07.1: Open Home in a new tab
+Precondition: Open https://letcode.in/window.
+Steps:
+1. Click "Open Home Page".
+2. Switch to the newly opened tab.
+3. Read and record the new tab title.
+4. Close the new tab.
+5. Return to the original tab.
+Expected Results:
+- Verify a new Home tab opens.
+- Verify the original Tabs Handler page remains available after the child tab closes.
+
+Test Case 07.2: Open and close multiple windows
+Precondition: Open https://letcode.in/window.
+Steps:
+1. Click "Multiple windows".
+2. Collect every open window handle.
+3. Switch to each new window and record its title.
+4. Close each child window.
+5. Return to the original window.
+Expected Results:
+- Verify more than one child window opens.
+- Verify all child windows close and the original window remains.
+
+Scenario 08: Find Elements
+Path: /elements
+
+Test Data:
+- githubUsername: ortoniKC
+
+Test Case 08.1: Find and validate a GitHub profile
+Precondition: Open https://letcode.in/elements.
+Steps:
+1. Enter "ortoniKC" in the Git username field.
+2. Submit the search.
+3. Read the displayed profile name and profile information.
+Expected Results:
+- Verify the profile avatar is displayed.
+- Verify profile information is displayed for "ortoniKC".
+
+Test Case 08.2: Compare repository count
+Precondition: A successful profile search for "ortoniKC" is displayed.
+Steps:
+1. Read the Public Repos count.
+2. Count the repositories listed on the page.
+Expected Results:
+- Verify the number of listed repositories equals the Public Repos count.
+
+Scenario 09: AUI - Drag
+Path: /draggable
+
+Test Case 09.1: Drag the target
+Precondition: Open https://letcode.in/draggable.
+Steps:
+1. Drag the target box to a different position inside the dotted container.
+Expected Results:
+- Verify the target position changes.
+- Verify the target remains inside the dotted container.
+
+Test Case 09.2: Verify drag constraints
+Precondition: Open https://letcode.in/draggable.
+Steps:
+1. Attempt to drag the target beyond each edge of the dotted container.
+Expected Results:
+- Verify the draggable target does not move outside the container boundaries.
+
+Scenario 10: AUI - Drop
+Path: /droppable
+
+Test Case 10.1: Drop the source into the target
+Precondition: Open https://letcode.in/droppable.
+Steps:
+1. Drag "Drag me to my target" into the target drop zone.
+2. Release the source inside the drop zone.
+Expected Results:
+- Verify the target changes to its dropped state.
+
+Scenario 11: AUI - Sort
+Path: /sortable
+
+Test Case 11.1: Move an item from To Do to Done
+Precondition: Open https://letcode.in/sortable.
+Steps:
+1. Record the first item in the TO DO list.
+2. Drag that item into the DONE list.
+Expected Results:
+- Verify the item is removed from TO DO.
+- Verify the same item appears in DONE.
+
+Scenario 12: AUI - Selectable
+Path: /selectable
+
+Test Case 12.1: Select a single item
+Precondition: Open https://letcode.in/selectable.
+Steps:
+1. Select "Playwright".
+Expected Results:
+- Verify only "Playwright" is selected.
+
+Test Case 12.2: Select multiple items
+Precondition: Open https://letcode.in/selectable.
+Steps:
+1. Select Playwright, Kurimurai, Selenium, Protractor, Appium, TestNg, Postman, Cypress, Webdriver.io, and LetCode using the supported multi-select interaction.
+Expected Results:
+- Verify all ten items are selected.
+
+Scenario 13: AUI - Slider
+Path: /slider
+
+Test Data:
+- sliderValue: 25
+
+Test Case 13.1: Set a slider value and generate countries
+Precondition: Open https://letcode.in/slider.
+Steps:
+1. Move the slider to value 25.
+2. Click "Get Countries".
+3. Count the generated country names.
+Expected Results:
+- Verify the slider value is 25.
+- Verify the generated country count corresponds to the selected slider value.
+
+Test Case 13.2: Verify slider range boundaries
+Precondition: Open https://letcode.in/slider.
+Steps:
+1. Move the slider to its minimum value 1.
+2. Verify the value does not go below 1.
+3. Move the slider to its maximum value 50.
+4. Verify the value does not go above 50.
+Expected Results:
+- Verify the supported slider range is 1 through 50.
+
+Scenario 14: Timeouts
+Path: /waits
+
+Test Case 14.1: Wait for and accept a delayed alert
+Precondition: Open https://letcode.in/waits.
+Steps:
+1. Click "Simple Alert".
+2. Wait until the delayed alert is displayed.
+3. Read the alert message.
+4. Accept the alert.
+Expected Results:
+- Verify the alert appears within the supported timeout.
+- Verify the alert closes after acceptance.
+
+Scenario 15: WebTable
+Path: /table
+
+Test Case 15.1: Sum the shopping-list prices
+Precondition: Open https://letcode.in/table.
+Steps:
+1. Read every price in the Shopping List table.
+2. Add the prices.
+3. Read the displayed total.
+Expected Results:
+- Verify the calculated price sum equals the displayed total.
+
+Test Case 15.2: Mark Raj as present
+Precondition: Open https://letcode.in/table.
+Steps:
+1. Find the row containing "Raj".
+2. Select the present checkbox in that row.
+Expected Results:
+- Verify Raj's checkbox is selected.
+
+Test Case 15.3: Verify column sorting
+Precondition: Open https://letcode.in/table.
+Steps:
+1. Click a sortable column header.
+2. Read the column values after the first click.
+3. Click the same header again.
+4. Read the column values after the second click.
+Expected Results:
+- Verify the first click sorts the values in one direction.
+- Verify the second click reverses the sort direction.
+
+Scenario 16: Advanced Table
+Path: /advancedtable
+
+Test Data:
+- pageSize: 10
+- searchText: Aberdeen
+
+Test Case 16.1: Change table page size
+Precondition: Open https://letcode.in/advancedtable.
+Steps:
+1. Select page size 10.
+2. Count the visible university rows.
+Expected Results:
+- Verify no more than 10 rows are displayed.
+
+Test Case 16.2: Search the table
+Precondition: Open https://letcode.in/advancedtable.
+Steps:
+1. Enter "Aberdeen" in the "Search table..." field.
+Expected Results:
+- Verify the results include "University of Aberdeen".
+- Verify unrelated universities are filtered out.
+
+Test Case 16.3: Sort by university name
+Precondition: Open https://letcode.in/advancedtable.
+Steps:
+1. Clear the table search.
+2. Click the "UNIVERSITY NAME" header.
+3. Read the visible university names.
+Expected Results:
+- Verify the visible names are sorted by university name.
+
+Test Case 16.4: Navigate table pages
+Precondition: Open https://letcode.in/advancedtable.
+Steps:
+1. Record the first visible university on page 1.
+2. Click "Next".
+3. Record the first visible university on page 2.
+4. Click "Previous".
+Expected Results:
+- Verify page 2 contains a different row set.
+- Verify Previous returns to page 1.
+
+Scenario 17: Date Pickers
+Path: /calendar
+
+Test Data:
+- birthday: 1990-05-15
+
+Test Case 17.1: Select a birthday
+Precondition: Open https://letcode.in/calendar.
+Steps:
+1. Select the date "1990-05-15" in the Birthday date picker.
+Expected Results:
+- Verify the Birthday field stores "1990-05-15".
+
+Scenario 18: Form Inputs
+Path: /forms
+
+Test Data:
+- firstName: Ada
+- lastName: Lovelace
+- email: ada.lovelace@example.test
+- countryCode: +91
+- phone: 9876543210
+- addressLine1: 12 Analytical Engine Road
+- addressLine2: Suite 5
+- state: Karnataka
+- postalCode: 560001
+- country: India
+- dateOfBirth: 1990-05-15
+- gender: Female
+
+Test Case 18.1: Submit a form with valid data
+Precondition: Open https://letcode.in/forms.
+Steps:
+1. Enter "Ada" in First Name.
+2. Enter "Lovelace" in Last Name.
+3. Enter "ada.lovelace@example.test" in Email.
+4. Select country code "+91".
+5. Enter "9876543210" in Phone Number.
+6. Enter "12 Analytical Engine Road" in Address Line 1.
+7. Enter "Suite 5" in Address Line 2.
+8. Enter "Karnataka" in State.
+9. Enter "560001" in Postal Code.
+10. Select "India" as Country.
+11. Select "1990-05-15" as Date of Birth.
+12. Select "Female" as Gender.
+13. Select the terms and conditions checkbox.
+14. Submit the form.
+Expected Results:
+- Verify the form accepts the valid data.
+- Verify no validation error is displayed.
+
+Test Case 18.2: Validate an invalid email
+Precondition: Open https://letcode.in/forms.
+Steps:
+1. Enter "not-an-email" in Email.
+2. Move focus away from the Email field.
+Expected Results:
+- Verify an email validation error is shown or the field is marked invalid.
+
+Test Case 18.3: Validate a phone number
+Precondition: Open https://letcode.in/forms.
+Steps:
+1. Select country code "+91".
+2. Enter "ABC123" in Phone Number.
+3. Move focus away from the Phone Number field.
+Expected Results:
+- Verify alphabetic phone input is rejected or marked invalid.
+
+Test Case 18.4: Require terms acceptance
+Precondition: Fill all required form fields with valid data but leave terms and conditions unselected.
+Steps:
+1. Submit the form.
+Expected Results:
+- Verify the form is not successfully submitted until terms and conditions are accepted.
+
+Scenario 19: File Operations
+Path: /file
+
+Test Data:
+- uploadFileName: letcode-upload-sample.txt
+
+Test Case 19.1: Select a file for upload
+Precondition: Open https://letcode.in/file and have a local file named "letcode-upload-sample.txt".
+Steps:
+1. Select "letcode-upload-sample.txt" in the file input.
+Expected Results:
+- Verify the selected file name is displayed by the file input.
+
+Test Case 19.2: Download the Excel sample
+Precondition: Open https://letcode.in/file.
+Steps:
+1. Click the Excel download control.
+Expected Results:
+- Verify "sample.xlsx" is downloaded.
+
+Test Case 19.3: Download the PDF sample
+Precondition: Open https://letcode.in/file.
+Steps:
+1. Click the PDF download control.
+Expected Results:
+- Verify "sample.pdf" is downloaded.
+
+Test Case 19.4: Download the text sample
+Precondition: Open https://letcode.in/file.
+Steps:
+1. Click the Text download control.
+Expected Results:
+- Verify "sample.txt" is downloaded.
+
+Scenario 20: DOM Elements
+Path: /shadow
+
+Test Data:
+- firstName: Ada
+- lastName: Lovelace
+- email: ada.lovelace@example.test
+
+Test Case 20.1: Enter first name in an open shadow root
+Precondition: Open https://letcode.in/shadow.
+Steps:
+1. Access the open shadow root.
+2. Enter "Ada" in the First Name field.
+Expected Results:
+- Verify the shadow-root First Name field contains "Ada".
+
+Test Case 20.2: Enter last name in a closed shadow component
+Precondition: Open https://letcode.in/shadow.
+Steps:
+1. Access the supported component interface for the closed shadow root.
+2. Enter "Lovelace" in the Last Name field.
+Expected Results:
+- Verify the Last Name field contains "Lovelace".
+
+Test Case 20.3: Enter email in the nested shadow component
+Precondition: Open https://letcode.in/shadow.
+Steps:
+1. Access the nested shadow component containing the Email field.
+2. Enter "ada.lovelace@example.test" in Email.
+Expected Results:
+- Verify the Email field contains "ada.lovelace@example.test".

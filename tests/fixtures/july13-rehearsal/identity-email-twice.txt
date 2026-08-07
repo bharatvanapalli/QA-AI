@@ -1,0 +1,15 @@
+# Multi-stage identity flow
+
+Data:
+- email=odyssey.demo@example.test
+- password=${ODYSSEY_DEMO_PASSWORD}
+
+1. Open the configured application target.
+2. Enter `email` in the email field and continue.
+3. When the next identity page asks for email again, enter the same `email` value.
+4. Continue to the password page.
+5. Enter `password` in the password field and submit.
+6. Verify that an authenticated application page is visible.
+
+The second email prompt depends on the first continuation. The password and final
+authenticated check depend on successful identity submission.

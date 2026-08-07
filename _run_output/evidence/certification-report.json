@@ -1,0 +1,47 @@
+{
+  "fidelityPlan": "AS_IS_FIDELITY_PLAN §4 Class G Phase 3",
+  "spec": {
+    "status": "draft",
+    "qualityIssues": [
+      {
+        "code": "telemetry-annotations",
+        "detail": "test.info() annotations carry internal telemetry IDs"
+      }
+    ]
+  },
+  "data": {
+    "fileCount": 2,
+    "files": [
+      "tests/data/admin-logout-redirects-to-auth-login-page.json",
+      "tests/data/post-logout-direct-navigation-to-dashboard-redirects-to-login.json"
+    ]
+  },
+  "locators": {
+    "locators/generated/dashboardPage.generated.locators.js": {
+      "status": "runnable",
+      "locatorCount": 1
+    },
+    "locators/generated/loginPage.generated.locators.js": {
+      "status": "runnable",
+      "locatorCount": 3
+    }
+  },
+  "evidence": {
+    "locator-manifest.json": {
+      "status": "present",
+      "entryCount": 4
+    },
+    "locator-conflicts.json": {
+      "status": "absent",
+      "conflictCount": 0
+    },
+    "dom-atlas.json": {
+      "status": "present",
+      "pageCount": 2
+    },
+    "pom-architect-report.json": {
+      "status": "present",
+      "methodCount": 0
+    }
+  }
+}

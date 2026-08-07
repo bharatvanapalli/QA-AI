@@ -1,8 +1,9 @@
 'use strict';
 
 const { getProvider } = require('../../lib/llmProvider');
-const { composeSystemPrompt } = require('../../lib/promptCompose');
+const { composeSystemPrompt, composeSystemPromptCached } = require('../../lib/promptCompose');
 const { parseJsonResponse } = require('../../lib/parseJsonResponse');
+const { normaliseStepShape } = require('../../lib/stepShape');
 
 /**
  * Agent 6 — Supervisor.
@@ -23,7 +24,7 @@ const { parseJsonResponse } = require('../../lib/parseJsonResponse');
  *
  * Output shape (JSON only, no markdown fences):
  *   {
- *     revisedCase?: { name, steps:[{action,target,value,expected}], assertions },
+ *     revisedCase?: { name, steps:[{action,element,locator_hint?,value,expected}], assertions },
  *     guidance?: string,           // injected as a 2nd system-prompt block
  *     contextNotes?: string,       // missing context the page revealed
  *     giveUp?: { reason: string }, // exclusive with the above
@@ -52,8 +53,11 @@ C) The requirement is fundamentally untestable on this page (feature isn't built
 Output rules:
 - JSON only. No markdown fences. No preamble.
 - Either (revisedCase + guidance + optional contextNotes) OR giveUp — not both.
-- \`steps\` MUST be an array of { action, target, value, expected } objects matching
-  the original step shape.
+- \`steps\` MUST be an array of { action, element, locator_hint?, value, expected } objects.
+  Use "element" for the human description of the element on the page (passed directly to
+  Playwright MCP's element parameter). Use "locator_hint" ONLY when role+name alone would be
+  ambiguous. DO NOT emit a "target" field; it is the legacy shape and the platform translates
+  it for backwards-compat only.
 - \`assertions\` is a comma-separated string of specific assertions.
 - \`guidance\` is short (1-3 sentences). It is prepended to the agent's system prompt.
 - Keep everything grounded in what the trails actually showed.`;
@@ -120,7 +124,7 @@ async function run({ apiKey, model, attempts, originalCase, requirement = '', on
       apiKey,
       model,
       maxTokens: 3500,
-      system: composeSystemPrompt(SYSTEM_PROMPT, extraGuidance),
+      system: composeSystemPromptCached(SYSTEM_PROMPT, extraGuidance),
       messages: [{ role: 'user', content: userMsg }],
       onRateLimit,
       responseFormat: 'json',
@@ -156,13 +160,13 @@ async function run({ apiKey, model, attempts, originalCase, requirement = '', on
 
 function normaliseCase(rc) {
   if (!rc || typeof rc !== 'object') return null;
+  // Phase F.3 — delegate to the canonical step normalizer; emits the new
+  // { element, locator_hint } shape regardless of which fields the
+  // Supervisor LLM produced.
   const steps = Array.isArray(rc.steps)
-    ? rc.steps.filter((s) => s && typeof s === 'object').map((s) => ({
-        action: String(s.action || '').slice(0, 120),
-        target: String(s.target || '').slice(0, 200),
-        value: s.value != null ? String(s.value).slice(0, 400) : '',
-        expected: String(s.expected || '').slice(0, 200),
-      }))
+    ? rc.steps.filter((s) => s && typeof s === 'object')
+        .map((s, i) => normaliseStepShape(s, i + 1))
+        .filter(Boolean)
     : [];
   return {
     name: rc.name ? String(rc.name).slice(0, 300) : '',

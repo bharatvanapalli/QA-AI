@@ -1,0 +1,320 @@
+{
+  "schemaVersion": "qaai-pom-architect-v1",
+  "mode": "deterministic",
+  "pages": {
+    "productsPage": {
+      "architectMethods": [
+        {
+          "kind": "searchForProduct",
+          "name": "searchForProduct",
+          "params": [
+            "productName"
+          ],
+          "inputLocator": "searchProductInput",
+          "buttonLocator": "searchButton",
+          "sourceStepIds": [
+            "el1",
+            "el2"
+          ],
+          "reason": "Collapsed search input + submit button into a single business method."
+        },
+        {
+          "kind": "selectBrand",
+          "name": "selectBrand",
+          "params": [
+            "brandName"
+          ],
+          "brands": [
+            {
+              "key": "polo",
+              "value": "Polo",
+              "locator": "6PoloLink"
+            }
+          ],
+          "sourceStepIds": [
+            "el1"
+          ],
+          "reason": "Collapsed brand-link click into a parameterized brand filter method."
+        },
+        {
+          "kind": "selectCategory",
+          "name": "selectCategory",
+          "params": [
+            "category",
+            "subCategory"
+          ],
+          "categories": [
+            {
+              "key": "kids",
+              "value": "Kids",
+              "locator": "kidsLink"
+            },
+            {
+              "key": "women",
+              "value": "Women",
+              "locator": "womenLink"
+            }
+          ],
+          "subCategories": [
+            {
+              "key": "dress",
+              "value": "Dress",
+              "locator": "dressLink"
+            },
+            {
+              "key": "tops",
+              "value": "Tops",
+              "locator": "topsLink"
+            }
+          ],
+          "sourceStepIds": [
+            "el1",
+            "el2"
+          ],
+          "reason": "Collapsed category + subcategory clicks into a parameterized catalog method."
+        }
+      ],
+      "assertionMethods": []
+    }
+  },
+  "specPlan": [
+    {
+      "testCaseId": "a3df6292-2e57-44cb-a08b-65683b701bac",
+      "methodName": "searchForProduct",
+      "kind": "searchForProduct",
+      "pageFile": "productsPage",
+      "sourceStepIds": [
+        "el1",
+        "el2"
+      ]
+    },
+    {
+      "testCaseId": "a3df6292-2e57-44cb-a08b-65683b701bac",
+      "methodName": "searchForProduct",
+      "kind": "skip",
+      "pageFile": "productsPage",
+      "sourceStepIds": [
+        "el2"
+      ]
+    },
+    {
+      "testCaseId": "b07fd71c-502e-43f8-ba30-f15d807416ad",
+      "methodName": "searchForProduct",
+      "kind": "searchForProduct",
+      "pageFile": "productsPage",
+      "sourceStepIds": [
+        "el1",
+        "el2"
+      ]
+    },
+    {
+      "testCaseId": "b07fd71c-502e-43f8-ba30-f15d807416ad",
+      "methodName": "searchForProduct",
+      "kind": "skip",
+      "pageFile": "productsPage",
+      "sourceStepIds": [
+        "el2"
+      ]
+    },
+    {
+      "testCaseId": "e5d8ada1-ed4d-4e30-8f68-bd4e1e488a50",
+      "methodName": "searchForProduct",
+      "kind": "searchForProduct",
+      "pageFile": "productsPage",
+      "sourceStepIds": [
+        "el1",
+        "el2"
+      ]
+    },
+    {
+      "testCaseId": "e5d8ada1-ed4d-4e30-8f68-bd4e1e488a50",
+      "methodName": "searchForProduct",
+      "kind": "skip",
+      "pageFile": "productsPage",
+      "sourceStepIds": [
+        "el2"
+      ]
+    },
+    {
+      "testCaseId": "c6c0a615-fb28-4c65-97fe-89d887abba14",
+      "methodName": "searchForProduct",
+      "kind": "searchForProduct",
+      "pageFile": "productsPage",
+      "sourceStepIds": [
+        "el1",
+        "el2"
+      ]
+    },
+    {
+      "testCaseId": "c6c0a615-fb28-4c65-97fe-89d887abba14",
+      "methodName": "searchForProduct",
+      "kind": "skip",
+      "pageFile": "productsPage",
+      "sourceStepIds": [
+        "el2"
+      ]
+    },
+    {
+      "testCaseId": "e8d7f201-c4b4-43e2-ba82-72681c90ffe7",
+      "methodName": "searchForProduct",
+      "kind": "searchForProduct",
+      "pageFile": "productsPage",
+      "sourceStepIds": [
+        "el1",
+        "el2"
+      ]
+    },
+    {
+      "testCaseId": "e8d7f201-c4b4-43e2-ba82-72681c90ffe7",
+      "methodName": "searchForProduct",
+      "kind": "skip",
+      "pageFile": "productsPage",
+      "sourceStepIds": [
+        "el2"
+      ]
+    },
+    {
+      "testCaseId": "62821c2b-85c2-47b5-ae17-713807623b70",
+      "methodName": "selectBrand",
+      "kind": "selectBrand",
+      "pageFile": "productsPage",
+      "sourceStepIds": [
+        "el1"
+      ]
+    },
+    {
+      "testCaseId": "e694182e-78d3-4c35-9704-9f0f809c7620",
+      "methodName": "searchForProduct",
+      "kind": "searchForProduct",
+      "pageFile": "productsPage",
+      "sourceStepIds": [
+        "el1",
+        "el2"
+      ]
+    },
+    {
+      "testCaseId": "e694182e-78d3-4c35-9704-9f0f809c7620",
+      "methodName": "searchForProduct",
+      "kind": "skip",
+      "pageFile": "productsPage",
+      "sourceStepIds": [
+        "el2"
+      ]
+    },
+    {
+      "testCaseId": "285658ff-589d-430d-b83b-e127e9705ac4",
+      "methodName": "searchForProduct",
+      "kind": "searchForProduct",
+      "pageFile": "productsPage",
+      "sourceStepIds": [
+        "el1",
+        "el2"
+      ]
+    },
+    {
+      "testCaseId": "285658ff-589d-430d-b83b-e127e9705ac4",
+      "methodName": "searchForProduct",
+      "kind": "skip",
+      "pageFile": "productsPage",
+      "sourceStepIds": [
+        "el2"
+      ]
+    },
+    {
+      "testCaseId": "216b0b6f-b635-4f90-b0c6-0187c7e40f09",
+      "methodName": "selectCategory",
+      "kind": "selectCategory",
+      "pageFile": "productsPage",
+      "sourceStepIds": [
+        "el1",
+        "el2"
+      ]
+    },
+    {
+      "testCaseId": "216b0b6f-b635-4f90-b0c6-0187c7e40f09",
+      "methodName": "selectCategory",
+      "kind": "skip",
+      "pageFile": "productsPage",
+      "sourceStepIds": [
+        "el2"
+      ]
+    },
+    {
+      "testCaseId": "a6fa82ba-a9d2-4417-a182-57a60bfff160",
+      "methodName": "searchForProduct",
+      "kind": "searchForProduct",
+      "pageFile": "productsPage",
+      "sourceStepIds": [
+        "el1",
+        "el2"
+      ]
+    },
+    {
+      "testCaseId": "a6fa82ba-a9d2-4417-a182-57a60bfff160",
+      "methodName": "searchForProduct",
+      "kind": "skip",
+      "pageFile": "productsPage",
+      "sourceStepIds": [
+        "el2"
+      ]
+    },
+    {
+      "testCaseId": "a6fa82ba-a9d2-4417-a182-57a60bfff160",
+      "methodName": "selectCategory",
+      "kind": "selectCategory",
+      "pageFile": "productsPage",
+      "sourceStepIds": [
+        "el3",
+        "el4"
+      ]
+    },
+    {
+      "testCaseId": "a6fa82ba-a9d2-4417-a182-57a60bfff160",
+      "methodName": "selectCategory",
+      "kind": "skip",
+      "pageFile": "productsPage",
+      "sourceStepIds": [
+        "el4"
+      ]
+    },
+    {
+      "testCaseId": "13a89c84-e811-4000-b8cc-f263f03f301e",
+      "methodName": "searchForProduct",
+      "kind": "searchForProduct",
+      "pageFile": "productsPage",
+      "sourceStepIds": [
+        "el1",
+        "el2"
+      ]
+    },
+    {
+      "testCaseId": "13a89c84-e811-4000-b8cc-f263f03f301e",
+      "methodName": "searchForProduct",
+      "kind": "skip",
+      "pageFile": "productsPage",
+      "sourceStepIds": [
+        "el2"
+      ]
+    },
+    {
+      "testCaseId": "7a7c1f6e-5271-43fc-9276-3680f71ca69c",
+      "methodName": "selectCategory",
+      "kind": "selectCategory",
+      "pageFile": "productsPage",
+      "sourceStepIds": [
+        "el1",
+        "el2"
+      ]
+    },
+    {
+      "testCaseId": "7a7c1f6e-5271-43fc-9276-3680f71ca69c",
+      "methodName": "selectCategory",
+      "kind": "skip",
+      "pageFile": "productsPage",
+      "sourceStepIds": [
+        "el2"
+      ]
+    }
+  ],
+  "rejectedAbstractions": []
+}

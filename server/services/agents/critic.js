@@ -22,8 +22,21 @@
  */
 
 const { getProvider } = require('../../lib/llmProvider');
-const { composeSystemPrompt } = require('../../lib/promptCompose');
+const { composeSystemPrompt, composeSystemPromptCached } = require('../../lib/promptCompose');
+
+// P1-3 REVERTED (2026-05-29 evening) — inline Critic stays at flagship.
+//
+// The earlier audit-sweep change routed runInline through tier='mid' (Haiku
+// 4.5) on the argument that monitoring is well within Haiku's capability.
+// Per the user's later "no compromise on verdict integrity" directive, the
+// inline Critic's job — detect agent confusion, abort hallucinated pass
+// claims, suggest pivots — directly affects whether a live-passable case
+// reaches its passable state before the turn ceiling. A weaker monitor
+// that misses an intervention can turn "live would pass" into "agent gave
+// up first." Keeping the flagship model removes that variable. Cost win
+// reverted; correctness wins.
 const { parseJsonResponse } = require('../../lib/parseJsonResponse');
+const { normaliseStepShape } = require('../../lib/stepShape');
 
 const SYSTEM_PROMPT = `You are a senior SDET reviewing a Playwright MCP test run.
 
@@ -61,7 +74,7 @@ Output a SINGLE JSON object — no markdown, no preamble:
       "testCaseId": "<echo the id verbatim>",
       "name": "<short sentence; keep close to the original if still accurate>",
       "steps": [
-        {"action":"<verb>","target":"<element label as it appears on the page>","value":"<typed value or empty>","expected":"<expected outcome or empty>"}
+        {"action":"<verb>","element":"<human description of the element, as it appears on the page>","locator_hint":"<optional CSS / role-name hint; omit when role+name is enough>","value":"<typed value or empty>","expected":"<expected outcome or empty>"}
       ],
       "assertions": "<comma-separated specific assertions, matched to real page text>",
       "reasoning": "<1-2 sentences: why the original failed and what changed>"
@@ -71,7 +84,10 @@ Output a SINGLE JSON object — no markdown, no preamble:
 }
 
 Rules:
-- The "steps" array MUST have entries shaped like the originals (action / target / value / expected).
+- The "steps" array MUST have entries shaped { action, element, locator_hint?, value, expected }.
+  Use "element" for the human description (passed directly to Playwright MCP's element parameter).
+  Use "locator_hint" ONLY when role+name alone would be ambiguous. DO NOT emit a "target" field —
+  the platform reads it from older cases for backwards-compat, but new output must use the new fields.
 - Surface accessibility-name OR placeholder OR testid that was visible in the trail; never copy a guess.
 - If the failure was network/server (not locator), say so in reasoning and leave steps largely intact.
 - If a test passed but the trail shows the agent had to skip an approved step (because the page didn't render it), update the steps to match what really happened.
@@ -135,7 +151,7 @@ async function run({ apiKey, model, runOutcome, onLog = async () => {}, onRateLi
       apiKey,
       model,
       maxTokens: 4000,
-      system: composeSystemPrompt(SYSTEM_PROMPT, extraGuidance),
+      system: composeSystemPromptCached(SYSTEM_PROMPT, extraGuidance),
       messages: [
         {
           role: 'user',
@@ -172,15 +188,14 @@ function normaliseRewrite(rw) {
   if (!rw || typeof rw !== 'object') return null;
   const id = String(rw.testCaseId || '').trim();
   if (!id) return null;
+  // Phase F.3 — delegate to the canonical normalizer so Critic rewrites land
+  // with element + locator_hint regardless of whether the LLM emitted the new
+  // shape or the legacy `target` shape.
   const steps = Array.isArray(rw.steps)
     ? rw.steps
         .filter((s) => s && typeof s === 'object')
-        .map((s) => ({
-          action: String(s.action || '').slice(0, 120),
-          target: String(s.target || '').slice(0, 200),
-          value: s.value != null ? String(s.value).slice(0, 400) : '',
-          expected: String(s.expected || '').slice(0, 200),
-        }))
+        .map((s, i) => normaliseStepShape(s, i + 1))
+        .filter(Boolean)
     : [];
   return {
     testCaseId: id,
@@ -201,14 +216,40 @@ You receive:
   - "caseContext": the test case (name, assertions, original approved steps)
   - "trail": the actions taken so far (tool, args, ok/error)
   - "lastSnapshot": the most recent accessibility snapshot of the page
+  - "liveDomContext" (when present): the REAL DOM — tag/type/role/class/value/
+    aria-expanded for the page's interactive elements. This is RICHER than the
+    accessibility snapshot: custom dropdowns, autocomplete fields, and icon
+    buttons that the snapshot shows as nameless "generic [ref=eN]" appear here
+    with their actual tag/class/value. USE IT to name the right element and the
+    right interaction when the snapshot alone is ambiguous.
 
-Your job is to catch problems EARLY:
-  - the agent is in a loop (clicking the same wrong element repeatedly)
-  - the agent missed a step from the approved plan
-  - the page is asking for something the test case didn't anticipate
+Custom-widget patterns to recognise from liveDomContext:
+  - A custom dropdown (div/span with class containing select/dropdown and an
+    aria-expanded, NOT a real <select>) needs a CLICK to open then a CLICK on
+    the option — never browser_select_option.
+  - An autocomplete field that already holds a doubled/garbled value (e.g.
+    "JamesJames") means an earlier type was not cleared. Hint: clear the field
+    (select-all + delete or triple-click) then type the value ONCE, then click
+    the matching suggestion option.
+
+Your job is to catch problems EARLY. Patterns to flag:
+  - **Wrong tool for the element type** (PRIORITY — common agent mistake):
+      · browser_type / browser_fill_form used on a submit button, checkbox,
+        radio, file input, or any non-text element. Fix: switch to browser_click.
+      · browser_click on a text field when the intent was to type. Fix: browser_type.
+      · browser_select_option on a custom (non-<select>) dropdown that needs
+        a click to open then a click on the option. Fix: two browser_clicks.
+    These show up as errors like "Input of type 'submit' cannot be filled"
+    or "<element> is not a select" — your hint should name the right tool.
+  - The agent is in a loop (clicking the same wrong element repeatedly)
+  - The agent missed a step from the approved plan
+  - The page is asking for something the test case didn't anticipate
     (consent banner, captcha, password mismatch, unexpected modal, 2FA prompt)
-  - the agent invented an element name/ref that isn't in the snapshot
-  - assertions are about to be missed because the agent is heading the wrong way
+  - The agent invented an element name/ref that isn't in the snapshot
+  - Assertions are about to be missed because the agent is heading the wrong way
+  - The agent typed credentials but never submitted (no click on Login/Submit)
+    — frequent stall pattern. Hint: "Click the <Login/Submit> button at ref=eN
+    to submit the form."
 
 If everything is on track, respond with exactly:
   {"ok": true}
@@ -218,6 +259,8 @@ If you need to intervene with general guidance, respond with:
 
 The hint is injected verbatim as a user message into the agent's next turn.
 Keep it SHORT (under 200 chars), ACTIONABLE, and grounded in the snapshot.
+Name the specific tool the agent should use next, and the specific ref / element
+label from the snapshot. Never say "try something else" — say WHAT and WHERE.
 
 ** Phase E2 — abort-pass-claim verdict **
 If the trail shows the agent is about to (or just did) emit "RESULT: pass"
@@ -245,7 +288,7 @@ Output ONLY JSON. No markdown fences, no preamble.`;
  * @param {function} [opts.onLog]
  * @returns {Promise<{ok:true} | {hint:string, severity:'info'|'warn'|'error'}>}
  */
-async function runInline({ apiKey, model, caseContext, trail, lastSnapshot, onLog = async () => {}, onRateLimit, extraGuidance, provider: providerName } = {}) {
+async function runInline({ apiKey, model, caseContext, trail, lastSnapshot, domContext, onLog = async () => {}, onRateLimit, extraGuidance, provider: providerName } = {}) {
   if (!apiKey) return { ok: true };  // silent skip — never throw from inline path
   const provider = getProvider(providerName);
 
@@ -257,24 +300,58 @@ async function runInline({ apiKey, model, caseContext, trail, lastSnapshot, onLo
     error: a.error ? String(a.error).slice(0, 200) : undefined,
   }));
 
-  const userContent = [
-    `## caseContext\n${JSON.stringify({
-      name: caseContext?.name || '',
-      assertions: caseContext?.assertions || '',
-      originalSteps: caseContext?.originalSteps || [],
-    }, null, 2)}`,
-    `\n## trail (last ${compactTrail.length} action(s))\n${JSON.stringify(compactTrail, null, 2)}`,
+  // P1-7 — caseContext block (case name, declared assertions, original
+  // steps) is identical across every turn within one case. Hoist it into
+  // the cached system array with its own cache_control breakpoint so
+  // within-case turn calls share the cache; only the per-turn trail and
+  // snapshot live in the uncached user message. The SYSTEM_PROMPT block
+  // ALSO gets cache_control so cross-case hits keep saving on the static
+  // monitor instructions.
+  //
+  // Generic rule: per-case static context is per-case cached. Caller-side
+  // per-turn dynamic content (trail, snapshot) lives in the message body.
+  const caseContextBlock = `## caseContext\n${JSON.stringify({
+    name: caseContext?.name || '',
+    assertions: caseContext?.assertions || '',
+    originalSteps: caseContext?.originalSteps || [],
+  }, null, 2)}`;
+  const turnPayload = [
+    `## trail (last ${compactTrail.length} action(s))\n${JSON.stringify(compactTrail, null, 2)}`,
     `\n## lastSnapshot (truncated)\n${String(lastSnapshot || '').slice(0, 3000)}`,
-  ].join('\n');
+    // K1 — deeper-than-snapshot DOM context (tag/type/role/class/value/expanded
+    // for the page's interactive elements, incl. custom dropdowns & autocomplete
+    // that the ARIA snapshot renders as nameless "generic"). When present, the
+    // Critic can name the right element/recipe the text snapshot alone can't.
+    domContext ? `\n## liveDomContext (real DOM — richer than the accessibility snapshot)\n${String(domContext).slice(0, 3000)}` : '',
+  ].filter(Boolean).join('\n');
 
+  // Build the system array with TWO cache breakpoints:
+  //   [INLINE_SYSTEM_PROMPT (cached)] — cross-case stable
+  //   [caseContext (cached)]          — within-case stable across turns
+  //   [operator guidance (uncached)]  — project/case overrides
+  // Anthropic caches everything up to and including the LAST block tagged
+  // cache_control; with two tags we get two cache layers.
+  const systemBlocks = [
+    { type: 'text', text: INLINE_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } },
+    { type: 'text', text: caseContextBlock, cache_control: { type: 'ephemeral' } },
+  ];
+  const trimmedGuidance = (typeof extraGuidance === 'string' ? extraGuidance.trim() : '');
+  if (trimmedGuidance) {
+    systemBlocks.push({
+      type: 'text',
+      text: `## OPERATOR GUIDANCE (apply when in conflict with the rules above)\n${trimmedGuidance}`,
+    });
+  }
+
+  // Use the requested model (flagship by default — see header comment).
   let resp;
   try {
     resp = await provider.complete({
       apiKey,
       model,
       maxTokens: 250,
-      system: composeSystemPrompt(INLINE_SYSTEM_PROMPT, extraGuidance),
-      messages: [{ role: 'user', content: userContent }],
+      system: systemBlocks,
+      messages: [{ role: 'user', content: turnPayload }],
       onRateLimit,
       responseFormat: 'json',
     });

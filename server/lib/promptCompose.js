@@ -30,12 +30,41 @@ const FOOTER = '\n\n---\n\n';
  *                               guidance sources can be joined with `\n\n`
  *                               before passing in — the composer doesn't
  *                               parse them.
+ *
+ * Returns a STRING (backwards-compatible). For agents that want prompt
+ * caching, use composeSystemPromptCached() — which returns the Anthropic
+ * array-of-content-blocks shape with cache_control on the static base.
  */
 function composeSystemPrompt(basePrompt, guidance) {
   if (!guidance || typeof guidance !== 'string') return basePrompt;
   const trimmed = guidance.trim();
   if (!trimmed) return basePrompt;
   return `${HEADER}\n${trimmed}${FOOTER}${basePrompt}`;
+}
+
+/**
+ * P1-1 / P1-4 — Cache-enabled variant. Returns an array of content blocks
+ * with `cache_control` on the static base-prompt prefix. Cache hits within
+ * the 5-minute Anthropic window save ~90% of the prefix input tokens.
+ *
+ * Gemini's provider flattens the array back to a string (cache hints are
+ * dropped — Gemini has no equivalent), so the same return shape works for
+ * both providers.
+ *
+ * Generic rule: static prefixes of LLM prompts get cache_control. The
+ * cacheable prefix must be byte-stable across calls — per-call dynamic
+ * content (operator guidance, per-case context) lives AFTER the cache
+ * boundary.
+ */
+function composeSystemPromptCached(basePrompt, guidance) {
+  const trimmed = (typeof guidance === 'string' ? guidance.trim() : '');
+  const blocks = [
+    { type: 'text', text: basePrompt, cache_control: { type: 'ephemeral' } },
+  ];
+  if (trimmed) {
+    blocks.push({ type: 'text', text: `${HEADER}\n${trimmed}` });
+  }
+  return blocks;
 }
 
 /**
@@ -60,4 +89,4 @@ function joinGuidance({ projectGuidance, sprintGuidance, caseGuidance } = {}) {
   return parts.length ? parts.join('\n\n') : null;
 }
 
-module.exports = { composeSystemPrompt, joinGuidance };
+module.exports = { composeSystemPrompt, composeSystemPromptCached, joinGuidance };

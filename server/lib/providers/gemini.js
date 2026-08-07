@@ -31,6 +31,7 @@
  */
 
 const crypto = require('crypto');
+const { recordDegradation } = require('../degradationSignal');
 
 let _GoogleGenerativeAI = null;
 function loadGoogle() {
@@ -46,7 +47,56 @@ function loadGoogle() {
   }
 }
 
-async function complete({ apiKey, model, system, messages, tools, maxTokens, signal, onRateLimit, responseFormat }) {
+function boundedRequestRetries(value, fallback = 1) {
+  if (value == null || value === '') return fallback;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(0, Math.min(2, Math.floor(parsed)));
+}
+
+function boundedRequestTimeout(value) {
+  if (value == null || value === '') return null;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return null;
+  return Math.max(1, Math.min(600_000, Math.floor(parsed)));
+}
+
+function requestPolicy({ timeoutMs, maxRetries } = {}) {
+  const retries = boundedRequestRetries(maxRetries, 1);
+  return {
+    timeoutMs: boundedRequestTimeout(timeoutMs),
+    maxRetries: retries,
+    maxAttempts: retries + 1,
+  };
+}
+
+function requestSignal(parentSignal, timeoutMs) {
+  const boundedTimeout = boundedRequestTimeout(timeoutMs);
+  if (boundedTimeout == null) {
+    return { signal: parentSignal, timedOut: () => false, cleanup: () => {} };
+  }
+
+  const controller = new AbortController();
+  let timeoutReached = false;
+  const abortFromParent = () => controller.abort();
+  if (parentSignal?.aborted) abortFromParent();
+  else parentSignal?.addEventListener('abort', abortFromParent, { once: true });
+  const timer = setTimeout(() => {
+    timeoutReached = true;
+    controller.abort();
+  }, boundedTimeout);
+
+  return {
+    signal: controller.signal,
+    timedOut: () => timeoutReached,
+    cleanup: () => {
+      clearTimeout(timer);
+      parentSignal?.removeEventListener?.('abort', abortFromParent);
+    },
+  };
+}
+
+async function complete({ apiKey, model, system, messages, tools, maxTokens, signal, onRateLimit, responseFormat, temperature, timeoutMs, maxRetries }) {
   if (!apiKey) {
     const err = new Error('Gemini API key missing. Configure it in Settings → Gemini API.');
     err.code = 'NO_API_KEY';
@@ -83,10 +133,72 @@ async function complete({ apiKey, model, system, messages, tools, maxTokens, sig
   if (responseFormat === 'json' && !hasTools) {
     generationConfig.responseMimeType = 'application/json';
   }
+  // Optional caller-pinned sampling temperature. Authoring stages (Architect)
+  // pin this LOW (~0.3) to kill run-to-run scenario-count variance; everywhere
+  // else it stays unset → Gemini's default. Clamp to the valid [0,2] range.
+  if (typeof temperature === 'number' && Number.isFinite(temperature)) {
+    generationConfig.temperature = Math.max(0, Math.min(2, temperature));
+  }
 
+  // SPEED + CORRECTNESS — Gemini 2.5 models run extended "thinking" by DEFAULT.
+  // Two distinct failures in a multi-turn agent loop (30+ calls per case):
+  //   1) Latency: thinking adds many seconds to EVERY call — the single
+  //      largest time sink.
+  //   2) Empty responses: thinking tokens draw down maxOutputTokens. With a
+  //      tight cap (the Conductor uses 1500) Pro can spend the ENTIRE budget
+  //      thinking and return finishReason=MAX_TOKENS with ZERO content parts.
+  //      The agent loop then sees an assistant turn with no text and no tool
+  //      call — i.e. "no response from the Conductor" — and stalls until the
+  //      turn ceiling. This is the Pro-specific breakage.
+  //
+  // Flash-class models let us disable thinking outright (thinkingBudget: 0).
+  // Pro CANNOT disable it (valid floor is 128) — so we cap it LOW and, whenever
+  // a budget is in play, add that budget ON TOP of maxOutputTokens so the real
+  // answer always has room. Override with QAAI_GEMINI_THINKING_BUDGET (clamped
+  // to >= 128 for non-flash models, since 0 would 400 on Pro).
+  const modelStr = String(model || '').trim();
+  const envBudgetRaw = process.env.QAAI_GEMINI_THINKING_BUDGET;
+  const envBudget = envBudgetRaw != null && envBudgetRaw !== '' ? Number(envBudgetRaw) : null;
+  let thinkingBudget = null;
+  if (/flash/i.test(modelStr)) {
+    // Flash: 0 = thinking off (fastest, the default).
+    thinkingBudget = (envBudget != null && Number.isFinite(envBudget) && envBudget >= 0) ? envBudget : 0;
+  } else if (/gemini-2|2\.5|2\.0/i.test(modelStr)) {
+    // Pro / other non-flash 2.x: thinking can't be disabled. Keep it low so
+    // Pro stays usable in the loop and never starves output. Clamp to >= 128.
+    const want = (envBudget != null && Number.isFinite(envBudget)) ? envBudget : 256;
+    thinkingBudget = Math.max(128, want);
+  } else {
+    // UNKNOWN / future model string — the flash-vs-Pro heuristic is keyed off the
+    // model name, which we don't recognise here. Do NOT guess a thinkingConfig:
+    // sending thinkingBudget=0 to a model that requires a floor 400s the request,
+    // and sending a floor to a non-thinking model is equally wrong. The only safe
+    // move on an unrecognised name is to OMIT thinkingConfig entirely and let the
+    // API apply its own default — but honour an explicit operator override when set.
+    if (envBudget != null && Number.isFinite(envBudget) && envBudget >= 0) {
+      thinkingBudget = envBudget;
+    }
+  }
+  if (thinkingBudget != null && Number.isFinite(thinkingBudget) && thinkingBudget >= 0) {
+    generationConfig.thinkingConfig = { thinkingBudget };
+    // Thinking tokens count against maxOutputTokens — guarantee headroom for
+    // the actual answer on top of the thinking budget, or the model can spend
+    // the whole cap thinking and return nothing (the failure described above).
+    if (thinkingBudget > 0) {
+      generationConfig.maxOutputTokens = (maxTokens || 1500) + thinkingBudget;
+    }
+  }
+
+  // P1-4 — accept the Anthropic-style array-of-content-blocks `system`
+  // shape so the same composeSystemPrompt() output works for both
+  // providers. Cache hints are silently dropped here (Gemini has no
+  // equivalent today); the text content is concatenated.
+  const systemText = Array.isArray(system)
+    ? system.map((b) => (typeof b === 'string' ? b : b?.text || '')).join('\n\n')
+    : (typeof system === 'string' ? system : '');
   const generativeModel = client.getGenerativeModel({
     model: model || 'gemini-2.5-pro',
-    systemInstruction: system ? { role: 'system', parts: [{ text: system }] } : undefined,
+    systemInstruction: systemText ? { role: 'system', parts: [{ text: systemText }] } : undefined,
     tools: geminiTools,
     generationConfig,
     // Default safety filters on Gemini block legitimate QA content (form
@@ -100,21 +212,71 @@ async function complete({ apiKey, model, system, messages, tools, maxTokens, sig
     ],
   });
 
+  // BOUNDED retry on 429 — a single short backoff for a transient burst, then
+  // FAIL FAST. The previous policy (10 attempts × up to 90s) let an exhausted
+  // key hang a run for ~10 minutes with no honest signal — the breaker can't
+  // help because it deliberately excludes 429. We now cap the TOTAL in-process
+  // wait so the run fails promptly and the operator can switch keys/provider.
+  //   - at most 2 attempts (1 retry)
+  //   - single wait clamped to 30s AND the cumulative wait clamped to 60s
+  // On exhaustion we recordDegradation (honest, loud) and throw the clean 429.
+  const policy = requestPolicy({ timeoutMs, maxRetries });
+  const MAX_ATTEMPTS = policy.maxAttempts;
+  const MAX_SINGLE_WAIT_MS = 30_000;
+  const MAX_TOTAL_WAIT_MS = 60_000;
+  let spentWaitMs = 0;
+
   let resp;
-  try {
-    const result = await generativeModel.generateContent({ contents }, { signal });
-    resp = result.response;
-  } catch (err) {
-    if (err?.name === 'AbortError' || signal?.aborted) {
-      const aborted = new Error('Cancelled by user.');
-      aborted.code = 'CANCELLED';
-      aborted.status = 499;
-      throw aborted;
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    const activeRequest = requestSignal(signal, policy.timeoutMs);
+    try {
+      const result = await generativeModel.generateContent({ contents }, { signal: activeRequest.signal });
+      resp = result.response;
+      break;
+    } catch (err) {
+      if (activeRequest.timedOut() && !signal?.aborted) {
+        const timedOut = new Error(`Gemini request exceeded its ${policy.timeoutMs}ms deadline.`);
+        timedOut.code = 'GEMINI_TIMEOUT';
+        timedOut.status = 504;
+        throw timedOut;
+      }
+      if (err?.name === 'AbortError' || signal?.aborted) {
+        const aborted = new Error('Cancelled by user.');
+        aborted.code = 'CANCELLED';
+        aborted.status = 499;
+        throw aborted;
+      }
+      const clean = cleanGeminiError(err, model);
+      if (clean.code === 'RATE_LIMIT' && !signal?.aborted) {
+        // Use Gemini's suggested delay when offered; else a single short backoff.
+        const suggestedMs = clean.retryAfter != null ? clean.retryAfter * 1000 : 15_000;
+        let waitMs = Math.min(suggestedMs, MAX_SINGLE_WAIT_MS);
+        // Never let the cumulative wait exceed the total budget; if even the
+        // clamped wait would blow it, don't bother waiting — fail fast now.
+        const remainingBudget = MAX_TOTAL_WAIT_MS - spentWaitMs;
+        if (attempt < MAX_ATTEMPTS - 1 && waitMs <= remainingBudget && remainingBudget > 0) {
+          spentWaitMs += waitMs;
+          console.log(`[gemini] 429 rate-limit (attempt ${attempt + 1}/${MAX_ATTEMPTS}) — retrying in ${Math.round(waitMs / 1000)}s (bounded fail-fast)`);
+          await new Promise((resolve, reject) => {
+            const timer = setTimeout(resolve, waitMs);
+            signal?.addEventListener('abort', () => { clearTimeout(timer); reject(Object.assign(new Error('Cancelled by user.'), { code: 'CANCELLED', status: 499 })); }, { once: true });
+          });
+          continue;
+        }
+        // Out of retries / out of budget — surface honestly and fail fast.
+        recordDegradation({
+          onLog: (level, message) => console.warn(`[gemini] ${level}: ${message}`),
+          stage: 'gemini-rate-limit',
+          severity: 'error',
+          reason: `Gemini returned 429 (quota exhausted) and the bounded in-process retry budget (<=${MAX_TOTAL_WAIT_MS / 1000}s) is spent`,
+          impact: 'the LLM call failed fast instead of hanging; the run will not complete until the key/provider has quota — switch provider or wait for the quota window to reset',
+          code: 'degraded_gemini_rate_limit',
+        });
+      }
+      throw clean;
+    } finally {
+      activeRequest.cleanup();
     }
-    // Translate the noisy `GoogleGenerativeAI Error: Error fetching from ...`
-    // blob into a short, user-readable line. The original message is kept on
-    // err.raw for debugging but the surfaced .message is clean.
-    throw cleanGeminiError(err, model);
   }
 
   return geminiResponseToAnthropic(resp);
@@ -144,9 +306,13 @@ function cleanGeminiError(err, model) {
     if (m1) retrySec = Math.ceil(parseFloat(m1[1]));
     else if (m2) retrySec = parseInt(m2[1], 10);
     const wait = retrySec ? ` Retry in ${retrySec}s.` : '';
-    const tip = /free_tier/i.test(raw)
-      ? ` Free-tier ${modelLabel} is rate-limited (5 RPM); switch to gemini-2.5-pro or a paid key.`
-      : '';
+    // "free_tier" appears in Google's quota-exceeded body only for keys that
+    // are genuinely on the free AI Studio tier (no GCP billing). Show a
+    // targeted tip in that case; for paid keys just point to the quota console.
+    const isFreeQuota = /free_tier/i.test(raw);
+    const tip = isFreeQuota
+      ? ` Your AI Studio key is on the free tier (5–15 RPM limit). To remove limits, link your Google Cloud project to a billing account at console.cloud.google.com and re-generate your key.`
+      : ` Your quota has been exhausted. Check usage and limits at console.cloud.google.com/apis/api/generativelanguage.googleapis.com.`;
     const clean = new Error(`Gemini quota exceeded.${wait}${tip}`);
     clean.code = 'RATE_LIMIT';
     clean.status = 429;
@@ -364,4 +530,11 @@ function geminiResponseToAnthropic(resp) {
   return { content, stop_reason, usage };
 }
 
-module.exports = { complete, name: 'gemini' };
+module.exports = {
+  complete,
+  name: 'gemini',
+  __test__: {
+    requestPolicy,
+    setGoogleGenerativeAI(value) { _GoogleGenerativeAI = value; },
+  },
+};

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Save, ShieldCheck, Trash2, BadgeCheck, Sparkles, Loader2, Zap } from 'lucide-react';
+import { Save, ShieldCheck, Trash2, BadgeCheck, Sparkles, Loader2, Zap, AlertTriangle } from 'lucide-react';
 import api, { ApiError } from '../../lib/apiClient';
 import useDirtyForm, { useUnsavedChangesWarning } from '../../lib/useDirtyForm';
 import { useToast } from '../../lib/useToast';
@@ -12,6 +12,10 @@ import Select from '../../components/ui/Select';
 import StatusBadge from '../../components/ui/StatusBadge';
 
 const KEY_PREFIX = 'sk-ant-';
+
+function notifyProviderSettingsChanged(provider = 'claude') {
+  window.dispatchEvent(new CustomEvent('qaai:provider-settings-changed', { detail: { provider } }));
+}
 
 export default function ClaudeSettings() {
   const toast = useToast();
@@ -99,6 +103,7 @@ export default function ClaudeSettings() {
           lastValidatedAt: new Date().toISOString(),
           lastError: null,
         }));
+        notifyProviderSettingsChanged();
       } else if (useStored) {
         setServerInfo((s) => ({
           ...s,
@@ -106,6 +111,7 @@ export default function ClaudeSettings() {
           lastValidatedAt: new Date().toISOString(),
           lastError: null,
         }));
+        notifyProviderSettingsChanged();
       }
     } catch (err) {
       if (err instanceof ApiError) {
@@ -158,6 +164,7 @@ export default function ClaudeSettings() {
       });
       f.commit({ apiKey: '', model: res.model });
       setValidation(null);
+      notifyProviderSettingsChanged();
       toast.success('Claude settings saved.', { title: 'Saved' });
     } catch (err) {
       const msg = err instanceof ApiError ? err.payload?.message || err.message : err.message;
@@ -188,6 +195,7 @@ export default function ClaudeSettings() {
       });
       f.rebase({ apiKey: '', model: 'claude-sonnet-4-6' });
       setValidation(null);
+      notifyProviderSettingsChanged();
       toast.success('API key removed.', { title: 'Deleted' });
     } catch (err) {
       toast.error(err.message);
@@ -324,15 +332,40 @@ export default function ClaudeSettings() {
         </div>
       </div>
 
-      {validation?.valid && (
-        <div className="rounded-md bg-success-50 border border-success-200 text-success-900 text-xs p-3 flex items-start gap-2">
-          <BadgeCheck className="w-4 h-4 mt-0.5" />
+      {/* Validation result panels — three states based on canGenerate probe */}
+      {validation?.valid && validation.canGenerate === false && (
+        <div className="rounded-md bg-danger-50 border border-danger-200 text-danger-900 text-xs p-3 flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
           <div>
-            <div className="font-semibold">Key authenticated against Anthropic.</div>
+            <div className="font-semibold">Key authenticated but generation is blocked.</div>
+            <div className="opacity-80 mt-0.5">
+              {validation.isUsageCap
+                ? 'Your Anthropic workspace has reached its API usage limit. Generation will resume automatically when the limit resets — check console.anthropic.com for the exact reset time.'
+                : 'Your Anthropic key is rate-limited right now. Wait a minute and try again, or check your rate limits at console.anthropic.com.'}
+            </div>
+          </div>
+        </div>
+      )}
+      {validation?.valid && validation.canGenerate === true && (
+        <div className="rounded-md bg-success-50 border border-success-200 text-success-900 text-xs p-3 flex items-start gap-2">
+          <BadgeCheck className="w-4 h-4 mt-0.5 shrink-0" />
+          <div>
+            <div className="font-semibold">Key authenticated and generation is working.</div>
             <div className="opacity-80">
               {validation.modelsAvailable?.length || 0} models accessible:{' '}
               {(validation.modelsAvailable || []).slice(0, 4).join(', ')}
               {validation.modelsAvailable?.length > 4 ? '…' : ''}
+            </div>
+          </div>
+        </div>
+      )}
+      {validation?.valid && validation.canGenerate === null && (
+        <div className="rounded-md bg-warn-50 border border-warn-200 text-warn-900 text-xs p-3 flex items-start gap-2">
+          <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0" />
+          <div>
+            <div className="font-semibold">Key authenticated — generation probe inconclusive.</div>
+            <div className="opacity-80">
+              Authentication passed but the generation test timed out. The key is likely fine — try running a scenario to confirm.
             </div>
           </div>
         </div>

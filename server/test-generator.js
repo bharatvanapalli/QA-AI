@@ -161,13 +161,21 @@ test.describe('${tc.module}', () => {
 
 /**
  * Clean all generated spec files (call before a new run).
+ *
+ * NOTE — June 2026: this used to nuke every `.spec.ts` in TESTS_DIR before
+ * each run, which (a) destroyed history between sprints and (b) defeated
+ * the purpose of treating `playwright/` as a durable workspace the user
+ * downloads as a ZIP. We now KEEP all existing files and rely on
+ * per-case write-overwrite: when a TC is regenerated, its single spec
+ * file overwrites the prior version (deterministic filename). Files for
+ * deleted TCs survive on disk until the user explicitly clears them via
+ * `DELETE /api/projects/:projectId/output-files`.
+ *
+ * Kept as a no-op + exported so existing callers (services/runs.js)
+ * don't have to be edited every time we revisit this policy.
  */
 function cleanTestsDir() {
-  if (fs.existsSync(TESTS_DIR)) {
-    fs.readdirSync(TESTS_DIR)
-      .filter(f => f.endsWith('.spec.ts'))
-      .forEach(f => fs.unlinkSync(path.join(TESTS_DIR, f)));
-  }
+  // intentionally empty — see comment above
 }
 
 module.exports = { generateSpecFile, cleanTestsDir, TESTS_DIR };

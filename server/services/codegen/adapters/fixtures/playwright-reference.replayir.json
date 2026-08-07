@@ -1,0 +1,117 @@
+{
+  "version": 1,
+  "caseId": "TC-LOGIN-VALID-ROW-1",
+  "authProfile": {
+    "id": "demo",
+    "strategy": "bypass_fixture",
+    "storageStateRef": "auth/demo.storageState.json"
+  },
+  "dataRow": {
+    "index": 0,
+    "label": "Row 1 - valid demo login",
+    "fields": {
+      "searchTerm": "Admin"
+    },
+    "sensitivity": "synthetic"
+  },
+  "dataRows": [
+    {
+      "index": 0,
+      "label": "Row 1 - valid demo login",
+      "fields": {
+        "searchTerm": "Admin"
+      },
+      "sensitivity": "synthetic"
+    },
+    {
+      "index": 1,
+      "label": "Row 2 - locked demo login",
+      "fields": {
+        "searchTerm": "Locked User"
+      },
+      "sensitivity": "synthetic"
+    }
+  ],
+  "steps": [
+    {
+      "op": "handlePopup",
+      "known": [
+        { "strategy": "role", "role": "button", "name": "Accept" },
+        { "strategy": "text", "text": "Got it" }
+      ]
+    },
+    {
+      "op": "resolve",
+      "as": "usernameField",
+      "candidates": [
+        { "strategy": "role", "role": "textbox", "name": "Username" },
+        { "strategy": "css", "selector": "input[name=\"username\"]" }
+      ]
+    },
+    {
+      "op": "act",
+      "target": "usernameField",
+      "action": "fill",
+      "valueRef": "env:QAAI_USERNAME"
+    },
+    {
+      "op": "resolve",
+      "as": "passwordField",
+      "candidates": [
+        { "strategy": "css", "selector": "input[name=\"password\"]" },
+        { "strategy": "placeholder", "text": "Password" }
+      ]
+    },
+    {
+      "op": "act",
+      "target": "passwordField",
+      "action": "fill",
+      "valueRef": "env:QAAI_PASSWORD"
+    },
+    {
+      "op": "resolve",
+      "as": "submitButton",
+      "candidates": [
+        { "strategy": "role", "role": "button", "name": "Login" },
+        { "strategy": "text", "text": "Login" }
+      ]
+    },
+    {
+      "op": "act",
+      "target": "submitButton",
+      "action": "click"
+    },
+    {
+      "op": "waitFor",
+      "condition": { "kind": "url", "pattern": "**/dashboard", "timeoutMs": 10000 }
+    },
+    {
+      "op": "resolve",
+      "as": "dashboardHeading",
+      "candidates": [
+        { "strategy": "role", "role": "heading", "name": "Dashboard" },
+        { "strategy": "text", "text": "Dashboard" }
+      ]
+    },
+    {
+      "op": "assert",
+      "contractRef": "ASSERT-DASHBOARD-VISIBLE",
+      "channel": "UI_TEXT",
+      "target": "dashboardHeading",
+      "expected": "Dashboard",
+      "evidence": { "source": "MCP", "snapshotText": "Dashboard" }
+    },
+    {
+      "op": "humanInput",
+      "field": "approvalCode",
+      "disposition": "test_hook",
+      "valueRef": "env:QAAI_TEST_APPROVAL_CODE"
+    }
+  ],
+  "verdict": {
+    "status": "pass",
+    "perAssertionOutcomes": [
+      { "contractRef": "ASSERT-DASHBOARD-VISIBLE", "status": "pass" }
+    ]
+  }
+}

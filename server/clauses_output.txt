@@ -1,0 +1,1119 @@
+﻿Total RequirementClauses: 124
+[
+  {
+    "id": "REQ-53629bf8ff",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "BR-AUTH-01: QAAI shall read credentials from AuthProfiles sheet (no hardcoding); inject username and password at login form.",
+    "behaviourText": "System reads credentials from AuthProfiles sheet and injects them into the login form without hardcoding.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:27.919Z"
+  },
+  {
+    "id": "REQ-873894fd7d",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "BR-AUTH-02: QAAI shall login with Admin credentials (Admin / admin123) and assert redirect to /dashboard/index.",
+    "behaviourText": "Admin login redirects to /dashboard/index.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:27.948Z"
+  },
+  {
+    "id": "REQ-5bb33e4d09",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "BR-AUTH-03: QAAI shall login with ESS credentials (ess_user_01 / TestUser@123) and assert redirect to /dashboard/index.",
+    "behaviourText": "ESS user login redirects to /dashboard/index.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:27.978Z"
+  },
+  {
+    "id": "REQ-01e815cfc2",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "BR-AUTH-04: QAAI shall verify session is established — verify cookies set and subsequent requests include auth headers.",
+    "behaviourText": "After login, session cookies are set and subsequent requests include authentication headers.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.000Z"
+  },
+  {
+    "id": "REQ-e09445b92c",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "BR-AUTH-05: QAAI shall assert that post-login URL contains '/dashboard' or equivalent authenticated path.",
+    "behaviourText": "Post-login URL contains '/dashboard' or an equivalent authenticated path.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.026Z"
+  },
+  {
+    "id": "REQ-7028e15f8e",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "BR-FORM-01: QAAI shall submit login form with empty username and assert field-level validation error 'Username is required'.",
+    "behaviourText": "Submitting the login form with an empty username displays the field-level error 'Username is required'.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.046Z"
+  },
+  {
+    "id": "REQ-7c2344f8b4",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "BR-FORM-02: QAAI shall submit login form with empty password and assert field-level validation error 'Password is required'.",
+    "behaviourText": "Submitting the login form with an empty password displays the field-level error 'Password is required'.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.066Z"
+  },
+  {
+    "id": "REQ-5f24527809",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "BR-FORM-03: QAAI shall submit with both fields empty and assert validation on both fields.",
+    "behaviourText": "Submitting the login form with both fields empty triggers validation errors on both username and password fields.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.081Z"
+  },
+  {
+    "id": "REQ-8cf5b70278",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "BR-FORM-04: QAAI shall verify error messages appear inline below respective fields, not generic alert.",
+    "behaviourText": "Validation error messages appear inline below their respective fields rather than as a generic alert.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.098Z"
+  },
+  {
+    "id": "REQ-f1ce5bd727",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "BR-ERROR-01: QAAI shall login with invalid username + valid password and assert error 'Invalid credentials'.",
+    "behaviourText": "Logging in with an invalid username and valid password displays the error 'Invalid credentials'.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.125Z"
+  },
+  {
+    "id": "REQ-618e514959",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "BR-ERROR-02: QAAI shall login with valid username + wrong password and assert error 'Invalid credentials'.",
+    "behaviourText": "Logging in with a valid username and wrong password displays the error 'Invalid credentials'.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.146Z"
+  },
+  {
+    "id": "REQ-b71d75c8ef",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "BR-ERROR-03: QAAI shall login with non-existent username and assert error message does NOT leak whether user exists.",
+    "behaviourText": "Logging in with a non-existent username does not reveal whether the user account exists.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.165Z"
+  },
+  {
+    "id": "REQ-d9f4fdee61",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "BR-ERROR-04: QAAI shall assert error message is user-friendly and not a technical stack trace.",
+    "behaviourText": "Authentication error messages are user-friendly and do not expose technical stack traces.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.182Z"
+  },
+  {
+    "id": "REQ-7a3cbab9c9",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "BR-ERROR-05: After invalid login, QAAI shall verify user remains on login page (no redirect).",
+    "behaviourText": "After a failed login attempt, the user remains on the login page with no redirect.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.197Z"
+  },
+  {
+    "id": "REQ-a1e3c197eb",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "BR-ERROR-06: QAAI shall verify error message is clearly visible (not hidden, proper color contrast).",
+    "behaviourText": "Error messages are clearly visible with proper color contrast and are not hidden.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.223Z"
+  },
+  {
+    "id": "REQ-1b41758900",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "BR-RBAC-01: QAAI shall login as Admin and assert Admin menu item is visible in left navigation.",
+    "behaviourText": "Admin user sees the Admin menu item in the left navigation after login.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.247Z"
+  },
+  {
+    "id": "REQ-9fc6b814b5",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "BR-RBAC-02: QAAI shall login as Admin and assert PIM, Leave, Time, Admin, Recruitment modules all visible.",
+    "behaviourText": "Admin user sees PIM, Leave, Time, Admin, and Recruitment modules in the navigation after login.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.269Z"
+  },
+  {
+    "id": "REQ-16a9481846",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "BR-RBAC-03: QAAI shall login as ESS user and assert Admin menu item is NOT visible.",
+    "behaviourText": "ESS user does not see the Admin menu item in the navigation after login.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.288Z"
+  },
+  {
+    "id": "REQ-b6dfe0c774",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "BR-RBAC-04: QAAI shall login as ESS user and assert only Leave, Time, My Info, Directory are visible.",
+    "behaviourText": "ESS user sees only Leave, Time, My Info, and Directory modules in the navigation after login.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.308Z"
+  },
+  {
+    "id": "REQ-c7610c0514",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "BR-RBAC-05: QAAI shall assert user's name or avatar displays correctly in the top-right corner post-login.",
+    "behaviourText": "The logged-in user's name or avatar displays correctly in the top-right corner after login.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.323Z"
+  },
+  {
+    "id": "REQ-b514297345",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "BR-RBAC-06: QAAI shall verify that Admin dashboard shows admin-specific widgets (user management, system stats).",
+    "behaviourText": "Admin dashboard displays admin-specific widgets including user management and system stats.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.351Z"
+  },
+  {
+    "id": "REQ-5176ef57c9",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "BR-RBAC-07: QAAI shall verify that ESS dashboard shows ESS-specific widgets (my info, my leave balance).",
+    "behaviourText": "ESS dashboard displays ESS-specific widgets including my info and my leave balance.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.374Z"
+  },
+  {
+    "id": "REQ-d262434715",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "BR-SESSION-01: QAAI shall login successfully and then logout via the top-right user menu.",
+    "behaviourText": "User can log out successfully using the top-right user menu.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.400Z"
+  },
+  {
+    "id": "REQ-39d1dd1b17",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "BR-SESSION-02: QAAI shall verify logout redirects to /auth/login (login page).",
+    "behaviourText": "Logout redirects the user to the /auth/login page.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.426Z"
+  },
+  {
+    "id": "REQ-a7aeaa86b4",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "BR-SESSION-03: QAAI shall verify session cookie is cleared after logout.",
+    "behaviourText": "Session cookie is cleared after the user logs out.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.450Z"
+  },
+  {
+    "id": "REQ-cb5c0c6d8f",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "BR-SESSION-04: QAAI shall attempt to navigate directly to /dashboard after logout and assert redirect to /auth/login.",
+    "behaviourText": "Navigating directly to /dashboard after logout redirects the user to /auth/login.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.477Z"
+  },
+  {
+    "id": "REQ-ff6b172ed8",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "BR-SESSION-05: QAAI shall verify 'Remember Me' checkbox (if present) extends session timeout.",
+    "behaviourText": "'Remember Me' checkbox, when present, extends the session timeout.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.501Z"
+  },
+  {
+    "id": "REQ-548e33505e",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "BR-SEC-01: QAAI shall attempt SQL injection in username field (e.g., 'admin' OR '1'='1') and assert safe rejection.",
+    "behaviourText": "SQL injection input in the username field is safely rejected without executing.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.525Z"
+  },
+  {
+    "id": "REQ-ff9b5010f7",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "BR-SEC-02: QAAI shall attempt XSS payload in username field (e.g., <script>alert(1)</script>) and assert payload not rendered.",
+    "behaviourText": "XSS payload entered in the username field is not rendered in the UI.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.545Z"
+  },
+  {
+    "id": "REQ-b7c51d8b3c",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "BR-SEC-03: QAAI shall attempt multiple failed logins (5+) and assert account not locked (or lockout message shown).",
+    "behaviourText": "After 5 or more failed login attempts, the account is either not locked or a lockout message is displayed.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.579Z"
+  },
+  {
+    "id": "REQ-12e8f4c996",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "BR-SEC-04: QAAI shall verify password field masks input (bullets, not plain text).",
+    "behaviourText": "Password field masks user input with bullets rather than displaying plain text.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.598Z"
+  },
+  {
+    "id": "REQ-90f59acf38",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "BR-SEC-05: QAAI shall verify no sensitive info (password hints, username suggestions) is exposed in UI.",
+    "behaviourText": "The UI does not expose sensitive information such as password hints or username suggestions.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.615Z"
+  },
+  {
+    "id": "REQ-c3eef35946",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "Entering username 'Admin' and password 'admin123', then clicking Login redirects to /dashboard/index",
+    "behaviourText": "Logging in with Admin/admin123 redirects the user to /dashboard/index.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.640Z"
+  },
+  {
+    "id": "REQ-77ffb19bc4",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "Post-login, Admin menu item is visible in left navigation",
+    "behaviourText": "After admin login, the Admin menu item is visible in the left navigation.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.661Z"
+  },
+  {
+    "id": "REQ-eadcfac0e9",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "Dashboard displays admin-specific widgets (system stats, user count, etc.)",
+    "behaviourText": "After admin login, the dashboard displays admin-specific widgets such as system stats and user count.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.686Z"
+  },
+  {
+    "id": "REQ-57cf81be1c",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "Session cookie is set and user remains logged in across page navigations",
+    "behaviourText": "After admin login, a session cookie is set and the user remains logged in across page navigations.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.706Z"
+  },
+  {
+    "id": "REQ-b71f59934d",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "After logout, attempting to navigate to /dashboard directly redirects back to /auth/login",
+    "behaviourText": "After logout, navigating directly to /dashboard redirects the user back to /auth/login.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.721Z"
+  },
+  {
+    "id": "REQ-4a8a5fc530",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "Entering username 'ess_user_01' and password 'TestUser@123' redirects to /dashboard/index",
+    "behaviourText": "Logging in with ess_user_01/TestUser@123 redirects the user to /dashboard/index.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.744Z"
+  },
+  {
+    "id": "REQ-1050bcc640",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "Post-login, Admin menu item is NOT visible in left navigation",
+    "behaviourText": "After ESS user login, the Admin menu item is not visible in the left navigation.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.764Z"
+  },
+  {
+    "id": "REQ-a3ce651036",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "Only Leave, Time, My Info, Directory modules are visible",
+    "behaviourText": "After ESS user login, only the Leave, Time, My Info, and Directory modules are visible.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.810Z"
+  },
+  {
+    "id": "REQ-261a49b56b",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "Dashboard displays ESS-specific widgets (my leave balance, my info, etc.)",
+    "behaviourText": "After ESS user login, the dashboard displays ESS-specific widgets such as leave balance and my info.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.826Z"
+  },
+  {
+    "id": "REQ-bd51c0af87",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "Attempting to navigate to /admin/viewSystemUsers as ESS user is redirected to dashboard",
+    "behaviourText": "An ESS user attempting to navigate to /admin/viewSystemUsers is redirected to the dashboard.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.840Z"
+  },
+  {
+    "id": "REQ-9d61d352ce",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "Leaving username field empty and clicking Login shows field-level error",
+    "behaviourText": "Submitting the login form with an empty username field shows a field-level error.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.857Z"
+  },
+  {
+    "id": "REQ-34e348c4ce",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "Error message states 'Username is required' or equivalent",
+    "behaviourText": "The error message for an empty username states 'Username is required' or equivalent.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.890Z"
+  },
+  {
+    "id": "REQ-5271e574ca",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "User remains on login page; no redirect occurs",
+    "behaviourText": "When the username field is empty and Login is clicked, the user remains on the login page with no redirect.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.904Z"
+  },
+  {
+    "id": "REQ-fc12a4d421",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "Error is displayed inline below the username field with proper styling",
+    "behaviourText": "The empty username error is displayed inline below the username field with proper styling.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.925Z"
+  },
+  {
+    "id": "REQ-e45c484d09",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "Leaving password field empty and clicking Login shows field-level error",
+    "behaviourText": "Submitting the login form with an empty password field shows a field-level error.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.940Z"
+  },
+  {
+    "id": "REQ-540b2aa982",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "Error message states 'Password is required' or equivalent",
+    "behaviourText": "The error message for an empty password states 'Password is required' or equivalent.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.953Z"
+  },
+  {
+    "id": "REQ-422c6c3d03",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "User remains on login page",
+    "behaviourText": "When the password field is empty and Login is clicked, the user remains on the login page.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.965Z"
+  },
+  {
+    "id": "REQ-ab36ebbb27",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "Error is inline below the password field",
+    "behaviourText": "The empty password error is displayed inline below the password field.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.977Z"
+  },
+  {
+    "id": "REQ-a565273f71",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "Clicking Login with both fields empty shows validation errors on both",
+    "behaviourText": "Submitting the login form with both fields empty triggers validation errors on both fields simultaneously.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:28.991Z"
+  },
+  {
+    "id": "REQ-c3974e8ea4",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "Both error messages are visible: 'Username is required' and 'Password is required'",
+    "behaviourText": "When both fields are empty, both 'Username is required' and 'Password is required' error messages are visible.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:29.006Z"
+  },
+  {
+    "id": "REQ-5e5dfceae9",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "Entering non-existent username 'nonexistent_user' and valid password shows error",
+    "behaviourText": "Entering a non-existent username with a valid password shows a login error.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:29.022Z"
+  },
+  {
+    "id": "REQ-35270321da",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "Error message is generic: 'Invalid credentials' (does NOT say 'user not found')",
+    "behaviourText": "The error message for an invalid username is the generic 'Invalid credentials' and does not reveal that the user was not found.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:29.039Z"
+  },
+  {
+    "id": "REQ-1c00312911",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "Error message is clearly visible (proper color, not hidden)",
+    "behaviourText": "The invalid credentials error message is clearly visible with proper color and is not hidden.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:29.058Z"
+  },
+  {
+    "id": "REQ-b04e33338b",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "Error message does not leak whether username or password was wrong",
+    "behaviourText": "The error message does not leak whether the username or the password was incorrect.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:29.076Z"
+  },
+  {
+    "id": "REQ-a9038c2f98",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "Entering 'Admin' with wrong password shows 'Invalid credentials' error",
+    "behaviourText": "Entering a correct username with a wrong password displays an 'Invalid credentials' error.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:29.090Z"
+  },
+  {
+    "id": "REQ-f936a6a968",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "User remains on login page; no partial authentication occurs",
+    "behaviourText": "After submitting an invalid password, the user remains on the login page and no partial authentication occurs.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:29.100Z"
+  },
+  {
+    "id": "REQ-95dbfa4566",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "Login button shows loading state during submission",
+    "behaviourText": "The Login button shows a loading state while the login submission is in progress.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:29.111Z"
+  },
+  {
+    "id": "REQ-6e4d67a20e",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "Entering \"admin' OR '1'='1\" in username field and submitting shows 'Invalid credentials'",
+    "behaviourText": "Submitting a SQL injection payload in the username field results in an 'Invalid credentials' error.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:29.133Z"
+  },
+  {
+    "id": "REQ-657dc35e57",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "No database error or stack trace is displayed",
+    "behaviourText": "When a SQL injection payload is submitted, no database error or stack trace is displayed.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:29.145Z"
+  },
+  {
+    "id": "REQ-8ef458c134",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "User remains on login page (no redirect)",
+    "behaviourText": "After a SQL injection attempt, the user remains on the login page with no redirect.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:29.163Z"
+  },
+  {
+    "id": "REQ-4e136f2974",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "Application does not crash or show technical errors",
+    "behaviourText": "The application does not crash or show technical errors when a SQL injection payload is submitted.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:29.183Z"
+  },
+  {
+    "id": "REQ-3025590790",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "Entering \"<script>alert('xss')</script>\" shows 'Invalid credentials' or graceful rejection",
+    "behaviourText": "Submitting an XSS payload in the username field results in 'Invalid credentials' or a graceful rejection.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:29.207Z"
+  },
+  {
+    "id": "REQ-87357c4577",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "No JavaScript alert appears; script is not executed",
+    "behaviourText": "When an XSS payload is submitted, no JavaScript alert appears and the script is not executed.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:29.226Z"
+  },
+  {
+    "id": "REQ-332158383a",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "Payload is treated as a literal search string, not HTML/JavaScript",
+    "behaviourText": "The XSS payload is treated as a literal string and is not rendered as HTML or executed as JavaScript.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:29.248Z"
+  },
+  {
+    "id": "REQ-e5b66d704e",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "After logout, the user is redirected to /auth/login",
+    "behaviourText": "Clicking logout redirects the user to /auth/login.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:29.263Z"
+  },
+  {
+    "id": "REQ-87b4c99a84",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "Session cookie is cleared (verified by checking Set-Cookie headers)",
+    "behaviourText": "After logout, the session cookie is cleared as verified by the Set-Cookie response headers.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:29.277Z"
+  },
+  {
+    "id": "REQ-354e4ffb12",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "Navigating back to /dashboard results in redirect to login page",
+    "behaviourText": "After logout, navigating back to /dashboard redirects the user to the login page.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:29.290Z"
+  },
+  {
+    "id": "REQ-37bada5326",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "User's name/avatar no longer appears in top-right corner",
+    "behaviourText": "After logout, the user's name and avatar no longer appear in the top-right corner.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:29.301Z"
+  },
+  {
+    "id": "REQ-f34a68261e",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "Password field uses HTML type='password' (not type='text')",
+    "behaviourText": "The password field uses HTML type='password' and not type='text'.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:29.316Z"
+  },
+  {
+    "id": "REQ-a8e5cbfc15",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "Entered characters appear as bullets (•) or dots (•), not readable text",
+    "behaviourText": "Characters entered in the password field are masked as bullets or dots and are not displayed as readable text.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:29.344Z"
+  },
+  {
+    "id": "REQ-984461a6dd",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "Clearing and re-entering shows consistent masking",
+    "behaviourText": "Clearing and re-entering characters in the password field consistently masks the input.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:29.360Z"
+  },
+  {
+    "id": "REQ-e92cf7890d",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "After 5 failed attempts, system shows either 'Account locked' or continues to accept attempts",
+    "behaviourText": "After 5 failed login attempts, the system either displays an account locked message or continues to accept attempts per policy.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:29.374Z"
+  },
+  {
+    "id": "REQ-a8d8860142",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "If lockout occurs, a message is displayed: 'Account is locked'",
+    "behaviourText": "If account lockout occurs after repeated failed attempts, the message 'Account is locked' is displayed.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:29.388Z"
+  },
+  {
+    "id": "REQ-adac7bbb65",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "No infinite loop or crash occurs",
+    "behaviourText": "Multiple failed login attempts do not cause an infinite loop or application crash.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-10T11:26:29.402Z"
+  },
+  {
+    "id": "REQ-045148986e",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "Username Input\nText field\nAccepts alphanumeric, email format",
+    "behaviourText": "Username input field accepts alphanumeric characters and email format.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-20T17:39:27.232Z"
+  },
+  {
+    "id": "REQ-473d1d5b35",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "Password Input\nPassword field\nMasks input; no plain text visible",
+    "behaviourText": "Password input field masks its content so no plain text is visible.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-20T17:39:27.253Z"
+  },
+  {
+    "id": "REQ-79a40e8234",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "Login Button\nSubmit button\nSubmits form; shows loading state",
+    "behaviourText": "Login button submits the form and displays a loading state while processing.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-20T17:39:27.273Z"
+  },
+  {
+    "id": "REQ-16b7b1fbae",
+    "sourceType": "BRD",
+    "sourceDocId": "59c65209-ed4d-48cc-9a7a-30a8e18a067c",
+    "excerpt": "Error Message Area\nAlert/message box\nDisplays validation or auth errors",
+    "behaviourText": "Error message area displays validation or authentication errors.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-20T17:39:27.303Z"
+  },
+  {
+    "id": "REQ-21ef951d0a",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC1: Entering username 'Admin' and password 'admin123', then clicking Login redirects to /dashboard/index",
+    "behaviourText": "Logging in with username 'Admin' and password 'admin123' redirects the user to /dashboard/index.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:46:59.875Z"
+  },
+  {
+    "id": "REQ-6741915e2e",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC2: Post-login, Admin menu item is visible in left navigation",
+    "behaviourText": "After admin login, the Admin menu item is visible in the left navigation.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:46:59.893Z"
+  },
+  {
+    "id": "REQ-3856fd34dd",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC3: Dashboard displays admin-specific widgets (system stats, user count, etc.)",
+    "behaviourText": "After admin login, the dashboard displays admin-specific widgets such as system stats and user count.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:46:59.941Z"
+  },
+  {
+    "id": "REQ-bc428c7abd",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC4: Session cookie is set and user remains logged in across page navigations",
+    "behaviourText": "After admin login, a session cookie is set and the user remains logged in across page navigations.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:46:59.975Z"
+  },
+  {
+    "id": "REQ-014da5b921",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "NEG1: After logout, attempting to navigate to /dashboard directly redirects back to /auth/login",
+    "behaviourText": "After logout, navigating directly to /dashboard redirects the user back to /auth/login.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:46:59.994Z"
+  },
+  {
+    "id": "REQ-4db4fa2f61",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC1: Entering username 'ess_user_01' and password 'TestUser@123' redirects to /dashboard/index",
+    "behaviourText": "Logging in with username 'ess_user_01' and password 'TestUser@123' redirects the user to /dashboard/index.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.028Z"
+  },
+  {
+    "id": "REQ-f726c7b752",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC2: Post-login, Admin menu item is NOT visible in left navigation",
+    "behaviourText": "After ESS user login, the Admin menu item is not visible in the left navigation.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.078Z"
+  },
+  {
+    "id": "REQ-95c4ad814d",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC3: Only Leave, Time, My Info, Directory modules are visible",
+    "behaviourText": "After ESS user login, only the Leave, Time, My Info, and Directory modules are visible.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.100Z"
+  },
+  {
+    "id": "REQ-3defe0d35b",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC4: Dashboard displays ESS-specific widgets (my leave balance, my info, etc.)",
+    "behaviourText": "After ESS user login, the dashboard displays ESS-specific widgets such as leave balance and my info.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.109Z"
+  },
+  {
+    "id": "REQ-8704565b6e",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "NEG1: Attempting to navigate to /admin/viewSystemUsers as ESS user is redirected to dashboard",
+    "behaviourText": "When an ESS user attempts to navigate to /admin/viewSystemUsers, they are redirected to the dashboard.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.125Z"
+  },
+  {
+    "id": "REQ-2b084bcf86",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC1: Leaving username field empty and clicking Login shows field-level error",
+    "behaviourText": "Submitting the login form with an empty username field displays a field-level validation error.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.143Z"
+  },
+  {
+    "id": "REQ-4ca432e5e6",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC2: Error message states 'Username is required' or equivalent",
+    "behaviourText": "The validation error message for an empty username states 'Username is required' or an equivalent message.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.157Z"
+  },
+  {
+    "id": "REQ-2e970cc652",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC3: User remains on login page; no redirect occurs",
+    "behaviourText": "When the username field is empty and the form is submitted, the user remains on the login page with no redirect.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.214Z"
+  },
+  {
+    "id": "REQ-30063c49b2",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC4: Error is displayed inline below the username field with proper styling",
+    "behaviourText": "The username validation error is displayed inline below the username field with proper styling.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.256Z"
+  },
+  {
+    "id": "REQ-e399e1bf44",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC1: Leaving password field empty and clicking Login shows field-level error",
+    "behaviourText": "Submitting the login form with an empty password field displays a field-level validation error.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.284Z"
+  },
+  {
+    "id": "REQ-2a46be5925",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC2: Error message states 'Password is required' or equivalent",
+    "behaviourText": "The validation error message for an empty password states 'Password is required' or an equivalent message.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.304Z"
+  },
+  {
+    "id": "REQ-a9bd5bfd57",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC3: User remains on login page",
+    "behaviourText": "When the password field is empty and the form is submitted, the user remains on the login page.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.317Z"
+  },
+  {
+    "id": "REQ-dc2ebfdc85",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC4: Error is inline below the password field",
+    "behaviourText": "The password validation error is displayed inline below the password field.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.347Z"
+  },
+  {
+    "id": "REQ-d78a00ef3b",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC1: Clicking Login with both fields empty shows validation errors on both",
+    "behaviourText": "Submitting the login form with both fields empty triggers validation errors on both the username and password fields.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.357Z"
+  },
+  {
+    "id": "REQ-963a33c80c",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC2: Both error messages are visible: 'Username is required' and 'Password is required'",
+    "behaviourText": "When both fields are empty on submission, both 'Username is required' and 'Password is required' error messages are visible.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.384Z"
+  },
+  {
+    "id": "REQ-beac8450d1",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC1: Entering non-existent username 'nonexistent_user' and valid password shows error",
+    "behaviourText": "Entering a non-existent username with a valid password and submitting the login form shows an error.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.416Z"
+  },
+  {
+    "id": "REQ-fab963921e",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC2: Error message is generic: 'Invalid credentials' (does NOT say 'user not found')",
+    "behaviourText": "The error message for a non-existent username is the generic 'Invalid credentials' and does not say 'user not found'.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.432Z"
+  },
+  {
+    "id": "REQ-6b4466c7b5",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC4: Error message is clearly visible (proper color, not hidden)",
+    "behaviourText": "The invalid-username error message is clearly visible with proper color and is not hidden.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.450Z"
+  },
+  {
+    "id": "REQ-ae45a94632",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "NEG1: Error message does not leak whether username or password was wrong",
+    "behaviourText": "The error message for failed login does not reveal whether the username or the password was incorrect.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.490Z"
+  },
+  {
+    "id": "REQ-ba4951dacf",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC1: Entering 'Admin' with wrong password shows 'Invalid credentials' error",
+    "behaviourText": "Entering the correct username 'Admin' with a wrong password displays an 'Invalid credentials' error.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.516Z"
+  },
+  {
+    "id": "REQ-b097057030",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC2: User remains on login page; no partial authentication occurs",
+    "behaviourText": "When an invalid password is submitted, the user remains on the login page and no partial authentication occurs.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.543Z"
+  },
+  {
+    "id": "REQ-354460b1c3",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC3: Login button shows loading state during submission",
+    "behaviourText": "The Login button displays a loading state while the login form submission is being processed.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.605Z"
+  },
+  {
+    "id": "REQ-596d90da09",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC1: Entering \"admin' OR '1'='1\" in username field and submitting shows 'Invalid credentials'",
+    "behaviourText": "Submitting an SQL injection payload in the username field results in an 'Invalid credentials' error response.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.666Z"
+  },
+  {
+    "id": "REQ-84dc6255d3",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC2: No database error or stack trace is displayed",
+    "behaviourText": "When an SQL injection payload is submitted, no database error or stack trace is displayed to the user.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.713Z"
+  },
+  {
+    "id": "REQ-6abf4c5b0e",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC3: User remains on login page (no redirect)",
+    "behaviourText": "When an SQL injection payload is submitted, the user remains on the login page with no redirect.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.737Z"
+  },
+  {
+    "id": "REQ-33ac77abbe",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC4: Application does not crash or show technical errors",
+    "behaviourText": "When an SQL injection payload is submitted, the application does not crash or display technical errors.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.754Z"
+  },
+  {
+    "id": "REQ-34e06f2593",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC1: Entering \"<script>alert('xss')</script>\" shows 'Invalid credentials' or graceful rejection",
+    "behaviourText": "Submitting an XSS script payload in the username field results in an 'Invalid credentials' error or graceful rejection.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.776Z"
+  },
+  {
+    "id": "REQ-b28046c21d",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC2: No JavaScript alert appears; script is not executed",
+    "behaviourText": "When an XSS payload is submitted, no JavaScript alert appears and the script is not executed.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.791Z"
+  },
+  {
+    "id": "REQ-868a585912",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC3: Payload is treated as a literal search string, not HTML/JavaScript",
+    "behaviourText": "The XSS payload entered in the username field is treated as a plain text string and not rendered as HTML or JavaScript.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.812Z"
+  },
+  {
+    "id": "REQ-9519eaad6c",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC1: After logout, the user is redirected to /auth/login",
+    "behaviourText": "After clicking logout, the user is redirected to /auth/login.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.841Z"
+  },
+  {
+    "id": "REQ-101fd71df4",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC2: Session cookie is cleared (verified by checking Set-Cookie headers)",
+    "behaviourText": "After logout, the session cookie is cleared, verifiable via Set-Cookie response headers.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.903Z"
+  },
+  {
+    "id": "REQ-5e9961e7cd",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC3: Navigating back to /dashboard results in redirect to login page",
+    "behaviourText": "After logout, attempting to navigate to /dashboard redirects the user to the login page.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.938Z"
+  },
+  {
+    "id": "REQ-96268a0897",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC4: User's name/avatar no longer appears in top-right corner",
+    "behaviourText": "After logout, the user's name and avatar no longer appear in the top-right corner of the page.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.973Z"
+  },
+  {
+    "id": "REQ-809646b301",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC1: Password field uses HTML type='password' (not type='text')",
+    "behaviourText": "The password input field uses the HTML attribute type='password' and not type='text'.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:00.986Z"
+  },
+  {
+    "id": "REQ-bf8a048b5f",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC2: Entered characters appear as bullets (•) or dots (•), not readable text",
+    "behaviourText": "Characters entered in the password field are masked and displayed as bullets or dots rather than readable text.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:01.022Z"
+  },
+  {
+    "id": "REQ-e62d345c75",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC3: Clearing and re-entering shows consistent masking",
+    "behaviourText": "Clearing the password field and re-entering characters shows consistent masking behaviour.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:01.035Z"
+  },
+  {
+    "id": "REQ-73e0fdb418",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC1: After 5 failed attempts, system shows either 'Account locked' or continues to accept attempts",
+    "behaviourText": "After 5 consecutive failed login attempts, the system either displays an 'Account locked' message or continues to accept attempts per policy.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:01.050Z"
+  },
+  {
+    "id": "REQ-7470edb011",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC2: If lockout occurs, a message is displayed: 'Account is locked'",
+    "behaviourText": "If account lockout is triggered, the message 'Account is locked' is displayed to the user.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:01.089Z"
+  },
+  {
+    "id": "REQ-592614700d",
+    "sourceType": "USER_STORY",
+    "sourceDocId": "42d9da11-c8c1-489d-8477-9e08365007a0",
+    "excerpt": "AC3: No infinite loop or crash occurs",
+    "behaviourText": "During repeated failed login attempts, no infinite loop or application crash occurs.",
+    "coverageDisposition": "uncovered",
+    "createdAt": "2026-06-21T07:47:01.110Z"
+  }
+]

@@ -1,0 +1,550 @@
+{
+  "schemaVersion": "qaai-dom-atlas-v1",
+  "pages": {
+    "/products": {
+      "schemaVersion": "qaai-dom-atlas-v1",
+      "pageKey": "/products",
+      "routeKey": "/products",
+      "url": "https://automationexercise.com/products",
+      "title": null,
+      "counts": {
+        "controls": 2
+      },
+      "firstSeenAt": 1781702290859,
+      "lastSeenAt": 1781702290861,
+      "seenCount": 13,
+      "controls": [
+        {
+          "selector": "getByRole(\"textbox\", { name: \"Search Product\" })",
+          "role": "textbox",
+          "name": "Search Product",
+          "visible": null,
+          "enabled": null,
+          "source": "verified_mcp_accessibility_snapshot",
+          "seenCount": 9
+        },
+        {
+          "selector": "getByText(\"Search Product\")",
+          "role": "textbox",
+          "name": "Search Product",
+          "visible": null,
+          "enabled": null,
+          "source": "verified_mcp_accessibility_snapshot",
+          "seenCount": 9
+        },
+        {
+          "selector": "getByRole(\"button\", { name: \"\" })",
+          "role": "button",
+          "name": "",
+          "visible": null,
+          "enabled": null,
+          "source": "verified_mcp_accessibility_snapshot",
+          "seenCount": 9
+        },
+        {
+          "selector": "getByText(\"\")",
+          "role": "button",
+          "name": "",
+          "visible": null,
+          "enabled": null,
+          "source": "verified_mcp_accessibility_snapshot",
+          "seenCount": 9
+        },
+        {
+          "selector": "getByRole(\"link\", { name: \" Women\" })",
+          "role": "link",
+          "name": " Women",
+          "visible": null,
+          "enabled": null,
+          "source": "verified_mcp_accessibility_snapshot",
+          "seenCount": 3
+        },
+        {
+          "selector": "getByText(\" Women\")",
+          "role": "link",
+          "name": " Women",
+          "visible": null,
+          "enabled": null,
+          "source": "verified_mcp_accessibility_snapshot",
+          "seenCount": 3
+        },
+        {
+          "selector": "getByRole(\"link\", { name: \"Dress\" })",
+          "role": "link",
+          "name": "Dress",
+          "visible": null,
+          "enabled": null,
+          "source": "verified_mcp_accessibility_snapshot",
+          "seenCount": 3
+        },
+        {
+          "selector": "getByText(\"Dress\")",
+          "role": "link",
+          "name": "Dress",
+          "visible": null,
+          "enabled": null,
+          "source": "verified_mcp_accessibility_snapshot",
+          "seenCount": 3
+        },
+        {
+          "selector": "getByRole(\"link\", { name: \" Men\" })",
+          "role": "link",
+          "name": " Men",
+          "visible": null,
+          "enabled": null,
+          "source": "verified_mcp_accessibility_snapshot",
+          "seenCount": 1
+        },
+        {
+          "selector": "getByText(\" Men\")",
+          "role": "link",
+          "name": " Men",
+          "visible": null,
+          "enabled": null,
+          "source": "verified_mcp_accessibility_snapshot",
+          "seenCount": 1
+        },
+        {
+          "selector": "getByRole(\"link\", { name: \"Tshirts\" })",
+          "role": "link",
+          "name": "Tshirts",
+          "visible": null,
+          "enabled": null,
+          "source": "verified_mcp_accessibility_snapshot",
+          "seenCount": 1
+        },
+        {
+          "selector": "getByText(\"Tshirts\")",
+          "role": "link",
+          "name": "Tshirts",
+          "visible": null,
+          "enabled": null,
+          "source": "verified_mcp_accessibility_snapshot",
+          "seenCount": 1
+        },
+        {
+          "selector": "getByRole(\"link\", { name: \"(6) Polo\" })",
+          "role": "link",
+          "name": "(6) Polo",
+          "visible": null,
+          "enabled": null,
+          "source": "verified_mcp_accessibility_snapshot",
+          "seenCount": 1
+        },
+        {
+          "selector": "getByText(\"(6) Polo\")",
+          "role": "link",
+          "name": "(6) Polo",
+          "visible": null,
+          "enabled": null,
+          "source": "verified_mcp_accessibility_snapshot",
+          "seenCount": 1
+        },
+        {
+          "selector": "getByRole(\"link\", { name: \" Kids\" })",
+          "role": "link",
+          "name": " Kids",
+          "visible": null,
+          "enabled": null,
+          "source": "verified_mcp_accessibility_snapshot",
+          "seenCount": 1
+        },
+        {
+          "selector": "getByText(\" Kids\")",
+          "role": "link",
+          "name": " Kids",
+          "visible": null,
+          "enabled": null,
+          "source": "verified_mcp_accessibility_snapshot",
+          "seenCount": 1
+        },
+        {
+          "selector": "getByRole(\"link\", { name: \"Tops\" })",
+          "role": "link",
+          "name": "Tops",
+          "visible": null,
+          "enabled": null,
+          "source": "verified_mcp_accessibility_snapshot",
+          "seenCount": 1
+        },
+        {
+          "selector": "getByText(\"Tops\")",
+          "role": "link",
+          "name": "Tops",
+          "visible": null,
+          "enabled": null,
+          "source": "verified_mcp_accessibility_snapshot",
+          "seenCount": 1
+        }
+      ],
+      "forms": [],
+      "tables": [],
+      "dialogs": [],
+      "landmarks": [],
+      "frames": [],
+      "shadowHosts": [],
+      "headings": [],
+      "verifiedActions": [
+        {
+          "toolName": "browser_type",
+          "elementLabel": "Search Product input",
+          "strategy": "role",
+          "expression": "getByRole(\"textbox\", { name: \"Search Product\" })",
+          "frameworkExpressions": {
+            "playwright": "getByRole(\"textbox\", { name: \"Search Product\" })"
+          },
+          "targetFacts": {
+            "role": "textbox",
+            "accessibleName": "Search Product"
+          },
+          "context": {
+            "source": "verified_mcp_accessibility_snapshot"
+          },
+          "proof": {
+            "count": 1,
+            "sameElement": true,
+            "visible": null,
+            "enabled": null,
+            "source": "verified_mcp_accessibility_snapshot",
+            "verified": true
+          },
+          "seenCount": 9
+        },
+        {
+          "toolName": "browser_click",
+          "elementLabel": "Search submit button",
+          "strategy": "role",
+          "expression": "getByRole(\"button\", { name: \"\" })",
+          "frameworkExpressions": {
+            "playwright": "getByRole(\"button\", { name: \"\" })"
+          },
+          "targetFacts": {
+            "role": "button",
+            "accessibleName": ""
+          },
+          "context": {
+            "source": "verified_mcp_accessibility_snapshot"
+          },
+          "proof": {
+            "count": 1,
+            "sameElement": true,
+            "visible": null,
+            "enabled": null,
+            "source": "verified_mcp_accessibility_snapshot",
+            "verified": true
+          },
+          "seenCount": 9
+        },
+        {
+          "toolName": "browser_click",
+          "elementLabel": "Women category link",
+          "strategy": "role",
+          "expression": "getByRole(\"link\", { name: \" Women\" })",
+          "frameworkExpressions": {
+            "playwright": "getByRole(\"link\", { name: \" Women\" })"
+          },
+          "targetFacts": {
+            "role": "link",
+            "accessibleName": " Women"
+          },
+          "context": {
+            "source": "verified_mcp_accessibility_snapshot"
+          },
+          "proof": {
+            "count": 1,
+            "sameElement": true,
+            "visible": null,
+            "enabled": null,
+            "source": "verified_mcp_accessibility_snapshot",
+            "verified": true
+          },
+          "seenCount": 3
+        },
+        {
+          "toolName": "browser_click",
+          "elementLabel": "Dress subcategory link under Women",
+          "strategy": "role",
+          "expression": "getByRole(\"link\", { name: \"Dress\" })",
+          "frameworkExpressions": {
+            "playwright": "getByRole(\"link\", { name: \"Dress\" })"
+          },
+          "targetFacts": {
+            "role": "link",
+            "accessibleName": "Dress"
+          },
+          "context": {
+            "source": "verified_mcp_accessibility_snapshot"
+          },
+          "proof": {
+            "count": 1,
+            "sameElement": true,
+            "visible": null,
+            "enabled": null,
+            "source": "verified_mcp_accessibility_snapshot",
+            "verified": true
+          },
+          "seenCount": 3
+        },
+        {
+          "toolName": "browser_click",
+          "elementLabel": "Men category heading link",
+          "strategy": "role",
+          "expression": "getByRole(\"link\", { name: \" Men\" })",
+          "frameworkExpressions": {
+            "playwright": "getByRole(\"link\", { name: \" Men\" })"
+          },
+          "targetFacts": {
+            "role": "link",
+            "accessibleName": " Men"
+          },
+          "context": {
+            "source": "verified_mcp_accessibility_snapshot"
+          },
+          "proof": {
+            "count": 1,
+            "sameElement": true,
+            "visible": null,
+            "enabled": null,
+            "source": "verified_mcp_accessibility_snapshot",
+            "verified": true
+          },
+          "seenCount": 1
+        },
+        {
+          "toolName": "browser_click",
+          "elementLabel": "Tshirts subcategory link under Men",
+          "strategy": "role",
+          "expression": "getByRole(\"link\", { name: \"Tshirts\" })",
+          "frameworkExpressions": {
+            "playwright": "getByRole(\"link\", { name: \"Tshirts\" })"
+          },
+          "targetFacts": {
+            "role": "link",
+            "accessibleName": "Tshirts"
+          },
+          "context": {
+            "source": "verified_mcp_accessibility_snapshot"
+          },
+          "proof": {
+            "count": 1,
+            "sameElement": true,
+            "visible": null,
+            "enabled": null,
+            "source": "verified_mcp_accessibility_snapshot",
+            "verified": true
+          },
+          "seenCount": 1
+        },
+        {
+          "toolName": "browser_click",
+          "elementLabel": "(6) Polo brand link in Brands sidebar",
+          "strategy": "role",
+          "expression": "getByRole(\"link\", { name: \"(6) Polo\" })",
+          "frameworkExpressions": {
+            "playwright": "getByRole(\"link\", { name: \"(6) Polo\" })"
+          },
+          "targetFacts": {
+            "role": "link",
+            "accessibleName": "(6) Polo"
+          },
+          "context": {
+            "source": "verified_mcp_accessibility_snapshot"
+          },
+          "proof": {
+            "count": 1,
+            "sameElement": true,
+            "visible": null,
+            "enabled": null,
+            "source": "verified_mcp_accessibility_snapshot",
+            "verified": true
+          },
+          "seenCount": 1
+        },
+        {
+          "toolName": "browser_click",
+          "elementLabel": "Kids category link",
+          "strategy": "role",
+          "expression": "getByRole(\"link\", { name: \" Kids\" })",
+          "frameworkExpressions": {
+            "playwright": "getByRole(\"link\", { name: \" Kids\" })"
+          },
+          "targetFacts": {
+            "role": "link",
+            "accessibleName": " Kids"
+          },
+          "context": {
+            "source": "verified_mcp_accessibility_snapshot"
+          },
+          "proof": {
+            "count": 1,
+            "sameElement": true,
+            "visible": null,
+            "enabled": null,
+            "source": "verified_mcp_accessibility_snapshot",
+            "verified": true
+          },
+          "seenCount": 1
+        },
+        {
+          "toolName": "browser_click",
+          "elementLabel": "Tops subcategory link under Women",
+          "strategy": "role",
+          "expression": "getByRole(\"link\", { name: \"Tops\" })",
+          "frameworkExpressions": {
+            "playwright": "getByRole(\"link\", { name: \"Tops\" })"
+          },
+          "targetFacts": {
+            "role": "link",
+            "accessibleName": "Tops"
+          },
+          "context": {
+            "source": "verified_mcp_accessibility_snapshot"
+          },
+          "proof": {
+            "count": 1,
+            "sameElement": true,
+            "visible": null,
+            "enabled": null,
+            "source": "verified_mcp_accessibility_snapshot",
+            "verified": true
+          },
+          "seenCount": 1
+        }
+      ]
+    },
+    "/category_products/1": {
+      "schemaVersion": "qaai-dom-atlas-v1",
+      "pageKey": "/category_products/1",
+      "routeKey": "/category_products/1",
+      "url": "https://automationexercise.com/category_products/1",
+      "title": null,
+      "counts": {
+        "controls": 2
+      },
+      "firstSeenAt": 1781702290861,
+      "lastSeenAt": 1781702290861,
+      "seenCount": 1,
+      "controls": [
+        {
+          "selector": "getByRole(\"link\", { name: \" Products\" })",
+          "role": "link",
+          "name": " Products",
+          "visible": null,
+          "enabled": null,
+          "source": "verified_mcp_accessibility_snapshot",
+          "seenCount": 1
+        },
+        {
+          "selector": "getByText(\" Products\")",
+          "role": "link",
+          "name": " Products",
+          "visible": null,
+          "enabled": null,
+          "source": "verified_mcp_accessibility_snapshot",
+          "seenCount": 1
+        }
+      ],
+      "forms": [],
+      "tables": [],
+      "dialogs": [],
+      "landmarks": [],
+      "frames": [],
+      "shadowHosts": [],
+      "headings": [],
+      "verifiedActions": [
+        {
+          "toolName": "browser_click",
+          "elementLabel": "Products nav link",
+          "strategy": "role",
+          "expression": "getByRole(\"link\", { name: \" Products\" })",
+          "frameworkExpressions": {
+            "playwright": "getByRole(\"link\", { name: \" Products\" })"
+          },
+          "targetFacts": {
+            "role": "link",
+            "accessibleName": " Products"
+          },
+          "context": {
+            "source": "verified_mcp_accessibility_snapshot"
+          },
+          "proof": {
+            "count": 1,
+            "sameElement": true,
+            "visible": null,
+            "enabled": null,
+            "source": "verified_mcp_accessibility_snapshot",
+            "verified": true
+          },
+          "seenCount": 1
+        }
+      ]
+    },
+    "/": {
+      "schemaVersion": "qaai-dom-atlas-v1",
+      "pageKey": "/",
+      "routeKey": "/",
+      "url": "https://automationexercise.com/",
+      "title": null,
+      "counts": {
+        "controls": 2
+      },
+      "firstSeenAt": 1781702290861,
+      "lastSeenAt": 1781702290861,
+      "seenCount": 1,
+      "controls": [
+        {
+          "selector": "getByRole(\"link\", { name: \" Products\" })",
+          "role": "link",
+          "name": " Products",
+          "visible": null,
+          "enabled": null,
+          "source": "verified_mcp_accessibility_snapshot",
+          "seenCount": 1
+        },
+        {
+          "selector": "getByText(\" Products\")",
+          "role": "link",
+          "name": " Products",
+          "visible": null,
+          "enabled": null,
+          "source": "verified_mcp_accessibility_snapshot",
+          "seenCount": 1
+        }
+      ],
+      "forms": [],
+      "tables": [],
+      "dialogs": [],
+      "landmarks": [],
+      "frames": [],
+      "shadowHosts": [],
+      "headings": [],
+      "verifiedActions": [
+        {
+          "toolName": "browser_click",
+          "elementLabel": "Products nav link",
+          "strategy": "role",
+          "expression": "getByRole(\"link\", { name: \" Products\" })",
+          "frameworkExpressions": {
+            "playwright": "getByRole(\"link\", { name: \" Products\" })"
+          },
+          "targetFacts": {
+            "role": "link",
+            "accessibleName": " Products"
+          },
+          "context": {
+            "source": "verified_mcp_accessibility_snapshot"
+          },
+          "proof": {
+            "count": 1,
+            "sameElement": true,
+            "visible": null,
+            "enabled": null,
+            "source": "verified_mcp_accessibility_snapshot",
+            "verified": true
+          },
+          "seenCount": 1
+        }
+      ]
+    }
+  }
+}

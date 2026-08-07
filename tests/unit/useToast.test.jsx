@@ -1,7 +1,6 @@
 import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, act } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen, act, fireEvent } from '@testing-library/react';
 import { ToastProvider, useToast } from '../../src/lib/useToast';
 
 // Tiny harness that exposes the toast API onto a button so we can drive
@@ -28,38 +27,34 @@ describe('useToast', () => {
     expect(region).toBeInTheDocument();
   });
 
-  it('announces success toasts with role="status" + polite live region', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+  it('announces success toasts with role="status" + polite live region', () => {
     render(<ToastProvider><Harness /></ToastProvider>);
-    await user.click(screen.getByText('push-ok'));
+    fireEvent.click(screen.getByText('push-ok'));
     const toast = screen.getByRole('status');
     expect(toast).toHaveTextContent(/all good/i);
     expect(toast).toHaveAttribute('aria-live', 'polite');
     expect(toast).toHaveAttribute('aria-atomic', 'true');
   });
 
-  it('escalates error toasts to role="alert" + assertive', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+  it('escalates error toasts to role="alert" + assertive', () => {
     render(<ToastProvider><Harness /></ToastProvider>);
-    await user.click(screen.getByText('push-err'));
+    fireEvent.click(screen.getByText('push-err'));
     const toast = screen.getByRole('alert');
     expect(toast).toHaveTextContent(/it broke/i);
     expect(toast).toHaveAttribute('aria-live', 'assertive');
   });
 
-  it('auto-dismisses non-error toasts after the default ttl', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+  it('auto-dismisses non-error toasts after the default ttl', () => {
     render(<ToastProvider><Harness /></ToastProvider>);
-    await user.click(screen.getByText('push-ok'));
+    fireEvent.click(screen.getByText('push-ok'));
     expect(screen.getByText('all good')).toBeInTheDocument();
     act(() => { vi.advanceTimersByTime(4500); });
     expect(screen.queryByText('all good')).not.toBeInTheDocument();
   });
 
-  it('keeps error toasts up longer (8s) than success (4s)', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+  it('keeps error toasts up longer (8s) than success (4s)', () => {
     render(<ToastProvider><Harness /></ToastProvider>);
-    await user.click(screen.getByText('push-err'));
+    fireEvent.click(screen.getByText('push-err'));
     act(() => { vi.advanceTimersByTime(5000); });
     // Still there past 4s
     expect(screen.queryByText('it broke')).toBeInTheDocument();
@@ -67,26 +62,25 @@ describe('useToast', () => {
     expect(screen.queryByText('it broke')).not.toBeInTheDocument();
   });
 
-  it('lets the user dismiss via the keyboard-reachable button', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+  it('lets the user dismiss via the keyboard-reachable button', () => {
     render(<ToastProvider><Harness /></ToastProvider>);
-    await user.click(screen.getByText('push-ok'));
+    fireEvent.click(screen.getByText('push-ok'));
     const dismiss = screen.getByRole('button', { name: /dismiss notification/i });
     expect(dismiss).toBeInTheDocument();
-    await user.click(dismiss);
+    fireEvent.click(dismiss);
     expect(screen.queryByText('all good')).not.toBeInTheDocument();
   });
 
-  it('exposes a programmatic dismiss(id) on the context', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+  it('exposes a programmatic dismiss(id) on the context', () => {
     let apiHandle;
     render(
       <ToastProvider>
         <Harness onMount={(t) => { apiHandle = t; }} />
       </ToastProvider>
     );
-    await user.click(screen.getByText('push-ok'));
-    const id = apiHandle.success('ephemeral');
+    fireEvent.click(screen.getByText('push-ok'));
+    let id;
+    act(() => { id = apiHandle.success('ephemeral'); });
     act(() => { apiHandle.dismiss(id); });
     expect(screen.queryByText('ephemeral')).not.toBeInTheDocument();
   });

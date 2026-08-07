@@ -1,0 +1,12 @@
+testCaseID,linkedStory,expectedURL,expectedHeading,expectedError,expectedVisibleElement,shouldRedirect,assertionType,notes
+TC-AUTH-01,US-AUTH-01,/web/index.php/dashboard/index,Welcome,(none),Admin menu item,No,URL + element presence,Admin login success
+TC-AUTH-02,US-AUTH-02,/web/index.php/dashboard/index,Welcome,(none),Leave menu (not Admin menu),No,URL + element check,ESS login success
+TC-FORM-01,US-AUTH-03,/web/index.php/auth/login,Login,Username is required,Error message below username field,No,Error message assertion,Empty username validation
+TC-FORM-02,US-AUTH-04,/web/index.php/auth/login,Login,Password is required,Error message below password field,No,Error message assertion,Empty password validation
+TC-NEG-01,US-AUTH-06,/web/index.php/auth/login,Login,Invalid credentials,Error message,No,Error text assertion,Invalid username rejection
+TC-NEG-02,US-AUTH-07,/web/index.php/auth/login,Login,Invalid credentials,Error message,No,Error text assertion,Invalid password rejection
+TC-SEC-01,US-AUTH-08,/web/index.php/auth/login or products page,Login or Products,(none or safe error),Page remains stable,No or safe redirect,"No crash, no injection",SQL injection rejected
+TC-SEC-04,US-AUTH-09,/web/index.php/auth/login,Login,(none or Invalid credentials),"Page stable, script not executed",No,No script execution,XSS payload not rendered
+TC-AUTH-03,US-AUTH-10,/web/index.php/auth/login,Login,(none),(none),Yes,Redirect + session clear,Logout success
+TC-AUTH-01-Dashboard,US-AUTH-01,/web/index.php/dashboard/index,(varies),(none),Dashboard widgets visible,No,Widget visibility,Admin dashboard widgets
+TC-AUTH-02-Dashboard,US-AUTH-02,/web/index.php/dashboard/index,(varies),(none),ESS-specific widgets,No,Widget visibility,ESS dashboard widgets
