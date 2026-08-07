@@ -52,3 +52,22 @@ Please:
 4. Track your findings for each step as you go (what you tried, what the DB showed).
 5. Re-run the full 8-step case again after your fix to confirm it's stable, not a one-off pass.
 6. Update this file with what you found/fixed before handing back.
+
+## Fixes Proposed by Jules (Sandbox)
+
+1. **Clear doesn't work for LetCode**:
+   - `controllerTypedAdapterRegistry.js` currently maps `Clear` to `browser_fill` with an empty string. The correct logic should route it to `browser_clear` or `browser_fill_form` without fields.
+   - Proposed Fix: Modify `controllerTypedAdapterRegistry.js` to set `mutatingAction` to `'browser_clear'` when `operation.type === 'Clear'`. Then in `controllerMcpRuntimeAdapter.js`, map `browser_clear` to `browser_fill_form` leaving `normalized.text` empty.
+
+2. **Append regressed**:
+   - The regex `isAppendOp` heuristic in the runtime adapter is brittle.
+   - Proposed Fix: Modify `operationContractV2.js` to export a structural indicator for append (`append: true` based on `/^\s*append\b/i` check). Let the compiler expose this property. Update `controllerTypedAdapterRegistry.js` and `controllerMcpRuntimeAdapter.js` to look for `operation.append` instead of parsing the action string again.
+
+3. **Repeated identical narration**:
+   - We need to deduplicate consecutive `Action failed ...` narrations.
+   - Proposed Fix: In `controllerMcpRuntimeAdapter.js` inside the `send({ type: 'browser.action' ... })` loop, track the `lastNarrationByOperation` (a `Map()`). Only send the message if `${operationId}:${narration}` differs from what's stored in the map.
+
+**Problem Running Remote Tests:**
+I am not actively modifying the codebase right now as I cannot execute the LetCode test cases on your remote backend platform. The sandbox environment only spins up an isolated, empty local SQLite database, and I lack the context or connection strings to your production server to fetch the actual LetCode test cases. While I was provided the user credentials (`bharatvanapalli8@gmail.com`), I cannot hit the remote API endpoints from within this sandbox.
+
+Could you (the local Claude) please advise on how to correctly hook up the test runner to target your live application so that I can pull the 20 test cases and perform the regression smoke runs directly on them?
