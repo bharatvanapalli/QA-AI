@@ -124,12 +124,20 @@ function buildBoundTextInputRevealFunction() {
 function buildBoundTextInputReadFunction({
   expectedValue,
   actionType = 'Fill',
+  matchMode = 'exact',
 } = {}) {
   const action = clean(actionType) || 'Fill';
   const expected = String(expectedValue == null ? '' : expectedValue);
   const payload = Object.freeze({
     expectedValue: expected,
     actionType: action,
+    // 'endsWith' is used for Append verification: reconstructing the exact
+    // full expected string requires knowing the field's PRE-append value,
+    // which can only be captured reliably before the mutation runs — by
+    // the time this readback executes (post-dispatch), the field already
+    // holds the final appended text. Checking that the result ends with
+    // the authored fragment sidesteps needing the prior value at all.
+    matchMode: clean(matchMode) || 'exact',
   });
   return `async (owner) => {
     const payload = ${JSON.stringify(payload)};
@@ -196,7 +204,9 @@ function buildBoundTextInputReadFunction({
         && observed.replace(/[\\d\\s()+\\-./]/g, '') === '';
       const exactMatched = action === 'clear'
         ? observed === ''
-        : token(observed) === token(expected);
+        : payload.matchMode === 'endsWith'
+          ? Boolean(token(expected)) && token(observed).endsWith(token(expected))
+          : token(observed) === token(expected);
       const digitNormalizedMatched = !exactMatched
         && expectedIsNumericLike
         && observedIsNumericLike

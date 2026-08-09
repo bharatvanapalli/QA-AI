@@ -10,6 +10,7 @@ const OPERATION_CLASS = Object.freeze({
 
 const ALWAYS_MUTATING_TOOLS = new Set([
   'browser_navigate', 'browser_navigate_back', 'browser_navigate_forward', 'browser_reload',
+  'browser_go_back', 'browser_go_forward',
   'browser_click', 'browser_double_click', 'browser_triple_click',
   'browser_mouse_click', 'browser_click_xy', 'browser_mouse_down', 'browser_mouse_up',
   'browser_type', 'browser_fill', 'browser_fill_form',

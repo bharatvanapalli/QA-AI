@@ -1790,6 +1790,67 @@ const ActionLine = React.memo(function ActionLine({ action }) {
       </div>
     );
   }
+  if (action.tool === 'resolution_diagnostic' || action.resolutionDiagnostic) {
+    const isAmbiguous = action.reason === 'multiple_semantic_snapshot_targets';
+    const title = isAmbiguous ? 'Ambiguous Element Reference' : 'Element Not Found';
+    const message = isAmbiguous
+      ? `Multiple elements matched the reference "${action.target || 'element'}". QAAI found ${action.candidateCount || 0} matching candidates.`
+      : `Could not locate "${action.target || 'element'}" on the page.`;
+    return (
+      <div className="mt-2 border-l-2 border-danger-400 bg-danger-50/50 pl-3 py-2 rounded-r-md">
+        <div className="flex items-start gap-2">
+          <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0 text-danger-600" aria-hidden="true" />
+          <div className="min-w-0 flex-1">
+            <div className="text-2xs font-bold uppercase tracking-wider text-danger-700">
+              {title}
+            </div>
+            <div className="text-sm text-ink-800 leading-snug mt-0.5">
+              {message}
+            </div>
+            {Array.isArray(action.candidates) && action.candidates.length > 0 && (
+              <div className="mt-1.5 text-2xs text-ink-600 font-mono">
+                <span className="font-semibold text-ink-700 block mb-0.5">Matched candidates:</span>
+                <ul className="list-disc pl-3 space-y-0.5">
+                  {action.candidates.slice(0, 4).map((c, i) => (
+                    <li key={i} className="truncate">
+                      [{c.role}] "{c.accessibleName || c.name || 'unnamed'}" {c.ref ? `(${c.ref})` : ''}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (action.tool === 'proof_diagnostic' || action.proofDiagnostic) {
+    if (action.message === 'same_semantic_owner_reresolved_after_rerender') {
+      return (
+        <div className="pl-3 py-1 border-l-2 border-info-300 text-2xs text-ink-500 italic">
+          Page rerendered · successfully re-resolved "{action.name || 'element'}" ({action.role})
+        </div>
+      );
+    }
+    if (action.message === 'proof_claim_discrepancy') {
+      return (
+        <div className="mt-2 border-l-2 border-warn-400 bg-warn-50/50 pl-3 py-2 rounded-r-md">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0 text-warn-600" aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <div className="text-2xs font-bold uppercase tracking-wider text-warn-700">
+                Assertion Discrepancy Found
+              </div>
+              <div className="text-sm text-ink-800 leading-snug mt-0.5">
+                Expected: <span className="font-semibold text-ink-950">"{action.expected}"</span> but observed: <span className="font-semibold text-ink-950">"{action.observed}"</span>.
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  }
   // Dedicated terminal-stop row (audit #1): a deterministic precondition stop. Rendered
   // as a prominent BLOCKED banner (warn tone — a precondition issue, not a defect) so
   // the Live Pipeline explains WHY it stopped at the exact moment, not a silent gap.

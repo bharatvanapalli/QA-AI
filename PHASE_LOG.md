@@ -4558,3 +4558,39 @@ Build the Playwright Page Object Model (POM) output format for both TypeScript a
 - `server/services/codegen/liveReplayCodegen.js`
 - `server/services/codegen/replayExport.js`
 - `scripts/qaai-regen-codegen.cjs`
+
+
+## Phase H Stage 4 (Session Memory Gating & Transcript Semantic Fixes)
+
+**Scope**: Address critical user feedback regarding race condition double-execution loops and nonsensical "Successfully" success logs being rendered on failed actions.
+
+**Built**:
+1. **Strict Concurrency Gating:** Patched server/routes/agents.js with an in-memory projectExecutionLocks cache. This enforces a strict first-in-first-out serialization during the vulnerable DB Run bootstrapping phase, fully solving the "double start" race condition.
+2. **Aggressive Session Teardown:** Updated controllerConductor.js to aggressively force mcp.stopMcpSession() and teardownBrowserSession() synchronously if a test case fails and is marked continuation-unsafe, plugging the memory leak where background operations emitted logs after the runner advanced.
+3. **Semantic Log Narration:** Overhauled the static string generation in controllerMcpRuntimeAdapter.js. The engine now checks the isError payload of an MCP tool response and accurately changes "Successfully [action]" to "Attempted to [action]" when a step fails.
+4. **Authored Instruction Failures in UI:** Enhanced the browser.action WS payload to stream the user's actionText. Theater.jsx now explicitly falls back to rendering the Human Instruction if an action hits a failed lifecycle, stopping the oxymoronic "Action failed · Successfully [action]" bug.
+
+**Touched**:
+- server/routes/agents.js
+- server/services/agents/controllerConductor.js
+- server/services/controllerMcpRuntimeAdapter.js
+- src/store/runStream.jsx
+- src/pages/Theater.jsx
+
+**Status**: Done. Ready for manual validation.
+
+
+## Phase H Stage 4.1 (Observation Deduplication & Highlighter Polish)
+
+**Scope**: Address the spammy/repetitive UI transcript for retry loops and fix missing text labels in the visual Playwright Field Highlighter.
+
+**Built**:
+1. **Observation Deduplication:** The Playwright adapter (controllerMcpRuntimeAdapter.js) now emits polling observer actions under the tool type 'operation_check' with synthetic metadata. This allows the frontend (runStream.jsx) to safely deduplicate polling retries in place instead of appending a new row to the transcript 3-6 times per assertion.
+2. **Transcript Visual Polish:** By suppressing the redundant logs, the transcript now correctly shows only the final evaluation outcome for a target, preserving the 'Action failed -> [Human Instruction]' override without spamming.
+3. **Field Highlighter Labels:** Updated the UI highlighter injected into the browser (mcpContextConfig.js). Instead of going completely blank on icon buttons or empty inputs, it now intelligently falls back to placeholder, aria-label, title, name, id, or the raw HTML tag name, ensuring the 'disabled' tag never floats alone without context.
+
+**Touched**:
+- server/services/controllerMcpRuntimeAdapter.js
+- server/services/mcpContextConfig.js
+
+**Status**: Done. Ready for manual validation.

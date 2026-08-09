@@ -92,10 +92,17 @@ function setScoped(scope, session) {
   }
   const prior = sessions.get(key);
   if (prior && prior !== session) {
-    prior.closed = true;
-    try { prior.cdp?.send('Page.stopScreencast'); } catch (_) {}
-    try { prior.context?.close(); } catch (_) {}
-    try { prior.browser?.close(); } catch (_) {}
+    // Raw ad-hoc close using field names (prior.context, prior.browser)
+    // that don't match the actual live-CDP session shape (nested under
+    // prior.liveCdp.context, no top-level .browser at all) — never really
+    // closed anything. Also must NOT set prior.closed = true before
+    // calling mcp.stopMcpSession() — that function's own first line is
+    // `if (session.closed) return;`, an idempotency guard that setting
+    // the flag first defeats, skipping all real teardown. Route through
+    // the one real teardown function instead.
+    require('./mcp').stopMcpSession(prior).catch((error) => (
+      console.error('[sessionRegistry] stopMcpSession threw for prior scoped session:', error)
+    ));
   }
   rememberScope(session, scope);
   sessions.set(key, session);
@@ -107,10 +114,9 @@ function set(userId, session) {
   // Close any prior session for this user
   const prior = sessions.get(userId);
   if (prior && prior !== session) {
-    prior.closed = true;
-    try { prior.cdp?.send('Page.stopScreencast'); } catch (_) {}
-    try { prior.context?.close(); } catch (_) {}
-    try { prior.browser?.close(); } catch (_) {}
+    require('./mcp').stopMcpSession(prior).catch((error) => (
+      console.error('[sessionRegistry] stopMcpSession threw for prior session:', error)
+    ));
   }
   sessions.set(userId, session);
 }

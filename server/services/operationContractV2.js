@@ -19,8 +19,13 @@ const OPERATION_KIND = Object.freeze({
 const TARGET_OPTIONAL_ACTIONS = new Set([
   'Navigate', 'GoBack', 'GoForward', 'Refresh',
   'SwitchContext', 'SwitchTab', 'Close', 'Screenshot', 'PressKey', 'Hotkey',
-  'AcceptAlert', 'DismissAlert', 'Copy', 'Paste', 'Evaluate',
+  'AcceptAlert', 'DismissAlert', 'Copy', 'Paste', 'Evaluate', 'Semantic',
 ]);
+// Pure navigation/whole-page controls that structurally can never have a
+// real UI target (unlike e.g. Screenshot/PressKey/SwitchTab, which
+// sometimes legitimately scope to one). Any inherited targetIdentity on
+// these is noise, not signal.
+const NEVER_HAS_TARGET_ACTIONS = new Set(['Navigate', 'GoBack', 'GoForward', 'Refresh']);
 const VALUE_REQUIRED_ACTIONS = new Set([
   'Fill',
   'Type',
@@ -35,7 +40,7 @@ const VALUE_REQUIRED_ACTIONS = new Set([
   'ExtractData',
   'StoreVariable',
 ]);
-const VALUE_OPTIONAL_ACTIONS = new Set(['Navigate', 'Select', 'Radio', 'Deselect', 'MultiSelect', 'Slider', 'SwitchTab', 'ExtractData', 'ClickAndHold', 'Evaluate']);
+const VALUE_OPTIONAL_ACTIONS = new Set(['Navigate', 'Select', 'Radio', 'Deselect', 'MultiSelect', 'Slider', 'SwitchTab', 'ExtractData', 'ClickAndHold', 'Evaluate', 'Semantic']);
 const VALUE_ACTIONS = new Set([...VALUE_REQUIRED_ACTIONS, ...VALUE_OPTIONAL_ACTIONS]);
 const ASSERTION_POLLUTION_RE = /(?:,\s*|\s+)(?:and\s+)?(?:verify|assert|validate|confirm|expect)(?:\s+that)?\b/i;
 const CHAINED_ACTION_RE = /\b(?:and\s+then|then)\s+(?:click|press|select|choose|fill|enter|type|submit|open)\b/i;
@@ -427,8 +432,14 @@ function normalizeAction(source, context, findings) {
   // steps like 'Append "text" to field' resolve to 'Type', not a 50-char
   // sentence that fails VALID_STEP_TYPES validation.
   const explicitType = clean(source.type);
+  // `source.action` sometimes holds a clean canonical type token (e.g.
+  // "GoBack") that DISAGREES with a stale/wrong `source.type` (e.g.
+  // "Click", left over from however the step was authored). When action
+  // IS itself a valid step type, it's a stronger, deliberate signal than
+  // type — trust it over a possibly-wrong type field.
+  const actionAsCanonicalType = VALID_STEP_TYPES.includes(clean(source.action)) ? clean(source.action) : null;
   const inferredType = !explicitType ? inferCanonicalType(source.action) : null;
-  const authoredType = optionActivation?.type || explicitType || inferredType || clean(source.action);
+  const authoredType = optionActivation?.type || actionAsCanonicalType || explicitType || inferredType || clean(source.action);
   const type = authoredType;
   const path = `steps[${context.index}]`;
   if (!VALID_STEP_TYPES.includes(type)) {
@@ -438,6 +449,18 @@ function normalizeAction(source, context, findings) {
   const operationId = `action:${stableIdPart(context.caseId)}:${stableIdPart(authoredId)}`;
   const kind = type === 'WaitForState' ? OPERATION_KIND.SYNCHRONIZATION : OPERATION_KIND.ACTION;
   let explicitTarget = optionActivation?.targetIdentity ?? source.targetIdentity ?? source.target;
+  if (NEVER_HAS_TARGET_ACTIONS.has(type)) {
+    // These are pure navigation/whole-page controls with no UI element of
+    // their own. Authored data can still carry a stale/descriptive
+    // targetIdentity (e.g. a free-text label like "Navigate back to X
+    // page.") left over from however the step was originally written —
+    // that text isn't a real, resolvable element, and letting it through
+    // makes downstream heuristics (e.g. "does the next step have a real
+    // target") wrongly treat this operation as target-bearing, which then
+    // leaks that bogus label into OTHER unrelated steps'/assertions'
+    // narration and resolution.
+    explicitTarget = null;
+  }
   const targetRequired = !TARGET_OPTIONAL_ACTIONS.has(type);
   if (targetRequired && explicitTarget == null) {
     const fallbackLabel = clean(source.element || source.label || source.accessibleName || source.action) || 'Page element';

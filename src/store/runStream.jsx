@@ -512,6 +512,48 @@ export function applyPipelineMessage(state, msg) {
         actionTrail: nextTrail.slice(-500),
       };
     }
+    case 'controller.resolution-diagnostic': {
+      if (!msg.tcId) return state;
+      const entry = {
+        tool: 'resolution_diagnostic',
+        resolutionDiagnostic: true,
+        tcId: msg.tcId,
+        operationId: msg.operationId,
+        resolutionStatus: msg.resolutionStatus,
+        reason: msg.reason,
+        target: msg.target,
+        candidateCount: msg.candidateCount,
+        candidates: msg.candidates,
+        ts: Date.now(),
+      };
+      return {
+        ...state,
+        actionTrail: [...state.actionTrail, entry].slice(-500),
+      };
+    }
+    case 'controller.proof-diagnostic': {
+      if (!msg.tcId) return state;
+      const entry = {
+        tool: 'proof_diagnostic',
+        proofDiagnostic: true,
+        tcId: msg.tcId,
+        operationId: msg.operationId,
+        phase: msg.phase,
+        message: msg.message,
+        priorRef: msg.priorRef || null,
+        currentRef: msg.currentRef || null,
+        role: msg.role || null,
+        name: msg.name || null,
+        assertionId: msg.assertionId || null,
+        expected: msg.expected || null,
+        observed: msg.observed || null,
+        ts: Date.now(),
+      };
+      return {
+        ...state,
+        actionTrail: [...state.actionTrail, entry].slice(-500),
+      };
+    }
     case 'run.cancelling': {
       // Cancel acknowledged by the server — wind the live indicators down
       // immediately. The agent itself may still take 30–60 s to actually

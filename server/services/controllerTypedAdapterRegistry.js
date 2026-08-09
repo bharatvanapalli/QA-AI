@@ -173,7 +173,7 @@ function inferAdapterKind(operation = {}, resolution = {}, context = {}) {
   const hint = context.ignoreResolvedAdapterHint === true ? '' : adapterHint(resolution);
   if (Object.values(ADAPTER_KIND).includes(hint)) return hint;
 
-  if (type === 'Navigate') return ADAPTER_KIND.NAVIGATION;
+  if (['Navigate', 'GoBack', 'GoForward', 'Refresh'].includes(type)) return ADAPTER_KIND.NAVIGATION;
   if (type === 'Scroll') return ADAPTER_KIND.REVEAL;
   if (type === 'Upload') return ADAPTER_KIND.UPLOAD;
   if (['SwitchContext'].includes(type) || ['frame', 'browser_context'].includes(role)) return ADAPTER_KIND.CONTEXT;
@@ -193,7 +193,7 @@ function inferAdapterKind(operation = {}, resolution = {}, context = {}) {
   if (['Check', 'Uncheck', 'Radio'].includes(type)) return ADAPTER_KIND.BOOLEAN;
   if (['Expand', 'Collapse'].includes(type)) return ADAPTER_KIND.ACCORDION;
   if (['table', 'grid', 'treegrid', 'list'].includes(role)) return ADAPTER_KIND.COLLECTION;
-  if (['Click', 'DoubleClick', 'Submit', 'Download', 'Hover'].includes(type)
+  if (['Click', 'DoubleClick', 'Submit', 'Download', 'Hover', 'ClickAndHold', 'RightClick', 'MiddleClick'].includes(type)
     || ['button', 'link'].includes(role)) return ADAPTER_KIND.BUTTON_OR_LINK;
   if (['checkbox', 'radio', 'switch'].includes(role)) return ADAPTER_KIND.BOOLEAN;
   return ADAPTER_KIND.GENERIC;
@@ -271,10 +271,17 @@ function planTextInput(operation, resolution, context) {
       target: ref,
       function: buildBoundTextInputRevealFunction(),
     }, 'reveal-owner'),
-    mutation: mutation(
-      operation.type === 'Type' ? 'browser_type' : 'browser_fill',
-      { target: ref, text: value },
-    ),
+    // 'browser_fill' is not a real tool on the installed @playwright/mcp
+    // server, so every Clear/Fill dispatch using it was transport-rejected
+    // with "Tool \"browser_fill\" not found" and silently left the field
+    // untouched. browser_type IS real, and controllerMcpRuntimeAdapter.js's
+    // transport() already has a dedicated isClearOp bypass (triggered by
+    // args.text === '') that drives the live-CDP page directly via
+    // page.evaluate — more reliable than routing through the MCP tool's
+    // own ref resolution. Emitting browser_type with an empty string here
+    // is what makes THAT bypass trigger; do not swap in a different tool
+    // name/arg shape for Clear or it stops matching isClearOp entirely.
+    mutation: mutation('browser_type', { target: ref, text: value, element: accessibleName || undefined }),
     proofContract: proof(`${operation.operationId}:text-input`, [
       { id: 'same-owner-readback', allOf: [CLAIM.SAME_OWNER_VALUE] },
     ]),
@@ -292,7 +299,8 @@ function planPasswordInput(operation, resolution, context) {
   const ref = resolvedRef(resolution);
   const value = valueFor(operation, context);
   return commonPlan(operation, ADAPTER_KIND.PASSWORD_INPUT, {
-    mutation: mutation('browser_fill', { target: ref, text: value }),
+    // Same 'browser_fill' does-not-exist issue as planTextInput above.
+    mutation: mutation('browser_type', { target: ref, text: value }),
     proofContract: proof(`${operation.operationId}:password-input`, [
       {
         id: 'protected-ack',
@@ -329,10 +337,23 @@ function planPasswordInput(operation, resolution, context) {
 }
 
 function planButton(operation, resolution, context = {}) {
-  const toolName = operation.type === 'DoubleClick' ? 'browser_double_click'
-    : operation.type === 'Hover' ? 'browser_hover'
-      : 'browser_click';
+  // browser_click_and_hold is not a real @playwright/mcp tool — there is
+  // no native "hold for N ms" primitive. Dispatching synthetic
+  // mousedown/mouseup DOM events via browser_evaluate (a tool that always
+  // exists) reproduces the same interaction a real long-press produces,
+  // since sites detect "held" state via those standard bubbling events
+  // (e.g. LetCode's "Button Hold!" flips to "Button has been long
+  // pressed" on exactly this sequence).
+  const isClickAndHold = operation.type === 'ClickAndHold';
+  const exactActivationRef = resolvedInteractionRef(resolution);
+  const toolName = isClickAndHold ? 'browser_evaluate'
+    : operation.type === 'DoubleClick' ? 'browser_click'
+      : operation.type === 'Hover' ? 'browser_hover'
+        : 'browser_click';
   const isHover = operation.type === 'Hover';
+  const clickButton = operation.type === 'RightClick' ? 'right'
+    : operation.type === 'MiddleClick' ? 'middle'
+      : undefined;
   const opensPopup = clean(operation?.operationCheck?.kind).toLowerCase() === 'menu_opened';
   const ownerRole = clean(
     resolution?.target?.identity?.role
@@ -340,7 +361,6 @@ function planButton(operation, resolution, context = {}) {
   ).toLowerCase();
   const requiresOwnerCorrelatedPopup = opensPopup
     && ['combobox', 'searchbox', 'textbox'].includes(ownerRole);
-  const exactActivationRef = resolvedInteractionRef(resolution);
   const recoveryEligible = operation.type === 'Click' && !opensPopup
     && ['button', 'link', 'menuitem', 'tab'].includes(ownerRole);
   const recoveryMutation = recoveryEligible
@@ -351,10 +371,30 @@ function planButton(operation, resolution, context = {}) {
     : null;
   const recoveryRequested = context.controllerRecoveryDirective
     === 'ACTIVATE_PROVEN_UNCHANGED_TARGET';
+  const mutationArgs = isClickAndHold
+    ? {
+      target: exactActivationRef,
+      function: `async (el) => {
+        el.scrollIntoView({ block: 'center', inline: 'nearest' });
+        const rect = el.getBoundingClientRect();
+        const x = rect.left + rect.width / 2;
+        const y = rect.top + rect.height / 2;
+        const opts = { bubbles: true, cancelable: true, view: window, clientX: x, clientY: y };
+        el.dispatchEvent(new MouseEvent('mousedown', opts));
+        await new Promise((resolve) => setTimeout(resolve, 600));
+        el.dispatchEvent(new MouseEvent('mouseup', opts));
+        return { ok: true };
+      }`,
+    }
+    : {
+      target: exactActivationRef,
+      ...(operation.type === 'DoubleClick' ? { doubleClick: true } : {}),
+      ...(clickButton ? { button: clickButton } : {}),
+    };
   return commonPlan(operation, ADAPTER_KIND.BUTTON_OR_LINK, {
     mutation: recoveryRequested && recoveryMutation
       ? recoveryMutation
-      : mutation(toolName, { target: exactActivationRef }),
+      : mutation(toolName, mutationArgs),
     recoveryMutation: recoveryRequested ? null : recoveryMutation,
     proofContract: isHover
       ? proof(`${operation.operationId}:hover`, [
@@ -528,12 +568,28 @@ function planUpload(operation, resolution, context) {
 }
 
 function planNavigation(operation) {
+  let sdkToolName = 'browser_navigate';
+  if (operation.type === 'GoBack') sdkToolName = 'browser_go_back';
+  if (operation.type === 'GoForward') sdkToolName = 'browser_go_forward';
+  if (operation.type === 'Refresh') sdkToolName = 'browser_reload';
+
+  const isDirectNavigate = operation.type === 'Navigate';
+
   return commonPlan(operation, ADAPTER_KIND.NAVIGATION, {
-    mutation: mutation('browser_navigate', { url: operation.value || operation.destination }),
-    proofContract: proof(`${operation.operationId}:navigation`, [
+    mutation: mutation(sdkToolName, { url: operation.value || operation.destination || operation.targetIdentity?.label || operation.targetIdentity?.accessibleName || '' }),
+    // GoBack/GoForward/Refresh have no authored destination URL and can't
+    // be checked against CLAIM.EXACT_NAVIGATION_TARGET, but they still need
+    // AT LEAST one proof alternative — an empty alternatives array is a
+    // structurally invalid proof contract (BROWSER_PROOF_CONTRACT_INVALID),
+    // so every GoBack failed before ever getting to the browser at all.
+    // next-required-control (does the next authored step's target become
+    // resolvable) is the one alternative that still applies without a URL.
+    proofContract: proof(`${operation.operationId}:navigation`, isDirectNavigate ? [
       { id: 'authored-destination', allOf: [CLAIM.AUTHORED_DESTINATION] },
       { id: 'next-required-control', allOf: [CLAIM.NEXT_REQUIRED_CONTROL_ACTIONABLE] },
       { id: 'exact-url', allOf: [CLAIM.EXACT_NAVIGATION_TARGET] },
+    ] : [
+      { id: 'next-required-control', allOf: [CLAIM.NEXT_REQUIRED_CONTROL_ACTIONABLE] },
     ]),
     requiredSources: [SNAPSHOT_SOURCE.BROWSER_SNAPSHOT, SNAPSHOT_SOURCE.DOM],
     recoveryOptions: ['REFRESH_SNAPSHOT'],

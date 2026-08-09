@@ -1678,17 +1678,23 @@ function exactWaitStateReached({
 }
 
 function exactPageTransitionCommitted({
-  operation,
   phase,
-  ownerVisible,
   preDispatchObservation,
   currentUrl,
 } = {}) {
   const preDispatchUrl = clean(preDispatchObservation?.url);
   const observedUrl = clean(currentUrl);
-  return clean(operation?.operationCheck?.kind).toLowerCase() === 'page_ready'
-    && phase === 'post_dispatch'
-    && ownerVisible === false
+  // Not gated on operation.operationCheck.kind === 'page_ready' — an
+  // authoring flag the Architect almost never sets on a plain "Click the X
+  // button" step even when clicking X does navigate, which made this claim
+  // structurally unreachable for most navigating clicks (LetCode's "Goto
+  // Home" click timed out because of exactly this).
+  // Not gated on ownerVisible === false either — a persistent nav link
+  // (e.g. "Goto Home" present in the header on every page, including the
+  // home page itself) never disappears, so that condition blocked this
+  // claim even after the operationCheck fix. A genuine URL change is
+  // sufficient evidence of a real transition on its own.
+  return phase === 'post_dispatch'
     && Boolean(preDispatchUrl)
     && Boolean(observedUrl)
     && token(preDispatchUrl) !== token(observedUrl);
@@ -2173,13 +2179,20 @@ function createControllerMcpRuntimeAdapter({
     const isAppendTextOp = Boolean(
       operation?.targetIdentity?.label && /\bappend\b/i.test(operation.targetIdentity.label)
     );
-    const existingTextVal = isAppendTextOp ? extractCandidateValue(snapshotText, ownerRef, ownerCandidate) : '';
-    const expectedTextInputValue = isAppendTextOp && existingTextVal
-      ? `${existingTextVal}${plan?.mutation?.args?.text ?? operation?.value ?? ''}`
+    // Reconstructing the full expected string (pre-append value + fragment)
+    // requires the field's value from BEFORE the mutation ran — by the time
+    // this observer runs post-dispatch, the field already holds the final
+    // text, so re-deriving "existing" from that same snapshot was circular
+    // and unreliable. Checking that the result ends with the authored
+    // fragment sidesteps needing the prior value at all.
+    const appendFragmentValue = clean(plan?.mutation?.args?.text ?? operation?.value ?? '');
+    const expectedTextInputValue = isAppendTextOp && appendFragmentValue
+      ? appendFragmentValue
       : plan?.proofMetadata?.expectedValue
         ?? plan?.mutation?.args?.text
         ?? operation?.value
         ?? '';
+    const textInputMatchMode = isAppendTextOp && appendFragmentValue ? 'endsWith' : 'exact';
     if (textInputReadbackRequired && ownerCandidate && phase !== 'pre_dispatch') {
       const accessibleName = clean(
         ownerCandidate.accessibleName
@@ -2195,6 +2208,7 @@ function createControllerMcpRuntimeAdapter({
             function: buildBoundTextInputReadFunction({
               expectedValue: expectedTextInputValue,
               actionType: operation.type,
+              matchMode: textInputMatchMode,
             }),
           }, Math.min(Math.max(100, Number(remainingMs) || 2_000), 2_000));
           textInputOwnerReadback = evaluatePayload(result);
@@ -2548,6 +2562,31 @@ function createControllerMcpRuntimeAdapter({
           expected: typedAssertionObservation.expected,
           observed: typedAssertionObservation.observed,
         })).catch(() => null);
+      }
+
+      if (typedAssertionObservation.candidateRef && phase !== 'pre_dispatch') {
+        try {
+          const isMatched = typedAssertionObservation.matched === true;
+          const highlightFunc = `function highlightElement(element) {
+            try {
+              const origOutline = element.style.outline;
+              const origBoxShadow = element.style.boxShadow;
+              element.style.outline = '3px solid ${isMatched ? '#10b981' : '#f59e0b'}';
+              element.style.boxShadow = '0 0 10px ${isMatched ? 'rgba(16, 185, 129, 0.8)' : 'rgba(245, 158, 11, 0.8)'}';
+              setTimeout(() => {
+                try {
+                  element.style.outline = origOutline;
+                  element.style.boxShadow = origBoxShadow;
+                } catch (_) {}
+              }, 2000);
+            } catch (_) {}
+          }`;
+          rawCall('browser_evaluate', {
+            element: clean(typedAssertionObservation.target) || 'element',
+            target: typedAssertionObservation.candidateRef,
+            function: highlightFunc,
+          }, 1000).catch(() => {});
+        } catch (_) {}
       }
 
       const targetLabel = clean(typedAssertionObservation.target || operation?.targetIdentity?.accessibleName || operation?.targetIdentity?.label || 'element');
@@ -3065,7 +3104,12 @@ function createControllerMcpRuntimeAdapter({
       || (args?.element && /\bclear\b/i.test(args.element))
     );
 
-    const sdkToolName = (toolName === 'browser_fill' && !isClearOp) ? 'browser_type' : toolName;
+    const isClickAndHoldOp = Boolean(
+      entry?.toolName === 'ClickAndHold'
+      || toolName === 'browser_click_and_hold'
+    );
+
+    const sdkToolName = toolName === 'browser_fill' ? 'browser_type' : toolName;
     // controllerTypedAdapterRegistry.js freezes mutation.args (Object.freeze),
     // and normaliseToolArgs() returns that same frozen reference untouched
     // whenever no target rewrite is needed (e.g. every browser_navigate call,
@@ -3150,6 +3194,152 @@ function createControllerMcpRuntimeAdapter({
         result = { isError: false, content: [{ type: 'text', text: `Navigated to ${session.currentUrl}` }] };
       } catch (error) {
         result = { isError: true, content: [{ type: 'text', text: `Direct navigation failed: ${error?.message || error}` }] };
+      }
+    } else if (sdkToolName === 'browser_go_back' && session.liveCdp?.context) {
+      try {
+        let page = session.liveCdp.context.pages()[0] || null;
+        if (page) await page.goBack({ waitUntil: 'domcontentloaded', timeout: Math.max(1_000, Math.min(60_000, Number(remainingMs) || 30_000)) });
+        session.currentUrl = page?.url() || session.currentUrl;
+        result = { isError: false, content: [{ type: 'text', text: `Navigated back to ${session.currentUrl}` }] };
+      } catch (error) {
+        result = { isError: true, content: [{ type: 'text', text: `Direct navigation failed: ${error?.message || error}` }] };
+      }
+    } else if (sdkToolName === 'browser_go_forward' && session.liveCdp?.context) {
+      try {
+        let page = session.liveCdp.context.pages()[0] || null;
+        if (page) await page.goForward({ waitUntil: 'domcontentloaded', timeout: Math.max(1_000, Math.min(60_000, Number(remainingMs) || 30_000)) });
+        session.currentUrl = page?.url() || session.currentUrl;
+        result = { isError: false, content: [{ type: 'text', text: `Navigated forward to ${session.currentUrl}` }] };
+      } catch (error) {
+        result = { isError: true, content: [{ type: 'text', text: `Direct navigation failed: ${error?.message || error}` }] };
+      }
+    } else if (sdkToolName === 'browser_reload' && session.liveCdp?.context) {
+      try {
+        let page = session.liveCdp.context.pages()[0] || null;
+        if (page) await page.reload({ waitUntil: 'domcontentloaded', timeout: Math.max(1_000, Math.min(60_000, Number(remainingMs) || 30_000)) });
+        session.currentUrl = page?.url() || session.currentUrl;
+        result = { isError: false, content: [{ type: 'text', text: `Refreshed page ${session.currentUrl}` }] };
+      } catch (error) {
+        result = { isError: true, content: [{ type: 'text', text: `Direct navigation failed: ${error?.message || error}` }] };
+      }
+    } else if (isClearOp && session.liveCdp?.context && targetRef) {
+      // Clear operation: browser_fill does not exist on the installed @playwright/mcp
+      // server (confirmed by journal DELIVERY_RECORDED: Tool "browser_fill" not found).
+      // Playwright's native locator.fill('') is the correct way to clear a field —
+      // it selects all existing content and replaces it with empty string. Drive the
+      // live-CDP context directly just like Navigate/GoBack/GoForward/Reload above.
+      try {
+        const page = session.liveCdp.context.pages()[0] || null;
+        if (page) {
+          // targetRef is an accessibility snapshot ref like "e5". Resolve it via
+          // the page's getByRole/locator. The most reliable approach: use
+          // page.locator() with the aria snapshot ref format that Playwright MCP
+          // understands, or fall back to a JS-based clear via evaluate.
+          await page.evaluate(({ ref, label }) => {
+            // Strategy 1: find the element by the snapshot ref attribute that
+            // @playwright/mcp sets (data-mcp-ref or similar), or by accessible name.
+            let el = null;
+            // Try aria-based query first
+            if (label) {
+              const candidates = document.querySelectorAll('input, textarea, [contenteditable]');
+              for (const c of candidates) {
+                const name = c.getAttribute('aria-label')
+                  || c.labels?.[0]?.textContent?.trim()
+                  || c.placeholder
+                  || c.name
+                  || '';
+                if (name && name.toLowerCase().includes(label.toLowerCase().replace(/^clear\s+(?:the\s+)?/i, ''))) {
+                  el = c;
+                  break;
+                }
+              }
+            }
+            // Strategy 2: try focused element (the reveal-owner phase already focused it)
+            if (!el && document.activeElement && ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+              el = document.activeElement;
+            }
+            if (el) {
+              // Use the native setter + input event dispatch to ensure React/Vue/etc pick it up
+              const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+                window.HTMLInputElement.prototype, 'value'
+              )?.set || Object.getOwnPropertyDescriptor(
+                window.HTMLTextAreaElement.prototype, 'value'
+              )?.set;
+              if (nativeInputValueSetter) {
+                nativeInputValueSetter.call(el, '');
+              } else {
+                el.value = '';
+              }
+              el.dispatchEvent(new Event('input', { bubbles: true }));
+              el.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+          }, { ref: targetRef, label: elementLabel });
+          result = { isError: false, content: [{ type: 'text', text: `Cleared field "${elementLabel || targetRef}"` }] };
+        } else {
+          result = { isError: true, content: [{ type: 'text', text: 'No page available for clear operation' }] };
+        }
+      } catch (error) {
+        result = { isError: true, content: [{ type: 'text', text: `Clear operation failed: ${error?.message || error}` }] };
+      }
+    } else if (isClickAndHoldOp && session.liveCdp?.context && targetRef) {
+      try {
+        const page = session.liveCdp.context.pages()[0] || null;
+        if (page) {
+          const clickAndHoldFunc = `function clickAndHold(element) {
+            try {
+              const dispatch = (type) => {
+                const ev = new MouseEvent(type, {
+                  bubbles: true,
+                  cancelable: true,
+                  view: window,
+                  buttons: 1
+                });
+                element.dispatchEvent(ev);
+                
+                if (window.PointerEvent) {
+                  const pev = new PointerEvent(type.replace('mouse', 'pointer'), {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window,
+                    buttons: 1,
+                    pointerType: 'mouse'
+                  });
+                  element.dispatchEvent(pev);
+                }
+              };
+              dispatch('mousedown');
+              setTimeout(() => {
+                try {
+                  dispatch('mouseup');
+                  const clickEv = new MouseEvent('click', {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window
+                  });
+                  element.dispatchEvent(clickEv);
+                } catch (_) {}
+              }, 2000);
+            } catch (_) {}
+          }`;
+          // Previously called rawEvaluateBoundRef(), a function that does
+          // not exist anywhere in this file — every ClickAndHold hit a
+          // ReferenceError ("rawEvaluateBoundRef is not defined") on every
+          // attempt. rawCall('browser_evaluate', ...) is the same helper
+          // reveal-owner and the readback functions already use
+          // successfully elsewhere in this file.
+          result = await rawCall('browser_evaluate', {
+            target: targetRef,
+            element: elementLabel,
+            function: clickAndHoldFunc,
+          }, remainingMs);
+          if (!result || result.isError) {
+            throw new Error(result?.content?.[0]?.text || 'Click and hold evaluation failed');
+          }
+        } else {
+          throw new Error('No page available for click and hold');
+        }
+      } catch (error) {
+        result = { isError: true, content: [{ type: 'text', text: `Click and hold failed: ${error?.message || error}` }] };
       }
     } else {
       result = await rawCall(sdkToolName, normalized, remainingMs);

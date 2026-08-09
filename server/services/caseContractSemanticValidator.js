@@ -23,7 +23,7 @@ const VALID_STEP_TYPES = Object.freeze([
   'AcceptAlert', 'DismissAlert', 'TypeAlert',
   'Copy', 'Paste', 'ExtractData', 'StoreVariable', 'Evaluate', 'human_input', 'human_verification',
   'FindRow', 'CountRows', 'SortColumn',
-  'Screenshot',
+  'Screenshot', 'Semantic'
 ]);
 
 const VALID_ASSERTION_TYPES = Object.freeze([

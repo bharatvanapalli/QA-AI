@@ -835,8 +835,18 @@ function createBrowserTransactionController({
           revealDeliveryStatus: revealDelivery.deliveryStatus,
           revealDispatchAttemptId: revealDelivery.dispatchAttemptId,
         });
+        // plan.proofMetadata.browserAcknowledgmentIsDeliveryOnly (set by
+        // planTextInput) signals that this reveal call is a plain
+        // browser_evaluate (focus/scroll), which never naturally produces
+        // a browserAcknowledged:true result the way a form-fill tool call
+        // does — this gate was requiring it anyway, unconditionally, so
+        // every Clear/Fill/Type dispatch hard-failed at the reveal step
+        // before ever reaching the real mutation (reproduced live: 5
+        // reveal-owner attempts, all DELIVERED, all rejected here).
+        const revealAcknowledgmentSatisfied = revealDelivery.browserAcknowledged === true
+          || plan?.proofMetadata?.browserAcknowledgmentIsDeliveryOnly === true;
         if (revealDelivery.deliveryStatus !== DELIVERY_STATUS.DELIVERED
-          || revealDelivery.browserAcknowledged !== true) {
+          || !revealAcknowledgmentSatisfied) {
           const terminal = machine.transition(CONTROLLER_STATE.EXECUTION_ERROR, {
             reason: revealDelivery.reason || 'exact_owner_reveal_unproven',
             factRefs: factRefsOf(resolution, revealDelivery),
@@ -926,6 +936,16 @@ function createBrowserTransactionController({
       } catch (error) {
         const positiveNonDelivery = error?.positivelyNotDelivered === true
           || error?.deliveryStatus === DELIVERY_STATUS.NOT_DELIVERED;
+        // A real gateway.dispatch throw (not just the routine
+        // DISPATCH_DEADLINE timeout) previously showed up downstream only
+        // as a generic exact_proof_unavailable after reconciliation
+        // exhausted, with zero dispatch journal entries and no clue why.
+        if (error?.code !== 'BROWSER_TRANSACTION_DISPATCH_DEADLINE') {
+          console.error(
+            `[browserTransactionController] gateway.dispatch threw for ${operation.operationId}:`,
+            error,
+          );
+        }
         delivery = Object.freeze({
           dispatchAttemptId: fallbackAttemptId,
           deliveryStatus: positiveNonDelivery

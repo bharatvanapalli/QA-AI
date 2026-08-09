@@ -1183,6 +1183,7 @@ async function launchLiveCdpBrowser({ sessionId, viewport, userDataDir, project,
     monitorBrowser,
     endpoint,
     profileDir,
+    isTempProfile: !userDataDir,
     port,
     gatewayBootstrapTrail: Array.isArray(gatewayBootstrapSession.actionExecutionGatewayTrail)
       ? gatewayBootstrapSession.actionExecutionGatewayTrail
@@ -1226,6 +1227,46 @@ function killBrowserTreeOnPort(port) {
   } catch (_) { /* best-effort reaper — never throws */ }
 }
 
+// Belt-and-braces #2: killBrowserTreeOnPort matches by the CDP port via
+// netstat column-parsing, which can silently match nothing (IPv6 vs IPv4
+// binding, column-format drift) and nobody could tell, since its own
+// taskkill results were never checked either. profileDir is a much more
+// reliable fingerprint — Playwright always passes it verbatim as
+// --user-data-dir=<profileDir> to the actual chrome.exe process, so this
+// matches directly against the one thing we know is unique and present
+// (reproduced live: context.close() + killBrowserTreeOnPort both reported
+// no error, yet two Chrome windows for two different sessions stayed open
+// simultaneously for minutes).
+function killBrowserTreeByProfileDir(profileDir) {
+  if (!profileDir || process.platform !== 'win32') return;
+  try {
+    const cp = require('child_process');
+    const psFilter = String(profileDir).replace(/'/g, "''");
+    const psCommand = `Get-CimInstance Win32_Process -Filter "Name='chrome.exe'" | Where-Object { $_.CommandLine -like '*${psFilter}*' } | Select-Object -ExpandProperty ProcessId`;
+    const lookup = cp.spawnSync(
+      'powershell.exe',
+      ['-NoProfile', '-NonInteractive', '-Command', psCommand],
+      { encoding: 'utf8', timeout: 8000 },
+    );
+    if (lookup.error) {
+      console.error(`[mcp] killBrowserTreeByProfileDir: PID lookup failed for ${profileDir}:`, lookup.error);
+      return;
+    }
+    const pids = (lookup.stdout || '').split(/\r?\n/).map((s) => s.trim()).filter((s) => /^\d+$/.test(s));
+    if (!pids.length) return;
+    for (const pid of pids) {
+      const killResult = cp.spawnSync('taskkill', ['/T', '/F', '/PID', pid], { timeout: 5000, shell: true });
+      if (killResult.error || (killResult.status !== 0 && killResult.status !== null)) {
+        console.error(
+          `[mcp] killBrowserTreeByProfileDir: taskkill failed for pid ${pid}: error=${killResult.error} status=${killResult.status} stderr=${String(killResult.stderr || '').trim()}`,
+        );
+      }
+    }
+  } catch (error) {
+    console.error(`[mcp] killBrowserTreeByProfileDir threw for ${profileDir}:`, error);
+  }
+}
+
 async function closeLiveCdpBrowser(liveCdp) {
   if (!liveCdp) return;
   await bestEffortWithin('live_cdp_context_close', () => liveCdp.context?.close?.(), 2500);
@@ -1236,6 +1277,14 @@ async function closeLiveCdpBrowser(liveCdp) {
   // Chrome (timed out / detached on Windows), force-kill its tree by the unique
   // remote-debugging port so it cannot accumulate and starve later sessions.
   killBrowserTreeOnPort(liveCdp.port);
+  killBrowserTreeByProfileDir(liveCdp.profileDir);
+  if (liveCdp.isTempProfile && liveCdp.profileDir) {
+    try {
+      await fs.promises.rm(liveCdp.profileDir, { recursive: true, force: true, maxRetries: 3, retryDelay: 300 });
+    } catch (error) {
+      console.error(`[mcp] failed to remove temp profile dir ${liveCdp.profileDir}:`, error);
+    }
+  }
 }
 
 function screencastOptionsFor(viewport) {
@@ -3545,11 +3594,26 @@ async function stopMcpSession(session) {
   if (pid) {
     try {
       if (process.platform === 'win32') {
-        require('child_process').spawnSync('taskkill', ['/T', '/F', '/PID', String(pid)], { timeout: 5000 });
+        // spawnSync's return value must be checked — a failed spawn
+        // (result.error) or non-zero exit status looked identical to
+        // success when ignored, so the MCP subprocess (and its Chrome
+        // tree) could silently survive teardown with zero trace.
+        const result = require('child_process').spawnSync(
+          'taskkill',
+          ['/T', '/F', '/PID', String(pid)],
+          { timeout: 5000, shell: true },
+        );
+        if (result.error || (result.status !== 0 && result.status !== null)) {
+          console.error(
+            `[mcp] taskkill failed for pid ${pid}: error=${result.error} status=${result.status} stderr=${String(result.stderr || '').trim()}`,
+          );
+        }
       } else {
         process.kill(-pid, 'SIGKILL');
       }
-    } catch (_) {}
+    } catch (error) {
+      console.error(`[mcp] taskkill threw for pid ${pid}:`, error);
+    }
   }
 }
 

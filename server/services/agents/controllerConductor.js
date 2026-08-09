@@ -57,6 +57,25 @@ function dependencyIds(testCase) {
   return Array.isArray(decoded) ? decoded.filter(Boolean) : [];
 }
 
+// A case's browser session is only worth keeping alive post-run if some
+// OTHER case in this same run actually declares it as a dependency (the
+// authenticated-session-reuse path, via sessionRegistry.leaseContinuation).
+// Without this check — and without an explicit stop otherwise — every
+// independent case that merely finishes cleanly parks its session alive
+// with no teardown until the run's very end `finally` block, so two wholly
+// unrelated cases (e.g. "Edit Fields" and "Click Actions", neither
+// depending on the other) end up with TWO live browser sessions running
+// concurrently for the run's remaining duration, and their live-transcript
+// events interleave in the UI (reproduced live repeatedly: TC-1's session
+// kept running while TC-2's fresh session was already executing).
+function hasFutureDependent(testCaseId, cases) {
+  const id = String(testCaseId);
+  return cases.some(({ testCase: other }) => (
+    String(other.id) !== id
+      && dependencyIds(other).map(String).includes(id)
+  ));
+}
+
 function rootCaseId(testCaseId, casesById, seen = new Set()) {
   if (seen.has(testCaseId)) return testCaseId;
   seen.add(testCaseId);
@@ -118,11 +137,15 @@ function deadlineForOperation(operation) {
       return scaledMs(12_000);
     case 'Click':
     case 'Submit':
-      return scaledMs(
-        clean(operation?.operationCheck?.kind).toLowerCase() === 'page_ready'
-          ? 30_000
-          : 10_000,
-      );
+      // There's no way to know in advance whether a given click triggers a
+      // full page load (e.g. clicking a nav link), so give every click the
+      // same generous budget Navigate itself gets — a click's own MCP round
+      // trip alone can eat several seconds, and a page_ready-flagged-only
+      // 10s budget starves post-click snapshot/reconciliation on any real
+      // page (reproduced live: LetCode's "Goto Home" link click used 3.4s
+      // just for the browser_click round trip, leaving too little of the
+      // 10s default for the destination page to load and verify).
+      return scaledMs(30_000);
     case 'WaitForState':
       return scaledMs(20_000);
     case 'Fill':
@@ -699,7 +722,8 @@ async function run({
       history.push({ testCaseId: testCase.id, ...caseOutcome });
 
       if (sessionRegistry.sessionIsUsable(browserSession)
-        && caseOutcome.continuationSafe) {
+        && caseOutcome.continuationSafe
+        && hasFutureDependent(testCase.id, cases)) {
         sessionRegistry.setScoped({
           userId,
           projectId,
@@ -707,6 +731,19 @@ async function run({
           caseId: testCase.id,
           continuityGroupId,
         }, browserSession);
+      } else if (browserSession) {
+        // Do NOT set browserSession.closed = true here — stopMcpSession's
+        // own first line is `if (!session || session.closed) return;`, an
+        // idempotency guard meant to skip a session some OTHER caller
+        // already tore down. Setting the flag before calling it makes
+        // every call think that's already true, so it returns immediately
+        // without ever running context.close(), the taskkill fallback, or
+        // profile-dir cleanup — the browser just stays open for the rest
+        // of the run with zero error anywhere.
+        await mcp.stopMcpSession(browserSession).catch((error) => (
+          console.error(`[controllerConductor] stopMcpSession threw for case ${testCase.id}:`, error)
+        ));
+        activeSessions.delete(browserSession);
       }
       if (outcome.paused) casePaused = true;
       } catch (caseError) {
