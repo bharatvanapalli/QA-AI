@@ -2617,6 +2617,11 @@ function createControllerMcpRuntimeAdapter({
         narration = `Verified "${targetLabel}" is hidden`;
       }
 
+      if (typedAssertionObservation.observed !== undefined && typedAssertionObservation.observed !== null && String(typedAssertionObservation.observed).trim() !== '') {
+        const obs = String(typedAssertionObservation.observed).trim();
+        narration += ` (observed: ${obs})`;
+      }
+
       send({
         type: 'browser.action',
         tool: `assertion_${assertionType.toLowerCase()}`,
@@ -3363,13 +3368,13 @@ function createControllerMcpRuntimeAdapter({
 
     if (result && !result.isError && toolName.startsWith('browser_') && !['browser_snapshot', 'browser_take_screenshot'].includes(toolName)) {
       try {
-        const shot = await mcp.captureLiveEvidenceScreenshot(session, { label: `${toolName}_evidence` });
+        const shot = await mcp.captureLiveEvidenceScreenshot(session, { label: `${toolName}_evidence_${Date.now()}` });
         if (shot) {
           if (!session.screenshots) session.screenshots = [];
           session.screenshots.push({
             ...shot,
             path: shot.artifactRef,
-            label: `${toolName}_evidence`,
+            label: `${toolName}_evidence_${Date.now()}`,
           });
         }
       } catch (_) {}
