@@ -689,6 +689,11 @@ async function run({
             durationMs: Math.max(0, Date.now() - startedAt),
             error,
             blockedReason: null,
+            screenshots: encodeJson(
+              Array.isArray(browserSession?.screenshots)
+                ? browserSession.screenshots.map((s) => s.path || s.artifactRef).filter(Boolean)
+                : []
+            ),
             stepResults: encodeJson(steps),
             assertionCheckResults: encodeJson(assertions),
             executionContractJson: encodeJson(contract),
@@ -765,6 +770,11 @@ async function run({
             status: 'blocked',
             error: diagnosticError,
             blockedReason: 'controller_internal_error',
+            screenshots: encodeJson(
+              Array.isArray(browserSession?.screenshots)
+                ? browserSession.screenshots.map((s) => s.path || s.artifactRef).filter(Boolean)
+                : []
+            ),
             stepResults: encodeJson([]),
             verdictVersion: 'controller_v1',
             verdictMode: 'mechanical_v1',
