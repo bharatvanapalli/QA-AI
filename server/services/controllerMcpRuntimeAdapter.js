@@ -3446,7 +3446,7 @@ function createControllerMcpRuntimeAdapter({
         ts: Date.now(),
       });
     }
-    const responseText = textOfResult(result);
+    const responseText = isSemanticOp ? '' : textOfResult(result);
     const semanticEvaluation = sdkToolName === 'browser_evaluate'
       ? evaluatePayload(result)
       : null;

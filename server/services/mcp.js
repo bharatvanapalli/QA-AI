@@ -4591,14 +4591,16 @@ async function callToolInner(session, name, args, options = {}) {
             {
               name: 'browser_evaluate',
               arguments: {
-                target: targetRef,
+                ref: targetRef,
                 function: fnStr,
               },
             },
             undefined,
             sdkRequestOptions
           );
-        } catch (_) {}
+        } catch (highlightErr) {
+          console.error('[mcp] highlighter injection failed:', highlightErr);
+        }
       }
 
       const sdkCall = session.client.callTool(

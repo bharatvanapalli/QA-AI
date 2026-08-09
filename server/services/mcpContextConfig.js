@@ -270,7 +270,7 @@ function writeInitScript(project, session) {
   lines.push('            if (container.parentNode) { container.parentNode.removeChild(container); }');
   lines.push('          }, 300);');
   lines.push('        }');
-  lines.push('      }, 1200);');
+  lines.push('      }, 3000);');
   lines.push('    };');
 
   lines.push('  } catch (e) {');

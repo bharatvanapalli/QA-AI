@@ -264,10 +264,11 @@ async function closeForUser(userId) {
   }
   if (!ownedSessions.size) return false;
   await Promise.allSettled([...ownedSessions].map(async (session) => {
-    if (session && typeof session === 'object') session.closed = true;
-    try { await session?.cdp?.send('Page.stopScreencast'); } catch (_) {}
-    try { await session?.context?.close(); } catch (_) {}
-    try { await session?.browser?.close(); } catch (_) {}
+    try {
+      await require('./mcp').stopMcpSession(session);
+    } catch (error) {
+      console.error(`[sessionRegistry] clearSessionsForUser stopMcpSession threw:`, error);
+    }
   }));
   return true;
 }
@@ -289,9 +290,11 @@ async function closeAll() {
     closed.add(session);
     closing.push(
       (async () => {
-        try { await session.cdp?.send('Page.stopScreencast'); } catch (_) {}
-        try { await session.context?.close(); } catch (_) {}
-        try { await session.browser?.close(); } catch (_) {}
+        try {
+          await require('./mcp').stopMcpSession(session);
+        } catch (error) {
+          console.error(`[sessionRegistry] closeAll stopMcpSession threw:`, error);
+        }
         sessions.delete(userId);
       })(),
     );
