@@ -2211,7 +2211,7 @@ function createControllerMcpRuntimeAdapter({
         try {
           const result = await rawCall('browser_evaluate', {
             element: accessibleName,
-            target: ownerRef,
+            ref: ownerRef,
             function: buildBoundTextInputReadFunction({
               expectedValue: expectedTextInputValue,
               actionType: operation.type,
@@ -2301,7 +2301,7 @@ function createControllerMcpRuntimeAdapter({
         try {
           const result = await rawCall('browser_evaluate', {
             element: accessibleName,
-            target: ownerRef,
+            ref: ownerRef,
             function: buildBoundTemporalOwnerReadFunction({
               valueKind: temporalProtocolClaim === 'normalized_time_owner_value'
                 ? 'time'
@@ -2352,7 +2352,7 @@ function createControllerMcpRuntimeAdapter({
         try {
           const result = await rawCall('browser_evaluate', {
             element: accessibleName,
-            target: ownerRef,
+            ref: ownerRef,
             function: buildBoundSelectionOwnerReadFunction({
               expectedSelection: authoredSelection,
             }),
@@ -2409,7 +2409,7 @@ function createControllerMcpRuntimeAdapter({
         try {
           const result = await rawCall('browser_evaluate', {
             element: accessibleName,
-            target: ownerRef,
+            ref: ownerRef,
             function: buildBoundPopupOwnershipReadFunction(),
           }, Math.min(Math.max(100, Number(remainingMs) || 1_000), 1_500));
           popupOwnershipReadback = evaluatePayload(result);
@@ -2591,7 +2591,7 @@ function createControllerMcpRuntimeAdapter({
           }`;
           rawCall('browser_evaluate', {
             element: clean(typedAssertionObservation.target) || 'element',
-            target: typedAssertionObservation.candidateRef,
+            ref: typedAssertionObservation.candidateRef,
             function: highlightFunc,
           }, 1000).catch(() => {});
         } catch (_) {}
@@ -3246,7 +3246,7 @@ function createControllerMcpRuntimeAdapter({
           {
             name: 'browser_evaluate',
             arguments: {
-              target: targetRef,
+              ref: targetRef,
               function: `(el) => {
                 const rect = el.getBoundingClientRect();
                 const style = window.getComputedStyle(el);
@@ -3347,7 +3347,7 @@ function createControllerMcpRuntimeAdapter({
           // reveal-owner and the readback functions already use
           // successfully elsewhere in this file.
           result = await rawCall('browser_evaluate', {
-            target: targetRef,
+            ref: targetRef,
             element: elementLabel,
             function: clickAndHoldFunc,
           }, remainingMs);
