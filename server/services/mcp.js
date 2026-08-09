@@ -4568,6 +4568,25 @@ async function callToolInner(session, name, args, options = {}) {
           authorization: options._gatewaySdkAuthorization,
         })
         : requestOptions;
+
+      const targetRef = callArgs?.target || callArgs?.ref || null;
+      const isHighlightCall = name === 'browser_evaluate' && typeof callArgs?.function === 'string' && callArgs.function.includes('__qaai_highlight');
+      if (session?.client && targetRef && !isHighlightCall && !['browser_snapshot', 'browser_take_screenshot', 'browser_screenshot', 'assertion_check'].includes(name)) {
+        try {
+          await session.client.callTool(
+            {
+              name: 'browser_evaluate',
+              arguments: {
+                target: targetRef,
+                function: `(el) => { if (typeof window.__qaai_highlight === "function") { window.__qaai_highlight(el); } }`,
+              },
+            },
+            undefined,
+            sdkRequestOptions
+          );
+        } catch (_) {}
+      }
+
       const sdkCall = session.client.callTool(
         { name, arguments: callArgs || {} },
         undefined,
