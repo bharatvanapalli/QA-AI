@@ -2495,11 +2495,12 @@ function createControllerMcpRuntimeAdapter({
       preDispatchObservation: context.preDispatchObservation,
       currentUrl: snapshot.url,
     });
+    const expectedValue = plan.proofMetadata?.expectedValue ?? operation.value ?? null;
     const ownerValueMatched = textInputReadbackRequired
       ? textInputOwnerState?.ownerStateCommitted === true
-      : operation.value != null
+      : expectedValue != null
         && ownerVisible
-        && token(ownerLine).includes(token(operation.value));
+        && token(ownerLine).includes(token(expectedValue));
     const protectedNonEmpty = ownerVisible
       && /\bpassword\b/i.test(ownerLine)
       && /(?:value\s*=\s*["'][^"']+|•{2,}|\*{2,})/i.test(ownerLine);
@@ -3102,7 +3103,7 @@ function createControllerMcpRuntimeAdapter({
       || entry?.toolName === 'Clear'
       || (elementLabel && /\bclear\b/i.test(elementLabel))
       || (args?.element && /\bclear\b/i.test(args.element))
-    );
+    ) && (toolName === 'browser_type' || toolName === 'browser_fill');
 
     const isClickAndHoldOp = Boolean(
       entry?.toolName === 'ClickAndHold'
@@ -3231,49 +3232,12 @@ function createControllerMcpRuntimeAdapter({
       try {
         const page = session.liveCdp.context.pages()[0] || null;
         if (page) {
-          // targetRef is an accessibility snapshot ref like "e5". Resolve it via
-          // the page's getByRole/locator. The most reliable approach: use
-          // page.locator() with the aria snapshot ref format that Playwright MCP
-          // understands, or fall back to a JS-based clear via evaluate.
-          await page.evaluate(({ ref, label }) => {
-            // Strategy 1: find the element by the snapshot ref attribute that
-            // @playwright/mcp sets (data-mcp-ref or similar), or by accessible name.
-            let el = null;
-            // Try aria-based query first
-            if (label) {
-              const candidates = document.querySelectorAll('input, textarea, [contenteditable]');
-              for (const c of candidates) {
-                const name = c.getAttribute('aria-label')
-                  || c.labels?.[0]?.textContent?.trim()
-                  || c.placeholder
-                  || c.name
-                  || '';
-                if (name && name.toLowerCase().includes(label.toLowerCase().replace(/^clear\s+(?:the\s+)?/i, ''))) {
-                  el = c;
-                  break;
-                }
-              }
-            }
-            // Strategy 2: try focused element (the reveal-owner phase already focused it)
-            if (!el && document.activeElement && ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
-              el = document.activeElement;
-            }
-            if (el) {
-              // Use the native setter + input event dispatch to ensure React/Vue/etc pick it up
-              const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-                window.HTMLInputElement.prototype, 'value'
-              )?.set || Object.getOwnPropertyDescriptor(
-                window.HTMLTextAreaElement.prototype, 'value'
-              )?.set;
-              if (nativeInputValueSetter) {
-                nativeInputValueSetter.call(el, '');
-              } else {
-                el.value = '';
-              }
-              el.dispatchEvent(new Event('input', { bubbles: true }));
-              el.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-          }, { ref: targetRef, label: elementLabel });
+          // reveal-owner (the preDispatchMutation) already focused the target element.
+          // Use Playwright's native fill('') on the currently-focused element — it
+          // properly triggers React/Vue synthetic events, unlike manual nativeInputValueSetter.
+          // ':focus' is CSS for document.activeElement, so this directly clears whichever
+          // input reveal-owner just focused, with no ref-resolution needed.
+          await page.locator(':focus').fill('', { timeout: 3000 });
           result = { isError: false, content: [{ type: 'text', text: `Cleared field "${elementLabel || targetRef}"` }] };
         } else {
           result = { isError: true, content: [{ type: 'text', text: 'No page available for clear operation' }] };
@@ -3285,7 +3249,7 @@ function createControllerMcpRuntimeAdapter({
       try {
         const page = session.liveCdp.context.pages()[0] || null;
         if (page) {
-          const clickAndHoldFunc = `function clickAndHold(element) {
+          const clickAndHoldFunc = `async function clickAndHold(element) {
             try {
               const dispatch = (type) => {
                 const ev = new MouseEvent(type, {
@@ -3308,18 +3272,20 @@ function createControllerMcpRuntimeAdapter({
                 }
               };
               dispatch('mousedown');
-              setTimeout(() => {
-                try {
-                  dispatch('mouseup');
-                  const clickEv = new MouseEvent('click', {
-                    bubbles: true,
-                    cancelable: true,
-                    view: window
-                  });
-                  element.dispatchEvent(clickEv);
-                } catch (_) {}
-              }, 2000);
-            } catch (_) {}
+              await new Promise((resolve) => setTimeout(resolve, 2000));
+              try {
+                dispatch('mouseup');
+                const clickEv = new MouseEvent('click', {
+                  bubbles: true,
+                  cancelable: true,
+                  view: window
+                });
+                element.dispatchEvent(clickEv);
+              } catch (_) {}
+              return { ok: true };
+            } catch (err) {
+              return { ok: false, error: err.message };
+            }
           }`;
           // Previously called rawEvaluateBoundRef(), a function that does
           // not exist anywhere in this file — every ClickAndHold hit a
@@ -3346,6 +3312,20 @@ function createControllerMcpRuntimeAdapter({
     }
     browserEpoch += 1;
     snapshots.invalidate({ browserEpoch: String(browserEpoch), reason: `mutation:${sdkToolName}` });
+
+    if (result && !result.isError && toolName.startsWith('browser_') && !['browser_snapshot', 'browser_take_screenshot'].includes(toolName)) {
+      try {
+        const shot = await mcp.captureLiveEvidenceScreenshot(session, { label: `${toolName}_evidence` });
+        if (shot) {
+          if (!session.screenshots) session.screenshots = [];
+          session.screenshots.push({
+            ...shot,
+            path: shot.artifactRef,
+            label: `${toolName}_evidence`,
+          });
+        }
+      } catch (_) {}
+    }
 
     if (toolName.startsWith('browser_') && !['browser_snapshot', 'browser_take_screenshot', 'browser_evaluate'].includes(toolName)) {
       const label = elementLabel || clean(normalized?.element || normalized?.label || normalized?.target || normalized?.url || normalized?.key || '');

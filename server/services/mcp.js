@@ -4571,7 +4571,8 @@ async function callToolInner(session, name, args, options = {}) {
 
       const targetRef = callArgs?.target || callArgs?.ref || null;
       const isHighlightCall = name === 'browser_evaluate' && typeof callArgs?.function === 'string' && callArgs.function.includes('__qaai_highlight');
-      if (session?.client && targetRef && !isHighlightCall && !['browser_snapshot', 'browser_take_screenshot', 'browser_screenshot', 'assertion_check'].includes(name)) {
+      const isClearTypeCall = name === 'browser_type' && (callArgs?.text === '' || callArgs?.text == null);
+      if (session?.client && targetRef && !isHighlightCall && !isClearTypeCall && !['browser_snapshot', 'browser_take_screenshot', 'browser_screenshot', 'assertion_check'].includes(name)) {
         try {
           await session.client.callTool(
             {
