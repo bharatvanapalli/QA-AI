@@ -540,6 +540,17 @@ async function run({
         });
         activeSessions.add(browserSession);
       }
+      
+      // Update the broadcast function on the session so that CDP frames
+      // and logs are routed to the new test case, even if the session was leased.
+      browserSession.broadcast = send;
+
+      send({
+        type: 'browser.session',
+        sessionId: browserSession?.id,
+        runId: runRow.id,
+        tcId: testCase.id,
+      });
 
       const contract = compileOperationContractV2({
         ...testCase,
