@@ -3135,6 +3135,11 @@ function createControllerMcpRuntimeAdapter({
       || (args?.element && /\bappend\b/i.test(args.element))
     );
 
+    const isSemanticOp = Boolean(
+      entry?.toolName === 'Semantic'
+      || (entry?.actionText && /\bsemantic\b/i.test(entry.actionText))
+    );
+
     if (isAppendOp && (normalized.text != null || args?.text != null || args?.value != null)) {
       const snapshotText = session.lastSnapshot || '';
       const existingVal = clean(entry?.candidate?.value) || extractCandidateValue(snapshotText, targetRef, entry?.candidate);
@@ -3225,6 +3230,27 @@ function createControllerMcpRuntimeAdapter({
       } catch (error) {
         result = { isError: true, content: [{ type: 'text', text: `Direct navigation failed: ${error?.message || error}` }] };
       }
+    } else if (isSemanticOp && session.liveCdp?.context && targetRef) {
+      try {
+        const page = session.liveCdp.context.pages()[0] || null;
+        if (page) {
+          const elementHandle = await page.locator(':focus').elementHandle({ timeout: 3000 }).catch(() => null);
+          if (elementHandle) {
+            const props = await elementHandle.evaluate((el) => {
+              const rect = el.getBoundingClientRect();
+              const style = window.getComputedStyle(el);
+              return `x=${Math.round(rect.x)}, y=${Math.round(rect.y)}, width=${Math.round(rect.width)}, height=${Math.round(rect.height)}, color=${style.color}, backgroundColor=${style.backgroundColor}, disabled=${el.disabled || el.getAttribute('aria-disabled') === 'true'}`;
+            });
+            result = { isError: false, content: [{ type: 'text', text: props }] };
+          } else {
+            result = { isError: true, content: [{ type: 'text', text: 'Target element not focused for semantic evaluation' }] };
+          }
+        } else {
+          result = { isError: true, content: [{ type: 'text', text: 'No page available for semantic operation' }] };
+        }
+      } catch (error) {
+        result = { isError: true, content: [{ type: 'text', text: `Semantic operation failed: ${error?.message || error}` }] };
+      }
     } else if (isClearOp && session.liveCdp?.context && targetRef) {
       // Clear operation: browser_fill does not exist on the installed @playwright/mcp
       // server (confirmed by journal DELIVERY_RECORDED: Tool "browser_fill" not found).
@@ -3246,6 +3272,24 @@ function createControllerMcpRuntimeAdapter({
         }
       } catch (error) {
         result = { isError: true, content: [{ type: 'text', text: `Clear operation failed: ${error?.message || error}` }] };
+      }
+    } else if (isAppendOp && session.liveCdp?.context && targetRef && normalized.text != null) {
+      // Append operation: browser_type at cursor position is unreliable — if reveal-owner
+      // focused the element with cursor at position 0, typing the full combined string
+      // (existingVal + fragment) at position 0 doubles the content. Use page.fill()
+      // on the focused element instead, which always replaces the full value atomically.
+      // normalized.text is already set to `${existingVal}${textToAppend}` above.
+      try {
+        const page = session.liveCdp.context.pages()[0] || null;
+        if (page) {
+          const fullValue = String(normalized.text);
+          await page.locator(':focus').fill(fullValue, { timeout: 3000 });
+          result = { isError: false, content: [{ type: 'text', text: `Appended to field "${elementLabel || targetRef}": value is now "${fullValue}"` }] };
+        } else {
+          result = { isError: true, content: [{ type: 'text', text: 'No page available for append operation' }] };
+        }
+      } catch (error) {
+        result = { isError: true, content: [{ type: 'text', text: `Append operation failed: ${error?.message || error}` }] };
       }
     } else if (isClickAndHoldOp && session.liveCdp?.context && targetRef) {
       try {
@@ -3360,6 +3404,8 @@ function createControllerMcpRuntimeAdapter({
         narration = `Pasted clipboard contents into "${label || 'field'}"`;
       } else if (/extract/i.test(entry?.actionText || '')) {
         narration = `Extracted data from "${label || 'element'}" into variable`;
+      } else if (isSemanticOp) {
+        narration = `Extracted properties for "${label || 'element'}": ${textOfResult(result)}`;
       } else if (/switch\s*tab|switch\s*window/i.test(entry?.actionText || '')) {
         narration = `Switched focus to tab/window "${label || 'target'}"`;
       } else if (/switch\s*frame|iframe/i.test(entry?.actionText || '')) {
