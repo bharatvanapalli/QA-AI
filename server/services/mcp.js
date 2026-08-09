@@ -4573,13 +4573,26 @@ async function callToolInner(session, name, args, options = {}) {
       const isHighlightCall = name === 'browser_evaluate' && typeof callArgs?.function === 'string' && callArgs.function.includes('__qaai_highlight');
       const isClearTypeCall = name === 'browser_type' && (callArgs?.text === '' || callArgs?.text == null);
       if (session?.client && targetRef && !isHighlightCall && !isClearTypeCall && !['browser_snapshot', 'browser_take_screenshot', 'browser_screenshot', 'assertion_check'].includes(name)) {
+        let fnStr = `(el) => { if (typeof window.__qaai_highlight === "function") { window.__qaai_highlight(el); } }`;
+        if (name === 'browser_type' && callArgs?.text) {
+          fnStr = `(el) => {
+            if (typeof window.__qaai_highlight === "function") { window.__qaai_highlight(el); }
+            try {
+              el.focus({ preventScroll: true });
+              if (typeof el.setSelectionRange === 'function') {
+                const len = el.value ? el.value.length : 0;
+                el.setSelectionRange(len, len);
+              }
+            } catch(e) {}
+          }`;
+        }
         try {
           await session.client.callTool(
             {
               name: 'browser_evaluate',
               arguments: {
                 target: targetRef,
-                function: `(el) => { if (typeof window.__qaai_highlight === "function") { window.__qaai_highlight(el); } }`,
+                function: fnStr,
               },
             },
             undefined,
