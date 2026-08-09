@@ -3407,7 +3407,25 @@ function createControllerMcpRuntimeAdapter({
       } else if (/extract/i.test(entry?.actionText || '')) {
         narration = `Extracted data from "${label || 'element'}" into variable`;
       } else if (isSemanticOp) {
-        narration = `Extracted properties for "${label || 'element'}"`;
+        let propsStr = '';
+        const resText = textOfResult(result);
+        if (resText) {
+          const w = resText.match(/width=([\d\.]+)/)?.[1];
+          const h = resText.match(/height=([\d\.]+)/)?.[1];
+          const c = resText.match(/color=(rgb[^\)]+\)|#[^\,]+|[a-zA-Z]+)/)?.[1];
+          const bg = resText.match(/backgroundColor=(rgba?[^\)]+\)|#[^\,]+|[a-zA-Z]+)/)?.[1];
+          const d = resText.match(/disabled=(true|false)/)?.[1];
+          const parts = [];
+          if (w) parts.push(`width: ${w}px`);
+          if (h) parts.push(`height: ${h}px`);
+          if (c) parts.push(`color: ${c}`);
+          if (bg && bg !== 'rgba(0, 0, 0, 0)') parts.push(`bg: ${bg}`);
+          if (d === 'true') parts.push('disabled');
+          if (parts.length > 0) {
+            propsStr = ` (${parts.join(', ')})`;
+          }
+        }
+        narration = `Extracted properties for "${label || 'element'}"${propsStr}`;
       } else if (/switch\s*tab|switch\s*window/i.test(entry?.actionText || '')) {
         narration = `Switched focus to tab/window "${label || 'target'}"`;
       } else if (/switch\s*frame|iframe/i.test(entry?.actionText || '')) {
