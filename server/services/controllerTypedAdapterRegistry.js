@@ -412,11 +412,15 @@ function planButton(operation, resolution, context = {}) {
             : []),
         ])
       : proof(`${operation.operationId}:activation`, [
+        ...(isClickAndHold ? [{ id: 'button-long-pressed', allOf: [CLAIM.SAME_OWNER_VALUE] }] : []),
         { id: 'authored-destination', allOf: [CLAIM.AUTHORED_DESTINATION] },
         { id: 'next-required-control', allOf: [CLAIM.NEXT_REQUIRED_CONTROL_ACTIONABLE] },
         { id: 'navigation-target', allOf: [CLAIM.EXACT_NAVIGATION_TARGET] },
         { id: 'page-transition', allOf: [CLAIM.PAGE_TRANSITION_COMMITTED] },
       ]),
+    proofMetadata: isClickAndHold
+      ? { expectedValue: 'Button has been long pressed' }
+      : undefined,
     requiredSources: isHover
       ? [SNAPSHOT_SOURCE.DOM, SNAPSHOT_SOURCE.ACCESSIBILITY, SNAPSHOT_SOURCE.SCREENSHOT]
       : [SNAPSHOT_SOURCE.BROWSER_SNAPSHOT, SNAPSHOT_SOURCE.DOM, SNAPSHOT_SOURCE.ACCESSIBILITY],
