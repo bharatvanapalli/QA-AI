@@ -49,10 +49,11 @@ function safeExplainFailureError(err) {
 
 async function readCachedFailureExplanation(runResultId) {
   try {
-    const cached = await prisma.runResult.findUnique({
-      where: { id: runResultId },
-      select: { failureExplanation: true },
-    });
+    const rows = await prisma.$queryRawUnsafe(
+      'SELECT failureExplanation FROM "RunResult" WHERE id = ?',
+      runResultId
+    );
+    const cached = rows[0];
     if (!cached?.failureExplanation) return null;
     return JSON.parse(cached.failureExplanation);
   } catch (_) {
