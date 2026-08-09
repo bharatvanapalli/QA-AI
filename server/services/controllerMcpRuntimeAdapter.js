@@ -532,7 +532,12 @@ function semanticWords(value) {
 }
 
 function textOfResult(result) {
-  return String(result?.text || mcp.textOfContent(result?.content) || '').trim();
+  const text = String(result?.text || mcp.textOfContent(result?.content) || '').trim();
+  const splitIndex = text.indexOf('### Ran Playwright code');
+  if (splitIndex !== -1) {
+    return text.substring(0, splitIndex).trim();
+  }
+  return text;
 }
 
 function evaluatePayload(result) {
@@ -3230,24 +3235,21 @@ function createControllerMcpRuntimeAdapter({
       } catch (error) {
         result = { isError: true, content: [{ type: 'text', text: `Direct navigation failed: ${error?.message || error}` }] };
       }
-    } else if (isSemanticOp && session.liveCdp?.context && targetRef) {
+    } else if (isSemanticOp && session.client && targetRef) {
       try {
-        const page = session.liveCdp.context.pages()[0] || null;
-        if (page) {
-          const elementHandle = await page.locator(':focus').elementHandle({ timeout: 3000 }).catch(() => null);
-          if (elementHandle) {
-            const props = await elementHandle.evaluate((el) => {
-              const rect = el.getBoundingClientRect();
-              const style = window.getComputedStyle(el);
-              return `x=${Math.round(rect.x)}, y=${Math.round(rect.y)}, width=${Math.round(rect.width)}, height=${Math.round(rect.height)}, color=${style.color}, backgroundColor=${style.backgroundColor}, disabled=${el.disabled || el.getAttribute('aria-disabled') === 'true'}`;
-            });
-            result = { isError: false, content: [{ type: 'text', text: props }] };
-          } else {
-            result = { isError: true, content: [{ type: 'text', text: 'Target element not focused for semantic evaluation' }] };
+        result = await session.client.callTool(
+          {
+            name: 'browser_evaluate',
+            arguments: {
+              target: targetRef,
+              function: `(el) => {
+                const rect = el.getBoundingClientRect();
+                const style = window.getComputedStyle(el);
+                return 'x=' + Math.round(rect.x) + ', y=' + Math.round(rect.y) + ', width=' + Math.round(rect.width) + ', height=' + Math.round(rect.height) + ', color=' + style.color + ', backgroundColor=' + style.backgroundColor + ', disabled=' + (el.disabled || el.getAttribute('aria-disabled') === 'true');
+              }`
+            }
           }
-        } else {
-          result = { isError: true, content: [{ type: 'text', text: 'No page available for semantic operation' }] };
-        }
+        );
       } catch (error) {
         result = { isError: true, content: [{ type: 'text', text: `Semantic operation failed: ${error?.message || error}` }] };
       }
@@ -3405,7 +3407,7 @@ function createControllerMcpRuntimeAdapter({
       } else if (/extract/i.test(entry?.actionText || '')) {
         narration = `Extracted data from "${label || 'element'}" into variable`;
       } else if (isSemanticOp) {
-        narration = `Extracted properties for "${label || 'element'}": ${textOfResult(result)}`;
+        narration = `Extracted properties for "${label || 'element'}"`;
       } else if (/switch\s*tab|switch\s*window/i.test(entry?.actionText || '')) {
         narration = `Switched focus to tab/window "${label || 'target'}"`;
       } else if (/switch\s*frame|iframe/i.test(entry?.actionText || '')) {
