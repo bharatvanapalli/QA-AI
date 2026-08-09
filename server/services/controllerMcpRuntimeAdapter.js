@@ -297,7 +297,9 @@ function evaluateControllerAssertionSnapshot({
   const payload = assertionPayload(contract);
   const type = clean(contract?.type || contract?.kind).toUpperCase()
     .replace(/^ASSERTVALUE$/, 'VALUE')
-    .replace(/^ASSERTTEXT$/, 'TEXT');
+    .replace(/^ASSERTTEXT$/, 'TEXT')
+    .replace(/^ASSERTVISIBLE$/, 'VISIBLE')
+    .replace(/^ASSERTHIDDEN$/, 'HIDDEN');
   const targetName = assertionTargetName(contract, operation);
 
   // VALUE/TEXT used to short-circuit here with a hand-rolled comparison
