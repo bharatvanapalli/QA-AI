@@ -1890,6 +1890,17 @@ function createControllerMcpRuntimeAdapter({
   // Playwright locator for it afterward. Nothing here changes what the
   // resolver returns or how dispatch behaves.
   const resolvedRefByOperation = new Map();
+  // The reconcile retry loop can call this adapter's observer several times
+  // for the SAME operation (pre_dispatch, then up to maxObservationAttempts
+  // reconcile passes — see browserTransactionController.js). Each pass
+  // built and sent its own assertion narration unconditionally, so a
+  // still-settling page produced 6-7 near-identical "Action failed" lines
+  // in the transcript before ever resolving — confirmed live this makes
+  // the transcript unreadable even when the underlying check eventually
+  // succeeds. Track the last narration text sent per operation and skip
+  // re-sending an identical one; a genuinely new observation (different
+  // reason, or the eventual success) still sends immediately.
+  const lastNarrationByOperation = new Map();
 
   const rawCall = async (toolName, args, remainingMs) => {
     if (session.closed || cancelToken?.cancelled || cancelToken?.signal?.aborted) {
@@ -2525,7 +2536,14 @@ function createControllerMcpRuntimeAdapter({
       })
       : null;
     const semanticOwnerReresolved = Boolean(ownerCandidate && !originalOwnerCandidate);
-    if (semanticOwnerReresolved) {
+    // Same over-sending problem as the assertion narration below: a retry
+    // loop re-resolving to the SAME ref on every attempt re-sent this exact
+    // diagnostic every time — confirmed live as 6-7 repeats of "The page
+    // changed, so I re-located..." for one field. Only send when the
+    // resolved ref actually changed since the last send for this operation.
+    const reresolveDedupeKey = `reresolve:${operation.operationId}`;
+    if (semanticOwnerReresolved && lastNarrationByOperation.get(reresolveDedupeKey) !== ownerCandidate.ref) {
+      lastNarrationByOperation.set(reresolveDedupeKey, ownerCandidate.ref);
       send({
         type: 'controller.proof-diagnostic',
         operationId: operation.operationId,
@@ -2743,21 +2761,46 @@ function createControllerMcpRuntimeAdapter({
         // Unrecognized/generic assertion type — state the authored
         // expectation itself instead of a meaningless placeholder, so the
         // transcript always says what was actually being checked.
-        narration = isMatched ? `I can confirm: ${expectedVal}` : `I could not confirm: ${expectedVal}`;
+        // expectedVal can be a JSON-stringified array of {name, role}
+        // objects (assertionResult's summarize() JSON.stringifies any
+        // non-string expected value for the raw reason string) — confirmed
+        // live this was leaking straight into the transcript as
+        // `[{"name":"Early Pickup Date/Time","role":null},...]`. Parse it
+        // back and show just the meaningful names when possible.
+        let friendlyExpected = expectedVal;
+        if (/^[[{]/.test(expectedVal)) {
+          try {
+            const parsed = JSON.parse(expectedVal);
+            const names = (Array.isArray(parsed) ? parsed : [parsed])
+              .map((entry) => (entry && typeof entry === 'object' ? clean(entry.name || entry.label || entry.value) : clean(entry)))
+              .filter(Boolean);
+            friendlyExpected = names.length ? names.join(', ') : '';
+          } catch (_) {
+            friendlyExpected = '';
+          }
+        }
+        narration = friendlyExpected
+          ? (isMatched ? `I can confirm: ${friendlyExpected}` : `I could not confirm: ${friendlyExpected}`)
+          : (isMatched
+            ? `Verified "${targetLabel}" matches the expected condition`
+            : `Could not verify "${targetLabel}" matches the expected condition`);
       } else {
         narration = isMatched
           ? `Verified "${targetLabel}" matches the expected condition`
           : `Could not verify "${targetLabel}" matches the expected condition`;
       }
 
-      send({
-        type: 'browser.action',
-        tool: `assertion_${assertionType.toLowerCase()}`,
-        args: { element: targetLabel, value: expectedVal },
-        narration,
-        actionStatus: isMatched ? 'executed' : 'failed',
-        ts: Date.now(),
-      });
+      if (lastNarrationByOperation.get(operation.operationId) !== narration) {
+        lastNarrationByOperation.set(operation.operationId, narration);
+        send({
+          type: 'browser.action',
+          tool: `assertion_${assertionType.toLowerCase()}`,
+          args: { element: targetLabel, value: expectedVal },
+          narration,
+          actionStatus: isMatched ? 'executed' : 'failed',
+          ts: Date.now(),
+        });
+      }
     }
     if (typedAssertionObservation?.candidateRef) {
       // Side-observation only, mirroring resolver()'s action-kind capture —
