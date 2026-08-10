@@ -731,7 +731,17 @@ function createBrowserTransactionController({
           context,
         });
         report(operation, CONTROLLER_STATE.RECONCILING, { attempt, proofStatus: last.proof.status });
-        if (last.proof.status !== PROOF_STATUS.UNKNOWN
+        // Only a confirmed MATCH (or a terminal boundary) should stop the
+        // loop early — matching the same policy already used one step
+        // earlier for the pre_dispatch->reconcile transition (see the
+        // MATCHED-only short-circuit above). Breaking on MISMATCH treated
+        // "not found YET because the page hasn't finished rendering" the
+        // same as "confirmed absent", so a still-mounting popup (a second
+        // dropdown option that renders slightly after the first — live
+        // evidence: New_Odyssey's Ship Direction control) got exactly one
+        // zero-delay retry before being declared a hard failure, instead of
+        // the full backoff-retry budget every other observation gets.
+        if (last.proof.status === PROOF_STATUS.MATCHED
           || last.proof.manualBoundary
           || last.proof.sessionLost) break;
       }

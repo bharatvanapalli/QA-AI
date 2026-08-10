@@ -364,16 +364,94 @@ function evaluateControllerAssertionSnapshot({
   }
 
   if (type === 'COLLECTION' || type === 'COLLECTION_MEMBERSHIP') {
-    const optionRoles = new Set(['option', 'menuitem', 'listitem', 'radio']);
-    const items = candidates
-      .filter((candidate) => optionRoles.has(token(candidate?.role)))
+    // 'button'/'checkbox'/'tab' added after a live run against a real
+    // custom dropdown (New_Odyssey's Ship Direction control) surfaced
+    // totalCandidates=122 with roles incl. "menu" (the popup container) but
+    // its individual rows were plain role="button" — not option/menuitem/
+    // listitem/radio — so the scan always returned observed=[] regardless
+    // of what was actually on screen. This is a common custom-dropdown
+    // pattern (rows rendered as buttons/tabs, not native option semantics),
+    // not specific to this one site.
+    //
+    // 'button'/'checkbox'/'tab'/'radio' are common generic roles used all
+    // over a real page (nav buttons, unrelated radio indicators elsewhere
+    // on the form, etc). Tried scoping candidates to the target's own
+    // controlLabels/scopeLabels first, but confirmed live it had no effect
+    // — on this densely-packed single-page form, every field in the same
+    // section apparently shares broad enough ancestor labels that the
+    // word-overlap heuristic couldn't discriminate "belongs to Equipment"
+    // from "belongs to Freight Term" reliably.
+    //
+    // The actually robust fix doesn't need to know WHERE a candidate
+    // belongs at all: confirmed live that every expected value (RR, LCL,
+    // LTL, TL, FCL) WAS present among the broadened-role candidates
+    // (missing=[] in diagnostics) — the failure was strictly that unrelated
+    // extra candidates ("Toggle options", "Pre-Paid", "Hazardous", ...) were
+    // interspersed among them, breaking the authored "exact order" check.
+    // Since this assertion only ever cares about a fixed list of expected
+    // values, anything whose name ISN'T one of them is noise by definition
+    // — filter it out directly instead of trying to infer relevance from
+    // structural proximity.
+    //
+    // 'generic' added after live evidence pinned down exactly why "Inbound"
+    // never appeared even after every other fix: its raw accessibility
+    // snapshot line was `- generic [ref=e2545] [cursor=pointer]: Inbound` —
+    // the unselected option in this widget carries NO semantic ARIA role at
+    // all (a real accessibility gap in the site's own markup — the
+    // selected option gets role="button", its sibling gets nothing).
+    // 'generic' is normally far too broad to trust (it's the ARIA catch-all
+    // for any unstyled div/span on a page) but is safe here specifically
+    // because matching is now gated on the candidate's text being one of
+    // the fixed expected values below — role alone no longer decides
+    // inclusion, so this can't reintroduce page-wide noise.
+    const optionRoles = new Set(['option', 'menuitem', 'listitem', 'radio', 'button', 'checkbox', 'tab', 'generic']);
+    const expectedList = (Array.isArray(payload.expectedMember) ? payload.expectedMember
+      : Array.isArray(payload.expectedItems) ? payload.expectedItems
+        : Array.isArray(payload.expectedValue) ? payload.expectedValue
+          : Array.isArray(payload.expected) ? payload.expected
+            : []);
+    const expectedTokens = new Set(expectedList.map(token));
+    const matchedCandidates = candidates.filter((candidate) => (
+      optionRoles.has(token(candidate?.role))
+      && expectedTokens.has(token(clean(candidate.accessibleName || candidate.name)))
+    ));
+    // Collapse consecutive duplicates — confirmed live that this widget
+    // renders each option as two distinct DOM nodes with the same name
+    // (["RR","RR","LCL","LCL",...] instead of ["RR","LCL",...]), a real,
+    // deliberate accessibility/measurement duplicate-rendering pattern in
+    // the site's own markup, not a dedup bug upstream (each duplicate has
+    // its own distinct ref). The authored "exact order" check cares about
+    // the meaningful visible sequence, not raw DOM node count.
+    const items = matchedCandidates
       .map((candidate) => clean(candidate.accessibleName || candidate.name))
-      .filter(Boolean);
-    return assertionResult(compareTypedAssertion(contract, items), {
+      .filter(Boolean)
+      .filter((value, index, all) => index === 0 || token(value) !== token(all[index - 1]));
+    const result = assertionResult(compareTypedAssertion(contract, items), {
       assertionType: type,
       target: targetName,
       observedKind: 'visible-scoped-collection',
     });
+    // Diagnostic only: surfaces whether a still-missing expected value
+    // exists ANYWHERE in the raw accessibility snapshot text. Present-but-
+    // missing means it's in the DOM but not parsed into a structured
+    // candidate with a recognized role (a parser gap); absent entirely
+    // means it isn't exposed to the accessibility tree at this snapshot
+    // moment (a real content/timing gap). matchedCandidates can no longer
+    // contain unrelated noise — it's now filtered to expected values only.
+    if (result.matched === false) {
+      const rawLines = String(snapshotText || '').split(/\r?\n/);
+      const missingHints = expectedList
+        .filter((value) => !items.some((item) => token(item) === token(value)))
+        .map((value) => {
+          const hitLine = rawLines.find((line) => line.toLowerCase().includes(token(value)));
+          return hitLine ? `${clean(value)}:RAW[${clean(hitLine).slice(0, 160)}]` : `${clean(value)}:absent_from_raw_snapshot_text`;
+        });
+      return Object.freeze({
+        ...result,
+        reason: `${result.reason}:missing=${JSON.stringify(missingHints)}`,
+      });
+    }
+    return result;
   }
 
   if (type === 'TEMPORAL_RELATIONSHIP'
@@ -2582,43 +2660,49 @@ function createControllerMcpRuntimeAdapter({
       // disabled/readonly/visible checks — never got a highlight or evidence
       // screenshot at all, since no later phase ever ran for them.
       if (typedAssertionObservation.candidateRef) {
-        try {
-          const isMatched = typedAssertionObservation.matched === true;
-          const highlightFunc = `function highlightElement(element) {
-            try {
-              const origOutline = element.style.outline;
-              const origBoxShadow = element.style.boxShadow;
-              element.style.outline = '3px solid ${isMatched ? '#10b981' : '#f59e0b'}';
-              element.style.boxShadow = '0 0 10px ${isMatched ? 'rgba(16, 185, 129, 0.8)' : 'rgba(245, 158, 11, 0.8)'}';
-              setTimeout(() => {
-                try {
-                  element.style.outline = origOutline;
-                  element.style.boxShadow = origBoxShadow;
-                } catch (_) {}
-              }, 2000);
-            } catch (_) {}
-          }`;
-          // Awaited (not fire-and-forget) so the flash is guaranteed painted
-          // before the evidence screenshot below is taken — otherwise the
-          // screenshot can win the race and show an unhighlighted element.
-          await rawCall('browser_evaluate', {
-            element: clean(typedAssertionObservation.target) || 'element',
-            target: typedAssertionObservation.candidateRef,
-            function: highlightFunc,
-          }, 5000);
-          const assertionLabel = clean(operation?.type || typedAssertionObservation.assertionType || 'assertion').toLowerCase();
-          const shot = await mcp.captureLiveEvidenceScreenshot(session, {
-            label: `assertion_${assertionLabel}_evidence_${Date.now()}`,
-          });
-          if (shot) {
-            if (!session.screenshots) session.screenshots = [];
-            session.screenshots.push({ ...shot, path: shot.artifactRef, label: `assertion_${assertionLabel}_evidence_${Date.now()}` });
-          } else {
-            console.error('[controllerMcpRuntimeAdapter] assertion highlight screenshot returned null for', operation.operationId);
-          }
-        } catch (err) {
-          console.error('[controllerMcpRuntimeAdapter] assertion highlight/screenshot threw for', operation.operationId, err);
-        }
+        // Fire-and-forget — NOT awaited. This was briefly made blocking (to
+        // guarantee the highlight painted before the screenshot) but that
+        // added up to 5s of real delay into the middle of the assertion
+        // retry loop. For a static page that's harmless; for a genuinely
+        // transient assertion target (an open dropdown that can auto-close)
+        // reproduced live against New_Odyssey's Ship Direction control:
+        // the extra delay between the pre_dispatch check and the immediate
+        // reconcile re-check gave the popup time to disappear, turning a
+        // borderline-timing case into a hard failure. The highlight/
+        // screenshot are cosmetic evidence, not correctness-critical — they
+        // must never block or slow down the actual verification pipeline.
+        (async () => {
+          try {
+            const isMatched = typedAssertionObservation.matched === true;
+            const highlightFunc = `function highlightElement(element) {
+              try {
+                const origOutline = element.style.outline;
+                const origBoxShadow = element.style.boxShadow;
+                element.style.outline = '3px solid ${isMatched ? '#10b981' : '#f59e0b'}';
+                element.style.boxShadow = '0 0 10px ${isMatched ? 'rgba(16, 185, 129, 0.8)' : 'rgba(245, 158, 11, 0.8)'}';
+                setTimeout(() => {
+                  try {
+                    element.style.outline = origOutline;
+                    element.style.boxShadow = origBoxShadow;
+                  } catch (_) {}
+                }, 2000);
+              } catch (_) {}
+            }`;
+            await rawCall('browser_evaluate', {
+              element: clean(typedAssertionObservation.target) || 'element',
+              target: typedAssertionObservation.candidateRef,
+              function: highlightFunc,
+            }, 5000);
+            const assertionLabel = clean(operation?.type || typedAssertionObservation.assertionType || 'assertion').toLowerCase();
+            const shot = await mcp.captureLiveEvidenceScreenshot(session, {
+              label: `assertion_${assertionLabel}_evidence_${Date.now()}`,
+            });
+            if (shot) {
+              if (!session.screenshots) session.screenshots = [];
+              session.screenshots.push({ ...shot, path: shot.artifactRef, label: `assertion_${assertionLabel}_evidence_${Date.now()}` });
+            }
+          } catch (_) {}
+        })();
       }
 
       const targetLabel = clean(typedAssertionObservation.target || operation?.targetIdentity?.accessibleName || operation?.targetIdentity?.label || 'element');

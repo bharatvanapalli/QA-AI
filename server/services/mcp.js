@@ -220,9 +220,25 @@ function parseSnapshotLine(line) {
   const m = line.match(_SNAPSHOT_LINE_RE);
   if (!m) return null;
   const rest = m[4] || '';
+  // Quoted-name lines (`button "Submit" [ref=e5]`) are the common MCP
+  // snapshot shape and are captured above. Some real widgets render an
+  // element with no accessible name at all — just visible text — as
+  // `generic [ref=e5] [cursor=pointer]: Inbound`, trailing plain text after
+  // a colon instead of a quoted name right after the role. Without this
+  // fallback, `name` stayed empty for such lines and the element could
+  // never become a usable candidate no matter what role it carried —
+  // reproduced live: New_Odyssey's unselected Ship Direction option never
+  // appeared as a candidate at all because of this, not a role mismatch.
+  // Only applies when the primary quoted-name capture found nothing, so
+  // normal quoted-name lines are completely unaffected.
+  let name = m[2] || m[3] || '';
+  if (!name) {
+    const trailingText = rest.match(/:\s*(.+)$/);
+    if (trailingText) name = trailingText[1].replace(/\s+/g, ' ').trim();
+  }
   return {
     role: m[1] || '',
-    name: m[2] || m[3] || '',
+    name,
     rest,
     ref: (rest.match(_SNAP_REF_RE) || [])[1] || null,
     placeholder: (rest.match(_SNAP_PLACEHOLDER_RE) || [])[1] || null,

@@ -92,9 +92,32 @@ function buildVirtualizedOptionSelectionFunction({ expectedSelection, maxScrolls
     ]).flatMap((value) => clean(value).split(/\\s+/)).filter(Boolean))];
     const ownerIds = [...new Set(relatedNodes.map((node) => clean(node.id)).filter(Boolean))];
     const popupSelector = '[role="listbox"],[role="menu"],[role="tree"]';
+    // '[role="button"]'/'[role="checkbox"]'/'[role="tab"]' added after a
+    // live run found a real popup (role="menu" container, correctly matched
+    // by popupSelector) whose rows were plain role="button" — not one of
+    // the native option/menuitem/listitem/radio roles — so this selector
+    // never found any option inside it, and findPopup() always reported
+    // virtualized_selection_popup_not_found even with the popup wide open
+    // on screen. Custom dropdown rows rendered as buttons/tabs is a common
+    // pattern generally, not specific to one site.
+    // '*' added after live evidence pinned down a widget where the
+    // UNSELECTED option carries no ARIA role at all: its raw snapshot line
+    // read simply as generic, cursor=pointer, text Inbound — no role
+    // attribute an element-role CSS selector could ever match. Since
+    // "generic" isn't a literal role attribute value (it is the
+    // accessibility engine's computed label for "no role"), no CSS
+    // attribute selector can target it — the option-discovery loop below
+    // must consider ALL descendants of the already-resolved popup surface.
+    // This is only safe because it's scoped to deepElements(surface) (the
+    // popup we already found, not the whole page) AND every candidate
+    // still has to win an exact/near-exact semanticRank match against the
+    // expected selection, with ambiguous ties explicitly rejected (see
+    // bestMatches.length !== 1 below) — role was never the real safety net
+    // for correctness, the text match always was.
     const optionSelector = [
       '[role="option"]', '[role="menuitem"]', '[role="listitem"]',
-      '[role="treeitem"]', '[role="radio"]', 'option', 'li', '[data-value]',
+      '[role="treeitem"]', '[role="radio"]', '[role="button"]',
+      '[role="checkbox"]', '[role="tab"]', 'option', 'li', '[data-value]', '*',
     ].join(',');
     const labelOf = (node) => clean(
       attr(node, 'aria-label')
@@ -227,7 +250,19 @@ function buildVirtualizedOptionSelectionFunction({ expectedSelection, maxScrolls
         && token(labelOf(actionOwner(node)) || labelOf(node)) === token(chosen.label)
         && visible(actionOwner(node))
     ));
-    const exactOwners = [...new Set(exactRendered.map(actionOwner))];
+    const renderedOwners = [...new Set(exactRendered.map(actionOwner))];
+    // optionSelector now includes '*' (needed for widgets that render an
+    // option with no ARIA role at all — see optionSelector's own comment),
+    // which means a single visual option can produce several matching
+    // wrapper/leaf elements at different DOM depths, each resolving to a
+    // different actionOwner (itself, when .closest() finds no interactive
+    // ancestor). Confirmed live: this alone turned a genuinely unique
+    // option into 4 "ambiguous" owners. Collapse to the leaf-most owners —
+    // if one owner contains another as a descendant, it's the same visual
+    // option seen at a shallower depth, not a second distinct option.
+    const exactOwners = renderedOwners.filter((owner) => (
+      !renderedOwners.some((other) => other !== owner && owner.contains(other))
+    ));
     if (exactOwners.length !== 1) {
       return {
         ok: false,
@@ -351,12 +386,21 @@ function buildBoundSelectionOwnerReadFunction({ expectedSelection, probeOnly = f
     ].filter((value) => value != null);
     const ownerExpanded = expandedValues.includes('true');
     const popupOpen = ownerExpanded || exactControlledPopups.length > 0;
+    // '*' added for the same reason as optionSelector above — a real
+    // widget on this site renders its unselected option with no ARIA role
+    // at all, so no role-based CSS selector can ever match it. Scoped to
+    // exactControlledPopups (an already-identified, narrow popup), so this
+    // doesn't reintroduce page-wide noise.
     const popupOptionSelector = [
       '[role="option"]',
       '[role="menuitem"]',
       '[role="listitem"]',
       '[role="radio"]',
+      '[role="button"]',
+      '[role="checkbox"]',
+      '[role="tab"]',
       'option',
+      '*',
     ].join(',');
     const ownedOptionNames = Array.from(new Set(exactControlledPopups.flatMap((popup) => (
       Array.from(popup.querySelectorAll?.(popupOptionSelector) || [])
