@@ -1,0 +1,1 @@
+const { PrismaClient } = require('@prisma/client'); const p = new PrismaClient(); p.runResult.findFirst({ where: { runId: 'd30099a0-43f1-4ae4-8b55-a55fab5d8ef4' }, select: { stepResults: true } }).then(r => { const sr = JSON.parse(r.stepResults); sr.forEach(s => console.log('Step', s.index, s.action, s.screenshotKey)); }).finally(() => p.$disconnect());

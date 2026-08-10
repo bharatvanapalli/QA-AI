@@ -1095,6 +1095,17 @@ async function launchLiveCdpBrowser({ sessionId, viewport, userDataDir, project,
     '--disable-extensions',
     '--disable-blink-features=AutomationControlled',
     '--no-sandbox',
+    // On a domain-joined Windows host, Integrated Windows Auth / Azure AD Seamless
+    // SSO is a machine-level (HKLM) policy applied to every chrome.exe process —
+    // it ignores --user-data-dir isolation entirely. Without this, any Microsoft
+    // login page (on ANY site under test, not just one) silently offers the
+    // operator's own signed-in Windows/AAD identity via a "Pick an account" tile
+    // instead of a blank email field, confirmed live via the resolved candidate
+    // "Sign in with <operator email> work or school account" in a "Pick an
+    // account" section. Empty allowlists override machine policy for this
+    // specific launch so the automation browser never gets a Kerberos ticket.
+    '--auth-server-allowlist=',
+    '--auth-negotiate-delegate-allowlist=',
   ];
 
   let headlessFromConfig = null;
@@ -1116,7 +1127,10 @@ async function launchLiveCdpBrowser({ sessionId, viewport, userDataDir, project,
 
   const launchOptions = {
     headless,
-    channel: undefined,
+    // See the matching comment in buildMcpCliArgs: bundled Chromium crashes on
+    // headed launch on this host (0xC0000005). channel 'chrome' selects the
+    // system Chrome binary, confirmed live to launch headed cleanly.
+    channel: 'chrome',
     viewport: headless === false ? null : (viewport || { width: 1280, height: 720 }),
     acceptDownloads: true,
     downloadsPath: contextExtras?.downloadsDir || undefined,
@@ -3206,7 +3220,7 @@ function buildMcpCliArgs({ viewport, headless, isolated, userDataDir, caps, noSa
   if (headless === true) {
     args.push('--headless');
   } else {
-    args.push('--browser', 'chromium');
+    args.push('--browser', 'chrome');
   }
   args.push('--no-sandbox');
   args.push('--image-responses', 'allow');

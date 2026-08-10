@@ -541,9 +541,16 @@ function evaluateControllerAssertionSnapshot({
 
   const owner = uniqueBestAssertionTarget(operation, contract, candidates);
   if (owner.status !== 'resolved') {
+    // Diagnostic only: "missing"/"ambiguous" alone gives no signal on WHY —
+    // surfacing the actual top-ranked candidates (name/role/score) turns a
+    // bare status into real evidence instead of requiring hand-traced
+    // scoring math or another live rerun with ad-hoc instrumentation.
+    const topRanked = (Array.isArray(owner.ranked) ? owner.ranked : [])
+      .slice(0, 5)
+      .map((entry) => `${clean(entry.candidate?.accessibleName || entry.candidate?.name).slice(0, 40)}[role=${entry.candidate?.role},score=${entry.score}]`);
     return Object.freeze({
       matched: null,
-      reason: `typed_assertion_target_${owner.status}`,
+      reason: `typed_assertion_target_${owner.status}:topRanked=${JSON.stringify(topRanked)}`,
       assertionType: type || null,
       target: targetName || null,
       observedKind: null,
