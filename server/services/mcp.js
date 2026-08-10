@@ -4591,7 +4591,7 @@ async function callToolInner(session, name, args, options = {}) {
             {
               name: 'browser_evaluate',
               arguments: {
-                ref: targetRef,
+                target: targetRef,
                 function: fnStr,
               },
             },
@@ -7297,7 +7297,7 @@ async function extractData(session, args) {
       name: 'browser_evaluate',
       arguments: {
         element: element || `<extract ${targetKey}>`,
-        ref: target,
+        target: target,
         function: fnString,
       },
     });

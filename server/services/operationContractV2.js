@@ -522,7 +522,16 @@ function normalizeAssertion(source, context, findings) {
   const explicitType = clean(source.type || source.assertionType);
   // Infer assertion type from free-form action text when no explicit type is set.
   // This handles steps like "Confirm the field is disabled" → AssertDisabled.
-  const inferredAssertionType = !explicitType ? inferAssertionType(source.action) : null;
+  // Many authored steps carry a generic action label like "Verify" while the
+  // actual semantic keyword ("disabled", "readonly", ...) lives only in
+  // authoredText/atomicText/expected — inferring from source.action alone
+  // meant those steps always missed every keyword pattern and silently fell
+  // through to the 'AssertVisible' safe-fallback, so a "confirm X is
+  // disabled" step was executed and reported as a bare visibility check.
+  const inferenceSourceText = [source.action, source.authoredText, source.atomicText, source.expected]
+    .map((value) => (value == null ? '' : String(value)))
+    .join(' ');
+  const inferredAssertionType = !explicitType ? inferAssertionType(inferenceSourceText) : null;
   const type = explicitType || inferredAssertionType || 'AssertText';
   const path = `assertions[${context.index}]`;
   if (!VALID_ASSERTION_TYPES.includes(type)) {

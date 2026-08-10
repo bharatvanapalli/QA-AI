@@ -1828,7 +1828,7 @@ const ActionLine = React.memo(function ActionLine({ action }) {
     if (action.message === 'same_semantic_owner_reresolved_after_rerender') {
       return (
         <div className="pl-3 py-1 border-l-2 border-info-300 text-2xs text-ink-500 italic">
-          Page rerendered · successfully re-resolved "{action.name || 'element'}" ({action.role})
+          The page changed, so I re-located the "{action.name || 'element'}" {action.role || 'element'} to keep going.
         </div>
       );
     }

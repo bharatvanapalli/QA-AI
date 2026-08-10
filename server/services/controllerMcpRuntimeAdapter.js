@@ -327,7 +327,9 @@ function evaluateControllerAssertionSnapshot({
         || /\bdisabled\b|\breadonly\b|aria-disabled\s*=\s*["']?true|aria-readonly\s*=\s*["']?true/i.test(line)
       )
       : true;
-    return assertionResult({ matched: isDisabledOrReadonly, expected: 'disabled', actual: isDisabledOrReadonly ? 'disabled' : 'enabled' }, {
+    const stateWord = ['READONLY', 'ASSERTREADONLY'].includes(type) ? 'readonly' : 'disabled';
+    const oppositeWord = stateWord === 'readonly' ? 'editable' : 'enabled';
+    return assertionResult({ matched: isDisabledOrReadonly, expected: stateWord, actual: isDisabledOrReadonly ? stateWord : oppositeWord }, {
       assertionType: type,
       target: targetName,
       observedKind: 'candidate-state',
@@ -2211,7 +2213,7 @@ function createControllerMcpRuntimeAdapter({
         try {
           const result = await rawCall('browser_evaluate', {
             element: accessibleName,
-            ref: ownerRef,
+            target: ownerRef,
             function: buildBoundTextInputReadFunction({
               expectedValue: expectedTextInputValue,
               actionType: operation.type,
@@ -2301,7 +2303,7 @@ function createControllerMcpRuntimeAdapter({
         try {
           const result = await rawCall('browser_evaluate', {
             element: accessibleName,
-            ref: ownerRef,
+            target: ownerRef,
             function: buildBoundTemporalOwnerReadFunction({
               valueKind: temporalProtocolClaim === 'normalized_time_owner_value'
                 ? 'time'
@@ -2352,7 +2354,7 @@ function createControllerMcpRuntimeAdapter({
         try {
           const result = await rawCall('browser_evaluate', {
             element: accessibleName,
-            ref: ownerRef,
+            target: ownerRef,
             function: buildBoundSelectionOwnerReadFunction({
               expectedSelection: authoredSelection,
             }),
@@ -2409,7 +2411,7 @@ function createControllerMcpRuntimeAdapter({
         try {
           const result = await rawCall('browser_evaluate', {
             element: accessibleName,
-            ref: ownerRef,
+            target: ownerRef,
             function: buildBoundPopupOwnershipReadFunction(),
           }, Math.min(Math.max(100, Number(remainingMs) || 1_000), 1_500));
           popupOwnershipReadback = evaluatePayload(result);
@@ -2572,7 +2574,14 @@ function createControllerMcpRuntimeAdapter({
         })).catch(() => null);
       }
 
-      if (typedAssertionObservation.candidateRef && phase !== 'pre_dispatch') {
+      // Standalone Verify/Assert-type operations have no mutation of their
+      // own to dispatch — pre_dispatch IS their only and final phase (see
+      // TERMINAL_DECISION commitDisposition:'ALREADY_SATISFIED' immediately
+      // following the pre_dispatch observation in the journal). Excluding
+      // pre_dispatch here meant every standalone assertion — including
+      // disabled/readonly/visible checks — never got a highlight or evidence
+      // screenshot at all, since no later phase ever ran for them.
+      if (typedAssertionObservation.candidateRef) {
         try {
           const isMatched = typedAssertionObservation.matched === true;
           const highlightFunc = `function highlightElement(element) {
@@ -2589,37 +2598,72 @@ function createControllerMcpRuntimeAdapter({
               }, 2000);
             } catch (_) {}
           }`;
-          rawCall('browser_evaluate', {
+          // Awaited (not fire-and-forget) so the flash is guaranteed painted
+          // before the evidence screenshot below is taken — otherwise the
+          // screenshot can win the race and show an unhighlighted element.
+          await rawCall('browser_evaluate', {
             element: clean(typedAssertionObservation.target) || 'element',
-            ref: typedAssertionObservation.candidateRef,
+            target: typedAssertionObservation.candidateRef,
             function: highlightFunc,
-          }, 1000).catch(() => {});
-        } catch (_) {}
+          }, 5000);
+          const assertionLabel = clean(operation?.type || typedAssertionObservation.assertionType || 'assertion').toLowerCase();
+          const shot = await mcp.captureLiveEvidenceScreenshot(session, {
+            label: `assertion_${assertionLabel}_evidence_${Date.now()}`,
+          });
+          if (shot) {
+            if (!session.screenshots) session.screenshots = [];
+            session.screenshots.push({ ...shot, path: shot.artifactRef, label: `assertion_${assertionLabel}_evidence_${Date.now()}` });
+          } else {
+            console.error('[controllerMcpRuntimeAdapter] assertion highlight screenshot returned null for', operation.operationId);
+          }
+        } catch (err) {
+          console.error('[controllerMcpRuntimeAdapter] assertion highlight/screenshot threw for', operation.operationId, err);
+        }
       }
 
       const targetLabel = clean(typedAssertionObservation.target || operation?.targetIdentity?.accessibleName || operation?.targetIdentity?.label || 'element');
-      const assertionType = clean(operation?.type || typedAssertionObservation?.assertionType).toUpperCase();
+      // Prefer typedAssertionObservation.assertionType — it's already
+      // normalized (e.g. 'AssertVisible' -> 'VISIBLE') a few lines above in
+      // this same function. operation?.type is the raw authored/compiled
+      // token and is NOT normalized, so preferring it here meant an
+      // "AssertVisible" operation uppercased to "ASSERTVISIBLE", which never
+      // matched the bare 'VISIBLE' check below — every such assertion fell
+      // through to the meaningless generic fallback.
+      const assertionType = clean(typedAssertionObservation?.assertionType || operation?.type).toUpperCase();
       const expectedVal = clean(operation?.value || typedAssertionObservation?.expected);
+      const observedVal = clean(typedAssertionObservation?.observed);
       const isMatched = typedAssertionObservation.matched === true;
 
-      let narration = 'Evaluated assertion';
+      // Phrased as a first-person observation of what was actually read on
+      // the page, not a bare pass/fail label — and never claims something
+      // it didn't check: the mismatch branches state what was expected vs.
+      // what was actually observed instead of a generic "not matched".
+      let narration;
       if (['DISABLED', 'ASSERTDISABLED'].includes(assertionType)) {
-        narration = `Verified "${targetLabel}" field is disabled`;
+        narration = isMatched ? `I can see "${targetLabel}" is disabled` : `I can see "${targetLabel}" is NOT disabled`;
       } else if (['READONLY', 'ASSERTREADONLY'].includes(assertionType)) {
-        narration = `Verified "${targetLabel}" field is read-only`;
+        narration = isMatched ? `I can see "${targetLabel}" is read-only` : `I can see "${targetLabel}" is NOT read-only`;
       } else if (['VALUE', 'ASSERTVALUE'].includes(assertionType)) {
-        narration = expectedVal ? `Verified value "${expectedVal}" in "${targetLabel}"` : `Verified value in "${targetLabel}"`;
+        narration = isMatched
+          ? (expectedVal ? `I can see the value "${expectedVal}" in "${targetLabel}"` : `I can see a value in "${targetLabel}"`)
+          : (observedVal ? `I expected "${expectedVal}" in "${targetLabel}" but read "${observedVal}"` : `I could not confirm the expected value in "${targetLabel}"`);
       } else if (['TEXT', 'ASSERTTEXT'].includes(assertionType)) {
-        narration = expectedVal ? `Verified text "${expectedVal}" in "${targetLabel}"` : `Verified text in "${targetLabel}"`;
-      } else if (['VISIBLE'].includes(assertionType)) {
-        narration = `Verified "${targetLabel}" is visible`;
-      } else if (['HIDDEN'].includes(assertionType)) {
-        narration = `Verified "${targetLabel}" is hidden`;
-      }
-
-      if (typedAssertionObservation.observed !== undefined && typedAssertionObservation.observed !== null && String(typedAssertionObservation.observed).trim() !== '') {
-        const obs = String(typedAssertionObservation.observed).trim();
-        narration += ` (observed: ${obs})`;
+        narration = isMatched
+          ? (expectedVal ? `I can see the text "${expectedVal}" in "${targetLabel}"` : `I can see text in "${targetLabel}"`)
+          : (observedVal ? `I expected "${expectedVal}" in "${targetLabel}" but read "${observedVal}"` : `I could not confirm the expected text in "${targetLabel}"`);
+      } else if (['VISIBLE', 'ASSERTVISIBLE'].includes(assertionType)) {
+        narration = isMatched ? `I can see "${targetLabel}" on the page` : `I could not see "${targetLabel}" on the page`;
+      } else if (['HIDDEN', 'ASSERTHIDDEN'].includes(assertionType)) {
+        narration = isMatched ? `I can confirm "${targetLabel}" is hidden` : `I can still see "${targetLabel}" — it is not hidden`;
+      } else if (expectedVal) {
+        // Unrecognized/generic assertion type — state the authored
+        // expectation itself instead of a meaningless placeholder, so the
+        // transcript always says what was actually being checked.
+        narration = isMatched ? `I can confirm: ${expectedVal}` : `I could not confirm: ${expectedVal}`;
+      } else {
+        narration = isMatched
+          ? `Verified "${targetLabel}" matches the expected condition`
+          : `Could not verify "${targetLabel}" matches the expected condition`;
       }
 
       send({
@@ -3246,8 +3290,9 @@ function createControllerMcpRuntimeAdapter({
           {
             name: 'browser_evaluate',
             arguments: {
-              ref: targetRef,
+              target: targetRef,
               function: `(el) => {
+                try { if (typeof window.__qaai_highlight === 'function') { window.__qaai_highlight(el); } } catch (_) {}
                 const rect = el.getBoundingClientRect();
                 const style = window.getComputedStyle(el);
                 return 'x=' + Math.round(rect.x) + ', y=' + Math.round(rect.y) + ', width=' + Math.round(rect.width) + ', height=' + Math.round(rect.height) + ', color=' + style.color + ', backgroundColor=' + style.backgroundColor + ', disabled=' + (el.disabled || el.getAttribute('aria-disabled') === 'true');
@@ -3347,7 +3392,7 @@ function createControllerMcpRuntimeAdapter({
           // reveal-owner and the readback functions already use
           // successfully elsewhere in this file.
           result = await rawCall('browser_evaluate', {
-            ref: targetRef,
+            target: targetRef,
             element: elementLabel,
             function: clickAndHoldFunc,
           }, remainingMs);
@@ -3393,11 +3438,15 @@ function createControllerMcpRuntimeAdapter({
         narration = `Right-clicked "${label || 'element'}"`;
       } else if (/hold|long_press/i.test(toolName) || /hold/i.test(entry?.actionText || '')) {
         narration = `Clicked and held "${label || 'element'}"`;
-      } else if (/go_back|back/i.test(entry?.actionText || '')) {
+      } else if (toolName === 'browser_go_back' || /go_back|back/i.test(entry?.actionText || '')) {
+        // toolName is the literal SDK tool name, checked first — it's a
+        // reliable universal signal regardless of how the step was authored.
+        // The actionText regex alone missed this on sites where the authored
+        // text is a generic label without the word "back" in it.
         narration = `Navigated back to previous page`;
-      } else if (/go_forward|forward/i.test(entry?.actionText || '')) {
+      } else if (toolName === 'browser_go_forward' || /go_forward|forward/i.test(entry?.actionText || '')) {
         narration = `Navigated forward to next page`;
-      } else if (/refresh|reload/i.test(entry?.actionText || '')) {
+      } else if (toolName === 'browser_reload' || /refresh|reload/i.test(entry?.actionText || '')) {
         narration = `Refreshed page`;
       } else if (/accept\s*alert|confirm\s*alert/i.test(entry?.actionText || '')) {
         narration = `Accepted browser alert dialog`;
@@ -3412,25 +3461,61 @@ function createControllerMcpRuntimeAdapter({
       } else if (/extract/i.test(entry?.actionText || '')) {
         narration = `Extracted data from "${label || 'element'}" into variable`;
       } else if (isSemanticOp) {
-        let propsStr = '';
+        // Answer the SPECIFIC question that was authored ("Get the X & Y
+        // co-ordinates...", "Find the color...", "Find the height &
+        // width...") instead of always dumping every captured field
+        // regardless of relevance — the evaluate function always returns
+        // x/y/width/height/color/backgroundColor/disabled together, but the
+        // narration should surface only what was actually asked, phrased as
+        // a first-person observation. Falls back to reporting everything
+        // captured, or an honest "could not read" line, when the question
+        // doesn't match a known pattern or nothing came back at all.
         const resText = textOfResult(result);
-        if (resText) {
-          const w = resText.match(/width=([\d\.]+)/)?.[1];
-          const h = resText.match(/height=([\d\.]+)/)?.[1];
-          const c = resText.match(/color=(rgb[^\)]+\)|#[^\,]+|[a-zA-Z]+)/)?.[1];
-          const bg = resText.match(/backgroundColor=(rgba?[^\)]+\)|#[^\,]+|[a-zA-Z]+)/)?.[1];
-          const d = resText.match(/disabled=(true|false)/)?.[1];
-          const parts = [];
-          if (w) parts.push(`width: ${w}px`);
-          if (h) parts.push(`height: ${h}px`);
-          if (c) parts.push(`color: ${c}`);
-          if (bg && bg !== 'rgba(0, 0, 0, 0)') parts.push(`bg: ${bg}`);
-          if (d === 'true') parts.push('disabled');
-          if (parts.length > 0) {
-            propsStr = ` (${parts.join(', ')})`;
+        const x = resText?.match(/x=([\-\d.]+)/)?.[1];
+        const y = resText?.match(/y=([\-\d.]+)/)?.[1];
+        const w = resText?.match(/width=([\d.]+)/)?.[1];
+        const h = resText?.match(/height=([\d.]+)/)?.[1];
+        const c = resText?.match(/color=(rgb[^)]+\)|#[^,]+|[a-zA-Z]+)/)?.[1];
+        const bg = resText?.match(/backgroundColor=(rgba?[^)]+\)|#[^,]+|[a-zA-Z]+)/)?.[1];
+        const bgKnown = bg && bg !== 'rgba(0, 0, 0, 0)';
+        const d = resText?.match(/disabled=(true|false)/)?.[1];
+        const question = clean(entry?.actionText || label).toLowerCase();
+        const askedLocation = /\bx\s*&?\s*y\b|co-?ordinate|\bposition\b|\blocation\b/.test(question);
+        const askedColor = /\bcolor\b/.test(question);
+        const askedSize = /\bheight\b|\bwidth\b|\bsize\b|\btall\b|\bfat\b/.test(question);
+        const askedState = /\bdisabled\b|\benabled\b/.test(question);
+
+        const facts = [];
+        if (askedLocation) {
+          facts.push(x != null && y != null ? `it is positioned at x=${x}, y=${y}` : 'I could not read its position');
+        }
+        if (askedColor) {
+          if (c || bgKnown) {
+            facts.push(`its ${c ? `text color is ${c}` : ''}${c && bgKnown ? ' and its ' : ''}${bgKnown ? `background color is ${bg}` : ''}`);
+          } else {
+            facts.push('I could not read its color');
           }
         }
-        narration = `Extracted properties for "${label || 'element'}"${propsStr}`;
+        if (askedSize) {
+          facts.push(w && h ? `it is ${w}px wide and ${h}px tall` : 'I could not read its size');
+        }
+        if (askedState) {
+          facts.push(d != null ? `it is ${d === 'true' ? 'disabled' : 'enabled'}` : 'I could not read whether it is enabled or disabled');
+        }
+
+        if (facts.length) {
+          narration = `I can see "${label || 'the element'}" — ${facts.join('; ')}`;
+        } else if (x != null || y != null || w || h || c || bgKnown || d != null) {
+          const parts = [];
+          if (x != null && y != null) parts.push(`position x=${x}, y=${y}`);
+          if (w && h) parts.push(`size ${w}px × ${h}px`);
+          if (c) parts.push(`text color ${c}`);
+          if (bgKnown) parts.push(`background color ${bg}`);
+          if (d === 'true') parts.push('disabled');
+          narration = `I read "${label || 'the element'}" — ${parts.join('; ')}`;
+        } else {
+          narration = `I could not read a value for "${label || 'the element'}"`;
+        }
       } else if (/switch\s*tab|switch\s*window/i.test(entry?.actionText || '')) {
         narration = `Switched focus to tab/window "${label || 'target'}"`;
       } else if (/switch\s*frame|iframe/i.test(entry?.actionText || '')) {
