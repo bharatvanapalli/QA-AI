@@ -34,6 +34,7 @@ import Skeleton from '../components/ui/Skeleton';
 import GenerationGuidancePanel from '../components/GenerationGuidancePanel';
 import GenerationPicker from '../components/GenerationPicker';
 import AuthoringAssist from '../components/testCases/AuthoringAssist';
+import { ACTION_DROPDOWN_GROUPS, getActionDef } from '../lib/actionSchema';
 
 /* ─────────────────────────────────────────────────────────────────────────────
  * Test Cases V2 — "Approve. Then run."
@@ -4392,6 +4393,21 @@ export function buildStepEditorDraft(group) {
 
 function StepEditForm({ draft, onChange, onCancel, onSave, saving, mode = 'edit' }) {
   const update = (field) => (event) => onChange({ ...draft, [field]: event.target.value });
+  const actionDef = getActionDef(draft.action);
+  const knownActionValues = useMemo(() => {
+    const values = new Set();
+    Object.values(ACTION_DROPDOWN_GROUPS).forEach((group) => {
+      group.forEach((item) => values.add(item.value));
+    });
+    return values;
+  }, []);
+  const isCustomAction = draft.action && !knownActionValues.has(draft.action);
+
+  const valuePlaceholder = actionDef?.valueLabel || (draft.action === 'Navigate' ? 'https://app.example.com/...' : '{{customer_email}}');
+  const targetPlaceholder = actionDef?.targetRequired
+    ? 'Target element (required)'
+    : (actionDef && actionDef.fields && actionDef.fields.length === 0 ? 'Not required for this action' : 'Target element (e.g. Email field)');
+
   return (
     <form
       className="rounded-xl border border-accent-200/80 bg-accent-50/55 p-3"
@@ -4420,23 +4436,71 @@ function StepEditForm({ draft, onChange, onCancel, onSave, saving, mode = 'edit'
           Optional interpreted fields
         </summary>
         <div className="grid gap-2 border-t border-ink-200/70 p-3 sm:grid-cols-2">
-          {[
-            ['action', 'Action', 'Enter'],
-            ['target', 'Target', 'Email field'],
-            ['value', 'Value or data token', '{{customer_email}}'],
-            ['validation', 'Validation', 'Email value is accepted'],
-            ['condition', 'Condition', 'When the field is available'],
-          ].map(([field, label, placeholder]) => (
-            <label key={field} className={field === 'condition' ? 'sm:col-span-2' : ''}>
-              <span className="text-2xs font-semibold uppercase tracking-wide text-ink-500">{label}</span>
-              <input
-                value={draft[field]}
-                onChange={update(field)}
-                placeholder={placeholder}
-                className="mt-1 h-9 w-full rounded-lg border border-ink-200 bg-white px-2.5 text-xs text-ink-900 outline-none transition focus:border-accent-300 focus:shadow-ring"
-              />
-            </label>
-          ))}
+          <label className="block">
+            <span className="text-2xs font-semibold uppercase tracking-wide text-ink-500">Action</span>
+            <select
+              value={draft.action || 'Click'}
+              onChange={update('action')}
+              className="mt-1 h-9 w-full rounded-lg border border-ink-200 bg-white px-2.5 text-xs font-medium text-ink-900 outline-none transition focus:border-accent-300 focus:shadow-ring"
+            >
+              {isCustomAction && (
+                <option value={draft.action}>
+                  {draft.action} (Custom)
+                </option>
+              )}
+              {Object.entries(ACTION_DROPDOWN_GROUPS).map(([category, actions]) => (
+                <optgroup key={category} label={category}>
+                  {actions.map((act) => (
+                    <option key={act.value} value={act.value}>
+                      {act.label}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </label>
+
+          <label className="block">
+            <span className="text-2xs font-semibold uppercase tracking-wide text-ink-500">Target</span>
+            <input
+              value={draft.target}
+              onChange={update('target')}
+              placeholder={targetPlaceholder}
+              className="mt-1 h-9 w-full rounded-lg border border-ink-200 bg-white px-2.5 text-xs text-ink-900 outline-none transition focus:border-accent-300 focus:shadow-ring"
+            />
+          </label>
+
+          <label className="block">
+            <span className="text-2xs font-semibold uppercase tracking-wide text-ink-500">
+              {actionDef?.valueLabel || 'Value or data token'}
+            </span>
+            <input
+              value={draft.value}
+              onChange={update('value')}
+              placeholder={valuePlaceholder}
+              className="mt-1 h-9 w-full rounded-lg border border-ink-200 bg-white px-2.5 text-xs text-ink-900 outline-none transition focus:border-accent-300 focus:shadow-ring"
+            />
+          </label>
+
+          <label className="block">
+            <span className="text-2xs font-semibold uppercase tracking-wide text-ink-500">Validation</span>
+            <input
+              value={draft.validation}
+              onChange={update('validation')}
+              placeholder="Email value is accepted"
+              className="mt-1 h-9 w-full rounded-lg border border-ink-200 bg-white px-2.5 text-xs text-ink-900 outline-none transition focus:border-accent-300 focus:shadow-ring"
+            />
+          </label>
+
+          <label className="block sm:col-span-2">
+            <span className="text-2xs font-semibold uppercase tracking-wide text-ink-500">Condition</span>
+            <input
+              value={draft.condition}
+              onChange={update('condition')}
+              placeholder="When the field is available"
+              className="mt-1 h-9 w-full rounded-lg border border-ink-200 bg-white px-2.5 text-xs text-ink-900 outline-none transition focus:border-accent-300 focus:shadow-ring"
+            />
+          </label>
         </div>
       </details>
 

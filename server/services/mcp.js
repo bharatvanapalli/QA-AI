@@ -1072,6 +1072,44 @@ function contextCliArgsForMcp({ cliArgs = [], usingLiveCdp = false } = {}) {
   return out;
 }
 
+function normalizeFsPathForCompare(value) {
+  return String(value || '').replace(/[\\/]+/g, path.sep).toLowerCase();
+}
+
+function unsafeBrowserProfileReason(profileDir) {
+  const normalized = normalizeFsPathForCompare(profileDir);
+  if (!normalized) return null;
+  const realChromeProfile = normalizeFsPathForCompare(path.join(os.homedir(), 'AppData', 'Local', 'Google', 'Chrome', 'User Data'));
+  const sharedMcpProfileRoot = normalizeFsPathForCompare(path.join(os.homedir(), 'AppData', 'Local', 'ms-playwright'));
+  if (normalized === realChromeProfile || normalized.startsWith(`${realChromeProfile}${path.sep}`)) {
+    return 'operator_chrome_user_data_profile';
+  }
+  if (normalized.includes(`${path.sep}ms-playwright${path.sep}mcp-chrome-`)) {
+    return 'shared_playwright_mcp_chrome_profile';
+  }
+  if (normalized === sharedMcpProfileRoot || normalized.startsWith(`${sharedMcpProfileRoot}${path.sep}mcp-chrome-`)) {
+    return 'shared_playwright_mcp_chrome_profile';
+  }
+  return null;
+}
+
+function assertIsolatedBrowserProfile(profileDir, source) {
+  const reason = unsafeBrowserProfileReason(profileDir);
+  if (!reason) return;
+  const err = new Error(`TEST_BROWSER_PROFILE_IS_NOT_ISOLATED: ${source || 'browser'} attempted to use ${reason} (${profileDir})`);
+  err.code = 'TEST_BROWSER_PROFILE_IS_NOT_ISOLATED';
+  err.profileDir = profileDir;
+  err.reason = reason;
+  throw err;
+}
+
+function qaaiFallbackMcpProfileDir(sessionId) {
+  const profileDir = path.join(os.tmpdir(), 'qaai-mcp', sessionId, 'profile');
+  assertIsolatedBrowserProfile(profileDir, 'mcp-fallback');
+  fs.mkdirSync(profileDir, { recursive: true });
+  return profileDir;
+}
+
 async function launchLiveCdpBrowser({ sessionId, viewport, userDataDir, project, contextExtras, broadcast } = {}) {
   if (envFlag('QAAI_LIVE_CDP_DISABLED') || envFlag('QAAI_CDP_LIVE_DISABLED')) return null;
   const pw = loadPlaywrightForLiveCdp();
@@ -1083,6 +1121,7 @@ async function launchLiveCdpBrowser({ sessionId, viewport, userDataDir, project,
   const port = await reserveLocalPort();
   const endpoint = `http://127.0.0.1:${port}`;
   const profileDir = userDataDir || path.join(os.tmpdir(), 'qaai-live-cdp', sessionId, 'profile');
+  assertIsolatedBrowserProfile(profileDir, 'live-cdp');
   fs.mkdirSync(profileDir, { recursive: true });
 
   const launchArgs = [
@@ -1102,10 +1141,17 @@ async function launchLiveCdpBrowser({ sessionId, viewport, userDataDir, project,
     // operator's own signed-in Windows/AAD identity via a "Pick an account" tile
     // instead of a blank email field, confirmed live via the resolved candidate
     // "Sign in with <operator email> work or school account" in a "Pick an
-    // account" section. Empty allowlists override machine policy for this
-    // specific launch so the automation browser never gets a Kerberos ticket.
-    '--auth-server-allowlist=',
-    '--auth-negotiate-delegate-allowlist=',
+    // account" section. Use the explicit impossible allowlist "_" rather than
+    // an empty value: on some Chrome/enterprise-policy combinations an empty
+    // command-line value behaves like "unset" and the Windows/AAD account still
+    // appears. Keep both allowlist and legacy whitelist spellings because the
+    // installed Chrome/MCP pairing may honor either name depending on version.
+    '--disable-integrated-auth',
+    '--auth-server-allowlist=_',
+    '--auth-server-whitelist=_',
+    '--auth-negotiate-delegate-allowlist=_',
+    '--auth-negotiate-delegate-whitelist=_',
+    '--auth-schemes=basic,digest',
   ];
 
   let headlessFromConfig = null;
@@ -3196,10 +3242,22 @@ function buildMcpCliArgs({ viewport, headless, isolated, userDataDir, caps, noSa
   // `--isolated` keeps the profile in memory (no disk persistence).
   if (cdpEndpoint) {
     args.push('--cdp-endpoint', cdpEndpoint);
+    // Connect-only mode: QAAI already owns the isolated live-CDP browser.
+    // Do not also pass --browser/--headless/--user-data-dir; some MCP builds
+    // then create or reuse their own ms-playwright/mcp-chrome-* profile.
+    args.push('--no-sandbox');
+    args.push('--image-responses', 'allow');
+    args.push('--snapshot-mode', 'full');
+    args.push('--output-mode', 'stdout');
+    args.push('--timeout-action', '30000');
+    return args;
   } else if (isolated && !userDataDir) {
     args.push('--isolated');
   }
-  if (!cdpEndpoint && userDataDir) { args.push('--user-data-dir', userDataDir); }
+  if (userDataDir) {
+    assertIsolatedBrowserProfile(userDataDir, 'mcp-cli');
+    args.push('--user-data-dir', userDataDir);
+  }
   if (!cdpEndpoint && viewport?.width && viewport?.height) {
     args.push('--viewport-size', `${viewport.width}x${viewport.height}`);
   }
@@ -3331,6 +3389,13 @@ async function startMcpSession({
     ? headlessFromConfig
     : (envFlag('QAAI_MCP_HEADLESS') || envFlag('PLAYWRIGHT_MCP_HEADLESS') || false);
   const tlsRejectUnauthorized = resolveTlsRejectUnauthorized();
+  const fallbackMcpProfileDir = !liveCdp?.endpoint && !userDataDir
+    ? qaaiFallbackMcpProfileDir(sessionId)
+    : null;
+  const effectiveMcpUserDataDir = liveCdp?.endpoint
+    ? null
+    : (userDataDir || fallbackMcpProfileDir);
+  if (effectiveMcpUserDataDir) assertIsolatedBrowserProfile(effectiveMcpUserDataDir, 'mcp-effective');
 
   const args = [
     cliPath,
@@ -3348,8 +3413,8 @@ async function startMcpSession({
       // a background tab in the operator's own window instead of a
       // distinguishable one — reproduced live on this host. `--isolated`
       // guarantees an in-memory, never-persisted, never-shared profile.
-      isolated: !userDataDir && !liveCdp?.endpoint,
-      userDataDir: liveCdp?.endpoint ? null : userDataDir,
+      isolated: false,
+      userDataDir: effectiveMcpUserDataDir,
       cdpEndpoint: liveCdp?.endpoint || null,
       caps: Array.isArray(extraCaps) && extraCaps.length ? extraCaps : ['vision', 'pdf', 'devtools'],
       // --no-sandbox helps on corp laptops where EDR/AV blocks sandboxed launches.
@@ -3370,6 +3435,16 @@ async function startMcpSession({
       tlsRejectUnauthorized,
     });
   } catch (_) { /* posture reporting must never block a session */ }
+  try {
+    (broadcast || (() => {}))({
+      type: 'agent.phase.log',
+      phase: 'conductor',
+      level: 'info',
+      message: liveCdp?.endpoint
+        ? `[mcp] test browser isolated via live CDP profile: ${liveCdp.profileDir}`
+        : `[mcp] test browser isolated via MCP profile: ${effectiveMcpUserDataDir}`,
+    });
+  } catch (_) {}
 
   // The MCP SDK's StdioClientTransport spawns the subprocess and pipes JSON-RPC
   // over stdin/stdout. The subprocess inherits NODE_TLS_REJECT_UNAUTHORIZED so
@@ -3445,6 +3520,8 @@ async function startMcpSession({
     framePollerPaused: false,
     framePollerInFlight: false,
     liveCdp,
+    fallbackMcpProfileDir,
+    effectiveMcpUserDataDir,
     liveFrameMode: liveCdp ? 'cdp_pending' : 'poller',
     cdpScreencast: null,
     mcpScheduler: {
@@ -3616,6 +3693,14 @@ async function stopMcpSession(session) {
   // StdioClientTransport.close() kills the subprocess for us. Belt and braces:
   await bestEffortWithin('mcp_transport_close', () => session.transport?.close?.(), 2000);
   await closeLiveCdpBrowser(session.liveCdp);
+  if (session.fallbackMcpProfileDir) {
+    killBrowserTreeByProfileDir(session.fallbackMcpProfileDir);
+    try {
+      await fs.promises.rm(session.fallbackMcpProfileDir, { recursive: true, force: true, maxRetries: 3, retryDelay: 300 });
+    } catch (error) {
+      console.error(`[mcp] failed to remove fallback MCP profile dir ${session.fallbackMcpProfileDir}:`, error);
+    }
+  }
   // Force-kill the whole process tree (node MCP subprocess → Chromium → GPU/renderer workers).
   // Transport.close() shuts the stdio pipe which should terminate the node subprocess, but
   // Chrome child processes are often detached and survive the pipe closure on Windows.
