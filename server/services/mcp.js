@@ -1110,6 +1110,54 @@ function qaaiFallbackMcpProfileDir(sessionId) {
   return profileDir;
 }
 
+// Confirmed live on this host (2026-08-11): the bundled Chromium revision
+// Playwright's npm package currently resolves to by default (chromium-1224,
+// i.e. `chromium.executablePath()`) crashes on launch with exit code
+// 3221225477 (0xC0000005 access violation) in BOTH headed and headless mode —
+// reproduced directly via chromium.launchPersistentContext AND a bare
+// execFileSync of chrome.exe, independent of any Playwright/MCP argument
+// choice. chromium-1234 (the newest installed revision) hangs indefinitely
+// on headed launch instead (reproduced directly, 30s+ with zero output —
+// a real hang, not a short-timeout false alarm). Sibling revisions installed
+// on this same host under the same ms-playwright dir (chromium-1217,
+// chromium-1222, chromium-1223, chromium-1228) all launch and navigate
+// cleanly — these are two individually bad/corrupted browser revisions, not
+// a systemic host/GPU/EDR issue. Switching to real system Chrome (channel
+// 'chrome') worked around the crash but introduced a worse problem: this
+// machine's HKLM\SOFTWARE\Policies\Google\Chrome policy has
+// CloudAPAuthEnabled=1 (confirmed via registry read), a machine-wide policy
+// that silently offers the operator's signed-in Windows/AAD identity on any
+// Microsoft login page — scoped specifically to "Google Chrome" in the
+// registry, so it has no jurisdiction over a plain Chromium binary. Pinning
+// to a known-good bundled Chromium revision fixes both failures AND
+// sidesteps the policy entirely, with no controller-side recovery logic
+// needed.
+const KNOWN_BAD_CHROMIUM_REVISIONS = new Set(['chromium-1224', 'chromium-1234']);
+let _resolvedBundledChromiumPath;
+function resolveWorkingBundledChromiumExecutable(pw) {
+  if (_resolvedBundledChromiumPath !== undefined) return _resolvedBundledChromiumPath;
+  _resolvedBundledChromiumPath = null;
+  try {
+    const rootDir = path.join(os.homedir(), 'AppData', 'Local', 'ms-playwright');
+    const revisions = fs.readdirSync(rootDir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && /^chromium-\d+$/.test(entry.name))
+      .map((entry) => entry.name)
+      .filter((name) => !KNOWN_BAD_CHROMIUM_REVISIONS.has(name))
+      .sort((a, b) => Number(b.split('-')[1]) - Number(a.split('-')[1]));
+    for (const revision of revisions) {
+      const candidate = path.join(rootDir, revision, 'chrome-win64', 'chrome.exe');
+      if (fs.existsSync(candidate)) {
+        _resolvedBundledChromiumPath = candidate;
+        break;
+      }
+    }
+  } catch (_) { /* fall through to Playwright's own default below */ }
+  if (!_resolvedBundledChromiumPath) {
+    try { _resolvedBundledChromiumPath = pw?.chromium?.executablePath?.() || null; } catch (_) {}
+  }
+  return _resolvedBundledChromiumPath;
+}
+
 async function launchLiveCdpBrowser({ sessionId, viewport, userDataDir, project, contextExtras, broadcast } = {}) {
   if (envFlag('QAAI_LIVE_CDP_DISABLED') || envFlag('QAAI_CDP_LIVE_DISABLED')) return null;
   const pw = loadPlaywrightForLiveCdp();
@@ -1134,18 +1182,12 @@ async function launchLiveCdpBrowser({ sessionId, viewport, userDataDir, project,
     '--disable-extensions',
     '--disable-blink-features=AutomationControlled',
     '--no-sandbox',
-    // On a domain-joined Windows host, Integrated Windows Auth / Azure AD Seamless
-    // SSO is a machine-level (HKLM) policy applied to every chrome.exe process —
-    // it ignores --user-data-dir isolation entirely. Without this, any Microsoft
-    // login page (on ANY site under test, not just one) silently offers the
-    // operator's own signed-in Windows/AAD identity via a "Pick an account" tile
-    // instead of a blank email field, confirmed live via the resolved candidate
-    // "Sign in with <operator email> work or school account" in a "Pick an
-    // account" section. Use the explicit impossible allowlist "_" rather than
-    // an empty value: on some Chrome/enterprise-policy combinations an empty
-    // command-line value behaves like "unset" and the Windows/AAD account still
-    // appears. Keep both allowlist and legacy whitelist spellings because the
-    // installed Chrome/MCP pairing may honor either name depending on version.
+    // Defense-in-depth against Integrated Windows Auth / Kerberos-Negotiate
+    // intranet prompts (a real, separate mechanism from the Azure AD "Pick an
+    // account" identity broker below the executablePath comment above this
+    // function) — these flags do NOT stop that broker; that's fixed by
+    // pinning to bundled Chromium instead of real system Chrome. Harmless to
+    // keep since they're plain Chromium switches, not Chrome-policy-gated.
     '--disable-integrated-auth',
     '--auth-server-allowlist=_',
     '--auth-server-whitelist=_',
@@ -1173,10 +1215,12 @@ async function launchLiveCdpBrowser({ sessionId, viewport, userDataDir, project,
 
   const launchOptions = {
     headless,
-    // See the matching comment in buildMcpCliArgs: bundled Chromium crashes on
-    // headed launch on this host (0xC0000005). channel 'chrome' selects the
-    // system Chrome binary, confirmed live to launch headed cleanly.
-    channel: 'chrome',
+    // Pin to a known-good bundled Chromium revision — see the comment above
+    // this function for why (a corrupted default revision crashed on launch,
+    // and the real-Chrome workaround introduced the CloudAPAuthEnabled
+    // identity-broker problem). Falls back to Playwright's own default
+    // resolution if no sibling revision is found on disk.
+    executablePath: resolveWorkingBundledChromiumExecutable(pw) || undefined,
     viewport: headless === false ? null : (viewport || { width: 1280, height: 720 }),
     acceptDownloads: true,
     downloadsPath: contextExtras?.downloadsDir || undefined,
@@ -3235,7 +3279,7 @@ function loadSdk() {
  * @param {object} opts
  * @returns {string[]}
  */
-function buildMcpCliArgs({ viewport, headless, isolated, userDataDir, caps, noSandbox, cdpEndpoint } = {}) {
+function buildMcpCliArgs({ viewport, headless, isolated, userDataDir, caps, noSandbox, cdpEndpoint, executablePath } = {}) {
   const args = [];
   // Browser channel — the alpha Playwright accepts 'chrome' / 'firefox' / 'webkit' / 'msedge';
   // omit to get the bundled Chromium build.
@@ -3261,24 +3305,20 @@ function buildMcpCliArgs({ viewport, headless, isolated, userDataDir, caps, noSa
   if (!cdpEndpoint && viewport?.width && viewport?.height) {
     args.push('--viewport-size', `${viewport.width}x${viewport.height}`);
   }
-  // Confirmed live on this host (2026-08-06): Playwright's bundled Chromium
-  // build crashes on launch in headed mode with exit code 3221225477
-  // (0xC0000005 access violation) — reproduced directly via
-  // chromium.launchPersistentContext, independent of this CLI. Because this
-  // function never passed --browser, every headed MCP session has been
-  // launching bundled Chromium, crashing immediately, with no visible
-  // window — while the session kept working because CDP screencast/action
-  // execution degrades gracefully. --browser chrome selects the system
-  // Chrome binary, which launches headed cleanly on this host (also
-  // confirmed live) and is what launchLiveCdpBrowser already uses for the
-  // screencast-observer browser above; this brings the actual
-  // automation-driving browser in line with it. The CLI's own --headless
-  // flag was also never being passed, so an explicit headless=true request
-  // had no effect on this subprocess either.
+  // This fallback path only runs when launchLiveCdpBrowser's live-CDP browser
+  // isn't available (rare — the normal path returns early at the cdpEndpoint
+  // branch above and never reaches here). See the resolveWorkingBundledChromiumExecutable
+  // comment near launchLiveCdpBrowser for why: the default bundled Chromium
+  // revision crashes on this host, and real system Chrome isn't a safe
+  // substitute (CloudAPAuthEnabled identity-broker policy). Pin to the same
+  // known-good bundled Chromium executable here for consistency. The CLI's
+  // own --headless flag was also never being passed, so an explicit
+  // headless=true request had no effect on this subprocess either.
   if (headless === true) {
     args.push('--headless');
   } else {
-    args.push('--browser', 'chrome');
+    args.push('--browser', 'chromium');
+    if (executablePath) args.push('--executable-path', executablePath);
   }
   args.push('--no-sandbox');
   args.push('--image-responses', 'allow');
@@ -3420,6 +3460,7 @@ async function startMcpSession({
       // --no-sandbox helps on corp laptops where EDR/AV blocks sandboxed launches.
       // Safe in dev; do NOT enable for production multi-tenant scenarios.
       noSandbox,
+      executablePath: resolveWorkingBundledChromiumExecutable() || undefined,
     }),
     ...contextCliArgsForMcp({ cliArgs: contextExtras.cliArgs, usingLiveCdp: !!liveCdp }),
   ];
