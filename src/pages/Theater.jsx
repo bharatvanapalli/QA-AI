@@ -1791,6 +1791,19 @@ const ActionLine = React.memo(function ActionLine({ action }) {
     );
   }
   if (action.tool === 'resolution_diagnostic' || action.resolutionDiagnostic) {
+    // controllerMcpRuntimeAdapter.js sends this SAME event type for two
+    // opposite things: a genuine resolution failure (resolutionStatus
+    // NOT_FOUND/AMBIGUOUS, with a `target` field), and a Date/Time-owner
+    // resolution SUCCESS notification (resolutionStatus RESOLVED — that
+    // code path only runs after an earlier `if (status !== RESOLVED)
+    // { ...; return; }` already handled the failure case, so RESOLVED here
+    // is never a failure). This component treated every occurrence as an
+    // error, so a successful date-picker resolution rendered a red
+    // "Element Not Found" banner immediately before the pick succeeded —
+    // confirmed live against New_Odyssey's calendar flow. Skip rendering
+    // entirely for the success case; nothing went wrong, so there's
+    // nothing to show here.
+    if (action.resolutionStatus === 'RESOLVED') return null;
     const isAmbiguous = action.reason === 'multiple_semantic_snapshot_targets';
     const title = isAmbiguous ? 'Ambiguous Element Reference' : 'Element Not Found';
     const message = isAmbiguous

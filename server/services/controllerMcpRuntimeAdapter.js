@@ -150,7 +150,19 @@ function assertionRoleAllowed(contract, candidate) {
     return ['listbox', 'option', 'menu', 'menuitem', 'listitem', 'radio'].includes(role);
   }
   if (['VALUE', 'DATE', 'TIME', 'DATE_TIME', 'DATETIME'].includes(type)) {
-    return ['combobox', 'textbox', 'searchbox', 'spinbutton'].includes(role);
+    // 'button'/'generic'/'region'/'cell'/'paragraph' added after live
+    // evidence (New_Odyssey's Freight Term/Ship Direction post-selection
+    // value display) showed a VALUE-type check's target consistently
+    // resolving to `{ status: 'missing' }`: the field's own display
+    // element is a custom widget, not a native textbox/combobox, so it was
+    // being rejected here regardless of how well its name matched — this
+    // is called AFTER rankSemanticCandidates already filtered to
+    // high-confidence name matches (score >= 650), and
+    // uniqueBestAssertionTarget still requires exactly one top-scoring
+    // survivor (falling back to 'ambiguous', not a silent wrong pick) — so
+    // broadening the role set here degrades safely instead of introducing
+    // false matches.
+    return ['combobox', 'textbox', 'searchbox', 'spinbutton', 'button', 'generic', 'region', 'cell', 'paragraph'].includes(role);
   }
   if (/\bheading\b/.test(targetName)) return role === 'heading';
   if (/\boption\b/.test(targetName)) return ['option', 'menuitem', 'listitem', 'radio'].includes(role);
