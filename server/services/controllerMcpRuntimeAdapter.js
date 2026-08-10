@@ -1281,11 +1281,23 @@ function scoreSemanticCandidate(operation, candidate) {
   if (roleScore == null) return null;
   const reference = clean(operation?.targetIdentity?.reference);
   if (reference && reference !== clean(candidate.ref || candidate.reference)) return null;
+  // A name ending in a bare "*" is a required-field LABEL marker
+  // ("Ship Direction *"), not the field's current value. Broadening
+  // assertionRoleAllowed's accepted roles for VALUE/DATE/TIME checks
+  // (generic/button/region/etc, needed for custom widgets with no native
+  // input) surfaced a real tie live: the label and the actual value
+  // display both score identically well against a target named
+  // "Ship Direction field", so uniqueBestAssertionTarget correctly refused
+  // to guess and reported "ambiguous". A label is essentially never the
+  // desired target for any operation type, so this is a safe, generic
+  // tie-breaker rather than something scoped to one assertion type.
+  const labelMarkerPenalty = /\*\s*$/.test(clean(candidate.accessibleName || candidate.name)) ? -120 : 0;
   return lexicalScore
     + roleScore
     + contextIntentScore(operation, candidate)
     + Math.min(40, Math.max(0, Number(candidate.stability) || 0) / 3)
-    + (reference ? 500 : 0);
+    + (reference ? 500 : 0)
+    + labelMarkerPenalty;
 }
 
 function rankSemanticCandidates(operation, candidates = []) {
@@ -2553,8 +2565,21 @@ function createControllerMcpRuntimeAdapter({
     // diagnostic every time — confirmed live as 6-7 repeats of "The page
     // changed, so I re-located..." for one field. Only send when the
     // resolved ref actually changed since the last send for this operation.
+    // MCP's element refs are scoped to a single browser_snapshot call, not
+    // stable DOM-node identifiers — a brand new snapshot (forced fresh for
+    // every reconcile attempt) simply will not contain the OLD ref from an
+    // earlier snapshot, regardless of whether anything on the page
+    // actually changed. For a pure observation/assertion retry loop, NO
+    // dispatch ever happens between attempts, so there is no real event
+    // that could have "changed the page" — the diagnostic was firing on
+    // ordinary ref churn and mislabeling it as a page transition. Confirmed
+    // live: a user watching the transcript correctly asked why it says
+    // "the page changed" when nothing on the page changed. Only genuinely
+    // meaningful right after a real dispatch (phase 'post_dispatch') —
+    // that's the one case where the page could plausibly have reacted to
+    // an action we just took.
     const reresolveDedupeKey = `reresolve:${operation.operationId}`;
-    if (semanticOwnerReresolved && lastNarrationByOperation.get(reresolveDedupeKey) !== ownerCandidate.ref) {
+    if (semanticOwnerReresolved && phase === 'post_dispatch' && lastNarrationByOperation.get(reresolveDedupeKey) !== ownerCandidate.ref) {
       lastNarrationByOperation.set(reresolveDedupeKey, ownerCandidate.ref);
       send({
         type: 'controller.proof-diagnostic',
