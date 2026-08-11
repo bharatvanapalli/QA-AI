@@ -64,9 +64,63 @@ function deterministicNormalize(text) {
   cleaned = cleaned.replace(/^\s*#{1,6}\s*(?:Test\s*Data|Inline\s*Test\s*Data|Data)\s*$/gim, 'Test Data:');
   cleaned = cleaned.replace(/^\s*#{1,6}\s*(?:Session\s*(?:&|and)\s*Dependency|Session\s*Policy|Session\s*Requirement)\s*$/gim, 'Session Policy:');
 
-  // Clean noisy conversational filler phrases in steps
-  cleaned = cleaned.replace(/\b(?:click\s+(?:on\s+)?(?:the\s+)?button\s+that\s+opens\s+(?:the\s+)?)\b/gi, 'Click ');
-  cleaned = cleaned.replace(/\b(?:close\s+(?:the\s+)?(?:modal|dialog|popup)\s+using\s+its\s+close\s+(?:control|button|icon))\b/gi, 'Click "Close button"');
+  // Ensure standalone "Verify that 'quoted text'" without predicate becomes "Verify that 'quoted text' is visible"
+  cleaned = cleaned.replace(/\bVerify\s+(?:that\s+)?("(?:[^"\\]|\\.)+"|'[^']+')(?:\s*)$/gim, 'Verify that $1 is visible');
+
+function splitOutsideQuotes(text) {
+  const parts = [];
+  let current = '';
+  let inQuotes = false;
+  let quoteChar = '';
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    if ((char === '"' || char === "'" || char === '“' || char === '”') && (i === 0 || text[i - 1] !== '\\')) {
+      if (!inQuotes) {
+        inQuotes = true;
+        quoteChar = char;
+      } else if (char === quoteChar || (quoteChar === '“' && char === '”')) {
+        inQuotes = false;
+        quoteChar = '';
+      }
+      current += char;
+    } else if (!inQuotes && text.slice(i).match(/^\s+(?:-|—)\s+/)) {
+      const match = text.slice(i).match(/^\s+(?:-|—)\s+/)[0];
+      if (current.trim()) parts.push(current.trim());
+      current = '';
+      i += match.length - 1;
+    } else {
+      current += char;
+    }
+  }
+  if (current.trim()) parts.push(current.trim());
+  return parts.length ? parts : [text.trim()];
+}
+
+  // Expand single-line numbered steps with inline ' - ' or ' — ' into sequential numbered steps
+  const expandedLines = [];
+  let stepNumber = 1;
+  for (const line of cleaned.split(/\r?\n/)) {
+    const match = line.match(/^\s*\d+[.)]\s+(.+)$/);
+    if (match) {
+      const parts = splitOutsideQuotes(match[1]);
+      for (const part of parts) {
+        let item = part.trim();
+        if (item) {
+          item = item.replace(/\bVerify\s+(?:that\s+)?("(?:[^"\\]|\\.)+"|'[^']+')\s*$/i, 'Verify that $1 is visible');
+          expandedLines.push(`${stepNumber}. ${item}`);
+          stepNumber += 1;
+        }
+      }
+    } else {
+      expandedLines.push(line);
+    }
+  }
+  cleaned = expandedLines.join('\n');
+
+  if (!/^\s*(?:Scenario|Steps|Requirement\s+Title)\s*:/im.test(cleaned)) {
+    cleaned = `Scenario: User Flow\n\nSteps:\n${cleaned}`;
+  }
 
   return cleaned.trim();
 }

@@ -471,7 +471,19 @@ function normalizePersistedStep(step, context) {
 
 function normalizeDeclaredAssertions(row, path, findings, sensitiveValues) {
   const raw = decodeArray(row.declaredAssertions, `${path}.declaredAssertions`, findings);
-  const ordered = orderRows(raw.filter((entry, index) => {
+  const normalizedRaw = (Array.isArray(raw) ? raw : []).map((entry, index) => {
+    if (typeof entry === 'string') {
+      return {
+        id: `decl-assert-${index + 1}`,
+        ordinal: index + 1,
+        type: 'Assertion',
+        target: { name: sanitizeString(entry, sensitiveValues) },
+        description: entry,
+      };
+    }
+    return entry;
+  });
+  const ordered = orderRows(normalizedRaw.filter((entry, index) => {
     if (isPlainObject(entry)) return true;
     addFinding(findings, `${path}.declaredAssertions[${index}]`, CODES.OBJECT_REQUIRED, 'Each persisted assertion must be an object.');
     return false;

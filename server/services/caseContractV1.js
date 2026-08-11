@@ -761,7 +761,7 @@ function collectStepTexts(lines) {
     if (listed) {
       const indentation = listed[1].replace(/\t/g, '    ').length;
       const candidate = clean(listed[2]);
-      if (indentation > 0 && currentIndex >= 0) {
+      if (indentation > 0 && currentIndex >= 0 && !isExecutableCandidate(candidate)) {
         steps[currentIndex] = clean(`${steps[currentIndex]} ${candidate}`);
         continue;
       }
@@ -1974,6 +1974,8 @@ module.exports = {
   envNameFor,
   _private: {
     bindText,
+    buildSteps,
+    buildAssertions,
     collectData,
     collectStepTexts,
     decomposeStepText,
