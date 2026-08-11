@@ -2185,6 +2185,8 @@ router.post(
             })),
             ...(storyDataAlignmentPlanV1.conflicts || []),
           ];
+          throw err;
+        }
         const shouldPreviewOnly = appendToCurrent
           && (requestBody.previewOnly === true || requestBody.persist === false || requestBody.reviewMode === 'preview' || refinementRequested);
         if (shouldPreviewOnly && typeof appendDesignText === 'string' && appendDesignText.trim()) {
