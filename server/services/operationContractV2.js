@@ -75,9 +75,10 @@ const TYPE_INFERENCE_RULES = [
   { pattern: /^\s*(?:press\s+shortcut|hotkey|press\s+combination|key\s+combination)\b/i, type: 'Hotkey' },
   { pattern: /^\s*press\s+(?:the\s+)?(?:tab|enter|escape|backspace|delete|arrow\w*|control|alt|shift|space|home|end|page\s*(?:up|down)|f\d{1,2})\b/i, type: 'PressKey' },
   // Dialogs & Alerts
-  { pattern: /^\s*(?:accept\s+(?:the\s+)?alert|confirm\s+(?:the\s+)?alert|ok\s+(?:the\s+)?alert)\b/i, type: 'AcceptAlert' },
-  { pattern: /^\s*(?:dismiss\s+(?:the\s+)?alert|cancel\s+(?:the\s+)?alert)\b/i, type: 'DismissAlert' },
-  { pattern: /^\s*(?:type|enter|input)\s+into\s+(?:the\s+)?(?:prompt|alert)\b/i, type: 'TypeAlert' },
+  { pattern: /^\s*(?:accept\s+(?:the\s+)?(?:alert|prompt|dialog|confirm)|confirm\s+(?:the\s+)?(?:alert|prompt|dialog)|ok\s+(?:the\s+)?(?:alert|prompt|dialog))\b/i, type: 'AcceptAlert' },
+  { pattern: /^\s*(?:dismiss\s+(?:the\s+)?(?:alert|prompt|dialog|confirm)|cancel\s+(?:the\s+)?(?:alert|prompt|dialog|confirm))\b/i, type: 'DismissAlert' },
+  { pattern: /^\s*(?:type|enter|input)\s+(?:["'].*?["']|.+?)\s+in(?:to)?\s+(?:the\s+)?(?:prompt|alert|dialog)\b/i, type: 'TypeAlert' },
+  { pattern: /^\s*(?:type|enter|input)\s+in(?:to)?\s+(?:the\s+)?(?:prompt|alert|dialog)\b/i, type: 'TypeAlert' },
   // Data & Clipboard
   { pattern: /^\s*(?:copy|copy\s+to\s+clipboard)\b/i, type: 'Copy' },
   { pattern: /^\s*(?:paste|paste\s+from\s+clipboard)\b/i, type: 'Paste' },

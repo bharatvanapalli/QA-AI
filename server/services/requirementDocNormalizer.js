@@ -46,7 +46,8 @@ function isAlreadyCanonical(text) {
 }
 
 /**
- * Deterministic pre-pass to normalize simple ATX headers, strip modal helpers, and clean [Must]/[Should] tags.
+ * Deterministic pre-pass to normalize simple ATX headers, strip modal helpers, clean [Must]/[Should] tags,
+ * and clean noisy conversational phrases into concise action targets.
  */
 function deterministicNormalize(text) {
   let cleaned = stripModalHelpers(text);
@@ -63,11 +64,15 @@ function deterministicNormalize(text) {
   cleaned = cleaned.replace(/^\s*#{1,6}\s*(?:Test\s*Data|Inline\s*Test\s*Data|Data)\s*$/gim, 'Test Data:');
   cleaned = cleaned.replace(/^\s*#{1,6}\s*(?:Session\s*(?:&|and)\s*Dependency|Session\s*Policy|Session\s*Requirement)\s*$/gim, 'Session Policy:');
 
+  // Clean noisy conversational filler phrases in steps
+  cleaned = cleaned.replace(/\b(?:click\s+(?:on\s+)?(?:the\s+)?button\s+that\s+opens\s+(?:the\s+)?)\b/gi, 'Click ');
+  cleaned = cleaned.replace(/\b(?:close\s+(?:the\s+)?(?:modal|dialog|popup)\s+using\s+its\s+close\s+(?:control|button|icon))\b/gi, 'Click "Close button"');
+
   return cleaned.trim();
 }
 
 const SYSTEM_PROMPT = `You are a strict QA requirement structure normalizer.
-Your ONLY job is to take an uploaded requirement document (user story, BDD scenario, or markdown test notes)
+Your ONLY job is to take an uploaded requirement document (user story, BDD scenario, or natural conversational test notes)
 and rewrite it into the EXACT canonical colon-suffixed section format required by the deterministic test compiler.
 
 CANONICAL SECTIONS TO USE (MUST USE COLON SUFFIX):
@@ -93,9 +98,15 @@ STRICT REWRITE RULES:
    "### Test Data" -> "Test Data:"
 2. Strip or integrate [Must] / [Should] / [Critical] tags cleanly.
 3. Remove modal helpers from assertions ("should be disabled" -> "is disabled").
-4. NEVER emit unbuilt assertion types (such as AssertUnchecked, AssertFocused, AssertEmpty).
-5. Preserve table rows, parameters, and {{variable}} tokens EXACTLY without modification.
-6. Output ONLY the canonical text. NO markdown code blocks (\`\`\`), NO preamble, NO closing commentary.`;
+4. Normalize conversational action phrases into clean action verbs and clean target names:
+   - "Click the button that opens the simple alert" -> Click "Simple Alert"
+   - "Accept the alert" / "Accept the prompt" -> Accept alert / Accept prompt
+   - "Dismiss the alert" -> Dismiss alert
+   - "Enter 'Ada Lovelace' in the prompt" -> Type "Ada Lovelace" into prompt
+   - "Close the modal using its close control" -> Click "Close button"
+5. NEVER emit unbuilt assertion types (such as AssertUnchecked, AssertFocused, AssertEmpty).
+6. Preserve table rows, parameters, and {{variable}} tokens EXACTLY without modification.
+7. Output ONLY the canonical text. NO markdown code blocks (\`\`\`), NO preamble, NO closing commentary.`;
 
 /**
  * Normalizes an uploaded requirement document into canonical caseContractV1 format.

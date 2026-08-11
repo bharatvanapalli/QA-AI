@@ -122,13 +122,33 @@ function writeInitScript(project, session) {
   lines.push('(function qaaiInit() {');
   lines.push('  try {');
 
-  // Dialog auto-accept — default ON unless project flag is false.
+  // Dialog auto-accept & dialog history recording — default ON unless project flag is false.
   const autoAccept = project?.autoAcceptDialogs !== false;
+  lines.push('    // Dialog history buffer for assertion verification');
+  lines.push('    window.__qaai_dialogs = window.__qaai_dialogs || [];');
+  lines.push('    window.__qaai_last_dialog = null;');
+  lines.push('    window.onbeforeunload = null;');
+  lines.push('    try { window.addEventListener("beforeunload", function(e) { e.stopImmediatePropagation(); }, true); } catch (_) {}');
   if (autoAccept) {
     lines.push('    // E10.5 — Auto-accept unexpected dialogs so the agent does not hang.');
-    lines.push('    window.alert = function(_msg) {};');
-    lines.push('    window.confirm = function(_msg) { return true; };');
-    lines.push('    window.prompt = function(_msg, def) { return def != null ? String(def) : ""; };');
+    lines.push('    window.alert = function(_msg) {');
+    lines.push('      const entry = { type: "alert", message: String(_msg || ""), time: Date.now() };');
+    lines.push('      window.__qaai_dialogs.push(entry);');
+    lines.push('      window.__qaai_last_dialog = entry;');
+    lines.push('    };');
+    lines.push('    window.confirm = function(_msg) {');
+    lines.push('      const entry = { type: "confirm", message: String(_msg || ""), time: Date.now() };');
+    lines.push('      window.__qaai_dialogs.push(entry);');
+    lines.push('      window.__qaai_last_dialog = entry;');
+    lines.push('      return true;');
+    lines.push('    };');
+    lines.push('    window.prompt = function(_msg, def) {');
+    lines.push('      const val = def != null ? String(def) : "";');
+    lines.push('      const entry = { type: "prompt", message: String(_msg || ""), defaultValue: val, time: Date.now() };');
+    lines.push('      window.__qaai_dialogs.push(entry);');
+    lines.push('      window.__qaai_last_dialog = entry;');
+    lines.push('      return val;');
+    lines.push('    };');
   }
 
   // Evidence-only recorder. It captures event shape and selector hints, never

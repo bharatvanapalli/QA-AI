@@ -177,7 +177,7 @@ function inferAdapterKind(operation = {}, resolution = {}, context = {}) {
   if (type === 'Scroll') return ADAPTER_KIND.REVEAL;
   if (type === 'Upload') return ADAPTER_KIND.UPLOAD;
   if (['SwitchContext'].includes(type) || ['frame', 'browser_context'].includes(role)) return ADAPTER_KIND.CONTEXT;
-  if (type === 'Close' || role === 'dialog') return ADAPTER_KIND.DIALOG;
+  if (['Close', 'AcceptAlert', 'DismissAlert', 'TypeAlert'].includes(type) || role === 'dialog') return ADAPTER_KIND.DIALOG;
   if (type === 'Date') return ADAPTER_KIND.DATE;
   if (['Time', 'DateTime'].includes(type)) return ADAPTER_KIND.TIME;
   if (type === 'Select') {
@@ -696,14 +696,20 @@ function createTypedAdapterPlan({ operation, resolution = {}, context = {} } = {
       return planObservation(operation, kind);
     case ADAPTER_KIND.REVEAL:
       return planReveal(operation);
-    case ADAPTER_KIND.DIALOG:
+    case ADAPTER_KIND.DIALOG: {
+      const isDismiss = operation.type === 'DismissAlert' || operation.type === 'Close';
+      const promptVal = operation.value || operation.targetIdentity?.value || null;
       return commonPlan(operation, kind, {
-        mutation: mutation('browser_handle_dialog', { action: operation.type === 'Close' ? 'dismiss' : 'accept' }),
+        mutation: mutation('browser_handle_dialog', {
+          action: isDismiss ? 'dismiss' : 'accept',
+          ...(promptVal ? { promptText: String(promptVal) } : {}),
+        }),
         proofContract: proof(`${operation.operationId}:dialog`, [
           { id: 'dialog-state', allOf: [CLAIM.DIALOG_STATE] },
         ]),
         recoveryOptions: ['REFRESH_SNAPSHOT'],
       });
+    }
     case ADAPTER_KIND.CONTEXT:
       return commonPlan(operation, kind, {
         mutation: mutation('browser_tabs', { action: 'select', target: resolvedRef(resolution) }),
