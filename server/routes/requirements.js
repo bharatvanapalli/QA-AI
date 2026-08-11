@@ -8,6 +8,7 @@ const ado = require('../services/ado');
 const jira = require('../services/jira');
 const integrations = require('../services/integrations');
 const { extractText } = require('../services/docs');
+const { normalizeRequirementDocument } = require('../services/requirementDocNormalizer');
 const { resolveAiCredentials } = require('../lib/resolveAiCredentials');
 const { buildDocumentUnderstanding } = require('../services/documentUnderstanding');
 const { requireAuth } = require('../middleware/auth');
@@ -202,14 +203,20 @@ router.post('/upload', requireCsrf, async (req, res, next) => {
       // includes them (sourceTypeForCategory → 'VISUAL') and preserves their
       // provenance; text docs keep the heuristic category.
       const category = parser === 'vision' ? 'visual' : guessCategory(d.name || '', text);
+      const normalizedText = await normalizeRequirementDocument(text, {
+        project,
+        userId: req.user.id,
+        ai: aiCreds,
+      });
+
       const doc = await prisma.document.create({
         data: {
           projectId: project.id,
           sprintId,
           name: d.name || 'untitled',
           mimeType: d.mimeType || d.type || null,
-          sizeBytes: typeof d.sizeBytes === 'number' ? d.sizeBytes : Buffer.byteLength(text, 'utf8'),
-          content: text,
+          sizeBytes: typeof d.sizeBytes === 'number' ? d.sizeBytes : Buffer.byteLength(normalizedText, 'utf8'),
+          content: normalizedText,
           category,
         },
       });
@@ -220,14 +227,7 @@ router.post('/upload', requireCsrf, async (req, res, next) => {
           sourceType: 'upload',
           sourceIdentifier: doc.id,
           title: d.name || null,
-          // Lifted from 8000 → 32000. The 8K cap was clipping substantive BRDs
-          // and dropping MANUAL ONLY-flagged stories that lived past the cut
-          // (observed on SauceDemo project 2026-05-28: 4 of 5 manual stories
-          // missing from Architect output, partially because the source flag
-          // was outside the 8K window). The Architect's join-and-slice still
-          // caps at 80K total, so per-doc 32K stays well within budget even
-          // for projects with 3–5 source documents.
-          content: text.slice(0, 32000),
+          content: normalizedText.slice(0, 32000),
           category,
         },
       });
