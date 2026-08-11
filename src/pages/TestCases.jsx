@@ -6560,9 +6560,9 @@ export default function TestCases() {
       continuationParentScenarioId,
       continuationSessionMode,
       forceAtlasRefresh: forceAtlasRefresh === true,
-      previewOnly: true,
-      persist: false,
-      reviewMode: 'preview',
+      previewOnly: false,
+      persist: true,
+      reviewMode: 'none',
     };
     setAddScenarioSubmitting(true);
     try {

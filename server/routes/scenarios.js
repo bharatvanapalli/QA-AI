@@ -82,6 +82,7 @@ const {
   findScenarioDeletionBlockers,
   scenarioDeletionBlockedError,
 } = require('../services/scenarioDeletionPolicy');
+const { normalizeRequirementDocument } = require('../services/requirementDocNormalizer');
 
 function summarizePostPersistDefects(verification, limit = 12) {
   const defects = Array.isArray(verification && verification.defects) ? verification.defects : [];
@@ -1519,8 +1520,8 @@ router.post(
       let effectiveGuidance = sessionGuidance;
       let appendDesignText = null;
       if (appendToCurrent) {
-        const designText = appendRequest.sessionGuidance;
-        if (!designText) {
+        const rawDesignText = appendRequest.sessionGuidance;
+        if (!rawDesignText) {
           failScenarioJob('Add Scenario requires pasted test design text.');
           return res.status(400).json({
             success: false,
@@ -1528,7 +1529,16 @@ router.post(
             message: 'Paste the target-app test design before adding a scenario.',
           });
         }
+        const designText = await normalizeRequirementDocument(rawDesignText, {
+          project,
+          userId: req.user.id,
+        });
         appendDesignText = designText;
+        if (appendDesignRequirement) {
+          appendDesignRequirement.content = designText;
+          appendDesignRequirement.body = designText;
+          appendDesignRequirement.text = designText;
+        }
         effectiveGuidance = [
           '[ADD TARGETED SCENARIO]: The user is ADDING specific coverage to an EXISTING suite. Author ONLY the scenario(s) described below — do NOT regenerate or duplicate existing coverage, and output a SHORT scenarios array (ideally one).',
           '[SEMANTIC ADD SCENARIO AUTHORING CONTRACT]: Treat the pasted text as a human-authored test design, even when it is noisy, repetitive, or only partly structured. Infer its intended browser flow before authoring candidate steps.',
