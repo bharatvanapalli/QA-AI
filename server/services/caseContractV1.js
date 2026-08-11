@@ -13,7 +13,11 @@ const SECTION_NAMES = new Set([
   'title',
   'requirement title',
   'scenario title',
+  'scenario name',
   'test case title',
+  'test case name',
+  'case title',
+  'case name',
   'target url',
   'scenario',
   'scenarios',
@@ -276,7 +280,7 @@ function parseSectionLine(line) {
 function parseCaseHeader(line) {
   const stripped = String(line || '').replace(/^\s*#{1,6}\s*/, '').trim();
   if (/^expected\s+(?:scenario|test\s+case)\s+count\s*:/i.test(stripped)) return null;
-  let match = stripped.match(/^(?:test\s+)?case(?:\s+#?\s*([A-Za-z0-9._-]+))?\s*(?::|[\-\u2013\u2014])\s*(.+)$/i);
+  let match = stripped.match(/^(?:test\s+)?case(?:\s+(?:name|title))?(?:\s+#?\s*([A-Za-z0-9._-]+))?\s*(?::|[\-\u2013\u2014])\s*(.+)$/i);
   if (match) return { externalId: clean(match[1]) || null, name: clean(match[2]) };
   match = stripped.match(/^(TC[-_ ]?[A-Za-z0-9._-]+)\s*(?::|[\-\u2013\u2014])\s*(.+)$/i);
   if (match) return { externalId: clean(match[1]), name: clean(match[2]) };
@@ -285,7 +289,7 @@ function parseCaseHeader(line) {
 
 function parseScenarioHeader(line) {
   const stripped = String(line || '').replace(/^\s*#{1,6}\s*/, '').trim();
-  const match = stripped.match(/^scenario(?:\s+#?\s*([A-Za-z0-9._-]+))?\s*:\s*(.+)$/i);
+  const match = stripped.match(/^scenario(?:\s+(?:name|title))?(?:\s+#?\s*([A-Za-z0-9._-]+))?\s*:\s*(.+)$/i);
   return match ? { externalId: clean(match[1]) || null, name: clean(match[2]) } : null;
 }
 
@@ -603,7 +607,7 @@ function findCaseRanges(lines, knownScenarioRanges = null) {
   const topLevelTitles = [];
   for (let index = 0; index < lines.length; index += 1) {
     const sectionLine = parseSectionLine(lines[index]);
-    if (!sectionLine || !['requirement title', 'scenario title'].includes(sectionLine.name)) continue;
+    if (!sectionLine || !['title', 'requirement title', 'scenario title', 'scenario name', 'scenario', 'test case title', 'test case name', 'test case', 'user story', 'feature'].includes(sectionLine.name)) continue;
     const name = sectionAuthoredValue(lines, index, sectionLine);
     topLevelTitles.push({ name, start: index });
   }
@@ -622,7 +626,7 @@ function findCaseRanges(lines, knownScenarioRanges = null) {
         caseHeader = parseCaseHeader(lines[cursor]);
         if (!caseHeader) {
           const sectionLine = parseSectionLine(lines[cursor]);
-          if (sectionLine && ['test case', 'test case title'].includes(sectionLine.name)) {
+          if (sectionLine && ['test case', 'test case title', 'test case name', 'case title', 'case name'].includes(sectionLine.name)) {
             const name = sectionAuthoredValue(lines, cursor, sectionLine);
             if (name) caseHeader = { externalId: null, name };
           }
@@ -650,7 +654,7 @@ function findCaseRanges(lines, knownScenarioRanges = null) {
       explicit.push({ ...header, start: index, bodyStart: index + 1 });
       continue;
     }
-    if (sectionLine && ['test case', 'test case title'].includes(sectionLine.name)) {
+    if (sectionLine && ['test case', 'test case title', 'test case name', 'case title', 'case name'].includes(sectionLine.name)) {
       const name = sectionAuthoredValue(lines, index, sectionLine);
       if (name) {
         explicit.push({
@@ -670,20 +674,11 @@ function findCaseRanges(lines, knownScenarioRanges = null) {
     }
   }
   if (explicit.length) {
-    return explicit.map((entry, index) => {
-      const nextCaseStart = index + 1 < explicit.length ? explicit[index + 1].start : lines.length;
-      const scenarioScope = scenarioRanges.find((scenario) => (
-        entry.start > scenario.start && entry.start < scenario.end
-      ));
-      return {
-        ...entry,
-        // A case owns only the lines inside its authored scenario. Without this
-        // boundary, the final case in one scenario absorbs the next scenario's
-        // preamble and its Test Data block.
-        end: scenarioScope ? Math.min(nextCaseStart, scenarioScope.end) : nextCaseStart,
-        partitionReason: 'explicit_case',
-      };
-    });
+    return explicit.map((entry, index) => ({
+      ...entry,
+      end: index + 1 < explicit.length ? explicit[index + 1].start : lines.length,
+      partitionReason: 'explicit_test_case',
+    }));
   }
 
   const scenarios = [];
@@ -691,7 +686,7 @@ function findCaseRanges(lines, knownScenarioRanges = null) {
     const header = parseScenarioHeader(lines[index]);
     if (header) scenarios.push({ ...header, start: index, bodyStart: index + 1 });
   }
-  if (scenarios.length > 1) {
+  if (scenarios.length) {
     return scenarios.map((entry, index) => ({
       ...entry,
       end: index + 1 < scenarios.length ? scenarios[index + 1].start : lines.length,
@@ -702,7 +697,7 @@ function findCaseRanges(lines, knownScenarioRanges = null) {
   let authoredTitle = '';
   for (let index = 0; index < lines.length; index += 1) {
     const section = parseSectionLine(lines[index]);
-    if (!section || !['title', 'requirement title', 'scenario title', 'test case title'].includes(section.name)) continue;
+    if (!section || !['title', 'requirement title', 'scenario title', 'scenario name', 'scenario', 'test case title', 'test case name', 'test case', 'user story', 'feature'].includes(section.name)) continue;
     authoredTitle = section.inline;
     if (!authoredTitle) {
       for (let cursor = index + 1; cursor < lines.length; cursor += 1) {
@@ -716,7 +711,7 @@ function findCaseRanges(lines, knownScenarioRanges = null) {
     }
     if (authoredTitle) break;
   }
-  const scenarioLine = lines.find((line) => /^\s*scenario\s*:/i.test(line));
+  const scenarioLine = lines.find((line) => /^\s*(?:scenario|test\s+case|case)(?:\s+(?:name|title))?\s*:/i.test(line));
   const name = authoredTitle || clean((scenarioLine || '').replace(/^[^:]+:\s*/, '')) || 'Procedural test flow';
   return [{ externalId: null, name, start: 0, bodyStart: 0, end: lines.length, partitionReason: 'single_behavior_topology' }];
 }

@@ -58,7 +58,8 @@ function deterministicNormalize(text) {
   // Normalize standard Markdown ATX headers to colon-suffixed headers
   cleaned = cleaned.replace(/^\s*#{1,6}\s*(?:User\s+Story|Feature|Requirement\s+Title|Title)\s*:\s*(.+)$/gim, 'Requirement Title: $1');
   cleaned = cleaned.replace(/^\s*#{1,6}\s*(?:User\s+Story|Feature|Requirement)\s*[-—–]\s*(.+)$/gim, 'Requirement Title: $1');
-  cleaned = cleaned.replace(/^\s*#{1,6}\s*Scenario\s*(?:\d+)?\s*:\s*(.+)$/gim, 'Scenario: $1');
+  cleaned = cleaned.replace(/^\s*#{1,6}\s*Scenario(?:\s+(?:Name|Title))?(?:\s+\d+)?\s*:\s*(.+)$/gim, 'Scenario: $1');
+  cleaned = cleaned.replace(/^\s*#{1,6}\s*(?:Test\s+Case|Case)(?:\s+(?:Name|Title))?(?:\s+\d+)?\s*:\s*(.+)$/gim, 'Test Case: $1');
   cleaned = cleaned.replace(/^\s*#{1,6}\s*(?:Steps|Test\s+Steps|Test\s+Procedure|Procedure|Flow)\s*$/gim, 'Steps:');
   cleaned = cleaned.replace(/^\s*#{1,6}\s*(?:Validations?\s*(?:&|and)\s*Acceptance\s*Criteria|Acceptance\s*Criteria|Validations?|Expected\s*Results?|Final\s*Validation)\s*$/gim, 'Final Validation:');
   cleaned = cleaned.replace(/^\s*#{1,6}\s*(?:Test\s*Data|Inline\s*Test\s*Data|Data)\s*$/gim, 'Test Data:');
