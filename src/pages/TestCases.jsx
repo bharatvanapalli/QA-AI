@@ -2397,7 +2397,7 @@ function AddScenarioPreviewModal({
             <Check className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
             <span>
               Current generation remains unchanged until this draft is explicitly approved.
-              {preview.revision && <span className="ml-1 font-mono text-xs">Revision {preview.revision}</span>}
+              {preview.revision && <span className="ml-1.5 inline-flex items-center rounded-md bg-info-100 px-1.5 py-0.5 text-2xs font-mono font-medium text-info-700">v{String(preview.revision).replace(/^sha256-/, '').slice(0, 8)}</span>}
             </span>
           </div>
         </header>
