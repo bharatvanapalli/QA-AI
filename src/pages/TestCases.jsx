@@ -1877,8 +1877,7 @@ function ActionChip({ icon: Icon, label, onClick, loading, tone = 'ink', kbd }) 
 // current suite, grounded in the verified site atlas + uploaded test data. The
 // "end-to-end journey" toggle tells the architect to author ONE chained flow
 // instead of decomposing into atomic cases.
-// ─────────────────────────────────────────────────────────────────────────────
-function AddScenarioModal({ open, onClose, onSubmit, onInterpret, submitting, interpreting, scenarios = [] }) {
+function AddScenarioModal({ open, onClose, onSubmit, onInterpret, onTerminate, submitting, interpreting, scenarios = [] }) {
   const [design, setDesign] = useState('');
   const [journey, setJourney] = useState(true);
   const [forceAtlasRefresh, setForceAtlasRefresh] = useState(false);
@@ -1933,16 +1932,29 @@ function AddScenarioModal({ open, onClose, onSubmit, onInterpret, submitting, in
         className="max-h-[min(90vh,860px)] w-full max-w-2xl overflow-y-auto rounded-[22px] border border-white/70 bg-white/95 p-5 shadow-card backdrop-blur-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start gap-3">
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-pill bg-accent-50 text-accent-600 shrink-0">
-            <Sparkles className="h-5 w-5" aria-hidden="true" />
-          </span>
-          <div className="min-w-0">
-            <h2 className="text-lg font-bold text-ink-950">Add test design</h2>
-            <p className="mt-0.5 text-sm text-ink-500">
-              Paste a messy paragraph, structured flow, or inline test data. QAAI will preserve it and interpret the actions, values, and expected results.
-            </p>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-pill bg-accent-50 text-accent-600 shrink-0">
+              <Sparkles className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="text-lg font-bold text-ink-950">Add test design</h2>
+              <p className="mt-0.5 text-sm text-ink-500">
+                Paste a messy paragraph, structured flow, or inline test data. QAAI will preserve it and interpret the actions, values, and expected results.
+              </p>
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (busy && onTerminate) onTerminate();
+              onClose();
+            }}
+            className="rounded-full p-1.5 text-ink-400 hover:bg-ink-100 hover:text-ink-700 transition"
+            aria-label="Close"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
         <label className="mt-4 block text-xs font-semibold uppercase tracking-wide text-ink-500">Describe the test flow</label>
@@ -2040,14 +2052,27 @@ function AddScenarioModal({ open, onClose, onSubmit, onInterpret, submitting, in
         </div>
 
         <div className="mt-5 flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={() => { if (!busy) onClose(); }}
-            disabled={busy}
-            className="inline-flex h-10 items-center rounded-pill border border-ink-200/70 bg-white/78 px-4 text-sm font-semibold text-ink-700 transition hover:bg-white disabled:opacity-45"
-          >
-            Cancel
-          </button>
+          {busy ? (
+            <button
+              type="button"
+              onClick={() => {
+                if (onTerminate) onTerminate();
+                onClose();
+              }}
+              className="inline-flex h-10 items-center gap-1.5 rounded-pill border border-danger-200 bg-danger-50 px-4 text-sm font-semibold text-danger-700 transition hover:bg-danger-100 shadow-sm"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+              Cancel & Stop
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-10 items-center rounded-pill border border-ink-200/70 bg-white/78 px-4 text-sm font-semibold text-ink-700 transition hover:bg-white"
+            >
+              Cancel
+            </button>
+          )}
           <button
             type="button"
             onClick={() => onInterpret(requestPayload)}
@@ -7983,6 +8008,7 @@ export default function TestCases() {
             interpreting={interpretationSubmitting}
             scenarios={scenarios}
             onClose={() => setShowAddScenario(false)}
+            onTerminate={handleTerminate}
             onSubmit={handleAddScenario}
             onInterpret={handleInterpretAddScenario}
           />
