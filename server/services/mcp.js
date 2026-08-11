@@ -1251,6 +1251,28 @@ async function launchLiveCdpBrowser({ sessionId, viewport, userDataDir, project,
   }
 
   const context = await pw.chromium.launchPersistentContext(profileDir, launchOptions);
+
+  const setupDialogListener = (page) => {
+    try {
+      page.on('dialog', async (dialog) => {
+        const msg = dialog.message();
+        const type = dialog.type();
+        try {
+          await page.evaluate(({ t, m }) => {
+            if (typeof window.__qaai_render_dialog_modal === 'function') {
+              window.__qaai_render_dialog_modal(t, m);
+            }
+          }, { t: type, m: msg }).catch(() => {});
+        } catch (_) {}
+        try {
+          await dialog.accept().catch(() => {});
+        } catch (_) {}
+      });
+    } catch (_) {}
+  };
+  context.on('page', (p) => setupDialogListener(p));
+  context.pages().forEach((p) => setupDialogListener(p));
+
   if (contextExtras?.initScriptPath) {
     try { await context.addInitScript({ path: contextExtras.initScriptPath }); } catch (_) {}
   }
