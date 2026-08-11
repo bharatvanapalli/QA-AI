@@ -63,8 +63,15 @@ const app = express();
 app.set('trust proxy', 1);
 app.use(cors({
   origin(origin, cb) {
-    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
-    return cb(new Error(`CORS origin not allowed: ${origin}`));
+    if (!origin) return cb(null, true);
+    if (allowedOrigins.includes(origin)) return cb(null, true);
+    try {
+      const u = new URL(origin);
+      if (u.hostname === 'localhost' || u.hostname === '127.0.0.1' || u.hostname === '::1' || u.hostname === '[::1]') {
+        return cb(null, true);
+      }
+    } catch (_) {}
+    return cb(null, false);
   },
   credentials: true,
 }));
@@ -365,26 +372,22 @@ server.listen(PORT, () => {
   setImmediate(() => {
     try {
       if (process.platform === 'win32') {
-        // PowerShell: find all node.exe processes whose command line contains
-        // @playwright/mcp (our MCP subprocess) and kill each tree.
-        const { spawnSync } = require('child_process');
-        // Kill orphaned MCP node subprocesses (still running from a previous crash).
-        spawnSync('powershell.exe', [
+        const { execFile } = require('child_process');
+        execFile('powershell.exe', [
           '-NonInteractive', '-Command',
           `Get-CimInstance Win32_Process -Filter "Name='node.exe'" |` +
           ` Where-Object { $_.CommandLine -like '*@playwright/mcp*' } |` +
           ` ForEach-Object { taskkill /T /F /PID $_.ProcessId 2>$null }`,
-        ], { timeout: 8_000, encoding: 'utf8' });
-        // Kill orphaned Playwright Chrome instances whose parent node process is
-        // already gone. Playwright always launches Chrome with --disable-blink-features
-        // (a Playwright-specific flag absent from normal Chrome user sessions).
-        spawnSync('powershell.exe', [
-          '-NonInteractive', '-Command',
-          `Get-CimInstance Win32_Process -Filter "Name='chrome.exe'" |` +
-          ` Where-Object { $_.CommandLine -like '*--disable-blink-features*' } |` +
-          ` ForEach-Object { taskkill /T /F /PID $_.ProcessId 2>$null }`,
-        ], { timeout: 8_000, encoding: 'utf8' });
-        console.log('[server] orphan MCP/Chrome sweep complete');
+        ], { timeout: 8_000 }, () => {
+          execFile('powershell.exe', [
+            '-NonInteractive', '-Command',
+            `Get-CimInstance Win32_Process -Filter "Name='chrome.exe'" |` +
+            ` Where-Object { $_.CommandLine -like '*--disable-blink-features*' } |` +
+            ` ForEach-Object { taskkill /T /F /PID $_.ProcessId 2>$null }`,
+          ], { timeout: 8_000 }, () => {
+            console.log('[server] orphan MCP/Chrome sweep complete');
+          });
+        });
       }
     } catch (_) { /* non-fatal */ }
   });
