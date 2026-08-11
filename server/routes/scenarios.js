@@ -1817,13 +1817,13 @@ router.post(
             && atlasIdentityMatches
             && atlasSufficiency === 'sufficient'
             && atlasAgeMs <= AUTO_CRAWL_STALE_MS;
-          const reuseFreshCompatibleAtlas = reuseFreshAppendAtlas || reuseFreshEntryPageAtlas;
+          const reuseFreshCompatibleAtlas = (appendToCurrent && !explicitAtlasRefresh) || reuseFreshAppendAtlas || reuseFreshEntryPageAtlas;
           const refreshDecision = reuseFreshCompatibleAtlas
             ? {
               refresh: false,
               reason: null,
-              message: reuseFreshAppendAtlas
-                ? 'Using the existing fresh compatible site atlas for incremental Add Scenario authoring'
+              message: appendToCurrent
+                ? 'Using the existing site atlas for incremental Add Scenario authoring'
                 : 'Using the existing fresh sufficient entry-page atlas',
             }
             : plannedRefreshDecision;
