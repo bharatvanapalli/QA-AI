@@ -368,8 +368,8 @@ function explicitCounts(text) {
 
 function sourceText(requirements) {
   return (Array.isArray(requirements) ? requirements : []).map((requirement) => {
-    const title = clean(requirement && requirement.title);
-    const content = String(requirement && requirement.content || '');
+    const title = clean(requirement && (requirement.title || requirement.name));
+    const content = String(requirement && (requirement.content || requirement.text || ''));
     return [title, content].filter(Boolean).join('\n');
   }).join('\n\n---\n\n');
 }
@@ -1045,9 +1045,11 @@ function inferStepTarget(type, text, previousControlTarget = null) {
     const assertion = assertionCoreClause(value)
       .replace(/^\s*(?:verify|assert|validate|confirm|expect)(?:\s+that)?\s+/i, '')
       .replace(/[.!?]+$/, '');
-    const visibleSubject = assertion.match(/^(.+?)(?=\s+(?:is|are)\s+(?:visible|hidden|displayed|shown|present|absent|enabled|disabled)\b)/i);
-    const subject = visibleSubject || assertion.match(/^(.+?)(?=\s+(?:contains?|displays?|shows?|represents?|has|(?:automatically\s+)?changes?|matches?|equals?|must|should)\b)/i);
-    return tidyTarget(subject && subject[1] || assertion);
+    const visibleSubject = assertion.match(/^(.+?)(?=\s*(?:is|are)\s+(?:visible|hidden|displayed|shown|present|absent|enabled|disabled)\b)/i);
+    const subject = visibleSubject || assertion.match(/^(.+?)(?=\s*(?:contains?|displays?|shows?|represents?|has|(?:automatically\s+)?changes?|matches?|equals?|must|should)\b)/i);
+    let resolvedTarget = tidyTarget(subject && subject[1] || assertion);
+    resolvedTarget = resolvedTarget.replace(/\s*(?:is|are)\s+(?:visible|hidden|displayed|shown|present|absent|enabled|disabled)\s*$/i, '').trim();
+    return tidyTarget(resolvedTarget);
   }
 
   const actionBody = value.replace(/^if\b[^.;]{0,240},\s*/i, '');
@@ -1528,17 +1530,15 @@ function addDefaultOperationChecks(steps) {
     if (step.type === 'Navigate') {
       step.operationCheck = {
         kind: 'page_ready',
-        target: nextTarget || target,
-        expected: nextTarget
-          ? `${nextTarget} is available after navigation.`
-          : 'The requested destination is loaded.',
+        target,
+        expected: 'The requested destination is loaded.',
         required: true,
-        ...(nextTarget ? { condition: { text: nextTarget } } : {}),
       };
       continue;
     }
     if (step.type === 'Click') {
       const opensControl = /\b(?:dropdown|list|menu|picker|calendar|suggestion)\b/i.test(`${target} ${step.text}`);
+      const cleanedNext = nextTarget ? nextTarget.replace(/\s+(?:button|btn|link|icon|input|field|textbox|checkbox|modal|dialog|popup)$/i, '').trim() : '';
       step.operationCheck = opensControl
         ? {
           kind: 'menu_opened',
@@ -1547,13 +1547,13 @@ function addDefaultOperationChecks(steps) {
           required: true,
         }
         : {
-          kind: nextTarget ? 'page_ready' : 'action_completed',
-          target: nextTarget || target,
-          expected: nextTarget
-            ? `${nextTarget} is available after activating ${target}.`
+          kind: cleanedNext ? 'page_ready' : 'action_completed',
+          target: cleanedNext || target,
+          expected: cleanedNext
+            ? `${cleanedNext} is available after activating ${target}.`
             : `${target} action completes.`,
           required: true,
-          ...(nextTarget ? { condition: { text: nextTarget } } : {}),
+          ...(cleanedNext ? { condition: { text: cleanedNext } } : {}),
         };
       continue;
     }

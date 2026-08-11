@@ -180,13 +180,47 @@ function valueResolver(valueRef) {
   return undefined;
 }
 
-function verdictError(outcome) {
-  const failed = outcome.operationResults
-    .map((result) => result.terminalDecision)
-    .filter((decision) => decision.state !== 'COMMITTED');
-  return failed.length
-    ? failed.map((decision) => `${decision.operationId}: ${decision.reason || decision.state}`).join('\n').slice(0, 4_000)
-    : null;
+function verdictError(outcome, contract) {
+  if (outcome?.paused) return 'Execution paused at an explicit manual boundary.';
+  const failedOps = (Array.isArray(outcome?.operationResults) ? outcome.operationResults : [])
+    .map((res) => ({
+      result: res,
+      decision: res.terminalDecision,
+      op: contract?.operations?.find((o) => o.operationId === res.operationId) || null,
+    }))
+    .filter(({ decision }) => decision && decision.state !== 'COMMITTED');
+
+  if (!failedOps.length) return null;
+
+  const summaries = failedOps.map(({ decision, op }, i) => {
+    const stepNum = op ? (contract.operations.indexOf(op) + 1) : (i + 1);
+    const action = op?.type || 'Action';
+    const target = op?.targetIdentity?.accessibleName || op?.targetIdentity?.label || op?.target || '';
+    const rawReason = String(decision?.reason || decision?.state || '');
+
+    let humanReason = rawReason;
+    if (rawReason.includes('exact_proof_unavailable') || rawReason.includes('all_exact_alternatives_mismatched')) {
+      if (action === 'Navigate') {
+        humanReason = `Navigation to "${target}" could not be confirmed — the destination page did not load or URL did not match.`;
+      } else if (action === 'Click') {
+        humanReason = `Could not locate or click "${target}" on the page.`;
+      } else if (action === 'Type' || action === 'Fill') {
+        humanReason = `Could not find input field "${target}" to enter text.`;
+      } else if (action.startsWith('Assert')) {
+        humanReason = `Assertion on "${target}" did not match expected value.`;
+      } else {
+        humanReason = `Action "${action}" on "${target}" could not be verified on the page.`;
+      }
+    } else if (rawReason.includes('timeout') || rawReason.includes('DEADLINE')) {
+      humanReason = `Operation timed out waiting for "${target}" to respond.`;
+    } else if (rawReason.includes('element_not_found') || rawReason.includes('unresolved')) {
+      humanReason = `Element "${target}" was not found on the page.`;
+    }
+
+    return `Step ${stepNum} (${action}${target ? ` "${target}"` : ''}): ${humanReason}`;
+  });
+
+  return summaries.join('\n');
 }
 
 function outcomeAllowsContinuation(outcome) {
@@ -687,11 +721,18 @@ async function run({
       const status = outcome.paused ? 'needs_human' : databaseStatus(outcome.verdict.verdict);
       const error = outcome.paused
         ? 'Execution paused at an explicit manual boundary.'
-        : verdictError(outcome);
+        : verdictError(outcome, contract);
       const replayIr = projectControllerReplayIr(contract, outcome, steps, assertions);
       const existingTc = await prisma.testCase.findUnique({ where: { id: testCase.id }, select: { id: true } });
       const validTcId = existingTc ? testCase.id : null;
       if (validTcId) {
+        const failedStep = steps.find((s) => s.status === 'fail' || s.status === 'blocked');
+        const failureAnalysis = error ? {
+          rootCause: error,
+          failedStepIndex: failedStep?.index || null,
+          failedAction: failedStep?.action || null,
+          failedTarget: failedStep?.target || null,
+        } : null;
         await prisma.runResult.create({
           data: {
             runId: runRow.id,
@@ -699,7 +740,9 @@ async function run({
             status,
             durationMs: Math.max(0, Date.now() - startedAt),
             error,
-            blockedReason: null,
+            reasoning: error ? `Step failed during execution:\n${error}` : null,
+            failureAnalysis: encodeJson(failureAnalysis),
+            blockedReason: status === 'blocked' ? error : null,
             screenshots: encodeJson(
               Array.isArray(browserSession?.screenshots)
                 ? browserSession.screenshots.map((s) => s.path || s.artifactRef).filter(Boolean)

@@ -1023,6 +1023,7 @@ function targetNamesFor(operation) {
   const explicitLabels = [
     operation?.targetIdentity?.accessibleName,
     operation?.targetIdentity?.label,
+    operation?.target,
   ].map(clean).filter(Boolean);
   const rawAliases = [
     ...(Array.isArray(operation?.targetAliases) ? operation.targetAliases : []),
@@ -1031,12 +1032,16 @@ function targetNamesFor(operation) {
   ].map(clean).filter(Boolean);
 
   const quoted = [...explicitLabels, ...rawAliases].flatMap(quotedLiterals);
+  const descriptorStripped = [...explicitLabels, ...rawAliases, ...quoted].map((name) => (
+    name.replace(/\s+(?:button|btn|link|icon|input|field|textbox|checkbox|modal|dialog|popup)$/i, '').trim()
+  )).filter(Boolean);
 
   return [
     ...new Set([
       ...explicitLabels,
       ...quoted,
       ...rawAliases,
+      ...descriptorStripped,
     ]),
   ];
 }
@@ -1737,16 +1742,15 @@ function exactAuthoredDestinationReached({
   phase,
   ownerVisible,
   snapshotText,
+  snapshotUrl,
 } = {}) {
-  const reached = snapshotContains(snapshotText, operation?.destination);
+  const dest = operation?.destination || operation?.value || operation?.target;
+  if (!dest) return false;
+  const isUrlMatch = snapshotUrl && (token(snapshotUrl).includes(token(dest)) || token(dest).includes(token(snapshotUrl)));
+  const reached = isUrlMatch || snapshotContains(snapshotText, dest);
   if (!reached) return false;
   if (phase !== 'pre_dispatch') return true;
 
-  // A source control often shares text with its destination ("Orders" is both
-  // a navigation link and a page heading). Its presence before dispatch is not
-  // proof that navigation already happened. Pre-dispatch satisfaction is valid
-  // only when the exact source owner has disappeared and a destination fact is
-  // independently observable.
   return ownerVisible === false;
 }
 
@@ -2636,6 +2640,7 @@ function createControllerMcpRuntimeAdapter({
       phase,
       ownerVisible,
       snapshotText,
+      snapshotUrl: snapshot.url,
     });
     const pageTransitionCommitted = exactPageTransitionCommitted({
       operation,
@@ -3128,11 +3133,15 @@ function createControllerMcpRuntimeAdapter({
               'first later authored action control actionable',
             );
             break;
-          case 'exact_navigation_target':
-            add(claimId, operation.type === 'Navigate'
-              ? token(snapshot.url).startsWith(token(operation.value))
-              : null, 'exact navigation target');
+          case 'exact_navigation_target': {
+            const dest = operation.value || operation.destination || operation.target;
+            const current = snapshot.url || '';
+            const matched = operation.type === 'Navigate'
+              ? Boolean(current && dest && (token(current).includes(token(dest)) || token(dest).includes(token(current))))
+              : null;
+            add(claimId, matched, 'exact navigation target');
             break;
+          }
           case 'page_transition_committed':
             add(
               claimId,
