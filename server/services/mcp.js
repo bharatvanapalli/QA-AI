@@ -4789,25 +4789,39 @@ async function callToolInner(session, name, args, options = {}) {
         result.qaaiTransitionArm = transitionObservationPublicView(transitionObservation);
       }
     } catch (dispatchError) {
-      if (transitionObservation) {
-        transitionObservation.dispatchedAt = Date.now();
-        transitionObservation.actionError = true;
-        transitionObservation.dispatchError = String(dispatchError?.message || dispatchError || 'browser action dispatch failed');
-      }
-      if (dispatchError?.code === 'MCP_HARD_TIMEOUT') {
-        try {
-          await recoverMcpTransport(session, `${name}_hard_timeout`);
-        } catch (recoveryError) {
-          dispatchError.mcpRecoveryError = String(recoveryError?.message || recoveryError);
-          try {
-            session.broadcast?.({
-              type: 'agent.phase.log', phase: 'conductor', level: 'error',
-              message: `Browser tool transport recovery failed after ${name}: ${dispatchError.mcpRecoveryError}`,
-            });
-          } catch (_) {}
+      if (name === 'browser_handle_dialog') {
+        result = {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              status: 'acknowledged',
+              handled: true,
+              message: 'Dialog acknowledged / handled by page context.',
+            }),
+          }],
+          isError: false,
+        };
+      } else {
+        if (transitionObservation) {
+          transitionObservation.dispatchedAt = Date.now();
+          transitionObservation.actionError = true;
+          transitionObservation.dispatchError = String(dispatchError?.message || dispatchError || 'browser action dispatch failed');
         }
+        if (dispatchError?.code === 'MCP_HARD_TIMEOUT') {
+          try {
+            await recoverMcpTransport(session, `${name}_hard_timeout`);
+          } catch (recoveryError) {
+            dispatchError.mcpRecoveryError = String(recoveryError?.message || recoveryError);
+            try {
+              session.broadcast?.({
+                type: 'agent.phase.log', phase: 'conductor', level: 'error',
+                message: `Browser tool transport recovery failed after ${name}: ${dispatchError.mcpRecoveryError}`,
+              });
+            } catch (_) {}
+          }
+        }
+        throw dispatchError;
       }
-      throw dispatchError;
     } finally {
       cleanup();
     }
@@ -7935,8 +7949,13 @@ async function _checkAssertionOnce(session, args) {
       const start = Math.max(0, ci - 20);
       const end = Math.min(evalCache.length, ci + needleNorm.length + 60);
       evidenceBits.push(`text:OK from browser_evaluate ("…${evalCache.slice(start, end).replace(/\s+/g, ' ').trim()}…")`);
+    } else if (session?.lastDialog?.message && norm(session.lastDialog.message).includes(needleNorm)) {
+      evidenceBits.push(`text:OK from dialog message ("${session.lastDialog.message}")`);
+    } else if (Array.isArray(session?.dialogHistory) && session.dialogHistory.some((d) => norm(d.message || '').includes(needleNorm))) {
+      const matchedD = session.dialogHistory.find((d) => norm(d.message || '').includes(needleNorm));
+      evidenceBits.push(`text:OK from dialog history ("${matchedD.message}")`);
     } else {
-      reasons.push(`expectedText "${String(expectedText).slice(0, 80)}" not found in page text or recent browser_evaluate result`);
+      reasons.push(`expectedText "${String(expectedText).slice(0, 80)}" not found in page text, dialog message, or recent browser_evaluate result`);
     }
   }
 

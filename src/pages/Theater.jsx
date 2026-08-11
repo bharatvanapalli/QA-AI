@@ -1194,7 +1194,7 @@ const ActionTrail = React.memo(function ActionTrail({ actions, scenarios, conduc
                       <div className="text-xs font-semibold text-ink-800 truncate" title={resolveCaseName(a.tcId)}>
                         {resolveCaseName(a.tcId)}
                       </div>
-                      {info?.scenarioName && (
+                      {info?.scenarioName && info.scenarioName !== resolveCaseName(a.tcId) && (
                         <div className="text-2xs text-ink-500 truncate" title={info.scenarioName}>
                           {info.scenarioName}
                         </div>
@@ -1955,6 +1955,10 @@ const ActionLine = React.memo(function ActionLine({ action }) {
     if (/check|radio/.test(toolName)) return `Set control${target ? ` · ${target}` : ''}`;
     if (/upload/.test(toolName)) return `Upload file${target ? ` · ${target}` : ''}`;
     if (/clear/.test(toolName)) return `Clear field${target ? ` · ${target}` : ''}`;
+    if (/dialog|alert|prompt|confirm/.test(toolName)) {
+      const actionKind = action.args?.action || '';
+      return actionKind === 'dismiss' ? 'Dismiss alert dialog' : 'Acknowledge alert dialog';
+    }
     if (/wait/.test(toolName)) return 'Wait for page effect';
     return 'Perform browser action';
   })();

@@ -177,7 +177,8 @@ function inferAdapterKind(operation = {}, resolution = {}, context = {}) {
   if (type === 'Scroll') return ADAPTER_KIND.REVEAL;
   if (type === 'Upload') return ADAPTER_KIND.UPLOAD;
   if (['SwitchContext'].includes(type) || ['frame', 'browser_context'].includes(role)) return ADAPTER_KIND.CONTEXT;
-  if (['Close', 'AcceptAlert', 'DismissAlert', 'TypeAlert'].includes(type) || role === 'dialog') return ADAPTER_KIND.DIALOG;
+  const targetLower = clean(identity.target || identity.accessibleName).toLowerCase();
+  if (['Close', 'AcceptAlert', 'DismissAlert', 'TypeAlert'].includes(type) || role === 'dialog' || (['Fill', 'Type'].includes(type) && ['prompt', 'alert'].includes(targetLower))) return ADAPTER_KIND.DIALOG;
   if (type === 'Date') return ADAPTER_KIND.DATE;
   if (['Time', 'DateTime'].includes(type)) return ADAPTER_KIND.TIME;
   if (type === 'Select') {
@@ -699,6 +700,17 @@ function createTypedAdapterPlan({ operation, resolution = {}, context = {} } = {
     case ADAPTER_KIND.DIALOG: {
       const isDismiss = operation.type === 'DismissAlert' || operation.type === 'Close';
       const promptVal = operation.value || operation.targetIdentity?.value || null;
+      if (['Fill', 'Type', 'TypeAlert'].includes(operation.type) && promptVal) {
+        return commonPlan(operation, kind, {
+          mutation: mutation('browser_evaluate', {
+            expression: `(function(){ if (typeof window.__qaai_set_prompt_value === 'function') window.__qaai_set_prompt_value(${JSON.stringify(String(promptVal))}); return true; })()`,
+          }),
+          proofContract: proof(`${operation.operationId}:dialog`, [
+            { id: 'dialog-state', allOf: [CLAIM.DIALOG_STATE] },
+          ]),
+          recoveryOptions: ['REFRESH_SNAPSHOT'],
+        });
+      }
       return commonPlan(operation, kind, {
         mutation: mutation('browser_handle_dialog', {
           action: isDismiss ? 'dismiss' : 'accept',
