@@ -1,4 +1,4 @@
-﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   motion,
@@ -14,6 +14,7 @@ import {
   AlertTriangle, GitCompareArrows, CheckCircle2, Info, FileSearch,
   ScrollText, BookOpen, Code2, ClipboardList, StopCircle, GitPullRequest,
   Plug, Plus, ChevronRight, Activity, Database, Table2, Trash2, RefreshCw,
+  Check, Copy,
 } from 'lucide-react';
 import api, { ApiError } from '../lib/apiClient';
 import { useProject } from '../store/project';
@@ -27,6 +28,7 @@ import PageHeader from '../components/PageHeader';
 import EmptyState from '../components/EmptyState';
 import GenerationGuidancePanel from '../components/GenerationGuidancePanel';
 import { GenerateConfigCard } from './TestCases';
+import { QAAI_AUTHORING_TEMPLATE } from '../components/testCases/AuthoringAssist';
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
  * Run Suite V2 — "Mission briefing → launch"
@@ -236,6 +238,7 @@ export default function RunSuite() {
   const [suiteGuidance, setSuiteGuidance] = useState(null);
   const [showGenerationConfig, setShowGenerationConfig] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
   const [integrations, setIntegrations] = useState({ claude: null, ado: null, jira: null });
   const [discrepancies, setDiscrepancies] = useState([]);
   const [detecting, setDetecting] = useState(false);
@@ -956,6 +959,7 @@ export default function RunSuite() {
                     uploading={uploading}
                     onDrag={setDragging}
                     onFiles={handleFiles}
+                    onOpenGuide={() => setShowGuide(true)}
                   />
 
                   <AIBriefStrip
@@ -1015,6 +1019,10 @@ export default function RunSuite() {
           )}
         </div>
       </main>
+      <UserStoryGuideModal
+        open={showGuide}
+        onClose={() => setShowGuide(false)}
+      />
       <DiscrepanciesModal
         open={discrepancyModalOpen && discrepancies.length > 0}
         discrepancies={discrepancies}
@@ -1495,7 +1503,7 @@ function ChannelCard({ icon: Icon, title, connected, subtitle, action }) {
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // DropZone — immersive, glass, scales+glows on drag.
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function DropZone({ dragging, uploading, onDrag, onFiles }) {
+function DropZone({ dragging, uploading, onDrag, onFiles, onOpenGuide }) {
   return (
     <motion.div
       onDragOver={(e) => { e.preventDefault(); onDrag(true); }}
@@ -1508,7 +1516,7 @@ function DropZone({ dragging, uploading, onDrag, onFiles }) {
           : '0 0 0 1px rgba(255,255,255,0.55) inset',
       }}
       transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-      className="relative overflow-hidden rounded-2xl border border-dashed border-ink-300/70 bg-white/40 backdrop-blur-md text-center py-10 px-6"
+      className="relative overflow-hidden rounded-2xl border border-dashed border-ink-300/70 bg-white/40 backdrop-blur-md text-center py-8 px-6"
     >
       {dragging && (
         <div
@@ -1529,8 +1537,140 @@ function DropZone({ dragging, uploading, onDrag, onFiles }) {
         <p className="text-xs text-ink-500 mt-1">
           PDF · DOCX · Markdown · JSON · HTML · TXT — up to 5 MB each
         </p>
+        <div className="mt-3 flex items-center justify-center">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenGuide?.();
+            }}
+            className="inline-flex items-center gap-1.5 rounded-full border border-accent-200/80 bg-accent-50/80 px-3.5 py-1 text-xs font-semibold text-accent-700 shadow-xs transition hover:bg-accent-100 hover:border-accent-300 focus-visible:outline-none focus-visible:shadow-ring"
+          >
+            <BookOpen className="h-3.5 w-3.5 text-accent-600" />
+            <span>Format Guide & Action Keywords</span>
+          </button>
+        </div>
       </div>
     </motion.div>
+  );
+}
+
+function UserStoryGuideModal({ open, onClose }) {
+  const [copied, setCopied] = useState(false);
+  const toast = useToast();
+
+  const copyTemplate = async () => {
+    try {
+      await navigator.clipboard.writeText(QAAI_AUTHORING_TEMPLATE);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+      toast.success('Sample user story markdown copied to clipboard');
+    } catch {
+      toast.info('Could not copy automatically. Please select text to copy.');
+    }
+  };
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="fixed inset-0 bg-ink-900/40 backdrop-blur-sm"
+      />
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 8 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 8 }}
+        className="relative z-10 max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/80 bg-white/95 p-6 shadow-2xl backdrop-blur-xl"
+      >
+        <div className="flex items-start justify-between gap-4 border-b border-ink-100 pb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent-100 text-accent-700">
+                <BookOpen className="h-4 w-4" />
+              </div>
+              <h2 className="text-lg font-bold text-ink-900">User Story & Test Flow Writing Guide</h2>
+            </div>
+            <p className="mt-1 text-xs text-ink-500">
+              Upload documents using these action keywords and variable tokens to ensure 100% automated precision.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full p-1.5 text-ink-400 hover:bg-ink-100 hover:text-ink-700 transition focus-visible:outline-none"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-accent-200/70 bg-accent-50/40 p-3.5">
+            <span className="text-xs font-bold uppercase tracking-wider text-accent-800">1. Action Keywords</span>
+            <ul className="mt-2 space-y-1 text-xs text-ink-700 font-mono">
+              <li><span className="text-accent-900 font-semibold">Navigate to "url"</span></li>
+              <li><span className="text-accent-900 font-semibold">Fill "field" with "val"</span></li>
+              <li><span className="text-accent-900 font-semibold">Select "opt" from "menu"</span></li>
+              <li><span className="text-accent-900 font-semibold">Click "button"</span></li>
+              <li><span className="text-accent-900 font-semibold">Check / Uncheck "box"</span></li>
+              <li><span className="text-accent-900 font-semibold">Clear "field"</span></li>
+              <li><span className="text-accent-900 font-semibold">Upload "file.pdf"</span></li>
+              <li><span className="text-accent-900 font-semibold">PressKey "Enter"</span></li>
+            </ul>
+          </div>
+
+          <div className="rounded-xl border border-success-200/70 bg-success-50/40 p-3.5">
+            <span className="text-xs font-bold uppercase tracking-wider text-success-800">2. Validations & Gherkin</span>
+            <ul className="mt-2 space-y-1 text-xs text-ink-700">
+              <li><code className="font-semibold text-success-900 font-mono">Verify "elem" is visible</code></li>
+              <li><code className="font-semibold text-success-900 font-mono">Verify "elem" displays text</code></li>
+              <li><code className="font-semibold text-success-900 font-mono">Verify "btn" is disabled</code></li>
+              <li><code className="font-semibold text-success-900 font-mono">Verify "box" is checked</code></li>
+              <li className="pt-1.5 font-medium text-ink-600">Supports Gherkin:</li>
+              <li className="font-semibold text-ink-800">Given / When / Then / And</li>
+            </ul>
+          </div>
+
+          <div className="rounded-xl border border-info-200/70 bg-info-50/40 p-3.5">
+            <span className="text-xs font-bold uppercase tracking-wider text-info-800">3. Variables & Secrets</span>
+            <p className="mt-2 text-xs leading-relaxed text-ink-700">
+              Use <code className="font-semibold text-info-900 font-mono">{'{{Customer Name}}'}</code> to bind variables to dataset tables.
+            </p>
+            <p className="mt-2.5 text-xs leading-relaxed text-ink-700">
+              Use <code className="font-semibold text-warn-800 bg-warn-50 px-1 py-0.5 rounded font-mono">{'{{env:PASSWORD}}'}</code> for environment passwords & secrets.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 rounded-2xl border border-ink-800 bg-ink-900 p-4 text-white">
+          <div className="flex items-center justify-between gap-3 border-b border-ink-700 pb-2.5">
+            <span className="text-xs font-semibold text-ink-300">Standard Sample Markdown (One-Click Copy)</span>
+            <button
+              type="button"
+              onClick={copyTemplate}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-accent-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-accent-500 focus-visible:outline-none"
+            >
+              {copied ? <Check className="h-3.5 w-3.5 text-success-300" /> : <Copy className="h-3.5 w-3.5" />}
+              {copied ? 'Copied to Clipboard' : 'Copy Sample Markdown'}
+            </button>
+          </div>
+          <pre className="mt-3 max-h-56 overflow-y-auto font-mono text-xs leading-relaxed text-ink-100 select-all whitespace-pre-wrap">
+            {QAAI_AUTHORING_TEMPLATE}
+          </pre>
+        </div>
+
+        <div className="mt-5 flex justify-end">
+          <Button variant="secondary" onClick={onClose}>
+            Close
+          </Button>
+        </div>
+      </motion.div>
+    </div>
   );
 }
 

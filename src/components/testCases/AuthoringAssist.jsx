@@ -9,25 +9,33 @@ import {
   Wand2,
 } from 'lucide-react';
 
-export const QAAI_AUTHORING_TEMPLATE = `User Story:
-As a [role],
-I want [capability],
-so that [business benefit].
+export const QAAI_AUTHORING_TEMPLATE = `# User Story: Create Inbound Freight Order
+Module: Orders
+Priority: P0
 
-Preconditions:
-- [starting condition]
+## Session & Dependency
+Execution Mode: Fresh Session
 
-Test Data:
-- username: {{username}}
-- expected_message: {{expected_message}}
+## Test Data
+| Dataset | Customer Name | Ship Direction | Password (Secret) |
+| :--- | :--- | :--- | :--- |
+| Primary | ACME Logistics | Inbound | {{env:USER_PASSWORD}} |
+| Secondary | Global Freight | Outbound | {{env:USER_PASSWORD}} |
 
-Steps:
-1. Open [page or URL].
-2. Enter {{username}} in the Username field.
-3. Click the Continue button.
+---
 
-Expected Results:
-- Verify {{expected_message}} is displayed.`;
+## Scenario 1: Successful Order Creation
+Type: Functional
+
+### Steps
+1. Navigate to "https://app.example.com/orders/new"
+   - Verify that "Order Entry Form" is visible.
+2. Fill "Customer Name" with "{{Customer Name}}"
+   - Verify that "Customer Name field" contains "{{Customer Name}}".
+3. Select "{{Ship Direction}}" from "Ship Direction dropdown"
+4. Click "Save Order button"
+   - Verify that "Confirmation Toast" displays text "Order Successfully Created" [Must]
+   - Verify that "Order Status field" displays "Created" [Must]`;
 
 const ACTION_RE = /\b(open|navigate|visit|click|press|enter|fill|type|select|choose|check|uncheck|upload|download|hover|scroll|save|submit|login|log in|logout|log out)\b/i;
 const ASSERTION_RE = /\b(verify|validate|assert|expect|confirm|ensure|should|must|displayed|visible|appears?)\b/i;
@@ -212,14 +220,28 @@ export default function AuthoringAssist({ value, onChange, disabled = false, onN
             </button>
           </div>
 
-          <div className="mt-3 grid gap-2 text-xs text-ink-600 sm:grid-cols-2">
-            <p><span className="font-semibold text-ink-800">Actions:</span> Open, Click, Enter, Fill, Select, Upload, Download</p>
-            <p><span className="font-semibold text-ink-800">Validations:</span> Verify, Validate, Assert, Expect, Confirm</p>
-            <p><span className="font-semibold text-ink-800">Conditions:</span> Given, When, If, Unless, After, Before</p>
-            <p><span className="font-semibold text-ink-800">Data:</span> key=value, key: value, or {'{{data_name}}'}</p>
+          <div className="mt-3 grid gap-2.5 text-xs text-ink-600 sm:grid-cols-2">
+            <div className="rounded-lg border border-ink-200/60 bg-white p-2.5">
+              <span className="font-semibold text-ink-900 block mb-1">Actions:</span>
+              <p className="text-ink-600 leading-relaxed">
+                <code className="text-accent-700 bg-accent-50 px-1 py-0.5 rounded">Navigate</code>, <code className="text-accent-700 bg-accent-50 px-1 py-0.5 rounded">Fill</code>, <code className="text-accent-700 bg-accent-50 px-1 py-0.5 rounded">Select</code>, <code className="text-accent-700 bg-accent-50 px-1 py-0.5 rounded">Click</code>, <code className="text-accent-700 bg-accent-50 px-1 py-0.5 rounded">Check</code>, <code className="text-accent-700 bg-accent-50 px-1 py-0.5 rounded">Upload</code>, <code className="text-accent-700 bg-accent-50 px-1 py-0.5 rounded">Clear</code>, <code className="text-accent-700 bg-accent-50 px-1 py-0.5 rounded">PressKey</code>
+              </p>
+            </div>
+            <div className="rounded-lg border border-ink-200/60 bg-white p-2.5">
+              <span className="font-semibold text-ink-900 block mb-1">Validations & Gherkin:</span>
+              <p className="text-ink-600 leading-relaxed">
+                <code className="text-success-700 bg-success-50 px-1 py-0.5 rounded">Verify</code>, <code className="text-success-700 bg-success-50 px-1 py-0.5 rounded">Validate</code>, <code className="text-success-700 bg-success-50 px-1 py-0.5 rounded">Assert</code> · <span className="text-ink-700 font-medium">Given / When / Then / And</span>
+              </p>
+            </div>
+            <div className="rounded-lg border border-ink-200/60 bg-white p-2.5 sm:col-span-2">
+              <span className="font-semibold text-ink-900 block mb-1">Dynamic Test Data & Secrets:</span>
+              <p className="text-ink-600 leading-relaxed">
+                Use <code className="text-info-700 bg-info-50 px-1 py-0.5 rounded">{'{{Customer Name}}'}</code> to bind variables to dataset tables, and <code className="text-warn-700 bg-warn-50 px-1 py-0.5 rounded">{'{{env:PASSWORD}}'}</code> for environment secrets.
+              </p>
+            </div>
           </div>
-          <p className="mt-2 text-xs leading-relaxed text-info-700">
-            Tip: use <span className="font-semibold">Check</span> for a checkbox action and <span className="font-semibold">Verify</span> for an expected result.
+          <p className="mt-2 text-xs leading-relaxed text-ink-500">
+            Tip: Indent <span className="font-semibold text-ink-700">- Verify ...</span> directly under a numbered step for immediate step-level verification.
           </p>
         </div>
       ) : null}
