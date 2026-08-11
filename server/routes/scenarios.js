@@ -1534,10 +1534,15 @@ router.post(
           userId: req.user.id,
         });
         appendDesignText = designText;
-        if (appendDesignRequirement) {
-          appendDesignRequirement.content = designText;
-          appendDesignRequirement.body = designText;
-          appendDesignRequirement.text = designText;
+        if (appendRequest.requirement) {
+          appendRequest.requirement.content = designText;
+          appendRequest.requirement.body = designText;
+          appendRequest.requirement.text = designText;
+        }
+        if (appendRequest.requirementClause) {
+          appendRequest.requirementClause.behaviourText = designText;
+          appendRequest.requirementClause.text = designText;
+          appendRequest.requirementClause.description = designText;
         }
         effectiveGuidance = [
           '[ADD TARGETED SCENARIO]: The user is ADDING specific coverage to an EXISTING suite. Author ONLY the scenario(s) described below — do NOT regenerate or duplicate existing coverage, and output a SHORT scenarios array (ideally one).',
