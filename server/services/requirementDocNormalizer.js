@@ -67,6 +67,11 @@ function deterministicNormalize(text) {
   // Ensure standalone "Verify that 'quoted text'" without predicate becomes "Verify that 'quoted text' is visible"
   cleaned = cleaned.replace(/\bVerify\s+(?:that\s+)?("(?:[^"\\]|\\.)+"|'[^']+')(?:\s*)$/gim, 'Verify that $1 is visible');
 
+  // Normalize specific nested quotes like "Your name is: "Bharat" " to "Your name is: 'Bharat'"
+  cleaned = cleaned.replace(/:\s*"([^"\n\r]+)"\s*"/g, ": '$1'\"");
+  // Ensure space between closing quote and words like is visible
+  cleaned = cleaned.replace(/("(?:[^"\\]|\\.)+"|'[^']+')([A-Za-z])/g, '$1 $2');
+
 function splitOutsideQuotes(text) {
   const parts = [];
   let current = '';
@@ -107,6 +112,7 @@ function splitOutsideQuotes(text) {
       for (const part of parts) {
         let item = part.trim();
         if (item) {
+          item = item.replace(/"\s+([^"\n\r]+?)\s*"/g, '"$1"');
           item = item.replace(/\bVerify\s+(?:that\s+)?("(?:[^"\\]|\\.)+"|'[^']+')\s*$/i, 'Verify that $1 is visible');
           expandedLines.push(`${stepNumber}. ${item}`);
           stepNumber += 1;
