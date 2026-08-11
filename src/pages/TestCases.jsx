@@ -6214,8 +6214,8 @@ export default function TestCases() {
   }, []);
 
   const handleAddStep = useCallback(async (testCase, draft) => {
-    if (!testCase?.id || !draft?.instruction?.trim()) return null;
-    const result = await api.post(`/test-cases/${encodeURIComponent(testCase.id)}/steps`, {
+    if (!current?.id || !testCase?.id || !draft?.instruction?.trim()) return null;
+    const result = await api.post(`/projects/${current.id}/test-cases/${encodeURIComponent(testCase.id)}/steps`, {
       projectId: current?.id,
       authoredText: draft.instruction.trim(),
       instruction: draft.instruction.trim(),
@@ -6243,9 +6243,9 @@ export default function TestCases() {
   }, [applyStepMutation, current?.id, load, toast]);
 
   const handleSaveStep = useCallback(async (testCase, stepId, draft) => {
-    if (!testCase?.id || !stepId || !draft?.instruction?.trim()) return null;
+    if (!current?.id || !testCase?.id || !stepId || !draft?.instruction?.trim()) return null;
     const result = await api.patch(
-      `/test-cases/${encodeURIComponent(testCase.id)}/steps/${encodeURIComponent(stepId)}`,
+      `/projects/${current.id}/test-cases/${encodeURIComponent(testCase.id)}/steps/${encodeURIComponent(stepId)}`,
       {
         projectId: current?.id,
         authoredText: draft.instruction.trim(),
@@ -6287,7 +6287,7 @@ export default function TestCases() {
   }, [applyStepMutation, current?.id, toast]);
 
   const handleRemoveStep = useCallback(async (testCase, stepId, label) => {
-    if (!testCase?.id || !stepId) return null;
+    if (!current?.id || !testCase?.id || !stepId) return null;
     const accepted = await confirm({
       title: 'Remove this step?',
       message: (
@@ -6306,7 +6306,7 @@ export default function TestCases() {
     if (!accepted) return null;
 
     const result = await api.del(
-      `/test-cases/${encodeURIComponent(testCase.id)}/steps/${encodeURIComponent(stepId)}?projectId=${encodeURIComponent(current?.id || '')}`,
+      `/projects/${current.id}/test-cases/${encodeURIComponent(testCase.id)}/steps/${encodeURIComponent(stepId)}`,
     );
     const fallbackSteps = (Array.isArray(testCase.steps) ? testCase.steps : [])
       .filter((step, sourceIndex) => stepLogicalIdentity(step, sourceIndex) !== stepId);
@@ -6321,9 +6321,9 @@ export default function TestCases() {
   }, [applyStepMutation, confirm, current?.id, toast]);
 
   const handleReorderSteps = useCallback(async (testCase, logicalStepIds) => {
-    if (!testCase?.id || !Array.isArray(logicalStepIds)) return null;
+    if (!current?.id || !testCase?.id || !Array.isArray(logicalStepIds)) return null;
     const result = await api.patch(
-      `/test-cases/${encodeURIComponent(testCase.id)}/steps/order`,
+      `/projects/${current.id}/test-cases/${encodeURIComponent(testCase.id)}/steps/order`,
       {
         projectId: current?.id,
         logicalStepIds,
@@ -6350,9 +6350,9 @@ export default function TestCases() {
   }, [applyStepMutation, current?.id, toast]);
 
   const handleUndoStep = useCallback(async (testCase, stepId, undoToken) => {
-    if (!testCase?.id || !stepId) return null;
+    if (!current?.id || !testCase?.id || !stepId) return null;
     const result = await api.post(
-      `/test-cases/${encodeURIComponent(testCase.id)}/steps/undo`,
+      `/projects/${current.id}/test-cases/${encodeURIComponent(testCase.id)}/steps/undo`,
       {
         projectId: current?.id,
         stepId,
