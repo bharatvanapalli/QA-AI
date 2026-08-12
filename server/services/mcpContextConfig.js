@@ -186,6 +186,7 @@ function writeInitScript(project, session) {
   lines.push('        card.appendChild(body);');
   lines.push('        if (inputEl) card.appendChild(inputEl);');
   lines.push('        card.appendChild(footer);');
+  lines.push('        // Native browser dialogs are preserved naturally without JS function overriding.');
   lines.push('        wrap.appendChild(card);');
   lines.push('        (document.body || document.documentElement).appendChild(wrap);');
   lines.push('        setTimeout(() => {');
@@ -199,30 +200,6 @@ function writeInitScript(project, session) {
   lines.push('    }');
   lines.push('    window.onbeforeunload = null;');
   lines.push('    try { window.addEventListener("beforeunload", function(e) { e.stopImmediatePropagation(); }, true); } catch (_) {}');
-  lines.push('    if (autoAccept) {');
-  lines.push('      window.alert = function(_msg) {');
-  lines.push('        const entry = { type: "alert", message: String(_msg || ""), time: Date.now() };');
-  lines.push('        window.__qaai_dialogs.push(entry);');
-  lines.push('        window.__qaai_last_dialog = entry;');
-  lines.push('        __qaai_render_dialog_modal("alert", _msg);');
-  lines.push('      };');
-  lines.push('      window.confirm = function(_msg) {');
-  lines.push('        const entry = { type: "confirm", message: String(_msg || ""), time: Date.now() };');
-  lines.push('        window.__qaai_dialogs.push(entry);');
-  lines.push('        window.__qaai_last_dialog = entry;');
-  lines.push('        __qaai_render_dialog_modal("confirm", _msg);');
-  lines.push('        return true;');
-  lines.push('      };');
-  lines.push('      window.prompt = function(_msg, def) {');
-  lines.push('        const fallbackVal = def != null ? String(def) : "";');
-  lines.push('        const promptVal = window.__qaai_prompt_value !== undefined ? window.__qaai_prompt_value : fallbackVal;');
-  lines.push('        const entry = { type: "prompt", message: String(_msg || ""), defaultValue: fallbackVal, value: promptVal, time: Date.now() };');
-  lines.push('        window.__qaai_dialogs.push(entry);');
-  lines.push('        window.__qaai_last_dialog = entry;');
-  lines.push('        __qaai_render_dialog_modal("prompt", _msg, promptVal);');
-  lines.push('        return promptVal;');
-  lines.push('      };');
-  lines.push('    }');
 
   // Evidence-only recorder. It captures event shape and selector hints, never
   // field values, and has no authority over execution or verdict decisions.

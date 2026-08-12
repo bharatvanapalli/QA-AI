@@ -1,8 +1,7 @@
-'use strict';
-
 const { createHash, randomUUID } = require('node:crypto');
 const { decodeJson, encodeJson } = require('./jsonField');
 const { MAX_AUTHORED_CASE_STEPS } = require('../lib/stepShape');
+const { buildDeclaredAssertionsFromSteps } = require('../lib/declaredAssertions');
 
 const MAX_AUTHORED_TEXT_LENGTH = 16_000;
 const MAX_STEP_PAYLOAD_BYTES = 128 * 1024;
@@ -230,6 +229,7 @@ function inferAction(text, structured = {}) {
 function stripLeadingAction(text) {
   return text
     .replace(/^\s*(?:navigate\s+back|go\s+back|navigate\s+forward|go\s+forward|refresh|reload|navigate|go\s+to|visit|load|open|right\s*click|middle\s*click|click\s*and\s*hold|hold\s+button|long\s*press|press\s+shortcut|hotkey|press\s+combination|accept\s+alert|dismiss\s+alert|type\s+into\s+prompt|copy|paste|extract\s+data|extract|save\s+to\s+variable|store\s+variable|switch\s+to\s+tab|switch\s+tab|switch\s+window|switch\s+to\s+frame|switch\s+frame|access\s+shadow|enter\s+shadow|append|clear\s+and\s+type|clear|drag\s+and\s+drop|drag|set\s+slider|adjust\s+slider|enter|fill|type|input|provide|populate|deselect|select|choose|pick|uncheck|check|click|press|tap|submit|upload|download|wait|pause|hover|scroll\s+into\s+view|scroll\s+to|scroll|expand|collapse|find\s+row|locate\s+row|count\s+rows|sort|click\s+header|verify|validate|assert|expect|confirm|ensure)\b\s*/i, '')
+    .replace(/^\s*that\b\s*/i, '')
     .replace(/[.\s]+$/g, '')
     .trim();
 }
@@ -275,6 +275,7 @@ function inferExecutionFields(text, structured = {}) {
     value = promptMatch ? promptMatch[1] : rest || null;
   }
   if (action === 'Verify') {
+    value = null;
     if (!expected) expected = rest || text.trim();
     if (!element) element = boundedString(structured.target, 500);
   }
@@ -378,6 +379,44 @@ function materializeLogicalStep(input, existingGroup = null, forcedLogicalStepId
     delete authoredCandidate.text;
     delete authoredCandidate.description;
   }
+  if (existingHead && incomingCarriesText) {
+    const newAuthoredText = authoredTextFrom(incoming, fallbackAuthoredText);
+    const textHasChanged = newAuthoredText && newAuthoredText.trim() !== (existingHead.authoredText || existingHead.text || '').trim();
+    if (textHasChanged) {
+      const oldTarget = (existingHead.target || existingHead.element || '').trim();
+      const incomingTarget = (incoming.target || incoming.element || '').trim();
+      if (!incomingTarget || incomingTarget === oldTarget) {
+        delete incoming.target;
+        delete incoming.element;
+        delete authoredCandidate.target;
+        delete authoredCandidate.element;
+        delete existingHead.target;
+        delete existingHead.element;
+      }
+      const oldValue = (existingHead.value == null ? '' : String(existingHead.value)).trim();
+      const incomingValue = (incoming.value == null ? '' : String(incoming.value)).trim();
+      if (!incomingValue || incomingValue === oldValue || incomingValue === (existingHead.authoredText || existingHead.text || '').trim()) {
+        delete incoming.value;
+        delete authoredCandidate.value;
+        delete existingHead.value;
+      }
+      const oldExpected = (existingHead.expected || existingHead.validation || '').trim();
+      const incomingValidation = (incoming.validation || incoming.expected || '').trim();
+      const normIncoming = incomingValidation.replace(/['"]/g, '').trim();
+      const normOld = oldExpected.replace(/['"]/g, '').trim();
+      if (!incomingValidation || incomingValidation === oldExpected || normIncoming === normOld || normIncoming.includes(normOld) || normOld.includes(normIncoming)) {
+        delete incoming.expected;
+        delete incoming.validation;
+        delete authoredCandidate.expected;
+        delete authoredCandidate.validation;
+        delete existingHead.expected;
+        delete existingHead.validation;
+      }
+      delete incoming.atomicActions;
+      delete authoredCandidate.atomicActions;
+      delete existingHead.atomicActions;
+    }
+  }
   const incomingChangesStructure = ['action', 'element', 'target', 'value', 'expected', 'validation', 'atomicActions']
     .some((key) => own(incoming, key));
   const authoredText = authoredTextFrom(
@@ -387,6 +426,37 @@ function materializeLogicalStep(input, existingGroup = null, forcedLogicalStepId
   const mergedInput = existingHead
     ? { ...existingHead, ...incoming, authoredText }
     : { ...incoming, authoredText };
+
+  if (existingHead && incomingCarriesText) {
+    if (!own(incoming, 'action') || incoming.action == null) {
+      delete existingHead.action;
+      delete mergedInput.action;
+    }
+    if ((!own(incoming, 'target') || incoming.target == null) && (!own(incoming, 'element') || incoming.element == null)) {
+      delete existingHead.target;
+      delete existingHead.element;
+      delete mergedInput.target;
+      delete mergedInput.element;
+    }
+    if (!own(incoming, 'value') || incoming.value == null) {
+      delete existingHead.value;
+      delete mergedInput.value;
+    }
+    if ((!own(incoming, 'expected') || incoming.expected == null) && (!own(incoming, 'validation') || incoming.validation == null)) {
+      delete existingHead.expected;
+      delete existingHead.validation;
+      delete mergedInput.expected;
+      delete mergedInput.validation;
+    }
+  }
+
+  if (!own(incoming, 'atomicActions')) {
+    delete incoming.atomicActions;
+    delete authoredCandidate.atomicActions;
+    if (existingHead) delete existingHead.atomicActions;
+    delete mergedInput.atomicActions;
+  }
+
   if (own(incoming, 'target') && !own(incoming, 'element')) mergedInput.element = incoming.target;
   if (own(incoming, 'element') && !own(incoming, 'target')) mergedInput.target = incoming.element;
   const interpretation = interpretStep(mergedInput, fallbackAuthoredText);
@@ -407,6 +477,7 @@ function materializeLogicalStep(input, existingGroup = null, forcedLogicalStepId
       contractStepId: boundedString(previous.contractStepId || mergedInput.contractStepId, 180) || id,
       logicalStepId,
       authoredText: interpretation.authoredText,
+      text: interpretation.authoredText,
       atomicText: atomic.atomicText,
       source: 'user',
       authored: true,
@@ -419,6 +490,12 @@ function materializeLogicalStep(input, existingGroup = null, forcedLogicalStepId
         executionMode: atomic.executionMode,
       },
     };
+    if (own(atomic, 'expected')) row.expected = atomic.expected; else delete row.expected;
+    if (own(atomic, 'target')) row.target = atomic.target; else delete row.target;
+    if (own(atomic, 'element')) row.element = atomic.element; else delete row.element;
+    if (own(atomic, 'value')) row.value = atomic.value; else delete row.value;
+    delete row.verify;
+    delete row.validation;
     delete row.atomicActions;
     delete row.instruction;
     delete row.description;
@@ -621,12 +698,20 @@ async function persistMutation({
     else fail(400, 'UNKNOWN_STEP_MUTATION', 'Unknown step mutation.');
 
     const encodedSteps = encodeJson(result.steps);
+    const updatedDeclared = buildDeclaredAssertionsFromSteps(result.steps, current.declaredAssertions);
+    const encodedDeclared = encodeJson(updatedDeclared);
     const updatedCount = await tx.testCase.updateMany({
       where: { id: current.id, projectId, steps: current.steps },
       data: {
         steps: encodedSteps,
-        // A source-level edit invalidates generated code. Execution state and
-        // approval remain authorized; active runs must use their run-start snapshot.
+        declaredAssertions: encodedDeclared,
+        // NOTE: Do NOT write to `assertions` here. The `assertions` column is
+        // consumed by compileOperationContractV2 as separate post-step operations
+        // and requires Assert-prefixed types (AssertVisible, AssertText, etc.).
+        // Our declaredAssertions uses "VISIBLE"/"TEXT" schema — writing it there
+        // causes assertion_type_unsupported findings that block the whole run.
+        // Steps 8 and 13 are already compiled inline from the step's own `type`
+        // field (AssertVisible), so no additional assertion rows are needed.
         specCode: null,
       },
     });

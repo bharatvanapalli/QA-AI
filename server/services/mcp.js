@@ -1252,21 +1252,101 @@ async function launchLiveCdpBrowser({ sessionId, viewport, userDataDir, project,
 
   const context = await pw.chromium.launchPersistentContext(profileDir, launchOptions);
 
+  const liveCdpResult = {
+    context,
+    monitorBrowser: null,
+    endpoint,
+    profileDir,
+    isTempProfile: !userDataDir,
+    port,
+    activeNativeDialog: null,
+    lastDialog: null,
+    dialogHistory: [],
+    dialogResolutionQueue: [],
+    gatewayBootstrapTrail: Array.isArray(gatewayBootstrapSession.actionExecutionGatewayTrail)
+      ? gatewayBootstrapSession.actionExecutionGatewayTrail
+      : [],
+  };
+
   const setupDialogListener = (page) => {
     try {
       page.on('dialog', async (dialog) => {
         const msg = dialog.message();
         const type = dialog.type();
-        try {
-          await page.evaluate(({ t, m }) => {
+        const entry = { type, message: msg, text: msg, time: Date.now() };
+        liveCdpResult.lastDialog = entry;
+        liveCdpResult.dialogHistory.push(entry);
+        // Confirmed live on LetCode's Dialog Flow (2026-08-12): a native
+        // dialog freezes the PAGE's own JS thread until resolved — so
+        // page.evaluate() (used below purely to paint a cosmetic HTML replica
+        // of the dialog, for screencast/evidence purposes) cannot complete
+        // until the dialog is gone. This function used to await that
+        // evaluate() BEFORE attempting to resolve the dialog, which
+        // self-deadlocked: the resolve call it was waiting to reach was the
+        // only thing that could ever unblock the evaluate() ahead of it.
+        // Reproduced live: our own accept() call, normally near-instant,
+        // took 5148ms — it was queued behind that stuck evaluate() the
+        // whole time. Resolving MUST happen first; the cosmetic paint is
+        // fire-and-forget afterward, never awaited, so it can't block
+        // anything again even if it stays stuck on some other page state.
+        const paintCosmeticModal = () => {
+          page.evaluate(({ t, m }) => {
             if (typeof window.__qaai_render_dialog_modal === 'function') {
               window.__qaai_render_dialog_modal(t, m);
             }
           }, { t: type, m: msg }).catch(() => {});
-        } catch (_) {}
-        try {
-          await dialog.accept().catch(() => {});
-        } catch (_) {}
+        };
+        // Holding the dialog open for a LATER, explicit
+        // AcceptAlert/DismissAlert/TypeAlert step loses a race against a
+        // competing resolver every time — by the time that later step runs
+        // (even just one operation later), the dialog is already gone
+        // ("No dialog is showing"), and whatever resolved it (not us)
+        // decides the outcome. The only reliable fix is to resolve as early
+        // as possible: right here, synchronously in this same handler,
+        // using the test's ALREADY-KNOWN authored intent for the dialog
+        // that's expected next (queued once per test case in
+        // controllerConductor.js#buildDialogResolutionQueue, from the
+        // canonical AcceptAlert/DismissAlert/TypeAlert operation types —
+        // not a per-site heuristic, so this generalizes to any test with
+        // native dialogs). If the queue has no next entry (a genuinely
+        // unplanned/unexpected dialog), fall through to the pre-existing
+        // hold-or-auto-accept-plain-alerts behavior below.
+        const queue = liveCdpResult.dialogResolutionQueue;
+        const nextResolution = Array.isArray(queue) && queue.length ? queue.shift() : null;
+        if (nextResolution) {
+          // Keep activeNativeDialog set even though the dialog is about to
+          // be closed — evaluateControllerAssertionSnapshot's TEXT/VALUE
+          // branch (controllerMcpRuntimeAdapter.js) uses its presence,
+          // specifically, not lastDialog, to recognize an "alert text"-style
+          // assertion target and read dialog.message() from it. Confirmed
+          // live: leaving this unset made every such assertion report zero
+          // candidates instead of the dialog's message, even though the
+          // eager resolution itself was working correctly.
+          liveCdpResult.activeNativeDialog = dialog;
+          entry.resolvedBy = nextResolution.sourceOperationId || null;
+          entry.resolvedAction = nextResolution.action;
+          try {
+            if (nextResolution.action === 'dismiss') {
+              await dialog.dismiss();
+            } else {
+              await dialog.accept(nextResolution.promptText != null ? nextResolution.promptText : undefined);
+            }
+            entry.resolved = true;
+          } catch (err) {
+            entry.resolved = false;
+            entry.resolveError = String(err?.message || err);
+          }
+          paintCosmeticModal();
+          return;
+        }
+        liveCdpResult.activeNativeDialog = dialog;
+        const autoAccept = project ? Boolean(project.autoAcceptDialogs !== false) : true;
+        if (autoAccept && type === 'alert') {
+          try {
+            await dialog.accept().catch(() => {});
+          } catch (_) {}
+        }
+        paintCosmeticModal();
       });
     } catch (_) {}
   };
@@ -1312,6 +1392,34 @@ async function launchLiveCdpBrowser({ sessionId, viewport, userDataDir, project,
       });
     } catch (_) {}
   }
+  if (monitorBrowser) {
+    // Confirmed live (2026-08-12): a native dialog was being closed within
+    // 8-18ms of opening — far too fast for any of our own async JS handlers
+    // to lose that race, on either connection. connectOverCDP here creates
+    // an ENTIRELY SEPARATE set of Playwright-library objects (Browser/
+    // BrowserContext/Page/DialogManager) from the ones launchPersistentContext
+    // already built above for the owner context, even though both point at
+    // the same remote browser — Playwright's library has no cross-connection
+    // awareness within the same process. This connection exists only to bind
+    // screencast frame listeners (see contexts() usages below) and never
+    // registered a 'dialog' listener anywhere, so Playwright's own
+    // no-handler-registered default (auto-dismiss immediately) fired on
+    // THIS connection specifically, before the owner context's real
+    // eager-resolution logic (setupDialogListener) ever got a turn. The
+    // handler itself is a no-op — resolution stays owned entirely by
+    // setupDialogListener; this only needs to exist so this connection
+    // stops racing to auto-close on its own.
+    const attachNoOpDialogGuard = (page) => {
+      try { page.on('dialog', () => {}); } catch (_) {}
+    };
+    try {
+      for (const ctx of monitorBrowser.contexts()) {
+        ctx.pages().forEach(attachNoOpDialogGuard);
+        try { ctx.on('page', attachNoOpDialogGuard); } catch (_) {}
+      }
+    } catch (_) {}
+  }
+  liveCdpResult.monitorBrowser = monitorBrowser;
   try {
     broadcast?.({
       type: 'agent.phase.log',
@@ -1320,17 +1428,7 @@ async function launchLiveCdpBrowser({ sessionId, viewport, userDataDir, project,
       message: `[mcp] live CDP browser ready on ${endpoint}`,
     });
   } catch (_) {}
-  return {
-    context,
-    monitorBrowser,
-    endpoint,
-    profileDir,
-    isTempProfile: !userDataDir,
-    port,
-    gatewayBootstrapTrail: Array.isArray(gatewayBootstrapSession.actionExecutionGatewayTrail)
-      ? gatewayBootstrapSession.actionExecutionGatewayTrail
-      : [],
-  };
+  return liveCdpResult;
 }
 
 // Force-kill the Chrome process tree that owns a known remote-debugging port.
@@ -3605,6 +3703,7 @@ async function startMcpSession({
     downloadsDir: contextExtras.downloadsDir,
     initScriptPath: contextExtras.initScriptPath,
     projectId: project?.id || null,
+    project: project || null,
     // Phase H M4 — every URL the session has been at, normalized to its
     // path. Used by postLoopRatify's three-way disambiguation
     // (currentUrl vs visitedUrls vs neither) to distinguish
@@ -4384,6 +4483,34 @@ async function callToolInner(session, name, args, options = {}) {
   if (name === 'browser_extract_data') {
     return await extractData(session, args || {});
   }
+  // Confirmed live on LetCode's Dialog Flow test case (2026-08-12): once a
+  // native alert()/confirm()/prompt() dialog is open, @playwright/mcp's OWN
+  // internal modal-state guard auto-dismisses it the instant ANY tool other
+  // than browser_handle_dialog is dispatched — this happens inside the MCP
+  // subprocess's own CDP session, independent of and unrecoverable by our
+  // side once it fires. controllerMcpRuntimeAdapter.js's capture() already
+  // synthesizes a fallback snapshot when browser_snapshot specifically hits
+  // this, but that's a REACTIVE recovery for reading the dialog's text —
+  // it cannot undo the fact that the real browser-level dialog was already
+  // resolved as Cancel/empty by the time that recovery code runs. The only
+  // real fix is PREVENTIVE: never let any other tool call reach MCP while a
+  // dialog is pending. Every incidental call in that window (evidence
+  // screenshots, highlight injection, snapshot refreshes, etc.) must be
+  // short-circuited here instead of dispatched.
+  const pendingDialog = session.activeNativeDialog || session.liveCdp?.activeNativeDialog
+    || session.lastDialog || session.liveCdp?.lastDialog;
+  if (pendingDialog && name !== 'browser_handle_dialog') {
+    const dialogMessage = String(
+      (typeof pendingDialog.message === 'function' ? pendingDialog.message() : pendingDialog.message) || '',
+    ).replace(/\s+/g, ' ').trim();
+    return {
+      isError: false,
+      content: [{
+        type: 'text',
+        text: `Page URL: ${session.currentUrl || ''}\nPage Title: Native Dialog Modal\n- text "alert text": ${dialogMessage}\n- text "dialog_message": ${dialogMessage}\n- text "${dialogMessage}" [ref=native_dialog_msg]\n`,
+      }],
+    };
+  }
   const callStartedAt = Date.now();
   // Pause frame polling while a "real" tool is in flight — otherwise polled
   // screenshots compete with the tool call and we get flaky responses.
@@ -4750,7 +4877,7 @@ async function callToolInner(session, name, args, options = {}) {
       const targetRef = callArgs?.target || callArgs?.ref || null;
       const isHighlightCall = name === 'browser_evaluate' && typeof callArgs?.function === 'string' && callArgs.function.includes('__qaai_highlight');
       const isClearTypeCall = name === 'browser_type' && (callArgs?.text === '' || callArgs?.text == null);
-      if (session?.client && targetRef && !isHighlightCall && !isClearTypeCall && !['browser_snapshot', 'browser_take_screenshot', 'browser_screenshot', 'assertion_check'].includes(name)) {
+      if (session?.client && targetRef && !isHighlightCall && !isClearTypeCall && !['browser_snapshot', 'browser_take_screenshot', 'browser_screenshot', 'assertion_check', 'browser_handle_dialog'].includes(name)) {
         let fnStr = `(el) => { if (typeof window.__qaai_highlight === "function") { window.__qaai_highlight(el); } }`;
         if (name === 'browser_type' && callArgs?.text) {
           fnStr = `(el) => {
@@ -4781,6 +4908,113 @@ async function callToolInner(session, name, args, options = {}) {
         }
       }
 
+      let dialogCaught = null;
+      const dialogHandlers = [];
+      if (session?.liveCdp?.context && (name === 'browser_click' || name === 'browser_press_key' || ACTION_REF_TOOLS.has(name))) {
+        const ownerPages = pagesFromPlaywrightContext(session.liveCdp.context);
+        for (const page of ownerPages) {
+          const handler = async (dialog) => {
+            const entry = { type: dialog.type(), message: dialog.message(), time: Date.now() };
+            dialogCaught = entry;
+            session.lastDialog = entry;
+            session.dialogHistory = session.dialogHistory || [];
+            session.dialogHistory.push(entry);
+            try {
+              await page.evaluate(({ t, m }) => {
+                let wrap = document.getElementById('qaai-dialog-modal-container');
+                if (!wrap) {
+                  wrap = document.createElement('div');
+                  wrap.id = 'qaai-dialog-modal-container';
+                  wrap.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);z-index:2147483647;display:flex;align-items:center;justify-content:center;font-family:system-ui,-apple-system,sans-serif;pointer-events:none;';
+                  const card = document.createElement('div');
+                  card.id = 'qaai-dialog-modal';
+                  card.style.cssText = 'background:#1e293b;border:2px solid #6366f1;box-shadow:0 25px 50px -12px rgba(0,0,0,0.7);border-radius:14px;width:90%;max-width:440px;padding:22px;color:#f8fafc;display:flex;flex-direction:column;gap:14px;';
+                  const badgeBg = t === 'prompt' ? '#0284c7' : t === 'confirm' ? '#d97706' : '#6366f1';
+                  const badgeText = t === 'prompt' ? 'Native Prompt Alert' : t === 'confirm' ? 'Native Confirm Alert' : 'Native Simple Alert';
+                  card.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(148,163,184,0.2);padding-bottom:10px;"><span style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;padding:4px 10px;border-radius:9999px;background:${badgeBg};color:#ffffff;">${badgeText}</span><span style="font-size:12px;color:#94a3b8;">${window.location.hostname || 'Browser Alert'}</span></div><div style="font-size:15px;line-height:1.5;color:#f1f5f9;word-break:break-word;padding:8px 0;">${m}</div><div style="display:flex;justify-content:flex-end;gap:8px;padding-top:6px;"><span style="padding:6px 16px;border-radius:8px;background:#6366f1;color:#ffffff;font-size:13px;font-weight:600;">Active Dialog</span></div>`;
+                  wrap.appendChild(card);
+                  (document.body || document.documentElement).appendChild(wrap);
+                }
+              }, { t: dialog.type(), m: dialog.message() }).catch(() => {});
+            } catch (_) {}
+            // Resolution is NOT attempted here. It used to be (autoAccept
+            // check + accept/dismiss), but this handler and the persistent
+            // listener in launchLiveCdpBrowser's setupDialogListener are
+            // both async functions registered on the same page — Node's
+            // EventEmitter.emit() calls each listener synchronously but
+            // does NOT wait for one's promise to settle before calling the
+            // next, so both handlers' bodies interleave after their first
+            // `await` (this same visual-modal injection). Confirmed live
+            // (2026-08-12): that interleaving raced this handler's own
+            // queue-check against setupDialogListener's, corrupting which
+            // one actually resolved the dialog and leaving session.lastDialog
+            // in an inconsistent state. Recording evidence here (dialogCaught,
+            // history, visual modal) is safe to keep — only ONE handler may
+            // ever call dialog.accept()/dismiss(), so setupDialogListener is
+            // now the sole authority for that.
+          };
+          try {
+            page.once('dialog', handler);
+            dialogHandlers.push({ page, handler });
+          } catch (_) {}
+        }
+      }
+
+      if (name === 'browser_handle_dialog') {
+        const nativeDialog = session.activeNativeDialog || session.liveCdp?.activeNativeDialog;
+        if (nativeDialog) {
+          try {
+            const page = nativeDialog.page?.() || session.liveCdp?.page;
+            if (page) {
+              await page.evaluate(() => {
+                const el = document.getElementById('qaai-dialog-modal-container') || document.getElementById('qaai-native-dialog-banner');
+                if (el) el.remove();
+              }).catch(() => {});
+            }
+          } catch (_) {}
+          try {
+            const isDismiss = callArgs?.accept === false || callArgs?.action === 'dismiss';
+            if (isDismiss) {
+              await nativeDialog.dismiss();
+            } else {
+              await nativeDialog.accept(callArgs?.promptText);
+            }
+          } catch (err) {
+            console.error('[mcp] activeNativeDialog operation failed:', err);
+          }
+          session.activeNativeDialog = null;
+          if (session.liveCdp) session.liveCdp.activeNativeDialog = null;
+          session.lastDialog = null;
+          if (session.liveCdp) session.liveCdp.lastDialog = null;
+        }
+        try {
+          await session.client.callTool(
+            {
+              name: 'browser_handle_dialog',
+              arguments: {
+                accept: callArgs?.action !== 'dismiss' && callArgs?.accept !== false,
+                promptText: callArgs?.promptText,
+              },
+            },
+            undefined,
+            sdkRequestOptions,
+          );
+        } catch (_) {}
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        result = {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              status: 'acknowledged',
+              handled: true,
+              message: 'Dialog acknowledged / handled by page context.',
+            }),
+          }],
+          isError: false,
+        };
+        return result;
+      }
+
       const sdkCall = session.client.callTool(
         { name, arguments: callArgs || {} },
         undefined,
@@ -4803,6 +5037,15 @@ async function callToolInner(session, name, args, options = {}) {
         result = await Promise.race([sdkCall, hardTimeout]);
       } finally {
         if (hardTimer) clearTimeout(hardTimer);
+        for (const { page, handler } of dialogHandlers) {
+          try { page.off('dialog', handler); } catch (_) {}
+        }
+      }
+      if (dialogCaught && result && Array.isArray(result.content)) {
+        result.content.push({
+          type: 'text',
+          text: `[MCP Auto-Handling Dialog] An alert (${dialogCaught.type}) appeared with message "${dialogCaught.message}" and was accepted.`,
+        });
       }
       if (transitionObservation) {
         transitionObservation.dispatchedAt = Date.now();
@@ -4812,6 +5055,18 @@ async function callToolInner(session, name, args, options = {}) {
       }
     } catch (dispatchError) {
       if (name === 'browser_handle_dialog') {
+        const nativeDialog = session.activeNativeDialog || session.liveCdp?.activeNativeDialog;
+        if (nativeDialog) {
+          try {
+            if (callArgs?.action === 'dismiss' || callArgs?.accept === false) {
+              await nativeDialog.dismiss();
+            } else {
+              await nativeDialog.accept(callArgs?.promptText);
+            }
+          } catch (_) {}
+          session.activeNativeDialog = null;
+          if (session.liveCdp) session.liveCdp.activeNativeDialog = null;
+        }
         result = {
           content: [{
             type: 'text',
@@ -5994,13 +6249,15 @@ async function screenshot(session, params = {}) {
  */
 function saveScreenshotToDisk(imgBlock, label) {
   if (!imgBlock?.data) return null;
-  const safe = String(label || crypto.randomBytes(4).toString('hex')).replace(/[^a-zA-Z0-9_-]/g, '_');
-  const ext = imgBlock.mediaType === 'image/png' ? '.png' : '.jpg';
-  const file = path.join(ARTIFACT_DIR, `${safe}${ext}`);
   try {
+    fs.mkdirSync(ARTIFACT_DIR, { recursive: true });
+    const safe = String(label || crypto.randomBytes(4).toString('hex')).replace(/[^a-zA-Z0-9_-]/g, '_');
+    const ext = imgBlock.mediaType === 'image/png' ? '.png' : '.jpg';
+    const file = path.join(ARTIFACT_DIR, `${safe}${ext}`);
     fs.writeFileSync(file, Buffer.from(imgBlock.data, 'base64'));
     return '/artifacts/live/' + path.basename(file);
-  } catch (_) {
+  } catch (err) {
+    console.error('[mcp] saveScreenshotToDisk failed:', err);
     return null;
   }
 }

@@ -11,49 +11,50 @@ async function run() {
     return;
   }
   
+  // Ensure status is approved so conductor can run it
+  await prisma.testCase.updateMany({
+    where: { projectId: project.id, name: 'LetCode Dialog Flow' },
+    data: { status: 'approved' }
+  });
+
   const testCase = await prisma.testCase.findFirst({
-    where: { projectId: project.id, status: 'approved' },
+    where: { projectId: project.id, name: 'LetCode Dialog Flow' },
   });
   
   if (!testCase) {
-    console.log('No approved test cases found in LetCode project');
+    console.log('No LetCode Dialog Flow test case found');
     return;
   }
   
   const user = await prisma.user.findFirst();
   
-  console.log('Test Case:', testCase.name);
+  console.log('Target Test Case:', testCase.name, 'ID:', testCase.id);
+  console.log('Project autoAcceptDialogs:', project.autoAcceptDialogs);
   
   const { runControllerConductorOnce } = require('../server/services/controllerConductorRunner.js');
   
   try {
     const outcome = await runControllerConductorOnce({
       project,
-      userId: user.id,
+      userId: user ? user.id : project.userId,
       scenarios: [{ cases: [testCase] }]
     });
-    console.log('Conductor Finished. Run ID:', outcome.runId);
+    console.log('\n=================== CONDUCTOR FINISHED ===================');
+    console.log('New Run ID:', outcome.runId);
     
     const runResult = await prisma.runResult.findFirst({
       where: { runId: outcome.runId, testCaseId: testCase.id },
     });
     
-    if (runResult && runResult.stepResults) {
-      const results = JSON.parse(runResult.stepResults);
+    if (runResult) {
+      console.log('RunResult Verdict Status:', runResult.status);
+      const results = JSON.parse(runResult.stepResults || '[]');
       console.log('Step Results Overview:');
       results.forEach(r => {
-         console.log(`Step: ${r.stepId} - Result: ${r.status}`);
-         if(r.actions) {
-            r.actions.forEach(a => {
-                console.log(`  Action: ${a.toolName} ${a.actionText || ''} -> ${a.result?.isError ? 'Error' : 'Success'}`);
-                if (a.result?.isError && a.result?.content) {
-                   console.log(`    Error Details: ${JSON.stringify(a.result.content)}`);
-                }
-            });
-         }
+         console.log(`Step ${r.index || r.stepId}: ${r.action || r.type} -> Status: ${r.status} ${r.reason ? '(' + r.reason + ')' : ''}`);
       });
     } else {
-      console.log('No run result or step results found');
+      console.log('No run result found for this run');
     }
   } catch (err) {
     console.error('Error running conductor:', err);

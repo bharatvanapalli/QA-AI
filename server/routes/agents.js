@@ -465,8 +465,11 @@ async function cleanupStaleAgentRuns({ projectId, userId = null } = {}) {
     status: 'running',
     startedAt: { lt: staleAgentRunCutoff() },
   };
-  if (projectId) where.projectId = projectId;
-  if (userId) where.userId = userId;
+  if (projectId) {
+    where.projectId = projectId;
+  } else if (userId) {
+    where.userId = userId;
+  }
   return prisma.agentRun.updateMany({
     where,
     data: {

@@ -1994,12 +1994,26 @@ function createControllerMcpRuntimeAdapter({
           } else {
             await nativeDialog.accept(args?.promptText);
           }
-        } catch (_) {}
-        session.activeNativeDialog = null;
-        if (session.liveCdp) session.liveCdp.activeNativeDialog = null;
-        session.lastDialog = null;
-        if (session.liveCdp) session.liveCdp.lastDialog = null;
+        } catch (_) {
+          // Confirmed live (2026-08-12): by the time this explicit step runs,
+          // the dialog is almost always already eagerly resolved (see
+          // setupDialogListener in mcp.js) — accept()/dismiss() on an
+          // already-handled dialog throws "No dialog is showing". That's
+          // expected now, not an error: the eager resolver already applied
+          // the authored intent at dialog-open time, faster than any
+          // competing resolver could react. Swallow safely either way.
+        }
       }
+      // Unconditional: an explicit AcceptAlert/DismissAlert/TypeAlert step
+      // means the conductor considers this dialog handled now, regardless
+      // of whether OUR OWN nativeDialog reference was still live (it won't
+      // be, in the normal eager-resolution case) — clear tracking state so
+      // a later, unrelated tool call doesn't get mistaken for one that
+      // still has a dialog pending.
+      session.activeNativeDialog = null;
+      if (session.liveCdp) session.liveCdp.activeNativeDialog = null;
+      session.lastDialog = null;
+      if (session.liveCdp) session.liveCdp.lastDialog = null;
       try {
         await session.client.callTool(
           {
@@ -2029,6 +2043,34 @@ function createControllerMcpRuntimeAdapter({
         }],
         isError: false,
       };
+    }
+    // Confirmed live on LetCode's Dialog Flow test case (2026-08-12): a
+    // matching guard was added in mcp.js's callToolInner, but rawCall (used
+    // by capture()/candidate resolution/everything else in this file) calls
+    // session.client.callTool directly a few lines below — bypassing that
+    // guard entirely. Reproduced live: capture()'s browser_snapshot retry
+    // loop hit "does not handle the modal state" from @playwright/mcp 13
+    // times in a row for the very first page-load alert, because this
+    // choke point never checked for a pending dialog at all. This is the
+    // ACTUAL dispatch path the conductor uses — the mcp.js guard alone was
+    // dead code for this. Short-circuit here too, before ever reaching
+    // session.client.callTool, so no incidental tool call can trip
+    // @playwright/mcp's own auto-dismiss safety net.
+    if (toolName !== 'browser_handle_dialog') {
+      const pendingDialog = session.activeNativeDialog || session.liveCdp?.activeNativeDialog
+        || session.lastDialog || session.liveCdp?.lastDialog;
+      if (pendingDialog) {
+        const dialogMessage = String(
+          (typeof pendingDialog.message === 'function' ? pendingDialog.message() : pendingDialog.message) || '',
+        ).replace(/\s+/g, ' ').trim();
+        return {
+          isError: false,
+          content: [{
+            type: 'text',
+            text: `Page URL: ${session.currentUrl || ''}\nPage Title: Native Dialog Modal\n- text "alert text": ${dialogMessage}\n- text "dialog_message": ${dialogMessage}\n- text "${dialogMessage}" [ref=native_dialog_msg]\n`,
+          }],
+        };
+      }
     }
     const timeoutMs = Math.max(100, Math.min(60_000, Number(remainingMs) || 5_000));
     let timer;
@@ -2070,12 +2112,25 @@ function createControllerMcpRuntimeAdapter({
       };
     }
     let snapshotText = textOfResult(result);
+    if (result?.isError) {
+      const modalMatch = (snapshotText || '').match(/\["(alert|confirm|prompt)"\s+dialog\s+with\s+message\s+"([^"]+)"\]/i)
+        || (JSON.stringify(result) || '').match(/\["(alert|confirm|prompt)"\s+dialog\s+with\s+message\s+"([^"]+)"\]/i);
+      if (modalMatch) {
+        const dialogType = modalMatch[1].toLowerCase();
+        const dialogMsg = modalMatch[2];
+        const entry = { type: dialogType, message: dialogMsg, text: dialogMsg, time: Date.now() };
+        session.lastDialog = entry;
+        if (session.liveCdp) session.liveCdp.lastDialog = entry;
+        session.dialogHistory = session.dialogHistory || [];
+        session.dialogHistory.push(entry);
+      }
+    }
     const activeDialogMsg = session?.activeNativeDialog?.message
       || session?.lastDialog?.message
       || session?.liveCdp?.lastDialog?.message
       || session?.liveCdp?.activeNativeDialog?.message;
-    if (result?.isError && activeDialogMsg) {
-      snapshotText = `Page URL: ${session.currentUrl || ''}\nPage Title: Native Dialog Modal\n- text "dialog_message": ${activeDialogMsg}\n- text "${activeDialogMsg}" [ref=native_dialog_msg]\n`;
+    if ((result?.isError || !snapshotText) && activeDialogMsg) {
+      snapshotText = `Page URL: ${session.currentUrl || ''}\nPage Title: Native Dialog Modal\n- text "alert text": ${activeDialogMsg}\n- text "dialog_message": ${activeDialogMsg}\n- text "${activeDialogMsg}" [ref=native_dialog_msg]\n`;
       result.isError = false;
     }
     const metadata = pageMetadata(snapshotText);

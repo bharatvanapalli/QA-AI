@@ -86,6 +86,41 @@ function rootCaseId(testCaseId, casesById, seen = new Set()) {
     : testCaseId;
 }
 
+// Confirmed live on LetCode's Dialog Flow test case (2026-08-12): a native
+// alert()/confirm()/prompt() dialog gets resolved by a competing party (not
+// us) within under a second of opening — reproduced directly via
+// diagnostic logging showing "No dialog is showing" on our OWN explicit
+// accept()/dismiss() call, every time, regardless of how many intervening
+// steps separate the triggering Click from that explicit step. Holding a
+// dialog open for a LATER step to resolve is fundamentally unreliable here.
+// The fix: since the compiled operation list already declares every
+// AcceptAlert/DismissAlert/TypeAlert intent up front, build one ordered
+// queue of resolutions per test case and let the dialog-open handler
+// (mcp.js#setupDialogListener) resolve synchronously, in the same tick the
+// dialog opens — no round trip, no race. Generic by construction: it reads
+// only the canonical AcceptAlert/DismissAlert/TypeAlert operation types
+// already used platform-wide, not any site-specific text/selector.
+function buildDialogResolutionQueue(operations) {
+  const queue = [];
+  if (!Array.isArray(operations)) return queue;
+  for (const op of operations) {
+    const type = op?.type;
+    if (type === 'TypeAlert') {
+      const promptVal = op.value ?? op.targetIdentity?.value ?? null;
+      queue.push({
+        action: 'accept',
+        promptText: promptVal != null ? String(promptVal) : null,
+        sourceOperationId: op.operationId || null,
+      });
+    } else if (type === 'AcceptAlert') {
+      queue.push({ action: 'accept', promptText: null, sourceOperationId: op.operationId || null });
+    } else if (type === 'DismissAlert') {
+      queue.push({ action: 'dismiss', promptText: null, sourceOperationId: op.operationId || null });
+    }
+  }
+  return queue;
+}
+
 function databaseStatus(verdict) {
   if (verdict === CASE_VERDICT.PASS) return 'pass';
   if (verdict === CASE_VERDICT.FAIL || verdict === CASE_VERDICT.EXECUTION_ERROR) return 'fail';
@@ -591,6 +626,9 @@ async function run({
         steps: decodeJson(testCase.steps, []) || [],
         assertions: decodeJson(testCase.assertions, []) || [],
       });
+      if (browserSession.liveCdp) {
+        browserSession.liveCdp.dialogResolutionQueue = buildDialogResolutionQueue(contract.operations);
+      }
       send({
         type: 'step.start',
         runId: runRow.id,
@@ -740,8 +778,7 @@ async function run({
             status,
             durationMs: Math.max(0, Date.now() - startedAt),
             error,
-            reasoning: error ? `Step failed during execution:\n${error}` : null,
-            failureAnalysis: encodeJson(failureAnalysis),
+            failureExplanation: error ? `Step failed during execution:\n${error}` : null,
             blockedReason: status === 'blocked' ? error : null,
             screenshots: encodeJson(
               Array.isArray(browserSession?.screenshots)
@@ -756,9 +793,10 @@ async function run({
             verdictMode: 'mechanical_v1',
             mechanicalVerdictReason: outcome.paused
               ? 'controller_manual_boundary'
-              : outcome.verdict.reason,
+              : (outcome.verdict?.reason || 'none'),
           },
-        }).catch((e) => console.error('[Conductor error saving runResult]', e.message));
+        }).catch((e) => console.error('[Conductor error saving runResult]', e));
+        await recomputeRunCounters(runRow.id).catch((e) => console.error('[Conductor error recomputing counters]', e));
       }
       for (const step of steps) {
         send({

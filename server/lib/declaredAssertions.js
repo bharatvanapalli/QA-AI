@@ -161,6 +161,9 @@ function validateRecord(raw) {
   switch (type) {
     case 'TEXT':
     case 'FORBIDDEN_TEXT':
+      if (typeof payload.expectedText !== 'string' && typeof payload.text === 'string') {
+        payload.expectedText = payload.text;
+      }
       if (typeof payload.expectedText !== 'string' && typeof payload.unexpectedText !== 'string') {
         return { ok: false, issue: 'text_assertion_needs_expectedText_or_unexpectedText' };
       }
@@ -478,6 +481,50 @@ function findMalformedMustAssertions(rawArray) {
   return issues;
 }
 
+function buildDeclaredAssertionsFromSteps(stepsInput, existingDeclared = []) {
+  const steps = Array.isArray(stepsInput) ? stepsInput : [];
+  const existing = parseAssertionArray(existingDeclared);
+  const out = [];
+
+  for (let index = 0; index < steps.length; index++) {
+    const step = steps[index];
+    if (!step || typeof step !== 'object') continue;
+
+    const actionName = step.action || step.type || '';
+    const isVerify = step.verificationPoint || step.stepKind === 'verification' || /^Assert|^Verify/i.test(actionName) || !!step.verify;
+    if (!isVerify) continue;
+
+    const rawExpected = step.expected || (typeof step.verify === 'string' ? step.verify : step.verify?.text) || step.text || step.authoredText || '';
+    let cleanExpected = String(rawExpected)
+      .replace(/^Verify\s+that\s+/i, '')
+      .replace(/\s+is\s+visible\.?$/i, '')
+      .replace(/^["']|["']$/g, '')
+      .replace(/["']\s+is\s+visible\.?$/i, '')
+      .replace(/^["']|["']$/g, '')
+      .trim();
+    if (!cleanExpected) continue;
+
+    const target = step.element || step.target || null;
+    const isTextVerify = /contains|has text|text/i.test(cleanExpected) || /Text/i.test(actionName);
+    const assertionType = isTextVerify ? 'TEXT' : 'VISIBLE';
+
+    out.push({
+      id: newAssertionId(),
+      type: assertionType,
+      criticality: 'must',
+      payload: isTextVerify
+        ? { expectedText: cleanExpected, text: cleanExpected, target }
+        : { text: cleanExpected, target: target || cleanExpected },
+      targetUrl: null,
+      checkAt: 'step',
+      stepOrder: step.order || (index + 1),
+      source: 'step_mutation',
+    });
+  }
+
+  return out.length ? out : existing;
+}
+
 module.exports = {
   normalizeForCase,
   validateRecord,   // exported for tests
@@ -486,6 +533,7 @@ module.exports = {
   normalizeCriticality,
   normalizeProvenance,
   normalizeNote,
+  buildDeclaredAssertionsFromSteps,
   VALID_TYPES,
   VALID_CHECK_AT,
   VALID_CRITICALITY,

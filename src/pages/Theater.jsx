@@ -1839,9 +1839,11 @@ const ActionLine = React.memo(function ActionLine({ action }) {
   }
   if (action.tool === 'proof_diagnostic' || action.proofDiagnostic) {
     if (action.message === 'same_semantic_owner_reresolved_after_rerender') {
+      const roleText = action.role && action.role !== 'element' && action.role !== 'code' ? ` ${action.role}` : '';
+      const nameText = action.name ? `"${action.name}"` : 'element';
       return (
         <div className="pl-3 py-1 border-l-2 border-info-300 text-2xs text-ink-500 italic">
-          The page changed, so I re-located the "{action.name || 'element'}" {action.role || 'element'} to keep going.
+          The page changed, so I re-located {nameText}{roleText} to keep going.
         </div>
       );
     }

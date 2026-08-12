@@ -1538,6 +1538,8 @@ function addDefaultOperationChecks(steps) {
     }
     if (step.type === 'Click') {
       const opensControl = /\b(?:dropdown|list|menu|picker|calendar|suggestion)\b/i.test(`${target} ${step.text}`);
+      const opensAlert = /\b(?:alert|dialog|prompt|confirm)\b/i.test(`${target} ${step.text}`)
+        || (next && ['AcceptAlert', 'DismissAlert'].includes(next.type));
       const cleanedNext = nextTarget ? nextTarget.replace(/\s+(?:button|btn|link|icon|input|field|textbox|checkbox|modal|dialog|popup)$/i, '').trim() : '';
       step.operationCheck = opensControl
         ? {
@@ -1546,15 +1548,22 @@ function addDefaultOperationChecks(steps) {
           expected: `${target} options are visible after opening the control.`,
           required: true,
         }
-        : {
-          kind: cleanedNext ? 'page_ready' : 'action_completed',
-          target: cleanedNext || target,
-          expected: cleanedNext
-            ? `${cleanedNext} is available after activating ${target}.`
-            : `${target} action completes.`,
-          required: true,
-          ...(cleanedNext ? { condition: { text: cleanedNext } } : {}),
-        };
+        : (opensAlert
+          ? {
+            kind: 'action_completed',
+            target,
+            expected: `${target} action completes.`,
+            required: true,
+          }
+          : {
+            kind: cleanedNext ? 'page_ready' : 'action_completed',
+            target: cleanedNext || target,
+            expected: cleanedNext
+              ? `${cleanedNext} is available after activating ${target}.`
+              : `${target} action completes.`,
+            required: true,
+            ...(cleanedNext ? { condition: { text: cleanedNext } } : {}),
+          });
       continue;
     }
     if (['Expand', 'Collapse'].includes(step.type)) {

@@ -438,9 +438,11 @@ function normalizeAction(source, context, findings) {
   // "Click", left over from however the step was authored). When action
   // IS itself a valid step type, it's a stronger, deliberate signal than
   // type — trust it over a possibly-wrong type field.
-  const actionAsCanonicalType = VALID_STEP_TYPES.includes(clean(source.action)) ? clean(source.action) : null;
-  const inferredType = !explicitType ? inferCanonicalType(source.action) : null;
-  const authoredType = optionActivation?.type || actionAsCanonicalType || explicitType || inferredType || clean(source.action);
+  const actionText = clean(source.action || source.authoredText || source.text);
+  const actionAsCanonicalType = VALID_STEP_TYPES.includes(actionText) ? actionText : null;
+  const inferredType = inferCanonicalType(actionText);
+  const dialogInferredType = (inferredType && ['TypeAlert', 'AcceptAlert', 'DismissAlert'].includes(inferredType)) ? inferredType : null;
+  const authoredType = optionActivation?.type || dialogInferredType || actionAsCanonicalType || explicitType || inferredType || actionText;
   const type = authoredType;
   const path = `steps[${context.index}]`;
   if (!VALID_STEP_TYPES.includes(type)) {
@@ -545,8 +547,8 @@ function normalizeAssertion(source, context, findings) {
   // Infer target from action text when no explicit target is provided.
   // Patterns: 'Confirm the "Field Name" field is X' → target = "Field Name"
   let target = source.targetIdentity ?? source.target;
-  if (target == null && source.action) {
-    const actionText = String(source.action);
+  if (target == null) {
+    const actionText = [source.authoredText, source.text, source.atomicText, source.action].filter(Boolean).join(' ');
     const targetMatch = actionText.match(/["']([^"']+)["']\s*(?:field|input|element|text\s*box|button|control)?/i);
     if (targetMatch) {
       target = { label: targetMatch[1], accessibleName: targetMatch[1] };

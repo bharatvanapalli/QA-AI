@@ -38,8 +38,8 @@ describe('Tests page non-blocking authoring and step editing contract', () => {
     const converted = convertFlowToTemplate(flow);
 
     expect(QAAI_AUTHORING_TEMPLATE).toContain('User Story:');
-    expect(QAAI_AUTHORING_TEMPLATE).toContain('Test Data:');
-    expect(QAAI_AUTHORING_TEMPLATE).toContain('Expected Results:');
+    expect(QAAI_AUTHORING_TEMPLATE).toContain('Test Data');
+    expect(QAAI_AUTHORING_TEMPLATE).toContain('Scenario 1:');
     expect(converted).toContain(flow);
     expect(converted).toContain('QAAI will extract inline values');
   });
@@ -57,14 +57,14 @@ describe('Tests page non-blocking authoring and step editing contract', () => {
       }],
     });
 
-    expect(draft).toEqual({
+    expect(draft).toEqual(expect.objectContaining({
       instruction: 'Enter {{email}} and verify it is accepted.',
       action: 'Fill',
       target: 'Email field',
       value: '{{email}}',
       validation: 'Email value is accepted',
       condition: '',
-    });
+    }));
   });
 
   it('uses the server-returned step order and logical count when replacing a case', () => {
@@ -89,10 +89,10 @@ describe('Tests page non-blocking authoring and step editing contract', () => {
   it('wires every step mutation route and keeps destructive confirmation inside useConfirm', () => {
     const ui = read('src/pages/TestCases.jsx');
 
-    expect(ui).toContain('api.post(`/test-cases/${encodeURIComponent(testCase.id)}/steps`');
-    expect(ui).toContain('`/test-cases/${encodeURIComponent(testCase.id)}/steps/${encodeURIComponent(stepId)}`');
-    expect(ui).toContain('`/test-cases/${encodeURIComponent(testCase.id)}/steps/order`');
-    expect(ui).toContain('`/test-cases/${encodeURIComponent(testCase.id)}/steps/undo`');
+    expect(ui).toContain('api.post(`/projects/${current.id}/test-cases/${encodeURIComponent(testCase.id)}/steps`');
+    expect(ui).toContain('`/projects/${current.id}/test-cases/${encodeURIComponent(testCase.id)}/steps/${encodeURIComponent(stepId)}`');
+    expect(ui).toContain('`/projects/${current.id}/test-cases/${encodeURIComponent(testCase.id)}/steps/order`');
+    expect(ui).toContain('`/projects/${current.id}/test-cases/${encodeURIComponent(testCase.id)}/steps/undo`');
     expect(ui).toContain("title: 'Remove this step?'");
     expect(ui).not.toContain('window.confirm(');
     expect(ui).toContain('This change will apply to the next execution.');
@@ -133,7 +133,8 @@ describe('Tests page non-blocking authoring and step editing contract', () => {
       />,
     );
 
-    await user.click(screen.getByRole('button', { name: 'Edit Step 1' }));
+    await user.click(screen.getByRole('button', { name: 'Open options for Step 1' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Edit step' }));
     const instruction = screen.getByRole('textbox', { name: 'Edit step instruction' });
     await user.clear(instruction);
     await user.type(instruction, 'Enter john@example.com and verify it is accepted.');
@@ -171,10 +172,12 @@ describe('Tests page non-blocking authoring and step editing contract', () => {
       />,
     );
 
-    await user.click(screen.getByRole('button', { name: 'Remove Step 1' }));
+    await user.click(screen.getByRole('button', { name: 'Open options for Step 1' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Delete step' }));
     await waitFor(() => expect(onRemoveStep).toHaveBeenCalledWith('logical-stable-1', 'Open the dashboard.'));
     await user.click(screen.getByRole('button', { name: 'Undo' }));
     await waitFor(() => expect(onUndoStep).toHaveBeenCalledWith('logical-stable-1', 'undo-1'));
-    expect(screen.getByRole('button', { name: 'Edit Step 1' })).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Open options for Step 1' }));
+    expect(screen.getByRole('menuitem', { name: 'Edit step' })).toBeVisible();
   });
 });

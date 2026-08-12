@@ -4404,15 +4404,22 @@ export function buildStepEditorDraft(group) {
     value !== '' && value != null ? `with ${String(value)}` : '',
     validation ? `and verify ${validation}` : '',
   ].filter(Boolean).join(' ');
+  const instruction = group?.authoredText || step.authoredText || step.text || fallbackInstruction || 'Complete this step.';
+  const valStr = typeof validation === 'string' ? validation : (validation ? JSON.stringify(validation) : '');
+  const valValue = value == null ? '' : String(value);
   return {
-    instruction: group?.authoredText || step.authoredText || step.text || fallbackInstruction || 'Complete this step.',
+    instruction,
     action,
     target,
-    value: value == null ? '' : String(value),
-    validation: typeof validation === 'string' ? validation : JSON.stringify(validation),
+    value: valValue,
+    validation: valStr,
     condition: typeof step.condition === 'string'
       ? step.condition
       : step.condition?.predicate || step.condition?.text || step.condition?.description || '',
+    _initialInstruction: instruction,
+    _initialTarget: target,
+    _initialValue: valValue,
+    _initialValidation: valStr,
   };
 }
 
@@ -6244,17 +6251,23 @@ export default function TestCases() {
 
   const handleSaveStep = useCallback(async (testCase, stepId, draft) => {
     if (!current?.id || !testCase?.id || !stepId || !draft?.instruction?.trim()) return null;
+    const initialInstruction = draft._initialInstruction || '';
+    const initialTarget = draft._initialTarget || '';
+    const initialValue = draft._initialValue || '';
+    const initialValidation = draft._initialValidation || '';
+    const instructionChanged = draft.instruction.trim() !== initialInstruction.trim();
+
     const result = await api.patch(
       `/projects/${current.id}/test-cases/${encodeURIComponent(testCase.id)}/steps/${encodeURIComponent(stepId)}`,
       {
         projectId: current?.id,
         authoredText: draft.instruction.trim(),
         instruction: draft.instruction.trim(),
-        action: draft.action.trim() || null,
-        target: draft.target.trim() || null,
-        value: draft.value,
-        validation: draft.validation.trim() || null,
-        condition: draft.condition.trim() || null,
+        action: draft.action?.trim() || null,
+        target: instructionChanged && (draft.target || '') === initialTarget ? null : (draft.target?.trim() || null),
+        value: instructionChanged && (draft.value || '') === initialValue ? null : draft.value,
+        validation: instructionChanged && (draft.validation || '') === initialValidation ? null : (draft.validation?.trim() || null),
+        condition: draft.condition?.trim() || null,
         source: 'user_edit',
         applyTo: 'next_execution',
       },
@@ -6268,11 +6281,11 @@ export default function TestCases() {
         ...step,
         authoredText: draft.instruction.trim(),
         text: draft.instruction.trim(),
-        ...(isPrimary && draft.action.trim() ? { action: draft.action.trim(), type: draft.action.trim() } : {}),
-        ...(isPrimary && draft.target.trim() ? { target: draft.target.trim(), element: draft.target.trim() } : {}),
+        ...(isPrimary && draft.action?.trim() ? { action: draft.action.trim(), type: draft.action.trim() } : {}),
+        ...(isPrimary && draft.target?.trim() ? { target: draft.target.trim(), element: draft.target.trim() } : {}),
         ...(isPrimary ? { value: draft.value } : {}),
-        ...(isPrimary && draft.validation.trim() ? { expected: draft.validation.trim() } : {}),
-        ...(isPrimary && draft.condition.trim() ? { condition: draft.condition.trim() } : {}),
+        ...(isPrimary && draft.validation?.trim() ? { expected: draft.validation.trim() } : {}),
+        ...(isPrimary && draft.condition?.trim() ? { condition: draft.condition.trim() } : {}),
         userEdited: true,
       };
     });

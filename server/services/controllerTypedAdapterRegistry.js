@@ -177,8 +177,26 @@ function inferAdapterKind(operation = {}, resolution = {}, context = {}) {
   if (type === 'Scroll') return ADAPTER_KIND.REVEAL;
   if (type === 'Upload') return ADAPTER_KIND.UPLOAD;
   if (['SwitchContext'].includes(type) || ['frame', 'browser_context'].includes(role)) return ADAPTER_KIND.CONTEXT;
-  const targetLower = clean(identity.target || identity.accessibleName).toLowerCase();
-  if (['Close', 'AcceptAlert', 'DismissAlert', 'TypeAlert'].includes(type) || role === 'dialog' || (['Fill', 'Type'].includes(type) && ['prompt', 'alert'].includes(targetLower))) return ADAPTER_KIND.DIALOG;
+  const targetLower = clean(
+    identity.target ||
+    identity.accessibleName ||
+    identity.label ||
+    operation.target ||
+    operation.element ||
+    operation.text ||
+    operation.authoredAction ||
+    operation.payload ||
+    operation.targetIdentity?.label ||
+    operation.targetIdentity?.accessibleName
+  ).toLowerCase();
+  const hasActiveNativeDialog = Boolean(
+    context?.hasActiveNativeDialog ||
+    context?.session?.activeNativeDialog ||
+    context?.session?.liveCdp?.activeNativeDialog ||
+    context?.session?.lastDialog ||
+    context?.session?.liveCdp?.lastDialog
+  );
+  if (['Close', 'AcceptAlert', 'DismissAlert', 'TypeAlert'].includes(type) || role === 'dialog' || (['Fill', 'Type'].includes(type) && (/\b(?:prompt|alert|native\s*dialog)\b/i.test(targetLower) || hasActiveNativeDialog))) return ADAPTER_KIND.DIALOG;
   if (type === 'Date') return ADAPTER_KIND.DATE;
   if (['Time', 'DateTime'].includes(type)) return ADAPTER_KIND.TIME;
   if (type === 'Select') {
@@ -418,6 +436,7 @@ function planButton(operation, resolution, context = {}) {
         { id: 'next-required-control', allOf: [CLAIM.NEXT_REQUIRED_CONTROL_ACTIONABLE] },
         { id: 'navigation-target', allOf: [CLAIM.EXACT_NAVIGATION_TARGET] },
         { id: 'page-transition', allOf: [CLAIM.PAGE_TRANSITION_COMMITTED] },
+        { id: 'dialog-state', allOf: [CLAIM.DIALOG_STATE] },
       ]),
     proofMetadata: isClickAndHold
       ? { expectedValue: 'Button has been long pressed' }
@@ -702,8 +721,9 @@ function createTypedAdapterPlan({ operation, resolution = {}, context = {} } = {
       const promptVal = operation.value || operation.targetIdentity?.value || null;
       if (['Fill', 'Type', 'TypeAlert'].includes(operation.type) && promptVal) {
         return commonPlan(operation, kind, {
-          mutation: mutation('browser_evaluate', {
-            expression: `(function(){ if (typeof window.__qaai_set_prompt_value === 'function') window.__qaai_set_prompt_value(${JSON.stringify(String(promptVal))}); return true; })()`,
+          mutation: mutation('browser_handle_dialog', {
+            accept: true,
+            promptText: String(promptVal),
           }),
           proofContract: proof(`${operation.operationId}:dialog`, [
             { id: 'dialog-state', allOf: [CLAIM.DIALOG_STATE] },
@@ -713,7 +733,7 @@ function createTypedAdapterPlan({ operation, resolution = {}, context = {} } = {
       }
       return commonPlan(operation, kind, {
         mutation: mutation('browser_handle_dialog', {
-          action: isDismiss ? 'dismiss' : 'accept',
+          accept: !isDismiss,
           ...(promptVal ? { promptText: String(promptVal) } : {}),
         }),
         proofContract: proof(`${operation.operationId}:dialog`, [
