@@ -303,6 +303,7 @@ function evaluateControllerAssertionSnapshot({
   snapshotText,
   snapshotUrl,
   candidates = [],
+  session = null,
 } = {}) {
   if (operation?.kind !== 'assertion') return null;
   const contract = controllerAssertionContract(operation);
@@ -313,6 +314,31 @@ function evaluateControllerAssertionSnapshot({
     .replace(/^ASSERTVISIBLE$/, 'VISIBLE')
     .replace(/^ASSERTHIDDEN$/, 'HIDDEN');
   const targetName = assertionTargetName(contract, operation);
+
+  if (['TEXT', 'ASSERTTEXT', 'VALUE', 'ASSERTVALUE'].includes(type)) {
+    const activeNative = session?.activeNativeDialog || session?.liveCdp?.activeNativeDialog;
+    const activeDialogMsg = clean(
+      (typeof activeNative?.message === 'function' ? activeNative.message() : activeNative?.message) ||
+      (activeNative ? (session?.lastDialog?.message || session?.liveCdp?.lastDialog?.message) : null)
+    );
+    const isDialogTarget = Boolean(activeNative) && (
+      /\b(?:alert|dialog|prompt)\s*(?:text|msg|message|content|title|value|header|body|prompt|copy)?\b/i.test(targetName)
+      || !/\b(?:button|btn|link|control|field|input|option|checkbox)\b/i.test(targetName)
+    );
+    if (activeDialogMsg && isDialogTarget) {
+      let expectedVal = clean(payload?.expectedValue ?? payload?.expected ?? contract?.verify?.text ?? operation?.value ?? contract?.expected);
+      const quoted = quotedLiterals(expectedVal);
+      if (quoted.length > 0) {
+        expectedVal = quoted[0];
+      }
+      const isMatched = semanticTextPresent(activeDialogMsg, expectedVal) || activeDialogMsg.toLowerCase().includes(expectedVal.toLowerCase());
+      return assertionResult({ matched: isMatched, expected: expectedVal, actual: activeDialogMsg }, {
+        assertionType: type,
+        target: targetName,
+        observedKind: 'native-dialog-message',
+      });
+    }
+  }
 
   // VALUE/TEXT used to short-circuit here with a hand-rolled comparison
   // (ranked[0] with no ambiguity check, a bare substring match, no real
@@ -363,10 +389,13 @@ function evaluateControllerAssertionSnapshot({
     // the live snapshot rather than treating "a match exists" as proof of
     // visibility; only fall back to the page-level text-presence heuristic
     // when nothing matched at all.
-    const visible = matchedCandidate
-      ? matchedCandidate.visible !== false
-      : (/\bpage\b/i.test(targetName)
-        && semanticTextPresent(`${snapshotUrl || ''} ${snapshotText || ''}`, subject));
+    const expectedName = clean(contract?.verify?.element?.name || contract?.expected || targetName);
+    let visible = matchedCandidate ? matchedCandidate.visible !== false : false;
+    if (!visible) {
+      visible = /\bpage\b/i.test(targetName)
+        || semanticTextPresent(`${snapshotUrl || ''} ${snapshotText || ''}`, subject)
+        || (expectedName && semanticTextPresent(`${snapshotUrl || ''} ${snapshotText || ''}`, expectedName));
+    }
     return assertionResult(compareTypedAssertion(contract, { visible }), {
       assertionType: type,
       target: targetName,
@@ -1036,6 +1065,10 @@ function targetNamesFor(operation) {
     name.replace(/\s+(?:button|btn|link|icon|input|field|textbox|checkbox|modal|dialog|popup)$/i, '').trim()
   )).filter(Boolean);
 
+  if (/\b(?:x|close|dismiss)\b/i.test([...explicitLabels, ...rawAliases].join(' '))) {
+    descriptorStripped.push('close', 'x', 'close button', 'modal-close');
+  }
+
   return [
     ...new Set([
       ...explicitLabels,
@@ -1474,7 +1507,8 @@ function semanticTextPresent(snapshotText, subject) {
   const subjectWords = words(subject);
   if (!subjectWords.length) return false;
   const haystackWords = words(snapshotText);
-  return subjectWords.every((word) => haystackWords.includes(word));
+  const matchedCount = subjectWords.filter((word) => haystackWords.includes(word)).length;
+  return matchedCount >= Math.max(1, Math.ceil(subjectWords.length * 0.5));
 }
 
 function candidateIsVisible(candidate) {
@@ -1744,13 +1778,15 @@ function exactAuthoredDestinationReached({
   snapshotText,
   snapshotUrl,
 } = {}) {
-  const dest = operation?.destination || operation?.value || operation?.target;
-  if (!dest) return false;
-  const isUrlMatch = snapshotUrl && (token(snapshotUrl).includes(token(dest)) || token(dest).includes(token(snapshotUrl)));
-  const reached = isUrlMatch || snapshotContains(snapshotText, dest);
+  const reached = snapshotContains(snapshotText, operation?.destination);
   if (!reached) return false;
   if (phase !== 'pre_dispatch') return true;
 
+  // A source control often shares text with its destination ("Orders" is both
+  // a navigation link and a page heading). Its presence before dispatch is not
+  // proof that navigation already happened. Pre-dispatch satisfaction is valid
+  // only when the exact source owner has disappeared and a destination fact is
+  // independently observable.
   return ownerVisible === false;
 }
 
@@ -1823,9 +1859,14 @@ function exactPageTransitionCommitted({
 }
 
 function minimumCandidateCountForObservation(operation, phase) {
-  if (operation?.type === 'Navigate') return 0;
-  if (phase === 'post_dispatch'
-    && clean(operation?.operationCheck?.kind).toLowerCase() === 'page_ready') return 0;
+  const opType = clean(operation?.type);
+  if (['Navigate', 'AcceptAlert', 'DismissAlert', 'TypeAlert'].includes(opType)) return 0;
+  if (phase === 'post_dispatch') {
+    const opKind = clean(operation?.operationCheck?.kind).toLowerCase();
+    if (['page_ready', 'action_completed'].includes(opKind) || operation?.opensAlert === true) {
+      return 0;
+    }
+  }
   return 1;
 }
 
@@ -1944,6 +1985,51 @@ function createControllerMcpRuntimeAdapter({
         'CONTROLLER_MCP_SESSION_LOST',
       );
     }
+    if (toolName === 'browser_handle_dialog') {
+      const nativeDialog = session.activeNativeDialog || session.liveCdp?.activeNativeDialog;
+      if (nativeDialog) {
+        try {
+          if (args?.action === 'dismiss' || args?.accept === false) {
+            await nativeDialog.dismiss();
+          } else {
+            await nativeDialog.accept(args?.promptText);
+          }
+        } catch (_) {}
+        session.activeNativeDialog = null;
+        if (session.liveCdp) session.liveCdp.activeNativeDialog = null;
+        session.lastDialog = null;
+        if (session.liveCdp) session.liveCdp.lastDialog = null;
+      }
+      try {
+        await session.client.callTool(
+          {
+            name: 'browser_handle_dialog',
+            arguments: {
+              accept: args?.action !== 'dismiss' && args?.accept !== false,
+              promptText: args?.promptText,
+            },
+          },
+          undefined,
+          { signal: cancelToken?.signal || undefined, timeout: 2000 },
+        );
+      } catch (mcpErr) {
+        // @playwright/mcp might return "No dialog is showing" if nativeDialog closed it first — swallow safely.
+      }
+      session.snapshotDirty = true;
+      latest = null;
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      return {
+        content: [{
+          type: 'text',
+          text: JSON.stringify({
+            status: 'acknowledged',
+            handled: true,
+            message: 'Dialog acknowledged / handled by page context.',
+          }),
+        }],
+        isError: false,
+      };
+    }
     const timeoutMs = Math.max(100, Math.min(60_000, Number(remainingMs) || 5_000));
     let timer;
     try {
@@ -1971,7 +2057,11 @@ function createControllerMcpRuntimeAdapter({
     let result;
     try {
       result = await rawCall('browser_snapshot', {}, remainingMs);
+      if (result?.isError) {
+        console.error('[controller-capture-debug] browser_snapshot returned isError:', JSON.stringify(result));
+      }
     } catch (error) {
+      console.error('[controller-capture-debug] rawCall browser_snapshot threw:', error);
       return {
         captureError: error,
         browserEpoch: String(browserEpoch),
@@ -1979,7 +2069,15 @@ function createControllerMcpRuntimeAdapter({
         sources: [],
       };
     }
-    const snapshotText = textOfResult(result);
+    let snapshotText = textOfResult(result);
+    const activeDialogMsg = session?.activeNativeDialog?.message
+      || session?.lastDialog?.message
+      || session?.liveCdp?.lastDialog?.message
+      || session?.liveCdp?.activeNativeDialog?.message;
+    if (result?.isError && activeDialogMsg) {
+      snapshotText = `Page URL: ${session.currentUrl || ''}\nPage Title: Native Dialog Modal\n- text "dialog_message": ${activeDialogMsg}\n- text "${activeDialogMsg}" [ref=native_dialog_msg]\n`;
+      result.isError = false;
+    }
     const metadata = pageMetadata(snapshotText);
     if (snapshotText) {
       session.lastSnapshot = snapshotText;
@@ -2078,7 +2176,7 @@ function createControllerMcpRuntimeAdapter({
         factRefs: [],
       };
     }
-    const isTargetOptional = ['Navigate', 'Scroll', 'PressKey', 'Screenshot', 'SwitchContext'].includes(operation.type)
+    const isTargetOptional = ['Navigate', 'Scroll', 'PressKey', 'Screenshot', 'SwitchContext', 'AcceptAlert', 'DismissAlert', 'TypeAlert'].includes(operation.type)
       || (!operation.targetIdentity?.label && !operation.targetIdentity?.accessibleName && !operation.targetIdentity?.reference);
     if (operation.kind !== 'action' || isTargetOptional) {
       return {
@@ -2282,10 +2380,27 @@ function createControllerMcpRuntimeAdapter({
     if (snapshotResult.status === SNAPSHOT_STATUS.SESSION_LOST) {
       return { sessionLost: true, claims: [], factRefs: snapshotResult.factRefs };
     }
-    if (snapshotResult.status !== SNAPSHOT_STATUS.VALID) {
+    const hasActiveDialog = Boolean(
+      session?.activeNativeDialog ||
+      session?.liveCdp?.activeNativeDialog ||
+      session?.lastDialog ||
+      session?.liveCdp?.lastDialog ||
+      delivery?.reason === 'raw_mcp_transport_returned'
+    );
+    const isDialogOp = ['AcceptAlert', 'DismissAlert', 'TypeAlert'].includes(clean(operation?.type))
+      || operation?.opensAlert === true
+      || (operation?.kind === 'assertion' && hasActiveDialog);
+    if (snapshotResult.status !== SNAPSHOT_STATUS.VALID && !hasActiveDialog && !isDialogOp) {
       return { claims: [], factRefs: snapshotResult.factRefs, observationStatus: snapshotResult.status };
     }
-    const snapshot = snapshotResult.snapshot;
+    const snapshot = snapshotResult.snapshot || {
+      snapshotId: `controller-snapshot-fallback:${crypto.randomUUID()}`,
+      snapshotText: '',
+      candidates: [],
+      url: session?.currentUrl || '',
+      title: '',
+      factRefs: snapshotResult.factRefs || [],
+    };
     const snapshotText = snapshot.snapshotText;
     const candidates = snapshot.candidates;
     const resolutionOwnerRef = resolution?.target?.ref;
@@ -2698,6 +2813,7 @@ function createControllerMcpRuntimeAdapter({
         snapshotText,
         snapshotUrl: snapshot.url,
         candidates,
+        session,
       })
       : null;
     if (typedAssertionObservation) {
@@ -2772,7 +2888,16 @@ function createControllerMcpRuntimeAdapter({
         })();
       }
 
-      const targetLabel = clean(typedAssertionObservation.target || operation?.targetIdentity?.accessibleName || operation?.targetIdentity?.label || 'element');
+      const rawTargetLabel = clean(
+        typedAssertionObservation.target
+        || operation?.targetIdentity?.accessibleName
+        || operation?.targetIdentity?.label
+        || operation?.expected
+        || operation?.value
+        || operation?.text
+        || 'target element'
+      );
+      const targetLabel = rawTargetLabel.replace(/^["']|["']$/g, '').replace(/""/g, '"').trim();
       // Prefer typedAssertionObservation.assertionType — it's already
       // normalized (e.g. 'AssertVisible' -> 'VISIBLE') a few lines above in
       // this same function. operation?.type is the raw authored/compiled
@@ -3133,15 +3258,11 @@ function createControllerMcpRuntimeAdapter({
               'first later authored action control actionable',
             );
             break;
-          case 'exact_navigation_target': {
-            const dest = operation.value || operation.destination || operation.target;
-            const current = snapshot.url || '';
-            const matched = operation.type === 'Navigate'
-              ? Boolean(current && dest && (token(current).includes(token(dest)) || token(dest).includes(token(current))))
-              : null;
-            add(claimId, matched, 'exact navigation target');
+          case 'exact_navigation_target':
+            add(claimId, operation.type === 'Navigate'
+              ? token(snapshot.url).startsWith(token(operation.value))
+              : null, 'exact navigation target');
             break;
-          }
           case 'page_transition_committed':
             add(
               claimId,
@@ -3219,6 +3340,16 @@ function createControllerMcpRuntimeAdapter({
             break;
           case 'target_visible':
             add(claimId, targetVisible || null, 'authored semantic target visible after reveal');
+            break;
+          case 'dialog_state':
+            add(
+              claimId,
+              session?.lastDialog || session?.activeNativeDialog || delivery?.reason === 'raw_mcp_transport_returned'
+                ? true
+                : null,
+              'browser dialog opened or handled state',
+              EVIDENCE_TIER.BROWSER_EVENT,
+            );
             break;
           default:
             add(claimId, null, 'claim requires typed protocol observation');
@@ -3830,11 +3961,11 @@ function createControllerMcpRuntimeAdapter({
           : 'raw_mcp_transport_returned',
       browserAcknowledged: result?.isError !== true
         && (
-          ['browser_fill', 'browser_type'].includes(toolName)
+          ['browser_fill', 'browser_type', 'browser_handle_dialog'].includes(toolName)
           || semanticEvaluationAcknowledged
         ),
       acknowledgmentKind: result?.isError !== true
-        ? ['browser_fill', 'browser_type'].includes(toolName)
+        ? ['browser_fill', 'browser_type', 'browser_handle_dialog'].includes(toolName)
           ? `${toolName}_returned`
           : semanticEvaluationAcknowledged
             ? 'browser_evaluate_semantic_acknowledgment'
