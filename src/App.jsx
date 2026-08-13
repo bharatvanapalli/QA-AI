@@ -36,6 +36,7 @@ import Settings from './pages/settings/Settings';
 import ClaudeSettings from './pages/settings/ClaudeSettings';
 import GeminiSettings from './pages/settings/GeminiSettings';
 import AiProviderSettings from './pages/settings/AiProviderSettings';
+import CopilotSettings from './pages/settings/CopilotSettings';
 import AdoSettings from './pages/settings/AdoSettings';
 import JiraSettings from './pages/settings/JiraSettings';
 import WebhookSettings from './pages/settings/WebhookSettings';
@@ -176,6 +177,7 @@ function MainLayout() {
             <Route path="settings" element={<Settings />}>
               <Route index element={<Navigate to="ai-provider" replace />} />
               <Route path="ai-provider" element={<AiProviderSettings />} />
+              <Route path="copilot" element={<CopilotSettings />} />
               <Route path="claude" element={<ClaudeSettings />} />
               <Route path="gemini" element={<GeminiSettings />} />
               <Route path="ado" element={<AdoSettings />} />

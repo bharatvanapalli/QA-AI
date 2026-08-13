@@ -103,12 +103,15 @@ export default function ProjectProviderSection() {
           options={[
             { value: 'claude', label: 'Claude (Anthropic)' },
             { value: 'gemini', label: 'Gemini (Google)' },
+            { value: 'copilot', label: 'GitHub Copilot (VS Code Bridge)' },
           ]}
           disabled={loading || saving}
           hint={
-            value === 'gemini'
-              ? 'Agents call Google Generative AI. Rate-limit chip is hidden — Google does not return per-request headroom.'
-              : 'Agents call Anthropic. Rate-limit chip shows live tokens-remaining from the response headers.'
+            value === 'copilot'
+              ? 'Agents route through the local VS Code GitHub Copilot Bridge (http://127.0.0.1:5005).'
+              : value === 'gemini'
+                ? 'Agents call Google Generative AI. Rate-limit chip is hidden — Google does not return per-request headroom.'
+                : 'Agents call Anthropic. Rate-limit chip shows live tokens-remaining from the response headers.'
           }
         />
         <Button

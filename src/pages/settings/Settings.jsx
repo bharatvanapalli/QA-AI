@@ -4,6 +4,7 @@ import { Cpu, Bot, Sparkles, GitBranch, KanbanSquare, Webhook, Bell } from 'luci
 
 const TABS = [
   { to: 'ai-provider', label: 'AI Provider', icon: Cpu },
+  { to: 'copilot', label: 'GitHub Copilot', icon: Cpu },
   { to: 'claude', label: 'Claude API', icon: Bot },
   { to: 'gemini', label: 'Gemini API', icon: Sparkles },
   { to: 'ado', label: 'Azure DevOps', icon: GitBranch },

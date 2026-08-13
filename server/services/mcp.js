@@ -928,6 +928,12 @@ function envFlag(name, defaultValue = false) {
   return /^(1|true|yes|on)$/i.test(String(raw));
 }
 
+// How long a native alert/confirm/prompt dialog is deliberately left open
+// before setupDialogListener's eager resolver closes it — purely so a human
+// watching the live browser can see it. Correctness never depends on this
+// value; it only trades a little wall-clock time for visibility.
+const DIALOG_VISIBLE_PAUSE_MS = Number(process.env.QAAI_DIALOG_VISIBLE_PAUSE_MS) || 700;
+
 // #32 — browser-topology portability.
 //
 // The crawl/run historically baked in NON-PORTABLE choices: a headed browser
@@ -1325,6 +1331,19 @@ async function launchLiveCdpBrowser({ sessionId, viewport, userDataDir, project,
           liveCdpResult.activeNativeDialog = dialog;
           entry.resolvedBy = nextResolution.sourceOperationId || null;
           entry.resolvedAction = nextResolution.action;
+          // Resolving this fast is correct but invisible — sub-20ms leaves
+          // no time for the OS to ever paint the dialog on screen, on the
+          // real window or anywhere else. This is a deliberate, human-scale
+          // pause purely so a person watching the live browser can actually
+          // see each alert/confirm/prompt appear before it closes. Safe to
+          // add now specifically because the dialog can no longer be
+          // auto-dismissed out from under us during it (monitorBrowser, the
+          // thing that used to do that in under 20ms, now has its own
+          // no-op 'dialog' listener) — activeNativeDialog/lastDialog are
+          // already set above, so any other tool call is blocked from
+          // reaching MCP for the duration (see the pendingDialog guards in
+          // controllerMcpRuntimeAdapter.js and mcp.js#callToolInner).
+          await new Promise((resolve) => setTimeout(resolve, DIALOG_VISIBLE_PAUSE_MS));
           try {
             if (nextResolution.action === 'dismiss') {
               await dialog.dismiss();
@@ -1342,6 +1361,7 @@ async function launchLiveCdpBrowser({ sessionId, viewport, userDataDir, project,
         liveCdpResult.activeNativeDialog = dialog;
         const autoAccept = project ? Boolean(project.autoAcceptDialogs !== false) : true;
         if (autoAccept && type === 'alert') {
+          await new Promise((resolve) => setTimeout(resolve, DIALOG_VISIBLE_PAUSE_MS));
           try {
             await dialog.accept().catch(() => {});
           } catch (_) {}

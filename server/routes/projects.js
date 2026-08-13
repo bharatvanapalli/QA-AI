@@ -749,7 +749,7 @@ router.put('/:id/provider', requireCsrf, async (req, res, next) => {
     if (!isValidProvider(aiProvider)) {
       return res.status(400).json({
         success: false, code: 'INVALID_PROVIDER',
-        message: 'aiProvider must be one of: claude, gemini.',
+        message: 'aiProvider must be one of: claude, gemini, copilot.',
       });
     }
     const project = await prisma.project.update({

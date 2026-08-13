@@ -24,11 +24,23 @@ const { isValidProvider } = require('./llmProvider');
 const DEFAULT_MODEL_BY_PROVIDER = {
   claude: 'claude-sonnet-4-6',
   gemini: 'gemini-2.5-pro',
+  copilot: 'copilot-gpt-4o',
 };
 
 async function resolveAiCredentials(userId, project) {
   const raw = project?.aiProvider || 'claude';
   const provider = isValidProvider(raw) ? raw.toLowerCase() : 'claude';
+
+  if (provider === 'copilot') {
+    const model = project?.aiModel || DEFAULT_MODEL_BY_PROVIDER.copilot;
+    return {
+      provider: 'copilot',
+      apiKey: 'copilot-bridge-active',
+      model,
+      integration: { status: 'valid', config: { model } },
+    };
+  }
+
   const secretName = `${provider}.apiKey`;
   const integrationType = provider;
 

@@ -1,0 +1,29 @@
+{
+  "name": "qaai-copilot-bridge",
+  "displayName": "QAAI Portal - GitHub Copilot Bridge",
+  "description": "Exposes a local bridge on port 5005 for QAAI Portal to interact with VS Code's active GitHub Copilot session",
+  "version": "1.0.0",
+  "publisher": "qaai",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "*"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "qaai-copilot-bridge.start",
+        "title": "QAAI: Start Copilot Bridge Server"
+      },
+      {
+        "command": "qaai-copilot-bridge.status",
+        "title": "QAAI: Check Copilot Bridge Status"
+      }
+    ]
+  }
+}

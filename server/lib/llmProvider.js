@@ -26,6 +26,7 @@
 
 const anthropic = require('./providers/anthropic');
 const gemini = require('./providers/gemini');
+const copilot = require('./providers/copilot');
 const breaker = require('./circuitBreaker');
 const userContext = require('./userContext');
 const budget = require('../services/budget');
@@ -33,9 +34,10 @@ const budget = require('../services/budget');
 const RAW_PROVIDERS = {
   claude: anthropic,
   gemini,
+  copilot,
 };
 
-const VALID_PROVIDERS = Object.freeze(['claude', 'gemini']);
+const VALID_PROVIDERS = Object.freeze(['claude', 'gemini', 'copilot']);
 
 /**
  * Wrap a provider so .complete() runs through the breaker + budget
@@ -100,6 +102,7 @@ function wrap(impl, providerName) {
 const PROVIDERS = {
   claude: wrap(anthropic, 'claude'),
   gemini: wrap(gemini, 'gemini'),
+  copilot: wrap(copilot, 'copilot'),
 };
 
 function getProvider(name) {

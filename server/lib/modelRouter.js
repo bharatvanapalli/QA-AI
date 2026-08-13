@@ -54,6 +54,7 @@ const MID_TIER_MODELS = Object.freeze({
 const FLAGSHIP_FALLBACKS = Object.freeze({
   claude: 'claude-sonnet-4-6',
   gemini: 'gemini-2.5-pro',
+  copilot: 'copilot-gpt-4o',
 });
 
 // Strong-tier model IDs by provider. Used by THOROUGH-mode high-stakes
@@ -66,6 +67,7 @@ const FLAGSHIP_FALLBACKS = Object.freeze({
 const STRONG_MODELS = Object.freeze({
   claude: 'claude-sonnet-4-6',
   gemini: 'gemini-2.5-pro',
+  copilot: 'copilot-gpt-4o',
 });
 
 // The set of mid/fast model IDs we treat as "needs a bump" for strong-tier.
@@ -73,7 +75,7 @@ const MID_MODEL_VALUES = Object.freeze(new Set(Object.values(MID_TIER_MODELS)));
 
 function normaliseProvider(name) {
   const s = String(name || '').toLowerCase();
-  if (s === 'claude' || s === 'gemini') return s;
+  if (s === 'claude' || s === 'gemini' || s === 'copilot') return s;
   return 'claude';
 }
 
