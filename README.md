@@ -18,12 +18,29 @@ QAAI Portal Agents ──► http://127.0.0.1:5005 ──► VS Code Copilot Ext
 
 ### 1. Step-by-Step Extension Setup (Client VM)
 
-Copy the pre-bundled `vscode-copilot-bridge/` folder directly into VS Code's extensions directory:
+You can install the **QAAI Copilot Bridge Extension** using either of the following two methods:
 
+#### Method A: Direct Folder Copy (Recommended for offline/restricted VMs)
+Copy the included `vscode-copilot-bridge/` folder directly into VS Code's extensions directory:
 - **Windows**: Copy `vscode-copilot-bridge` folder to `%USERPROFILE%\.vscode\extensions\qaai.qaai-copilot-bridge-1.0.0`
 - **Mac / Linux**: Copy `vscode-copilot-bridge` folder to `~/.vscode/extensions/qaai.qaai-copilot-bridge-1.0.0`
 
-> **Note**: Direct folder copying bypasses VSIX signature warnings and auto-activates every time VS Code opens!
+> *Why Method A?* Direct folder copying bypasses VSIX signature verification prompts and auto-activates every time VS Code launches!
+
+#### Method B: Install via `.vsix` file (`qaai-copilot-bridge-1.0.0.vsix`)
+The pre-packaged extension package file `qaai-copilot-bridge-1.0.0.vsix` is provided directly in the root of the repository.
+
+- **Option 1 (VS Code GUI)**:
+  1. Open VS Code.
+  2. Click the **Extensions** icon on the left sidebar (`Ctrl+Shift+X`).
+  3. Click the `...` (**Views and More Actions**) menu at the top-right of the Extensions panel.
+  4. Click **Install from VSIX...**
+  5. Select the file `qaai-copilot-bridge-1.0.0.vsix` from the repository root directory.
+
+- **Option 2 (Terminal Command)**:
+  ```bash
+  code --install-extension qaai-copilot-bridge-1.0.0.vsix
+  ```
 
 ### 2. Verify Extension Activation inside VS Code
 1. Open VS Code.
