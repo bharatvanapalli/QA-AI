@@ -1,0 +1,14 @@
+{
+  "include": ["**/*.ts"],
+  "compilerOptions": {
+    "allowJs": true,
+    "declaration": false,
+    "lib": ["ES6", "DOM", "DOM.Iterable"],
+    "module": "es6",
+    "moduleResolution": "node",
+    "noImplicitAny": true,
+    "sourceMap": true,
+    "strictNullChecks": true,
+    "target": "es6"
+  }
+}

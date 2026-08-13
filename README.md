@@ -1,24 +1,24 @@
 # QAAI Portal — Autonomous Quality Intelligence
 
-> **Read this first if you're a new developer, reviewer, or deploying to a Client VM.**
+> **Read this first if you're deploying to a Client VM or air-gapped environment.**
 >
-> 1. **Zero API Key Deployment via GitHub Copilot (VS Code Bridge)**: You do NOT need external Claude/Gemini API keys! See [GitHub Copilot Setup Guide](#github-copilot-vs-code-bridge-setup-zero-api-keys) below.
-> 2. **Client VM Quickstart**: Clone repository $\rightarrow$ Copy extension to `.vscode/extensions/` $\rightarrow$ `npm install` $\rightarrow$ `node server/index.js` + `npm run dev`.
-> 3. No mock data anywhere — every screen is wired to real backend services and Playwright browser instances.
+> 1. **100% Pre-Bundled & Offline Ready**: All `node_modules`, Prisma database clients, and extensions are **pre-bundled in this repository**. **NO `npm install` required inside the Client VM!**
+> 2. **Zero API Key Deployment via GitHub Copilot (VS Code Bridge)**: You do NOT need external Claude/Gemini API keys! See [GitHub Copilot Setup Guide](#github-copilot-vs-code-bridge-setup-zero-api-keys) below.
+> 3. **Client VM Quickstart**: Clone repository $\rightarrow$ Copy extension folder to `.vscode/extensions/` $\rightarrow$ Run `npm run dev:full`!
 
 ---
 
-## GITHUB COPILOT (VS CODE BRIDGE) SETUP (ZERO API KEYS)
+## GITHUB COPILOT (VS CODE BRIDGE) SETUP (ZERO INSTALLS & ZERO API KEYS)
 
-QAAI Portal supports **GitHub Copilot (VS Code Bridge)** mode. This allows the system to run in air-gapped corporate Client VMs with **zero external Anthropic/Claude API keys** by routing 100% of LLM reasoning tasks through your active VS Code Copilot session.
+QAAI Portal supports **GitHub Copilot (VS Code Bridge)** mode. This allows the system to run in air-gapped corporate Client VMs with **zero `npm install` commands and zero external Anthropic/Claude API keys** by routing 100% of LLM reasoning tasks through your active VS Code Copilot session.
 
 ```
 QAAI Portal Agents ──► http://127.0.0.1:5005 ──► VS Code Copilot Extension ──► GitHub Copilot
 ```
 
-### 1. Step-by-Step Extension Setup (Client VM or Local)
+### 1. Step-by-Step Extension Setup (Client VM)
 
-Copy the included `vscode-copilot-bridge/` folder directly into VS Code's extensions directory:
+Copy the pre-bundled `vscode-copilot-bridge/` folder directly into VS Code's extensions directory:
 
 - **Windows**: Copy `vscode-copilot-bridge` folder to `%USERPROFILE%\.vscode\extensions\qaai.qaai-copilot-bridge-1.0.0`
 - **Mac / Linux**: Copy `vscode-copilot-bridge` folder to `~/.vscode/extensions/qaai.qaai-copilot-bridge-1.0.0`
@@ -35,21 +35,15 @@ Copy the included `vscode-copilot-bridge/` folder directly into VS Code's extens
    QAAI Copilot Bridge listening on http://127.0.0.1:5005
    ```
 
-### 3. Quickstart Installation Commands
+### 3. Client VM Startup Commands (NO npm install needed!)
 
 Run these exact commands in your terminal:
 
 ```bash
-# 1. Install project dependencies
-npm install
-
-# 2. Generate Prisma Database Client
-npm run prisma:generate
-
-# 3. Push SQLite Database Schema
+# 1. Initialize local SQLite Database schema
 npx prisma db push
 
-# 4. Start Backend & Frontend Together
+# 2. Start Backend API & Frontend UI together
 # Backend API: http://localhost:5000 | Frontend UI: http://localhost:5173
 npm run dev:full
 ```
