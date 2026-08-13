@@ -1,10 +1,66 @@
 # QAAI Portal — Autonomous Quality Intelligence
 
-> **Read this first if you're a new Claude session, dev, or reviewer.**
+> **Read this first if you're a new developer, reviewer, or deploying to a Client VM.**
 >
-> 1. If you're resuming pending work: **start with [`NEXT_PHASE_PLAN.md`](./NEXT_PHASE_PLAN.md)** — the 7-phase roadmap agreed on 2026-05-20 (UI polish, scenarios model, multi-agent pipeline, live CDP browser, element picker, multi-framework codegen, honest demo).
-> 2. The "STATE OF THE PROJECT" section below is the canonical source of truth for what is *already built*.
-> 3. No mock data anywhere — every screen is wired to real backend services.
+> 1. **Zero API Key Deployment via GitHub Copilot (VS Code Bridge)**: You do NOT need external Claude/Gemini API keys! See [GitHub Copilot Setup Guide](#github-copilot-vs-code-bridge-setup-zero-api-keys) below.
+> 2. **Client VM Quickstart**: Clone repository $\rightarrow$ Copy extension to `.vscode/extensions/` $\rightarrow$ `npm install` $\rightarrow$ `node server/index.js` + `npm run dev`.
+> 3. No mock data anywhere — every screen is wired to real backend services and Playwright browser instances.
+
+---
+
+## GITHUB COPILOT (VS CODE BRIDGE) SETUP (ZERO API KEYS)
+
+QAAI Portal supports **GitHub Copilot (VS Code Bridge)** mode. This allows the system to run in air-gapped corporate Client VMs with **zero external Anthropic/Claude API keys** by routing 100% of LLM reasoning tasks through your active VS Code Copilot session.
+
+```
+QAAI Portal Agents ──► http://127.0.0.1:5005 ──► VS Code Copilot Extension ──► GitHub Copilot
+```
+
+### 1. Step-by-Step Extension Setup (Client VM or Local)
+
+Copy the included `vscode-copilot-bridge/` folder directly into VS Code's extensions directory:
+
+- **Windows**: Copy `vscode-copilot-bridge` folder to `%USERPROFILE%\.vscode\extensions\qaai.qaai-copilot-bridge-1.0.0`
+- **Mac / Linux**: Copy `vscode-copilot-bridge` folder to `~/.vscode/extensions/qaai.qaai-copilot-bridge-1.0.0`
+
+> **Note**: Direct folder copying bypasses VSIX signature warnings and auto-activates every time VS Code opens!
+
+### 2. Verify Extension Activation inside VS Code
+1. Open VS Code.
+2. Open the **Output** panel (*View $\rightarrow$ Output*).
+3. Select **QAAI Copilot Bridge** from the dropdown menu on the top right.
+4. You will see:
+   ```text
+   Activating QAAI Copilot Bridge extension...
+   QAAI Copilot Bridge listening on http://127.0.0.1:5005
+   ```
+
+### 3. Quickstart Installation Commands
+
+Run these exact commands in your terminal:
+
+```bash
+# 1. Install project dependencies
+npm install
+
+# 2. Generate Prisma Database Client
+npm run prisma:generate
+
+# 3. Push SQLite Database Schema
+npx prisma db push
+
+# 4. Start Backend & Frontend Together
+# Backend API: http://localhost:5000 | Frontend UI: http://localhost:5173
+npm run dev:full
+```
+
+### 4. Enable Copilot Provider in Settings
+1. Open http://localhost:5173 in your browser and sign up / log in.
+2. Go to **Settings** $\rightarrow$ **GitHub Copilot**.
+3. Set **Active AI Provider** to `GitHub Copilot (VS Code Bridge)`.
+4. Click **Save provider**.
+
+All scenario generation, self-healing locators, conductor test runs, and post-mortem failure reports will now execute cleanly via GitHub Copilot!
 
 ---
 
