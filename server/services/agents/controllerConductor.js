@@ -297,16 +297,17 @@ function operationRows(contract, outcome, recoveryEvents = [], verifiedLocators 
       schedule?.scheduleState === 'SKIPPED_DEPENDENCY' ? 'SKIPPED_DEPENDENCY' : null
     );
     const recoveryTrail = recoveryByOperation.get(operation.operationId) || [];
-    const target = clean(
+    const rawTarget = clean(
       operation?.targetIdentity?.accessibleName
         || operation?.targetIdentity?.label
         || operation?.target,
-    ) || null;
+    );
     const plannedValue = operation?.selection?.value
       ?? operation?.selection?.text
       ?? operation?.selection?.label
       ?? operation?.value
       ?? null;
+    const target = rawTarget || (operation?.type === 'Navigate' ? clean(plannedValue || operation?.plannedText || operation?.url) : null);
     const reason = decision?.reason || schedule?.skipReason || null;
     return {
       index: index + 1,

@@ -65,11 +65,14 @@ function authoredUrlOf(step = {}) {
   const expected = step.expected && typeof step.expected === 'object' ? step.expected : {};
   const operationCheck = step.operationCheck && typeof step.operationCheck === 'object' ? step.operationCheck : {};
   const wait = step.waitContract && typeof step.waitContract === 'object' ? step.waitContract : {};
+  const isNavStep = ['Navigate', 'Open', 'visit', 'load'].includes(String(step.type || step.action || ''));
   return clean(
     step.url || step.targetUrl || step.href || step.urlPattern || step.expectedUrl
       || operationCheck.url || operationCheck.urlPattern || operationCheck.expectedUrl
       || wait.url || wait.urlPattern || wait.expectedUrl
-      || expected.url || expected.urlPattern || expected.expectedUrl,
+      || expected.url || expected.urlPattern || expected.expectedUrl
+      || (isNavStep ? (step.plannedText || step.value || step.target) : null)
+      || (step.target && String(step.target).startsWith('http') ? step.target : null),
   ) || null;
 }
 
@@ -80,7 +83,8 @@ function authoredTargetOf(step = {}) {
   return clean(
     identity.accessibleName || identity.name || identity.label
       || condition.target || wait.target
-      || step.target || step.element || step.field || step.label || step.name,
+      || step.target || step.element || step.field || step.label || step.name
+      || step.plannedText || step.value,
   ) || null;
 }
 
@@ -137,13 +141,17 @@ function evaluateLandingOracleObservation({ oracle, observation } = {}) {
     const pattern = normalizedUrlPattern(oracle.urlPattern);
     let matched = false;
     try {
-      if (pattern.startsWith('/') && pattern.lastIndexOf('/') > 0) {
-        const end = pattern.lastIndexOf('/');
-        matched = new RegExp(pattern.slice(1, end), pattern.slice(end + 1)).test(actual);
+      const jsRegexMatch = pattern.match(/^\/(.+)\/([gimsuy]*)$/);
+      if (jsRegexMatch) {
+        matched = new RegExp(jsRegexMatch[1], jsRegexMatch[2]).test(actual);
       } else {
-        matched = !!actual && !!pattern && actual.toLowerCase().includes(pattern.toLowerCase());
+        const cleanActual = actual.toLowerCase();
+        const cleanPattern = pattern.toLowerCase();
+        matched = !!actual && !!pattern && (cleanActual.includes(cleanPattern) || cleanPattern.includes(cleanActual));
       }
-    } catch (_) {}
+    } catch (_) {
+      matched = !!actual && !!pattern && actual.toLowerCase().includes(pattern.toLowerCase());
+    }
     return { matched, reason: matched ? 'authored_url_reached' : 'authored_url_not_reached' };
   }
   const matched = observation.matched === true || observation.actionable === true;
