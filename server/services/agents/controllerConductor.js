@@ -230,7 +230,7 @@ function verdictError(outcome, contract) {
   const summaries = failedOps.map(({ decision, op }, i) => {
     const stepNum = op ? (contract.operations.indexOf(op) + 1) : (i + 1);
     const action = op?.type || 'Action';
-    const target = op?.targetIdentity?.accessibleName || op?.targetIdentity?.label || op?.target || '';
+    const target = op?.targetIdentity?.accessibleName || op?.targetIdentity?.label || op?.target || op?.plannedText || op?.value || op?.url || op?.targetUrl || '';
     const rawReason = String(decision?.reason || decision?.state || '');
 
     let humanReason = rawReason;
@@ -297,17 +297,16 @@ function operationRows(contract, outcome, recoveryEvents = [], verifiedLocators 
       schedule?.scheduleState === 'SKIPPED_DEPENDENCY' ? 'SKIPPED_DEPENDENCY' : null
     );
     const recoveryTrail = recoveryByOperation.get(operation.operationId) || [];
-    const rawTarget = clean(
+    const target = clean(
       operation?.targetIdentity?.accessibleName
         || operation?.targetIdentity?.label
         || operation?.target,
-    );
+    ) || null;
     const plannedValue = operation?.selection?.value
       ?? operation?.selection?.text
       ?? operation?.selection?.label
       ?? operation?.value
       ?? null;
-    const target = rawTarget || (operation?.type === 'Navigate' ? clean(plannedValue || operation?.plannedText || operation?.url) : null);
     const reason = decision?.reason || schedule?.skipReason || null;
     return {
       index: index + 1,
