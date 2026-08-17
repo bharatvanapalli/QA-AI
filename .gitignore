@@ -3,9 +3,9 @@
 .pnp.*
 
 # Build outputs
-dist/
-build/
-.vite/
+/dist/
+/build/
+/.vite/
 
 # Logs
 *.log

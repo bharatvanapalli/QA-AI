@@ -355,7 +355,21 @@ function normalizeValue(type, source, path, findings) {
     findings.push(finding(path, 'action_value_required', `${type} requires value or valueRef.`));
     return Object.freeze({ value: null, valueRef: null });
   }
-  const value = hasValue ? clone(source.value) : null;
+  let value = hasValue ? clone(source.value) : null;
+  if (type === 'Navigate' && !value && !valueRef) {
+    const rawCandidate = clean(
+      (typeof source.target === 'string' ? source.target : textFromTarget(source.target))
+      || source.element
+      || source.authoredText
+      || source.text
+    );
+    const urlMatch = rawCandidate.match(/https?:\/\/[^\s"']+/i);
+    if (urlMatch) {
+      value = urlMatch[0];
+    } else if (rawCandidate && (/^https?:\/\//i.test(rawCandidate) || /^\//.test(rawCandidate))) {
+      value = rawCandidate;
+    }
+  }
   if (typeof value === 'string' && containsPollutedInstruction(value)) {
     findings.push(finding(
       `${path}.value`,

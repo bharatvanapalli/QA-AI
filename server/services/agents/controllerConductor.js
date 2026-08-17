@@ -230,7 +230,12 @@ function verdictError(outcome, contract) {
   const summaries = failedOps.map(({ decision, op }, i) => {
     const stepNum = op ? (contract.operations.indexOf(op) + 1) : (i + 1);
     const action = op?.type || 'Action';
-    const target = op?.targetIdentity?.accessibleName || op?.targetIdentity?.label || op?.target || op?.plannedText || op?.value || op?.url || op?.targetUrl || '';
+    const target = clean(
+      op?.targetIdentity?.accessibleName
+        || op?.targetIdentity?.label
+        || op?.target
+        || (op?.type === 'Navigate' ? (op?.value || op?.plannedText || op?.destination || op?.valueRef) : ''),
+    ) || '';
     const rawReason = String(decision?.reason || decision?.state || '');
 
     let humanReason = rawReason;
@@ -300,7 +305,8 @@ function operationRows(contract, outcome, recoveryEvents = [], verifiedLocators 
     const target = clean(
       operation?.targetIdentity?.accessibleName
         || operation?.targetIdentity?.label
-        || operation?.target,
+        || operation?.target
+        || (operation?.type === 'Navigate' ? (operation?.value || operation?.plannedText || operation?.destination || operation?.valueRef) : ''),
     ) || null;
     const plannedValue = operation?.selection?.value
       ?? operation?.selection?.text
@@ -600,9 +606,10 @@ async function run({
           message: `Controller reused the exact authenticated browser context for "${testCase.name}".`,
         });
       } else {
+        const initialTargetUrl = targetUrl || projectConfig?.targetUrl || process.env.QAAI_TARGET_URL || null;
         browserSession = await mcp.startMcpSession({
           userId,
-          targetUrl: null,
+          targetUrl: initialTargetUrl,
           broadcast: send,
           project: projectConfig || {},
           authorityMode: 'browser_transaction_controller',
