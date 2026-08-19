@@ -2989,9 +2989,23 @@ function createControllerMcpRuntimeAdapter({
             const targetQuery = clean(typedAssertionObservation.target || operation.target || operation?.targetIdentity?.accessibleName || '');
             await page.evaluate(({ query, matched, type }) => {
               let el = null;
-              const q = String(query || '').trim().toLowerCase().replace(/^(?:verify|confirm|assert|check)\s+(?:that\s+)?(?:the\s+)?(?:input\s+field\s+is\s+disabled\s+of|text\s+present\s+in|edit\s+field\s+is\s+disabled|text\s+is\s+readonly|what\s+is\s+inside\s+the\s+text\s+box)?/i, '').trim();
-              const inputs = Array.from(document.querySelectorAll('input:not([type="hidden"]), textarea, select, button, a, [role="textbox"], [role="button"]'));
-              if (q) {
+              const fullQ = String(query || '').trim().toLowerCase();
+              const q = fullQ.replace(/^(?:verify|confirm|assert|check)\s+(?:that\s+)?(?:the\s+)?(?:input\s+field\s+is\s+disabled\s+of|text\s+present\s+in|edit\s+field\s+is\s+disabled|text\s+is\s+readonly|what\s+is\s+inside\s+the\s+text\s+box)?/i, '').trim();
+              const inputs = Array.from(document.querySelectorAll('input, textarea, select, button, a, [role="textbox"], [role="button"]'));
+              if (fullQ) {
+                el = inputs.find(i => {
+                  const id = (i.id || '').toLowerCase();
+                  const name = (i.name || '').toLowerCase();
+                  const ph = (i.placeholder || '').toLowerCase();
+                  const val = (i.value || '').toLowerCase();
+                  const lbl = (i.labels && i.labels[0] ? i.labels[0].innerText : '').toLowerCase();
+                  const aria = (i.getAttribute('aria-label') || '').toLowerCase();
+                  const prev = (i.previousElementSibling?.innerText || '').toLowerCase();
+                  const parent = (i.parentElement?.innerText || '').toLowerCase();
+                  return [id, name, ph, val, lbl, aria, prev, parent].some(t => t && (t.includes(fullQ) || fullQ.includes(t)));
+                });
+              }
+              if (!el && q) {
                 el = inputs.find(i => {
                   const id = (i.id || '').toLowerCase();
                   const name = (i.name || '').toLowerCase();
@@ -3004,10 +3018,6 @@ function createControllerMcpRuntimeAdapter({
                   return [id, name, ph, val, lbl, aria, prev, parent].some(t => t && (t.includes(q) || q.includes(t)));
                 });
               }
-              if (!el && query) {
-                const all = Array.from(document.querySelectorAll('label, div, p, span, h1, h2, h3, h4, h5, h6'));
-                el = all.find(e => e.innerText && e.innerText.toLowerCase().includes(query.toLowerCase()));
-              }
               if (!el && (type === 'DISABLED' || type === 'ASSERTDISABLED')) {
                 el = document.querySelector('input:disabled, textarea:disabled, button:disabled, [aria-disabled="true"]');
               }
@@ -3019,6 +3029,9 @@ function createControllerMcpRuntimeAdapter({
                   ? el
                   : (el.querySelector('input, textarea, button, select') || el);
                 try { targetNode.focus({ preventScroll: true }); } catch (_) {}
+                if (typeof window.__qaai_highlight === 'function') {
+                  try { window.__qaai_highlight(targetNode, query); } catch (_) {}
+                }
                 targetNode.style.outline = matched ? '3px solid #10b981' : '3px solid #ef4444';
                 targetNode.style.boxShadow = matched ? '0 0 10px rgba(16, 185, 129, 0.8)' : '0 0 10px rgba(239, 68, 68, 0.8)';
               }

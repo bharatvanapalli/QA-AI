@@ -288,7 +288,7 @@ function writeInitScript(project, session) {
   }
 
   // Visual Element Highlighter
-  lines.push('    window.__qaai_highlight = function(el) {');
+  lines.push('    window.__qaai_highlight = function(el, customLabel) {');
   lines.push('      if (!el || !(el instanceof Element)) return;');
   lines.push('      const existing = document.getElementById("qaai-element-highlighter");');
   lines.push('      if (existing) { existing.remove(); }');
@@ -327,9 +327,10 @@ function writeInitScript(project, session) {
   lines.push('      label.style.padding = "2px 6px";');
   lines.push('      label.style.borderRadius = "3px";');
   lines.push('      label.style.whiteSpace = "nowrap";');
-  lines.push('      let elLabel = el.getAttribute("aria-label") || el.placeholder || (el.labels && el.labels[0] && el.labels[0].textContent) || el.textContent?.trim().slice(0, 30) || el.name || el.id || el.tagName.toLowerCase();');
+  lines.push('      let elLabel = customLabel || (el.labels && el.labels[0] && el.labels[0].textContent) || el.getAttribute("aria-label") || (el.previousElementSibling?.tagName === "LABEL" ? el.previousElementSibling.textContent : null) || (el.parentElement?.tagName === "LABEL" ? el.parentElement.textContent : null) || el.placeholder || el.textContent?.trim().slice(0, 30) || el.name || el.id || el.tagName.toLowerCase();');
   lines.push('      elLabel = String(elLabel || "").trim();');
-  lines.push('      if (el.disabled || el.getAttribute("aria-disabled") === "true") { elLabel += " (disabled)"; }');
+  lines.push('      if (el.disabled || el.getAttribute("aria-disabled") === "true") { if (!elLabel.includes("(disabled)")) elLabel += " (disabled)"; }');
+  lines.push('      if (el.readOnly || el.hasAttribute("readonly")) { if (!elLabel.includes("(readonly)")) elLabel += " (readonly)"; }');
   lines.push('      label.textContent = elLabel;');
   lines.push('      container.appendChild(label);');
   lines.push('      document.body.appendChild(container);');
