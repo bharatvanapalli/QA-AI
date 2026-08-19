@@ -2981,57 +2981,63 @@ function createControllerMcpRuntimeAdapter({
         })).catch(() => null);
       }
 
-      // Standalone Verify/Assert-type operations have no mutation of their
-      // own to dispatch — pre_dispatch IS their only and final phase (see
-      // TERMINAL_DECISION commitDisposition:'ALREADY_SATISFIED' immediately
-      // following the pre_dispatch observation in the journal). Excluding
-      // pre_dispatch here meant every standalone assertion — including
-      // disabled/readonly/visible checks — never got a highlight or evidence
-      // screenshot at all, since no later phase ever ran for them.
-      if (typedAssertionObservation.candidateRef) {
-        // Fire-and-forget — NOT awaited. This was briefly made blocking (to
-        // guarantee the highlight painted before the screenshot) but that
-        // added up to 5s of real delay into the middle of the assertion
-        // retry loop. For a static page that's harmless; for a genuinely
-        // transient assertion target (an open dropdown that can auto-close)
-        // reproduced live against New_Odyssey's Ship Direction control:
-        // the extra delay between the pre_dispatch check and the immediate
-        // reconcile re-check gave the popup time to disappear, turning a
-        // borderline-timing case into a hard failure. The highlight/
-        // screenshot are cosmetic evidence, not correctness-critical — they
-        // must never block or slow down the actual verification pipeline.
-        (async () => {
-          try {
+      if (typedAssertionObservation && phase === 'pre_dispatch') {
+        try {
+          const page = activePageOf(session);
+          if (page) {
             const isMatched = typedAssertionObservation.matched === true;
-            const highlightFunc = `function highlightElement(element) {
-              try {
-                const origOutline = element.style.outline;
-                const origBoxShadow = element.style.boxShadow;
-                element.style.outline = '3px solid ${isMatched ? '#10b981' : '#f59e0b'}';
-                element.style.boxShadow = '0 0 10px ${isMatched ? 'rgba(16, 185, 129, 0.8)' : 'rgba(245, 158, 11, 0.8)'}';
-                setTimeout(() => {
-                  try {
-                    element.style.outline = origOutline;
-                    element.style.boxShadow = origBoxShadow;
-                  } catch (_) {}
-                }, 2000);
-              } catch (_) {}
-            }`;
-            await rawCall('browser_evaluate', {
-              element: clean(typedAssertionObservation.target) || 'element',
-              target: typedAssertionObservation.candidateRef,
-              function: highlightFunc,
-            }, 5000);
+            const targetQuery = clean(typedAssertionObservation.target || operation.target || operation?.targetIdentity?.accessibleName || '');
+            await page.evaluate(({ query, matched, type }) => {
+              let el = null;
+              const q = String(query || '').trim().toLowerCase().replace(/^(?:verify|confirm|assert|check)\s+(?:that\s+)?(?:the\s+)?(?:input\s+field\s+is\s+disabled\s+of|text\s+present\s+in|edit\s+field\s+is\s+disabled|text\s+is\s+readonly|what\s+is\s+inside\s+the\s+text\s+box)?/i, '').trim();
+              const inputs = Array.from(document.querySelectorAll('input:not([type="hidden"]), textarea, select, button, a, [role="textbox"], [role="button"]'));
+              if (q) {
+                el = inputs.find(i => {
+                  const id = (i.id || '').toLowerCase();
+                  const name = (i.name || '').toLowerCase();
+                  const ph = (i.placeholder || '').toLowerCase();
+                  const val = (i.value || '').toLowerCase();
+                  const lbl = (i.labels && i.labels[0] ? i.labels[0].innerText : '').toLowerCase();
+                  const aria = (i.getAttribute('aria-label') || '').toLowerCase();
+                  const prev = (i.previousElementSibling?.innerText || '').toLowerCase();
+                  const parent = (i.parentElement?.innerText || '').toLowerCase();
+                  return [id, name, ph, val, lbl, aria, prev, parent].some(t => t && (t.includes(q) || q.includes(t)));
+                });
+              }
+              if (!el && query) {
+                const all = Array.from(document.querySelectorAll('label, div, p, span, h1, h2, h3, h4, h5, h6'));
+                el = all.find(e => e.innerText && e.innerText.toLowerCase().includes(query.toLowerCase()));
+              }
+              if (!el && (type === 'DISABLED' || type === 'ASSERTDISABLED')) {
+                el = document.querySelector('input:disabled, textarea:disabled, button:disabled, [aria-disabled="true"]');
+              }
+              if (!el && (type === 'READONLY' || type === 'ASSERTREADONLY')) {
+                el = document.querySelector('input[readonly], textarea[readonly], [aria-readonly="true"]');
+              }
+              if (el) {
+                const targetNode = (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'BUTTON' || el.tagName === 'SELECT')
+                  ? el
+                  : (el.querySelector('input, textarea, button, select') || el);
+                try { targetNode.focus({ preventScroll: true }); } catch (_) {}
+                targetNode.style.outline = matched ? '3px solid #10b981' : '3px solid #ef4444';
+                targetNode.style.boxShadow = matched ? '0 0 10px rgba(16, 185, 129, 0.8)' : '0 0 10px rgba(239, 68, 68, 0.8)';
+              }
+            }, { query: targetQuery, matched: isMatched, type: typedAssertionObservation.assertionType });
+
             const assertionLabel = clean(operation?.type || typedAssertionObservation.assertionType || 'assertion').toLowerCase();
             const shot = await mcp.captureLiveEvidenceScreenshot(session, {
               label: `assertion_${assertionLabel}_evidence_${Date.now()}`,
             });
             if (shot) {
               if (!session.screenshots) session.screenshots = [];
-              session.screenshots.push({ ...shot, path: shot.artifactRef, label: `assertion_${assertionLabel}_evidence_${Date.now()}` });
+              session.screenshots.push({
+                ...shot,
+                path: shot.artifactRef,
+                label: `assertion_${assertionLabel}_evidence_${Date.now()}`,
+              });
             }
-          } catch (_) {}
-        })();
+          }
+        } catch (_) {}
       }
 
       const rawTargetLabel = clean(
@@ -4045,15 +4051,28 @@ function createControllerMcpRuntimeAdapter({
             };
           }, targetSearch);
 
-          const logSummary = inspectData?.text != null
-            ? `"${inspectData.text}"${inspectData.readOnly ? ' (read-only)' : ''}${inspectData.disabled ? ' (disabled)' : ''}`
+          const printedText = inspectData?.text != null
+            ? String(inspectData.text).trim()
             : JSON.stringify(inspectData);
           send({
             type: 'agent.transcript',
             actionText: `Printed value of "${elementLabel || targetRef || 'element'}"`,
-            message: `[PRINT] ${elementLabel || targetRef || 'element'}: ${logSummary}`,
+            message: `[PRINT] "${elementLabel || targetRef || 'element'}": "${printedText}"`,
           });
-          result = { isError: false, content: [{ type: 'text', text: `Printed value of "${elementLabel || targetRef || 'element'}": ${logSummary}` }] };
+          try {
+            const shot = await mcp.captureLiveEvidenceScreenshot(session, {
+              label: `print_inspect_evidence_${Date.now()}`,
+            });
+            if (shot) {
+              if (!session.screenshots) session.screenshots = [];
+              session.screenshots.push({
+                ...shot,
+                path: shot.artifactRef,
+                label: `print_inspect_evidence_${Date.now()}`,
+              });
+            }
+          } catch (_) {}
+          result = { isError: false, content: [{ type: 'text', text: `[PRINT] "${elementLabel || targetRef || 'element'}": "${printedText}"` }] };
         } else {
           result = { isError: true, content: [{ type: 'text', text: 'No page available to inspect' }] };
         }
