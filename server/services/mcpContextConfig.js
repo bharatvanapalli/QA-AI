@@ -290,6 +290,9 @@ function writeInitScript(project, session) {
   // Visual Element Highlighter
   lines.push('    window.__qaai_highlight = function(el, customLabel) {');
   lines.push('      if (!el || !(el instanceof Element)) return;');
+  lines.push('      try {');
+  lines.push('        el.scrollIntoView({ behavior: "auto", block: "center", inline: "nearest" });');
+  lines.push('      } catch (_) {}');
   lines.push('      const existing = document.getElementById("qaai-element-highlighter");');
   lines.push('      if (existing) { existing.remove(); }');
   lines.push('      const rect = el.getBoundingClientRect();');

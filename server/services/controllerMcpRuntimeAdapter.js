@@ -3028,7 +3028,10 @@ function createControllerMcpRuntimeAdapter({
                 const targetNode = (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'BUTTON' || el.tagName === 'SELECT')
                   ? el
                   : (el.querySelector('input, textarea, button, select') || el);
-                try { targetNode.focus({ preventScroll: true }); } catch (_) {}
+                try {
+                  targetNode.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' });
+                  targetNode.focus({ preventScroll: true });
+                } catch (_) {}
                 if (typeof window.__qaai_highlight === 'function') {
                   try { window.__qaai_highlight(targetNode, query); } catch (_) {}
                 }
