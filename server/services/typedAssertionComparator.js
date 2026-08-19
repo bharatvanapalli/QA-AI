@@ -239,14 +239,17 @@ function booleanState(actual, key) {
   if (typeof actual === 'boolean') return actual;
   if (typeof actual === 'string') {
     const state = actual.trim().toLowerCase();
-    if (['true', 'yes', 'checked', 'selected', 'visible'].includes(state)) return true;
-    if (['false', 'no', 'unchecked', 'unselected', 'hidden'].includes(state)) return false;
+    if (['true', 'yes', 'checked', 'selected', 'visible', 'disabled', 'readonly'].includes(state)) return true;
+    if (['false', 'no', 'unchecked', 'unselected', 'hidden', 'enabled', 'editable'].includes(state)) return false;
   }
   if (!isObject(actual)) return null;
   if (typeof actual[key] === 'boolean') return actual[key];
+  if (key === 'disabled' && typeof actual.disabled === 'boolean') return actual.disabled;
+  if (key === 'readOnly' && typeof actual.readOnly === 'boolean') return actual.readOnly;
+  if (key === 'readOnly' && typeof actual.readonly === 'boolean') return actual.readonly;
   if (key === 'visible' && typeof actual.hidden === 'boolean') return !actual.hidden;
   if (key === 'visible' && actual.exists === false) return false;
-  const ariaKey = key === 'checked' ? 'ariaChecked' : key === 'selected' ? 'ariaSelected' : null;
+  const ariaKey = key === 'checked' ? 'ariaChecked' : key === 'selected' ? 'ariaSelected' : key === 'disabled' ? 'ariaDisabled' : key === 'readOnly' ? 'ariaReadonly' : null;
   if (ariaKey && actual[ariaKey] !== undefined) return booleanState(actual[ariaKey], key);
   return null;
 }
@@ -349,12 +352,12 @@ function compareTypedAssertion(assertion = {}, actualInput) {
   }
 
   if (type === 'TEXT' || type === 'FORBIDDEN_TEXT') {
-    const expected = firstDefined(payload.expectedText, payload.unexpectedText, payload.expectedValue, payload.expected);
+    const expected = firstDefined(payload.expectedText, payload.unexpectedText, payload.expectedValue, payload.expected, payload.equals, payload.value, payload.text);
     const comparator = type === 'FORBIDDEN_TEXT' ? 'not_contains' : payload.comparator || 'contains';
     return compareText(expected, textActual(actualInput), comparator, payload);
   }
   if (type === 'REGEX') return compareRegex(firstDefined(payload.expectedPattern, payload.pattern), textActual(actualInput), payload.flags);
-  if (type === 'NUMBER') return compareNumber(firstDefined(payload.expectedNumber, payload.expectedValue, payload.expected), actualInput, payload.comparator, payload.tolerance);
+  if (type === 'NUMBER') return compareNumber(firstDefined(payload.expectedNumber, payload.expectedValue, payload.expected, payload.equals, payload.value), actualInput, payload.comparator, payload.tolerance);
   if (type === 'CURRENCY') return compareCurrency(payload, actualInput);
   if (type === 'DATE') return compareTemporal('date', payload, actualInput);
   if (type === 'TIME') return compareTemporal('time', payload, actualInput);
@@ -366,9 +369,25 @@ function compareTypedAssertion(assertion = {}, actualInput) {
   if (type === 'URL') return compareUrl(payload, actualInput);
   if (type === 'VISIBLE') return compareBoolean('visible', true, actualInput);
   if (type === 'HIDDEN') return compareBoolean('visible', false, actualInput);
+  if (type === 'DISABLED') return compareBoolean('disabled', payload.expectedDisabled !== false, actualInput);
+  if (type === 'ENABLED') return compareBoolean('disabled', false, actualInput);
+  if (type === 'READONLY') return compareBoolean('readOnly', payload.expectedReadonly !== false, actualInput);
   if (type === 'ATTRIBUTE') return compareAttribute(payload, actualInput);
-  if (type === 'VALUE') return compareText(firstDefined(payload.expectedValue, payload.expected),
-    isObject(actualInput) ? firstDefined(actualInput.value, actualInput.actual) : actualInput, payload.comparator || 'equals', payload);
+  if (type === 'VALUE') {
+    const expected = firstDefined(payload.expectedValue, payload.expected, payload.equals, payload.value, payload.expectedText);
+    const expStr = String(expected || '').trim().toLowerCase();
+    if (expStr === 'disabled' && isObject(actualInput) && actualInput.disabled === true) {
+      return result(OUTCOMES.MATCHED, expected, 'disabled', 'equals', 'disabled_matched');
+    }
+    if ((expStr === 'readonly' || expStr === 'read-only' || expStr === 'read_only') && isObject(actualInput) && actualInput.readOnly === true) {
+      return result(OUTCOMES.MATCHED, expected, 'readonly', 'equals', 'readonly_matched');
+    }
+    if (expStr === 'enabled' && isObject(actualInput) && actualInput.disabled === false) {
+      return result(OUTCOMES.MATCHED, expected, 'enabled', 'equals', 'enabled_matched');
+    }
+    return compareText(expected,
+      isObject(actualInput) ? firstDefined(actualInput.value, actualInput.actual) : actualInput, payload.comparator || 'equals', payload);
+  }
   if (type === 'SELECTED') return compareBoolean('selected', payload.expectedSelected !== false, actualInput);
   if (type === 'CHECKED') return compareBoolean('checked', payload.expectedChecked !== false, actualInput);
   if (type === 'COUNT') return compareNumber(firstDefined(payload.expectedCount, payload.expectedValue, payload.expected),

@@ -95,18 +95,22 @@ function controllerAssertionContract(operation = {}) {
       || operation?.targetIdentity?.label
       || operation?.target,
   );
+  const verify = operation?.verify && typeof operation.verify === 'object' ? operation.verify : {};
+  const operationCheck = operation?.operationCheck && typeof operationCheck === 'object' ? operation.operationCheck : {};
+  const expected = operation.expected
+    ?? operation.value
+    ?? verify.equals
+    ?? verify.expected
+    ?? verify.text
+    ?? verify.value
+    ?? operationCheck.expected
+    ?? operationCheck.value
+    ?? null;
   return assertionContractOf({
     ...operation,
     action: operation.type,
     target,
-    // Compiled assertion operations carry their expected value in `.value`
-    // (the same field convention action operations use for plannedText) —
-    // not `.expected`. Falling back to it here is what compareTypedAssertion
-    // actually reads as `payload.expected`; without it, every flat-authored
-    // AssertValue/AssertText step (e.g. LetCode's) compared against
-    // `undefined` and came back "exact_proof_unavailable" regardless of the
-    // real field value.
-    expected: operation.expected ?? operation.value,
+    expected,
     verify: operation.verify,
     comparator: operation.comparator,
   });
@@ -201,7 +205,14 @@ function uniqueBestAssertionTarget(operation, contract, candidates = [], explici
   const ranked = rankedAssertionTargets(operation, contract, candidates, explicitTarget);
   if (!ranked.length) return { status: 'missing', candidate: null, ranked };
   const bestScore = ranked[0].score;
-  const best = ranked.filter((entry) => entry.score === bestScore);
+  let best = ranked.filter((entry) => entry.score === bestScore);
+  if (best.length > 1) {
+    const inputControlRoles = ['textbox', 'combobox', 'searchbox', 'spinbutton', 'button', 'checkbox', 'radio'];
+    const controlMatches = best.filter((entry) => inputControlRoles.includes(token(entry.candidate?.role)));
+    if (controlMatches.length === 1) {
+      best = controlMatches;
+    }
+  }
   if (best.length !== 1) return { status: 'ambiguous', candidate: null, ranked };
   return { status: 'resolved', candidate: best[0].candidate, ranked };
 }
@@ -588,6 +599,14 @@ function evaluateControllerAssertionSnapshot({
   }
 
   const observedValue = snapshotOwnerValue(snapshotText, owner.candidate, targetName);
+  const ownerLine = owner.candidate?.ref ? lineForRef(snapshotText, owner.candidate.ref) : '';
+  const actualObject = {
+    value: observedValue || owner.candidate?.value || null,
+    text: observedValue || owner.candidate?.accessibleName || owner.candidate?.name || null,
+    actual: observedValue || owner.candidate?.value || owner.candidate?.accessibleName || null,
+    disabled: Boolean(owner.candidate?.disabled || owner.candidate?.attributes?.disabled || /\bdisabled\b/i.test(ownerLine)),
+    readOnly: Boolean(owner.candidate?.readOnly || owner.candidate?.readonly || owner.candidate?.attributes?.readonly || /\breadonly\b/i.test(ownerLine)),
+  };
   if (type === 'VALUE'
     && temporalControlFamily(targetName) === 'time'
     && temporalControlFamily(targetName) !== 'time_zone') {
@@ -607,7 +626,7 @@ function evaluateControllerAssertionSnapshot({
       });
     }
   }
-  const comparison = compareTypedAssertion(contract, observedValue);
+  const comparison = compareTypedAssertion(contract, actualObject);
   return assertionResult(comparison, {
     assertionType: type,
     target: targetName,
@@ -1948,6 +1967,7 @@ function createControllerMcpRuntimeAdapter({
   operations = [],
   cancelToken = null,
   journal = null,
+  knownLocators = new Map(),
   now = Date.now,
   send = () => {},
 } = {}) {
@@ -3523,42 +3543,90 @@ function createControllerMcpRuntimeAdapter({
     const isClearOp = Boolean(
       args?.clear === true
       || entry?.toolName === 'Clear'
+      || toolName === 'Clear'
       || (elementLabel && /\bclear\b/i.test(elementLabel))
       || (args?.element && /\bclear\b/i.test(args.element))
-    ) && (toolName === 'browser_type' || toolName === 'browser_fill');
+    );
 
     const isClickAndHoldOp = Boolean(
       entry?.toolName === 'ClickAndHold'
+      || toolName === 'ClickAndHold'
       || toolName === 'browser_click_and_hold'
     );
-
-    const sdkToolName = toolName === 'browser_fill' ? 'browser_type' : toolName;
-    // controllerTypedAdapterRegistry.js freezes mutation.args (Object.freeze),
-    // and normaliseToolArgs() returns that same frozen reference untouched
-    // whenever no target rewrite is needed (e.g. every browser_navigate call,
-    // and any click/type whose target already needs no rewriting). Mutating
-    // it in place below threw "Cannot add property target, object is not
-    // extensible" on every such call, silently swallowed by the outer gateway
-    // catch into a generic "delivery uncertain" — no operation ever reached
-    // the browser. Spread into a fresh, always-extensible object first.
-    const normalized = { ...(mcp.normaliseToolArgs(sdkToolName, args || {}, session).args || {}) };
-
-    // Restore normalized properties based on our computations
-    normalized.target = normalized.target || targetRef;
-    normalized.element = normalized.element || elementLabel;
 
     const isAppendOp = Boolean(
       args?.append === true
       || entry?.toolName === 'Append'
+      || toolName === 'Append'
       || (entry?.actionText && /\bappend\b/i.test(entry.actionText))
       || (elementLabel && /\bappend\b/i.test(elementLabel))
       || (args?.element && /\bappend\b/i.test(args.element))
+    );
+
+    const isPressKeyOp = Boolean(
+      entry?.toolName === 'PressKey'
+      || toolName === 'browser_press_key'
+      || toolName === 'PressKey'
+      || (entry?.actionText && /\bpress\s+(?:the\s+)?(?:keyboard\s+)?(?:tab|enter|escape|space|backspace|delete)\b/i.test(entry.actionText))
+    );
+
+    const isInspectOp = Boolean(
+      entry?.toolName === 'Inspect'
+      || entry?.toolName === 'Print'
+      || entry?.toolName === 'ReadAndPrint'
+      || toolName === 'Inspect'
+      || toolName === 'Print'
+      || toolName === 'ReadAndPrint'
+      || (entry?.actionText && /\b(?:read\s+the\s+text|print\s+all|print\s+the|print|inspect|read)\b/i.test(entry.actionText))
+    );
+
+    const isSwitchTabOp = Boolean(
+      entry?.toolName === 'SwitchTab'
+      || toolName === 'SwitchTab'
+      || (entry?.actionText && /\b(?:switch\s+to\s+tab|switch\s+tab|goto\s+(?:the\s+)?newly\s+opened\s+tab)\b/i.test(entry.actionText))
+    );
+
+    const isNewTabOp = Boolean(
+      entry?.toolName === 'NewTab'
+      || toolName === 'NewTab'
+      || (entry?.actionText && /\b(?:open\s+(?:a\s+)?new\s+tab|new\s+tab)\b/i.test(entry.actionText))
+    );
+
+    const isCloseTabOp = Boolean(
+      entry?.toolName === 'CloseTab'
+      || toolName === 'CloseTab'
+      || (entry?.actionText && /\b(?:close\s+all\s+(?:the\s+)?windows|close\s+(?:the\s+)?child\s+window|close\s+tab|close\s+window)\b/i.test(entry.actionText))
+    );
+
+    const isSetViewportOp = Boolean(
+      entry?.toolName === 'SetViewport'
+      || toolName === 'SetViewport'
+      || (entry?.actionText && /\b(?:set\s+viewport|resize\s+window)\b/i.test(entry.actionText))
+    );
+
+    const isTypeSequentiallyOp = Boolean(
+      entry?.toolName === 'TypeSequentially'
+      || toolName === 'TypeSequentially'
+      || (entry?.actionText && /\b(?:type\s+sequentially|human\s+typing)\b/i.test(entry.actionText))
+    );
+
+    const isSelectMultipleOp = Boolean(
+      entry?.toolName === 'SelectMultiple'
+      || entry?.toolName === 'MultiSelect'
+      || toolName === 'SelectMultiple'
+      || toolName === 'MultiSelect'
+      || (entry?.actionText && /\b(?:multi\s*select|select\s+multiple)\b/i.test(entry.actionText))
     );
 
     const isSemanticOp = Boolean(
       entry?.toolName === 'Semantic'
       || (entry?.actionText && /\bsemantic\b/i.test(entry.actionText))
     );
+
+    const sdkToolName = toolName === 'browser_fill' ? 'browser_type' : toolName;
+    const normalized = { ...(mcp.normaliseToolArgs(sdkToolName, args || {}, session).args || {}) };
+    normalized.target = normalized.target || targetRef;
+    normalized.element = normalized.element || elementLabel;
 
     if (isAppendOp && (normalized.text != null || args?.text != null || args?.value != null)) {
       const snapshotText = session.lastSnapshot || '';
@@ -3678,12 +3746,20 @@ function createControllerMcpRuntimeAdapter({
       try {
         const page = session.liveCdp.context.pages()[0] || null;
         if (page) {
-          // reveal-owner (the preDispatchMutation) already focused the target element.
-          // Use Playwright's native fill('') on the currently-focused element — it
-          // properly triggers React/Vue synthetic events, unlike manual nativeInputValueSetter.
-          // ':focus' is CSS for document.activeElement, so this directly clears whichever
-          // input reveal-owner just focused, with no ref-resolution needed.
-          await page.locator(':focus').fill('', { timeout: 3000 });
+          result = await rawCall('browser_evaluate', {
+            target: targetRef,
+            element: elementLabel,
+            function: `(el) => {
+              if (!el) return { ok: false };
+              const target = (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') ? el : (el.querySelector('input, textarea') || el);
+              try { target.focus(); } catch (_) {}
+              target.value = '';
+              target.dispatchEvent(new Event('input', { bubbles: true }));
+              target.dispatchEvent(new Event('change', { bubbles: true }));
+              return { ok: true };
+            }`
+          }, remainingMs);
+          try { await page.locator(':focus').fill('', { timeout: 1000 }); } catch (_) {}
           result = { isError: false, content: [{ type: 'text', text: `Cleared field "${elementLabel || targetRef}"` }] };
         } else {
           result = { isError: true, content: [{ type: 'text', text: 'No page available for clear operation' }] };
@@ -3691,18 +3767,28 @@ function createControllerMcpRuntimeAdapter({
       } catch (error) {
         result = { isError: true, content: [{ type: 'text', text: `Clear operation failed: ${error?.message || error}` }] };
       }
-    } else if (isAppendOp && session.liveCdp?.context && targetRef && normalized.text != null) {
-      // Append operation: browser_type at cursor position is unreliable — if reveal-owner
-      // focused the element with cursor at position 0, typing the full combined string
-      // (existingVal + fragment) at position 0 doubles the content. Use page.fill()
-      // on the focused element instead, which always replaces the full value atomically.
-      // normalized.text is already set to `${existingVal}${textToAppend}` above.
+    } else if (isAppendOp && session.liveCdp?.context && targetRef) {
       try {
         const page = session.liveCdp.context.pages()[0] || null;
         if (page) {
-          const fullValue = String(normalized.text);
-          await page.locator(':focus').fill(fullValue, { timeout: 3000 });
-          result = { isError: false, content: [{ type: 'text', text: `Appended to field "${elementLabel || targetRef}": value is now "${fullValue}"` }] };
+          const textToAppend = clean(normalized.text != null ? normalized.text : (args?.text != null ? args.text : args?.value || ''));
+          const appendFunc = `(el) => {
+            if (!el) return { ok: false, error: 'element not found' };
+            try { el.focus(); } catch (_) {}
+            const text = ${JSON.stringify(textToAppend)};
+            const cur = el.value || '';
+            const finalVal = cur.endsWith(text) ? cur : (cur + text);
+            el.value = finalVal;
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+            return { ok: true, value: finalVal };
+          }`;
+          result = await rawCall('browser_evaluate', {
+            target: targetRef,
+            element: elementLabel,
+            function: appendFunc
+          }, remainingMs);
+          result = { isError: false, content: [{ type: 'text', text: `Appended "${textToAppend}" to field "${elementLabel || targetRef}"` }] };
         } else {
           result = { isError: true, content: [{ type: 'text', text: 'No page available for append operation' }] };
         }
@@ -3770,6 +3856,164 @@ function createControllerMcpRuntimeAdapter({
         }
       } catch (error) {
         result = { isError: true, content: [{ type: 'text', text: `Click and hold failed: ${error?.message || error}` }] };
+      }
+    } else if (isPressKeyOp && session.liveCdp?.context) {
+      try {
+        const page = session.liveCdp.context.pages()[0] || null;
+        if (page) {
+          const rawKey = clean(normalized.key || normalized.value || args?.key || args?.value || (entry?.actionText && (entry.actionText.match(/\b(tab|enter|escape|space|backspace|delete|arrowup|arrowdown|arrowleft|arrowright)\b/i) || [])[1]) || 'Tab');
+          const keyMap = { tab: 'Tab', enter: 'Enter', escape: 'Escape', space: 'Space', backspace: 'Backspace', delete: 'Delete' };
+          const keyToPress = keyMap[rawKey.toLowerCase()] || rawKey;
+          await page.keyboard.press(keyToPress);
+          result = { isError: false, content: [{ type: 'text', text: `Pressed keyboard key "${keyToPress}"` }] };
+        } else {
+          result = { isError: true, content: [{ type: 'text', text: 'No page available to press key' }] };
+        }
+      } catch (error) {
+        result = { isError: true, content: [{ type: 'text', text: `Press key failed: ${error?.message || error}` }] };
+      }
+    } else if (isInspectOp && session.liveCdp?.context) {
+      try {
+        const page = session.liveCdp.context.pages()[0] || null;
+        if (page) {
+          const inspectFn = `async (el) => {
+            if (!el) return { text: document.body.innerText || '', title: document.title, url: window.location.href };
+            const tag = el.tagName ? el.tagName.toLowerCase() : '';
+            const val = (tag === 'input' || tag === 'textarea' || tag === 'select') ? (el.value || '') : (el.innerText || el.textContent || '');
+            const rect = el.getBoundingClientRect();
+            const style = window.getComputedStyle(el);
+            return {
+              text: val.trim(),
+              tag,
+              x: Math.round(rect.x),
+              y: Math.round(rect.y),
+              width: Math.round(rect.width),
+              height: Math.round(rect.height),
+              color: style.color,
+              disabled: Boolean(el.disabled || el.getAttribute('aria-disabled') === 'true'),
+              readOnly: Boolean(el.readOnly || el.hasAttribute('readonly'))
+            };
+          }`;
+          let inspectRes;
+          if (targetRef) {
+            inspectRes = await rawCall('browser_evaluate', { target: targetRef, element: elementLabel, function: inspectFn }, remainingMs);
+          } else {
+            const pageData = await page.evaluate(() => ({
+              title: document.title,
+              url: window.location.href,
+              text: (document.body.innerText || '').slice(0, 500),
+            }));
+            inspectRes = { isError: false, content: [{ type: 'text', text: JSON.stringify(pageData) }] };
+          }
+          const rawResultText = inspectRes?.content?.[0]?.text || '';
+          let logSummary = rawResultText;
+          try {
+            const parsed = JSON.parse(rawResultText);
+            if (parsed.text != null) {
+              logSummary = `"${parsed.text}"${parsed.readOnly ? ' (read-only)' : ''}${parsed.disabled ? ' (disabled)' : ''}`;
+            }
+          } catch (_) {}
+          send({
+            type: 'agent.transcript',
+            actionText: `Printed value of "${elementLabel || targetRef || 'element'}"`,
+            message: `[PRINT] ${elementLabel || targetRef || 'element'}: ${logSummary}`,
+          });
+          result = { isError: false, content: [{ type: 'text', text: `Printed value of "${elementLabel || targetRef || 'element'}": ${logSummary}` }] };
+        } else {
+          result = { isError: true, content: [{ type: 'text', text: 'No page available to inspect' }] };
+        }
+      } catch (error) {
+        result = { isError: true, content: [{ type: 'text', text: `Inspect operation failed: ${error?.message || error}` }] };
+      }
+    } else if (isSwitchTabOp && session.liveCdp?.context) {
+      try {
+        const pages = session.liveCdp.context.pages();
+        if (pages.length > 1) {
+          const targetPage = pages[pages.length - 1];
+          await targetPage.bringToFront();
+          session.currentUrl = targetPage.url();
+          result = { isError: false, content: [{ type: 'text', text: `Switched to tab: ${targetPage.url()}` }] };
+        } else if (pages.length === 1) {
+          await pages[0].bringToFront();
+          result = { isError: false, content: [{ type: 'text', text: `Active tab is ${pages[0].url()}` }] };
+        } else {
+          result = { isError: true, content: [{ type: 'text', text: 'No tabs found in browser context' }] };
+        }
+      } catch (error) {
+        result = { isError: true, content: [{ type: 'text', text: `Switch tab failed: ${error?.message || error}` }] };
+      }
+    } else if (isCloseTabOp && session.liveCdp?.context) {
+      try {
+        const pages = session.liveCdp.context.pages();
+        if (pages.length > 1) {
+          const pageToClose = pages[pages.length - 1];
+          const closedUrl = pageToClose.url();
+          await pageToClose.close();
+          const remainingPage = session.liveCdp.context.pages()[0];
+          if (remainingPage) {
+            await remainingPage.bringToFront();
+            session.currentUrl = remainingPage.url();
+          }
+          result = { isError: false, content: [{ type: 'text', text: `Closed tab: ${closedUrl}` }] };
+        } else {
+          result = { isError: false, content: [{ type: 'text', text: 'Single tab kept open' }] };
+        }
+      } catch (error) {
+        result = { isError: true, content: [{ type: 'text', text: `Close tab failed: ${error?.message || error}` }] };
+      }
+    } else if (isNewTabOp && session.liveCdp?.context) {
+      try {
+        const page = await session.liveCdp.context.newPage();
+        if (normalized.url || args?.url || args?.value) {
+          const targetUrl = normalized.url || args?.url || args?.value;
+          await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
+          session.currentUrl = page.url();
+        }
+        await page.bringToFront();
+        result = { isError: false, content: [{ type: 'text', text: `Opened new tab: ${page.url() || 'about:blank'}` }] };
+      } catch (error) {
+        result = { isError: true, content: [{ type: 'text', text: `New tab failed: ${error?.message || error}` }] };
+      }
+    } else if (isSetViewportOp && session.liveCdp?.context) {
+      try {
+        const page = session.liveCdp.context.pages()[0] || null;
+        if (page) {
+          const width = parseInt(normalized.width || args?.width || 1280, 10);
+          const height = parseInt(normalized.height || args?.height || 720, 10);
+          await page.setViewportSize({ width, height });
+          result = { isError: false, content: [{ type: 'text', text: `Set viewport to ${width}x${height}` }] };
+        } else {
+          result = { isError: true, content: [{ type: 'text', text: 'No page available to set viewport' }] };
+        }
+      } catch (error) {
+        result = { isError: true, content: [{ type: 'text', text: `Set viewport failed: ${error?.message || error}` }] };
+      }
+    } else if (isTypeSequentiallyOp && session.liveCdp?.context) {
+      try {
+        const page = session.liveCdp.context.pages()[0] || null;
+        if (page) {
+          const text = String(normalized.text || normalized.value || args?.text || args?.value || '');
+          await page.keyboard.type(text, { delay: 50 });
+          result = { isError: false, content: [{ type: 'text', text: `Typed sequentially: "${text}"` }] };
+        } else {
+          result = { isError: true, content: [{ type: 'text', text: 'No page available for sequential typing' }] };
+        }
+      } catch (error) {
+        result = { isError: true, content: [{ type: 'text', text: `Sequential typing failed: ${error?.message || error}` }] };
+      }
+    } else if (isSelectMultipleOp && session.liveCdp?.context && targetRef) {
+      try {
+        const page = session.liveCdp.context.pages()[0] || null;
+        if (page) {
+          const rawVals = normalized.values || args?.values || normalized.value || args?.value || '';
+          const values = Array.isArray(rawVals) ? rawVals : String(rawVals).split(',').map((s) => s.trim()).filter(Boolean);
+          await page.locator(':focus').selectOption(values);
+          result = { isError: false, content: [{ type: 'text', text: `Selected multiple options: ${JSON.stringify(values)}` }] };
+        } else {
+          result = { isError: true, content: [{ type: 'text', text: 'No page available for multi-select' }] };
+        }
+      } catch (error) {
+        result = { isError: true, content: [{ type: 'text', text: `Multi-select failed: ${error?.message || error}` }] };
       }
     } else {
       result = await rawCall(sdkToolName, normalized, remainingMs);
