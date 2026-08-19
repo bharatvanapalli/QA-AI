@@ -3872,47 +3872,50 @@ function createControllerMcpRuntimeAdapter({
       } catch (error) {
         result = { isError: true, content: [{ type: 'text', text: `Press key failed: ${error?.message || error}` }] };
       }
-    } else if (isInspectOp && session.liveCdp?.context) {
+    } else if (isInspectOp && (session.liveCdp?.context || livePlaywrightPageForSession(session))) {
       try {
-        const page = session.liveCdp.context.pages()[0] || null;
+        const page = livePlaywrightPageForSession(session) || session.liveCdp?.context?.pages?.()[0] || null;
         if (page) {
-          const inspectFn = `async (el) => {
-            if (!el) return { text: document.body.innerText || '', title: document.title, url: window.location.href };
+          const targetSearch = clean(elementLabel || targetRef || '');
+          const inspectData = await page.evaluate((target) => {
+            const query = String(target || '').trim();
+            const inputs = Array.from(document.querySelectorAll('input, textarea, select, [role="textbox"], [contenteditable="true"]'));
+            let el = null;
+            if (query) {
+              el = inputs.find(i => {
+                const id = i.id || '';
+                const name = i.name || '';
+                const placeholder = i.placeholder || '';
+                const val = i.value || '';
+                const labelEl = i.labels && i.labels[0] ? i.labels[0].innerText : '';
+                const ariaLabel = i.getAttribute('aria-label') || '';
+                const prev = i.previousElementSibling?.innerText || '';
+                const parent = i.parentElement?.innerText || '';
+                return [id, name, placeholder, val, labelEl, ariaLabel, prev, parent].some(t => t.toLowerCase().includes(query.toLowerCase()));
+              });
+              if (!el) {
+                const all = Array.from(document.querySelectorAll('p, span, div, h1, h2, h3, h4, h5, h6, label, td, th'));
+                el = all.find(e => e.innerText && e.innerText.toLowerCase().includes(query.toLowerCase()));
+              }
+            }
+            if (!el) el = document.activeElement && document.activeElement !== document.body ? document.activeElement : null;
+            if (!el) return { text: (document.body.innerText || '').slice(0, 500), url: window.location.href };
+            if (typeof window.__qaai_highlight === 'function') {
+              try { window.__qaai_highlight(el); } catch (_) {}
+            }
             const tag = el.tagName ? el.tagName.toLowerCase() : '';
             const val = (tag === 'input' || tag === 'textarea' || tag === 'select') ? (el.value || '') : (el.innerText || el.textContent || '');
-            const rect = el.getBoundingClientRect();
-            const style = window.getComputedStyle(el);
             return {
-              text: val.trim(),
+              text: String(val || '').trim(),
               tag,
-              x: Math.round(rect.x),
-              y: Math.round(rect.y),
-              width: Math.round(rect.width),
-              height: Math.round(rect.height),
-              color: style.color,
               disabled: Boolean(el.disabled || el.getAttribute('aria-disabled') === 'true'),
               readOnly: Boolean(el.readOnly || el.hasAttribute('readonly'))
             };
-          }`;
-          let inspectRes;
-          if (targetRef) {
-            inspectRes = await rawCall('browser_evaluate', { target: targetRef, element: elementLabel, function: inspectFn }, remainingMs);
-          } else {
-            const pageData = await page.evaluate(() => ({
-              title: document.title,
-              url: window.location.href,
-              text: (document.body.innerText || '').slice(0, 500),
-            }));
-            inspectRes = { isError: false, content: [{ type: 'text', text: JSON.stringify(pageData) }] };
-          }
-          const rawResultText = inspectRes?.content?.[0]?.text || '';
-          let logSummary = rawResultText;
-          try {
-            const parsed = JSON.parse(rawResultText);
-            if (parsed.text != null) {
-              logSummary = `"${parsed.text}"${parsed.readOnly ? ' (read-only)' : ''}${parsed.disabled ? ' (disabled)' : ''}`;
-            }
-          } catch (_) {}
+          }, targetSearch);
+
+          const logSummary = inspectData?.text != null
+            ? `"${inspectData.text}"${inspectData.readOnly ? ' (read-only)' : ''}${inspectData.disabled ? ' (disabled)' : ''}`
+            : JSON.stringify(inspectData);
           send({
             type: 'agent.transcript',
             actionText: `Printed value of "${elementLabel || targetRef || 'element'}"`,

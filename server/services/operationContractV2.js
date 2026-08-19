@@ -17,30 +17,33 @@ const OPERATION_KIND = Object.freeze({
 });
 
 const TARGET_OPTIONAL_ACTIONS = new Set([
-  'Navigate', 'GoBack', 'GoForward', 'Refresh',
-  'SwitchContext', 'SwitchTab', 'Close', 'Screenshot', 'PressKey', 'Hotkey',
-  'AcceptAlert', 'DismissAlert', 'Copy', 'Paste', 'Evaluate', 'Semantic',
+  'Navigate', 'NavigateBack', 'NavigateForward', 'GoBack', 'GoForward', 'Refresh', 'Reload', 'SetViewport',
+  'SwitchContext', 'SwitchTab', 'NewTab', 'CloseTab', 'Close', 'Screenshot', 'PressKey', 'Hotkey',
+  'AcceptAlert', 'DismissAlert', 'HandleAlert', 'Copy', 'Paste', 'Evaluate', 'Inspect', 'ReadAndPrint', 'Print', 'Semantic', 'Verify',
 ]);
 // Pure navigation/whole-page controls that structurally can never have a
 // real UI target (unlike e.g. Screenshot/PressKey/SwitchTab, which
 // sometimes legitimately scope to one). Any inherited targetIdentity on
 // these is noise, not signal.
-const NEVER_HAS_TARGET_ACTIONS = new Set(['Navigate', 'GoBack', 'GoForward', 'Refresh']);
+const NEVER_HAS_TARGET_ACTIONS = new Set(['Navigate', 'NavigateBack', 'NavigateForward', 'GoBack', 'GoForward', 'Refresh', 'Reload']);
 const VALUE_REQUIRED_ACTIONS = new Set([
   'Fill',
   'Type',
+  'TypeSequentially',
+  'Append',
   'ClearAndType',
   'Date',
   'Time',
   'DateTime',
   'Upload',
+  'UploadFile',
   'PressKey',
   'Hotkey',
   'TypeAlert',
   'ExtractData',
   'StoreVariable',
 ]);
-const VALUE_OPTIONAL_ACTIONS = new Set(['Navigate', 'Select', 'Radio', 'Deselect', 'MultiSelect', 'Slider', 'SwitchTab', 'ExtractData', 'ClickAndHold', 'Evaluate', 'Semantic']);
+const VALUE_OPTIONAL_ACTIONS = new Set(['Navigate', 'Select', 'Radio', 'Deselect', 'MultiSelect', 'SelectMultiple', 'Slider', 'SwitchTab', 'NewTab', 'CloseTab', 'Inspect', 'ReadAndPrint', 'Print', 'ExtractData', 'ClickAndHold', 'Evaluate', 'Semantic', 'HandleAlert', 'SetViewport', 'Verify']);
 const VALUE_ACTIONS = new Set([...VALUE_REQUIRED_ACTIONS, ...VALUE_OPTIONAL_ACTIONS]);
 const ASSERTION_POLLUTION_RE = /(?:,\s*|\s+)(?:and\s+)?(?:verify|assert|validate|confirm|expect)(?:\s+that)?\b/i;
 const CHAINED_ACTION_RE = /\b(?:and\s+then|then)\s+(?:click|press|select|choose|fill|enter|type|submit|open)\b/i;
@@ -50,7 +53,6 @@ class OperationContractError extends Error {
   constructor(message, findings = []) {
     super(message);
     this.name = 'OperationContractError';
-    this.code = 'OPERATION_CONTRACT_INVALID';
     this.findings = Object.freeze(findings.map((finding) => Object.freeze({ ...finding })));
   }
 }
@@ -64,55 +66,102 @@ const TYPE_INFERENCE_RULES = [
   { pattern: /^\s*(?:navigate\s+back|go\s+back)\b/i, type: 'GoBack' },
   { pattern: /^\s*(?:navigate\s+forward|go\s+forward)\b/i, type: 'GoForward' },
   { pattern: /^\s*(?:refresh|reload)\b/i, type: 'Refresh' },
+  { pattern: /^\s*(?:set\s+viewport|viewport)\b/i, type: 'SetViewport' },
   { pattern: /^\s*(?:navigate|go\s+to|visit|load)\b/i, type: 'Navigate' },
   { pattern: /^\s*open\b/i, type: 'Navigate' },
   // Mouse gestures
   { pattern: /^\s*(?:right\s*click|context\s*menu)\b/i, type: 'RightClick' },
   { pattern: /^\s*(?:middle\s*click|aux\s*click)\b/i, type: 'MiddleClick' },
-  { pattern: /^\s*(?:click\s*and\s*hold|hold\s+button|long\s*press|press\s*and\s*hold)\b/i, type: 'ClickAndHold' },
+  { pattern: /^\s*(?:click\s+and\s+hold|hold\s+button|long\s+press|press\s+and\s+hold)\b/i, type: 'ClickAndHold' },
   { pattern: /^\s*(?:double\s*click)\b/i, type: 'DoubleClick' },
   // Shortcuts & Keys
   { pattern: /^\s*(?:press\s+shortcut|hotkey|press\s+combination|key\s+combination)\b/i, type: 'Hotkey' },
-  { pattern: /^\s*press\s+(?:the\s+)?(?:tab|enter|escape|backspace|delete|arrow\w*|control|alt|shift|space|home|end|page\s*(?:up|down)|f\d{1,2})\b/i, type: 'PressKey' },
+  { pattern: /^\s*press\s+(?:the\s+)?(?:keyboard\s+)?(?:tab|enter|escape|backspace|delete|arrow\w*|control|alt|shift|space|home|end|page\s*(?:up|down)|f\d{1,2})\b/i, type: 'PressKey' },
   // Dialogs & Alerts
   { pattern: /^\s*(?:accept\s+(?:the\s+)?(?:alert|prompt|dialog|confirm)|confirm\s+(?:the\s+)?(?:alert|prompt|dialog)|ok\s+(?:the\s+)?(?:alert|prompt|dialog))\b/i, type: 'AcceptAlert' },
   { pattern: /^\s*(?:dismiss\s+(?:the\s+)?(?:alert|prompt|dialog|confirm)|cancel\s+(?:the\s+)?(?:alert|prompt|dialog|confirm))\b/i, type: 'DismissAlert' },
   { pattern: /^\s*(?:type|enter|input)\s+(?:["'].*?["']|.+?)\s+in(?:to)?\s+(?:the\s+)?(?:prompt|alert|dialog)\b/i, type: 'TypeAlert' },
   { pattern: /^\s*(?:type|enter|input)\s+in(?:to)?\s+(?:the\s+)?(?:prompt|alert|dialog)\b/i, type: 'TypeAlert' },
+  { pattern: /^\s*(?:handle\s*alert|alert)\b/i, type: 'HandleAlert' },
   // Data & Clipboard
   { pattern: /^\s*(?:copy|copy\s+to\s+clipboard)\b/i, type: 'Copy' },
   { pattern: /^\s*(?:paste|paste\s+from\s+clipboard)\b/i, type: 'Paste' },
   { pattern: /^\s*(?:extract\s+data|extract|save\s+to\s+variable|store\s+variable|record)\b/i, type: 'ExtractData' },
+  { pattern: /^\s*(?:print\s+all|print\s+the|print|log|echo|display|output)\b/i, type: 'Print' },
+  { pattern: /^\s*(?:read\s+the\s+text|inspect|read|observe|examine)\b/i, type: 'Inspect' },
   { pattern: /^\s*(?:evaluate|execute\s*script|run\s*script)\b/i, type: 'Evaluate' },
   { pattern: /^\s*(?:human_input|human_verification|manual|human|prompt_user)\b/i, type: 'WaitForState' },
   // Window & Frame isolation
-  { pattern: /^\s*(?:switch\s+to\s+tab|switch\s+tab|switch\s+window)\b/i, type: 'SwitchTab' },
+  { pattern: /^\s*(?:open\s+(?:a\s+)?new\s+tab|new\s+tab)\b/i, type: 'NewTab' },
+  { pattern: /^\s*(?:goto\s+(?:the\s+)?newly\s+opened\s+tab|switch\s+to\s+tab|switch\s+tab|switch\s+window)\b/i, type: 'SwitchTab' },
+  { pattern: /^\s*(?:close\s+all\s+(?:the\s+)?windows|close\s+(?:the\s+)?child\s+window|close\s+tab|close\s+window)\b/i, type: 'CloseTab' },
   { pattern: /^\s*(?:switch\s+to\s+frame|switch\s+frame|enter\s+iframe)\b/i, type: 'SwitchFrame' },
   { pattern: /^\s*(?:access\s+shadow|enter\s+shadow|access\s+open\s+shadow|access\s+closed\s+shadow)\b/i, type: 'AccessShadow' },
   { pattern: /^\s*(?:switch\s*(?:to|context))\b/i, type: 'SwitchContext' },
   // Inputs
-  { pattern: /^\s*append\b/i, type: 'Type' },
+  { pattern: /^\s*append\b/i, type: 'Append' },
   { pattern: /^\s*clear\s+and\s+(?:type|enter|fill)\b/i, type: 'ClearAndType' },
   { pattern: /^\s*clear\b/i, type: 'Clear' },
+  { pattern: /^\s*(?:type\s+sequentially|human\s+typing)\b/i, type: 'TypeSequentially' },
   { pattern: /^\s*(?:drag\s+and\s+drop|drag)\b/i, type: 'DragAndDrop' },
   { pattern: /^\s*(?:set\s+slider|adjust\s+slider|slide)\b/i, type: 'Slider' },
   { pattern: /^\s*(?:enter|fill|type|input|provide|populate)\b/i, type: 'Fill' },
+  { pattern: /^\s*(?:multi\s*select|select\s+multiple)\b/i, type: 'MultiSelect' },
   { pattern: /^\s*deselect\b/i, type: 'Deselect' },
   { pattern: /^\s*(?:select|choose|pick)\b/i, type: 'Select' },
   { pattern: /^\s*uncheck\b/i, type: 'Uncheck' },
   { pattern: /^\s*check\b/i, type: 'Check' },
+  { pattern: /^\s*(?:radio)\b/i, type: 'Radio' },
   { pattern: /^\s*(?:click|tap|submit)\b/i, type: 'Click' },
   { pattern: /^\s*press\b/i, type: 'Click' },
-  { pattern: /^\s*upload\b/i, type: 'Upload' },
-  { pattern: /^\s*download\b/i, type: 'Download' },
+  { pattern: /^\s*(?:upload|upload\s+file)\b/i, type: 'Upload' },
+  { pattern: /^\s*(?:download|download\s+file)\b/i, type: 'Download' },
+  // Synchronization & Waiting
+  { pattern: /^\s*(?:wait\s+for\s+(?:network\s+idle|network|traffic|requests\s+to\s+finish)|network\s+idle)\b/i, type: 'WaitForNetworkIdle' },
+  { pattern: /^\s*(?:wait\s+for\s+(?:navigation|url\s+change|page\s+load|page\s+to\s+load))\b/i, type: 'WaitForNavigation' },
+  { pattern: /^\s*(?:wait\s+for\s+(?:response|api\s+response|endpoint\s+response))\b/i, type: 'WaitForResponse' },
+  { pattern: /^\s*(?:wait\s+for\s+(?:request|api\s+call))\b/i, type: 'WaitForRequest' },
+  { pattern: /^\s*(?:wait\s+for\s+(?:hidden|invisibility|disappearance|spinner\s+to\s+hide|loader\s+to\s+disappear)|wait\s+until\s+hidden)\b/i, type: 'WaitForHidden' },
+  { pattern: /^\s*(?:wait\s+for\s+(?:element|presence|visibility|appear|visible)|wait\s+until\s+visible)\b/i, type: 'WaitForElement' },
+  { pattern: /^\s*(?:sleep|delay|hard\s+pause|pause\s+for)\b/i, type: 'Sleep' },
   { pattern: /^\s*(?:wait|pause)\b/i, type: 'WaitForState' },
-  { pattern: /^\s*hover\b/i, type: 'Hover' },
-  { pattern: /^\s*(?:scroll\s+into\s+view|scroll\s+to)\b/i, type: 'ScrollIntoView' },
-  { pattern: /^\s*scroll\b/i, type: 'Scroll' },
-  { pattern: /^\s*(?:expand)\b/i, type: 'Expand' },
-  { pattern: /^\s*(?:collapse)\b/i, type: 'Collapse' },
-  { pattern: /^\s*screenshot\b/i, type: 'Screenshot' },
-  { pattern: /^\s*close\b/i, type: 'Close' },
+  // Storage & State Management
+  { pattern: /^\s*(?:clear\s+all\s+cookies|clear\s+cookies|delete\s+cookies|erase\s+cookies)\b/i, type: 'ClearCookies' },
+  { pattern: /^\s*(?:set\s+cookie|add\s+cookie)\b/i, type: 'SetCookie' },
+  { pattern: /^\s*(?:get\s+cookie|read\s+cookie)\b/i, type: 'GetCookie' },
+  { pattern: /^\s*(?:clear\s+local\s*storage|delete\s+local\s*storage)\b/i, type: 'ClearLocalStorage' },
+  { pattern: /^\s*(?:set\s+local\s*storage|write\s+local\s*storage)\b/i, type: 'SetLocalStorage' },
+  { pattern: /^\s*(?:get\s+local\s*storage|read\s+local\s*storage)\b/i, type: 'GetLocalStorage' },
+  { pattern: /^\s*(?:clear\s+session\s*storage|delete\s+session\s*storage)\b/i, type: 'ClearSessionStorage' },
+  { pattern: /^\s*(?:load\s+storage\s*state|load\s+auth\s*state|use\s+saved\s*state)\b/i, type: 'LoadStorageState' },
+  { pattern: /^\s*(?:clear\s+storage\s*state|clear\s+auth\s*state)\b/i, type: 'ClearStorageState' },
+  // Network & Mocking
+  { pattern: /^\s*(?:mock\s+response|mock\s+api|stub\s+response|fake\s+response)\b/i, type: 'MockResponse' },
+  { pattern: /^\s*(?:block\s+url|block\s+resource|block\s+route)\b/i, type: 'BlockUrl' },
+  { pattern: /^\s*(?:set\s+headers|inject\s+headers|add\s+headers)\b/i, type: 'SetHeaders' },
+  { pattern: /^\s*(?:route\s+network|intercept\s+network|intercept\s+request|route)\b/i, type: 'RouteNetwork' },
+  { pattern: /^\s*(?:spy\s+request|listen\s+to\s+request|track\s+request)\b/i, type: 'SpyRequest' },
+  // Granular Input & Focus / Blur
+  { pattern: /^\s*(?:focus\s+on|focus)\b/i, type: 'Focus' },
+  { pattern: /^\s*(?:blur\s+from|blur|remove\s+focus)\b/i, type: 'Blur' },
+  { pattern: /^\s*(?:mouse\s*down)\b/i, type: 'MouseDown' },
+  { pattern: /^\s*(?:mouse\s*up)\b/i, type: 'MouseUp' },
+  { pattern: /^\s*(?:mouse\s*move|move\s+pointer)\b/i, type: 'MouseMove' },
+  { pattern: /^\s*(?:key\s*down|hold\s+key)\b/i, type: 'KeyDown' },
+  { pattern: /^\s*(?:key\s*up|release\s+key)\b/i, type: 'KeyUp' },
+  { pattern: /^\s*(?:swipe|flick)\b/i, type: 'Swipe' },
+  { pattern: /^\s*(?:pinch|zoom\s+gesture)\b/i, type: 'Pinch' },
+  // Environment & Device Emulation
+  { pattern: /^\s*(?:emulate\s+geolocation|set\s+geolocation|spoof\s+location)\b/i, type: 'EmulateGeolocation' },
+  { pattern: /^\s*(?:emulate\s+timezone|set\s+timezone)\b/i, type: 'EmulateTimezone' },
+  { pattern: /^\s*(?:emulate\s+media|set\s+color\s*scheme|toggle\s+dark\s*mode|dark\s*mode)\b/i, type: 'EmulateMediaFeature' },
+  { pattern: /^\s*(?:emulate\s+network|throttle\s+network|simulate\s+offline|slow\s+3g)\b/i, type: 'EmulateNetworkConditions' },
+  // Low-level DOM & OS Extraction
+  { pattern: /^\s*(?:read\s+clipboard|get\s+clipboard)\b/i, type: 'ReadClipboard' },
+  { pattern: /^\s*(?:write\s+clipboard|copy\s+to\s+clipboard)\b/i, type: 'WriteClipboard' },
+  { pattern: /^\s*(?:extract\s+attribute|get\s+attribute)\b/i, type: 'ExtractAttribute' },
+  { pattern: /^\s*(?:extract\s+css|get\s+css|get\s+computed\s+style)\b/i, type: 'ExtractCSS' },
+  { pattern: /^\s*(?:get\s+bounding\s*box|get\s+coordinates|get\s+element\s+bounds)\b/i, type: 'GetBoundingBox' },
   // Table operations
   { pattern: /^\s*(?:find\s+row|locate\s+row)\b/i, type: 'FindRow' },
   { pattern: /^\s*(?:count\s+rows|count\s+visible)\b/i, type: 'CountRows' },
@@ -465,7 +514,7 @@ function normalizeAction(source, context, findings) {
   const authoredId = clean(source.id || source.contractStepId || source.stepId || (source.order != null ? `step-${source.order}` : `step-${context.index + 1}`));
   const operationId = `action:${stableIdPart(context.caseId)}:${stableIdPart(authoredId)}`;
   const kind = type === 'WaitForState' ? OPERATION_KIND.SYNCHRONIZATION : OPERATION_KIND.ACTION;
-  let explicitTarget = optionActivation?.targetIdentity ?? source.targetIdentity ?? source.target;
+  let explicitTarget = optionActivation?.targetIdentity ?? source.targetIdentity ?? source.target ?? source.element;
   if (NEVER_HAS_TARGET_ACTIONS.has(type)) {
     // These are pure navigation/whole-page controls with no UI element of
     // their own. Authored data can still carry a stale/descriptive

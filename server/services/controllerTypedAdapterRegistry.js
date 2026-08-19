@@ -211,6 +211,7 @@ function inferAdapterKind(operation = {}, resolution = {}, context = {}) {
   }
   if (['Check', 'Uncheck', 'Radio'].includes(type)) return ADAPTER_KIND.BOOLEAN;
   if (['Expand', 'Collapse'].includes(type)) return ADAPTER_KIND.ACCORDION;
+  if (['Print', 'Inspect', 'ReadAndPrint'].includes(type)) return ADAPTER_KIND.REVEAL;
   if (['table', 'grid', 'treegrid', 'list'].includes(role)) return ADAPTER_KIND.COLLECTION;
   if (['Click', 'DoubleClick', 'Submit', 'Download', 'Hover', 'ClickAndHold', 'RightClick', 'MiddleClick'].includes(type)
     || ['button', 'link'].includes(role)) return ADAPTER_KIND.BUTTON_OR_LINK;
@@ -598,20 +599,13 @@ function planNavigation(operation) {
   if (operation.type === 'Refresh') sdkToolName = 'browser_reload';
 
   const isDirectNavigate = operation.type === 'Navigate';
+  const navUrl = clean(operation.value || operation.destination || operation.targetIdentity?.label || operation.targetIdentity?.accessibleName || operation.target || '');
 
   return commonPlan(operation, ADAPTER_KIND.NAVIGATION, {
-    mutation: mutation(sdkToolName, { url: operation.value || operation.destination || operation.targetIdentity?.label || operation.targetIdentity?.accessibleName || '' }),
-    // GoBack/GoForward/Refresh have no authored destination URL and can't
-    // be checked against CLAIM.EXACT_NAVIGATION_TARGET, but they still need
-    // AT LEAST one proof alternative — an empty alternatives array is a
-    // structurally invalid proof contract (BROWSER_PROOF_CONTRACT_INVALID),
-    // so every GoBack failed before ever getting to the browser at all.
-    // next-required-control (does the next authored step's target become
-    // resolvable) is the one alternative that still applies without a URL.
+    mutation: mutation(sdkToolName, { url: navUrl }),
     proofContract: proof(`${operation.operationId}:navigation`, isDirectNavigate ? [
-      { id: 'authored-destination', allOf: [CLAIM.AUTHORED_DESTINATION] },
-      { id: 'next-required-control', allOf: [CLAIM.NEXT_REQUIRED_CONTROL_ACTIONABLE] },
       { id: 'exact-url', allOf: [CLAIM.EXACT_NAVIGATION_TARGET] },
+      { id: 'authored-destination', allOf: [CLAIM.AUTHORED_DESTINATION] },
     ] : [
       { id: 'next-required-control', allOf: [CLAIM.NEXT_REQUIRED_CONTROL_ACTIONABLE] },
     ]),

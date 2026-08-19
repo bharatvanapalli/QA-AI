@@ -522,6 +522,25 @@ async function run({
     await sessionRegistry.closeForUser(userId).catch(() => {});
   }
 
+  // Phase E1/E10: Pre-fetch project's known locators to inject into the mechanical
+  // execution engine context so the healer has ground truth for fallback resolution.
+  const knownLocatorsList = await prisma.knowledgeBaseLocator.findMany({
+    where: { projectId, healthScore: { gte: 30 } },
+    orderBy: [
+      { healthScore: 'desc' },
+      { occurrences: 'desc' },
+    ],
+    take: 50,
+  });
+  // Map them by target element name (lowercased/trimmed) so adapter can easily cross-reference
+  const knownLocators = new Map();
+  for (const loc of knownLocatorsList) {
+    const key = String(loc.element || '').trim().toLowerCase();
+    if (key && !knownLocators.has(key)) {
+      knownLocators.set(key, loc);
+    }
+  }
+
   const journalRoot = path.resolve(process.cwd(), 'playwright', 'controller-journal', runRow.id);
   const journal = createFileBrowserTransactionEventJournal({
     rootDir: journalRoot,
@@ -649,6 +668,7 @@ async function run({
         operations: contract.operations,
         cancelToken,
         journal,
+        knownLocators,
         send: (event) => send({
           runId: runRow.id,
           tcId: testCase.id,
@@ -752,6 +772,7 @@ async function run({
           deadlineForOperation,
           observationAttemptsForOperation,
           resolutionAttemptsForOperation,
+          knownLocators,
         },
       });
       // Phase 30.0.1 — captured per-operation, immediately on commit, inside
@@ -785,11 +806,15 @@ async function run({
             status,
             durationMs: Math.max(0, Date.now() - startedAt),
             error,
-            failureExplanation: error ? `Step failed during execution:\n${error}` : null,
             blockedReason: status === 'blocked' ? error : null,
             screenshots: encodeJson(
               Array.isArray(browserSession?.screenshots)
-                ? browserSession.screenshots.map((s) => s.path || s.artifactRef).filter(Boolean)
+                ? browserSession.screenshots.map((s, idx) => ({
+                    url: s.path || s.artifactRef || (typeof s === 'string' ? s : s.url),
+                    stepIndex: s.stepIndex ?? (idx + 1),
+                    action: s.action || s.label || 'Action evidence',
+                    ts: s.capturedAt || s.ts || Date.now(),
+                  })).filter((s) => s.url)
                 : []
             ),
             stepResults: encodeJson(steps),
@@ -871,7 +896,12 @@ async function run({
             blockedReason: 'controller_internal_error',
             screenshots: encodeJson(
               Array.isArray(browserSession?.screenshots)
-                ? browserSession.screenshots.map((s) => s.path || s.artifactRef).filter(Boolean)
+                ? browserSession.screenshots.map((s, idx) => ({
+                    url: s.path || s.artifactRef || (typeof s === 'string' ? s : s.url),
+                    stepIndex: s.stepIndex ?? (idx + 1),
+                    action: s.action || s.label || 'Action evidence',
+                    ts: s.capturedAt || s.ts || Date.now(),
+                  })).filter((s) => s.url)
                 : []
             ),
             stepResults: encodeJson([]),
