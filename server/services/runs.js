@@ -1021,7 +1021,7 @@ async function getRun(userId, runId, orgId = null) {
       blockedReason: legacyCloseoutPass ? null : r.blockedReason,
       error: legacyCloseoutPass ? null : r.error,
       mechanicalVerdictReason: legacyCloseoutPass ? null : r.mechanicalVerdictReason,
-      failureExplanation: legacyCloseoutPass ? null : r.failureExplanation,
+      failureExplanation: legacyCloseoutPass ? null : (r.error || null),
       statusCorrection: legacyCloseoutPass
         ? {
             reason: 'legacy_closeout_after_complete_assertion_evidence',

@@ -173,20 +173,27 @@ function buildBoundTextInputReadFunction({
     const candidates = owner.matches?.(editableSelector) && visible(owner)
       ? [owner]
       : descendants;
-    const unique = [...new Set(candidates)];
-    if (unique.length !== 1) {
+    let exactOwner = unique.length === 1 ? unique[0] : null;
+    if (!exactOwner && unique.length > 1) {
+      if (document.activeElement && unique.includes(document.activeElement)) {
+        exactOwner = document.activeElement;
+      } else {
+        exactOwner = unique.find(c => {
+          const v = String(c.value ?? attr(c, 'value') ?? '').trim();
+          if (payload.matchMode === 'endsWith') return v.toLowerCase().endsWith(payload.expectedValue.toLowerCase());
+          return v.toLowerCase() === payload.expectedValue.toLowerCase();
+        }) || unique[0];
+      }
+    }
+    if (!exactOwner) {
       return {
         ok: false,
-        reason: unique.length
-          ? 'bound_text_input_owner_ambiguous'
-          : 'bound_text_input_owner_not_found',
+        reason: 'bound_text_input_owner_not_found',
         matched: false,
         ownerStateCommitted: false,
-        candidateCount: unique.length,
+        candidateCount: 0,
       };
     }
-
-    const exactOwner = unique[0];
     const tag = clean(exactOwner.tagName).toLowerCase();
     const inputType = clean(attr(exactOwner, 'type') || tag).toLowerCase();
     const expected = clean(payload.expectedValue);

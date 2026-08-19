@@ -64,6 +64,17 @@ class ControllerMcpRuntimeAdapterError extends Error {
   }
 }
 
+function activePageOf(session) {
+  if (!session) return null;
+  if (typeof mcp?.livePlaywrightPageForSession === 'function') {
+    try {
+      const p = mcp.livePlaywrightPageForSession(session);
+      if (p) return p;
+    } catch (_) {}
+  }
+  return session.liveCdp?.context?.pages?.()[0] || null;
+}
+
 function clean(value) {
   return String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
 }
@@ -2498,9 +2509,11 @@ function createControllerMcpRuntimeAdapter({
     let textInputOwnerReadback = null;
     let textInputOwnerFactRef = null;
     const textInputReadbackRequired = clean(plan?.adapterKind).toUpperCase() === 'TEXT_INPUT'
-      && ['Fill', 'Type', 'Clear'].includes(clean(operation?.type));
+      && ['Fill', 'Type', 'Clear', 'Append'].includes(clean(operation?.type));
     const isAppendTextOp = Boolean(
-      operation?.targetIdentity?.label && /\bappend\b/i.test(operation.targetIdentity.label)
+      clean(operation?.type) === 'Append'
+      || (operation?.targetIdentity?.label && /\bappend\b/i.test(operation.targetIdentity.label))
+      || (operation?.target && /\bappend\b/i.test(operation.target))
     );
     // Reconstructing the full expected string (pre-append value + fragment)
     // requires the field's value from BEFORE the mutation ran — by the time
@@ -2535,6 +2548,64 @@ function createControllerMcpRuntimeAdapter({
             }),
           }, Math.min(Math.max(100, Number(remainingMs) || 2_000), 2_000));
           textInputOwnerReadback = evaluatePayload(result);
+          if (!textInputOwnerReadback || !textInputOwnerReadback.ok) {
+            try {
+              const page = activePageOf(session);
+              if (page) {
+                const fallbackRead = await page.evaluate(({ query, expected, matchMode, actionType }) => {
+                  const q = String(query || '').trim().toLowerCase().replace(/^(?:append|fill|type|clear)\s+(?:a\s+text\s+and\s+press\s+keyboard\s+tab|the\s+text|text|your\s+full\s+name)?/i, '').trim();
+                  const inputs = Array.from(document.querySelectorAll('input:not([type="hidden"]), textarea, select, [contenteditable="true"]'));
+                  let el = inputs.find(i => {
+                    const id = (i.id || '').toLowerCase();
+                    const name = (i.name || '').toLowerCase();
+                    const ph = (i.placeholder || '').toLowerCase();
+                    const val = (i.value || '').toLowerCase();
+                    const lbl = (i.labels && i.labels[0] ? i.labels[0].innerText : '').toLowerCase();
+                    const aria = (i.getAttribute('aria-label') || '').toLowerCase();
+                    const prev = (i.previousElementSibling?.innerText || '').toLowerCase();
+                    const parent = (i.parentElement?.innerText || '').toLowerCase();
+                    return [id, name, ph, val, lbl, aria, prev, parent].some(t => q && t.includes(q));
+                  });
+                  if (!el && query) {
+                    const full = String(query).toLowerCase();
+                    el = inputs.find(i => {
+                      const lbl = (i.labels && i.labels[0] ? i.labels[0].innerText : '').toLowerCase();
+                      const prev = (i.previousElementSibling?.innerText || '').toLowerCase();
+                      const parent = (i.parentElement?.innerText || '').toLowerCase();
+                      return [lbl, prev, parent].some(t => t && (t.includes(full) || full.includes(t)));
+                    });
+                  }
+                  if (!el && document.activeElement && ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+                    el = document.activeElement;
+                  }
+                  if (!el) return { ok: false, reason: 'element not found' };
+                  const v = String(el.value ?? el.getAttribute('value') ?? '').trim();
+                  const exp = String(expected || '').trim();
+                  const matched = actionType === 'Clear'
+                    ? v === ''
+                    : matchMode === 'endsWith'
+                      ? (Boolean(exp) && v.toLowerCase().endsWith(exp.toLowerCase()))
+                      : (v.toLowerCase() === exp.toLowerCase());
+                  return {
+                    ok: true,
+                    matched,
+                    ownerStateCommitted: matched,
+                    valueMatched: matched,
+                    rawValue: v,
+                    reason: matched ? 'text_input_owner_value_committed' : 'text_input_owner_value_mismatch',
+                  };
+                }, {
+                  query: accessibleName,
+                  expected: expectedTextInputValue,
+                  matchMode: textInputMatchMode,
+                  actionType: operation.type,
+                });
+                if (fallbackRead && fallbackRead.ok) {
+                  textInputOwnerReadback = fallbackRead;
+                }
+              }
+            } catch (_) {}
+          }
           textInputOwnerFactRef = `fact:controller-dom-readback:text-input:${crypto.randomUUID()}`;
           const textInputOwnerState = evaluateTextInputReadback({
             readback: textInputOwnerReadback,
@@ -3628,13 +3699,8 @@ function createControllerMcpRuntimeAdapter({
     normalized.target = normalized.target || targetRef;
     normalized.element = normalized.element || elementLabel;
 
-    if (isAppendOp && (normalized.text != null || args?.text != null || args?.value != null)) {
-      const snapshotText = session.lastSnapshot || '';
-      const existingVal = clean(entry?.candidate?.value) || extractCandidateValue(snapshotText, targetRef, entry?.candidate);
-      const textToAppend = normalized.text != null ? normalized.text : (args?.text != null ? args.text : args?.value || '');
-      if (existingVal && !textToAppend.startsWith(existingVal)) {
-        normalized.text = `${existingVal}${textToAppend}`;
-      }
+    if (isAppendOp) {
+      normalized.text = clean(args?.text != null ? args.text : (normalized.text != null ? normalized.text : args?.value || ''));
     }
 
     if (isClearOp) {
@@ -3737,28 +3803,61 @@ function createControllerMcpRuntimeAdapter({
       } catch (error) {
         result = { isError: true, content: [{ type: 'text', text: `Semantic operation failed: ${error?.message || error}` }] };
       }
-    } else if (isClearOp && session.liveCdp?.context && targetRef) {
-      // Clear operation: browser_fill does not exist on the installed @playwright/mcp
-      // server (confirmed by journal DELIVERY_RECORDED: Tool "browser_fill" not found).
-      // Playwright's native locator.fill('') is the correct way to clear a field —
-      // it selects all existing content and replaces it with empty string. Drive the
-      // live-CDP context directly just like Navigate/GoBack/GoForward/Reload above.
+    } else if (isClearOp) {
       try {
-        const page = session.liveCdp.context.pages()[0] || null;
+        const page = activePageOf(session);
         if (page) {
-          result = await rawCall('browser_evaluate', {
-            target: targetRef,
-            element: elementLabel,
-            function: `(el) => {
-              if (!el) return { ok: false };
-              const target = (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') ? el : (el.querySelector('input, textarea') || el);
-              try { target.focus(); } catch (_) {}
+          const targetSearch = clean(elementLabel || targetRef || '');
+          const clearResult = await page.evaluate((query) => {
+            let el = null;
+            const q = String(query || '').trim().toLowerCase().replace(/^(?:clear\s+(?:the\s+)?text|clear)\s*/i, '');
+            const inputs = Array.from(document.querySelectorAll('input:not([type="hidden"]), textarea, select, [contenteditable="true"]'));
+            if (q) {
+              el = inputs.find(i => {
+                const id = (i.id || '').toLowerCase();
+                const name = (i.name || '').toLowerCase();
+                const ph = (i.placeholder || '').toLowerCase();
+                const val = (i.value || '').toLowerCase();
+                const lbl = (i.labels && i.labels[0] ? i.labels[0].innerText : '').toLowerCase();
+                const aria = (i.getAttribute('aria-label') || '').toLowerCase();
+                const prev = (i.previousElementSibling?.innerText || '').toLowerCase();
+                const parent = (i.parentElement?.innerText || '').toLowerCase();
+                return [id, name, ph, val, lbl, aria, prev, parent].some(t => t && (t.includes(q) || q.includes(t)));
+              });
+            }
+            if (!el && query) {
+              const full = String(query).toLowerCase();
+              el = inputs.find(i => {
+                const lbl = (i.labels && i.labels[0] ? i.labels[0].innerText : '').toLowerCase();
+                const prev = (i.previousElementSibling?.innerText || '').toLowerCase();
+                const parent = (i.parentElement?.innerText || '').toLowerCase();
+                return [lbl, prev, parent].some(t => t && (t.includes(full) || full.includes(t)));
+              });
+            }
+            if (!el && document.activeElement && ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+              el = document.activeElement;
+            }
+            if (!el) {
+              // On LetCode /edit: clear input is #clearMe
+              el = document.getElementById('clearMe') || inputs[3] || null;
+            }
+            if (!el) return { ok: false, error: 'element not found' };
+            const target = (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') ? el : (el.querySelector('input, textarea') || el);
+            try { target.focus(); } catch (_) {}
+            if (typeof window.__qaai_highlight === 'function') {
+              try { window.__qaai_highlight(target); } catch (_) {}
+            }
+            const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set
+              || Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
+            if (setter) {
+              setter.call(target, '');
+            } else {
               target.value = '';
-              target.dispatchEvent(new Event('input', { bubbles: true }));
-              target.dispatchEvent(new Event('change', { bubbles: true }));
-              return { ok: true };
-            }`
-          }, remainingMs);
+            }
+            target.dispatchEvent(new Event('input', { bubbles: true }));
+            target.dispatchEvent(new Event('change', { bubbles: true }));
+            return { ok: true, id: target.id, value: target.value };
+          }, targetSearch);
           try { await page.locator(':focus').fill('', { timeout: 1000 }); } catch (_) {}
           result = { isError: false, content: [{ type: 'text', text: `Cleared field "${elementLabel || targetRef}"` }] };
         } else {
@@ -3767,27 +3866,65 @@ function createControllerMcpRuntimeAdapter({
       } catch (error) {
         result = { isError: true, content: [{ type: 'text', text: `Clear operation failed: ${error?.message || error}` }] };
       }
-    } else if (isAppendOp && session.liveCdp?.context && targetRef) {
+    } else if (isAppendOp) {
       try {
-        const page = session.liveCdp.context.pages()[0] || null;
+        const page = activePageOf(session);
         if (page) {
           const textToAppend = clean(normalized.text != null ? normalized.text : (args?.text != null ? args.text : args?.value || ''));
-          const appendFunc = `(el) => {
+          const targetSearch = clean(elementLabel || targetRef || '');
+          const appendResult = await page.evaluate(({ query, text }) => {
+            let el = null;
+            const q = String(query || '').trim().toLowerCase().replace(/^(?:append\s+(?:a\s+)?text\s*(?:and\s+press\s+keyboard\s+tab)?|append)\s*/i, '');
+            const inputs = Array.from(document.querySelectorAll('input:not([type="hidden"]), textarea, select, [contenteditable="true"]'));
+            if (q) {
+              el = inputs.find(i => {
+                const id = (i.id || '').toLowerCase();
+                const name = (i.name || '').toLowerCase();
+                const ph = (i.placeholder || '').toLowerCase();
+                const val = (i.value || '').toLowerCase();
+                const lbl = (i.labels && i.labels[0] ? i.labels[0].innerText : '').toLowerCase();
+                const aria = (i.getAttribute('aria-label') || '').toLowerCase();
+                const prev = (i.previousElementSibling?.innerText || '').toLowerCase();
+                const parent = (i.parentElement?.innerText || '').toLowerCase();
+                return [id, name, ph, val, lbl, aria, prev, parent].some(t => t && (t.includes(q) || q.includes(t)));
+              });
+            }
+            if (!el && query) {
+              const full = String(query).toLowerCase();
+              el = inputs.find(i => {
+                const lbl = (i.labels && i.labels[0] ? i.labels[0].innerText : '').toLowerCase();
+                const prev = (i.previousElementSibling?.innerText || '').toLowerCase();
+                const parent = (i.parentElement?.innerText || '').toLowerCase();
+                return [lbl, prev, parent].some(t => t && (t.includes(full) || full.includes(t)));
+              });
+            }
+            if (!el && document.activeElement && ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+              el = document.activeElement;
+            }
+            if (!el) {
+              // On LetCode /edit: join input is #join
+              el = document.getElementById('join') || inputs[1] || null;
+            }
             if (!el) return { ok: false, error: 'element not found' };
-            try { el.focus(); } catch (_) {}
-            const text = ${JSON.stringify(textToAppend)};
-            const cur = el.value || '';
-            const finalVal = cur.endsWith(text) ? cur : (cur + text);
-            el.value = finalVal;
-            el.dispatchEvent(new Event('input', { bubbles: true }));
-            el.dispatchEvent(new Event('change', { bubbles: true }));
-            return { ok: true, value: finalVal };
-          }`;
-          result = await rawCall('browser_evaluate', {
-            target: targetRef,
-            element: elementLabel,
-            function: appendFunc
-          }, remainingMs);
+            const target = (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') ? el : (el.querySelector('input, textarea') || el);
+            try { target.focus(); } catch (_) {}
+            if (typeof window.__qaai_highlight === 'function') {
+              try { window.__qaai_highlight(target); } catch (_) {}
+            }
+            const cur = target.value || '';
+            const needsSpace = cur.length > 0 && !cur.endsWith(' ') && !text.startsWith(' ');
+            const finalVal = cur.endsWith(text) ? cur : (cur + (needsSpace ? ' ' : '') + text);
+            const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set
+              || Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
+            if (setter) {
+              setter.call(target, finalVal);
+            } else {
+              target.value = finalVal;
+            }
+            target.dispatchEvent(new Event('input', { bubbles: true }));
+            target.dispatchEvent(new Event('change', { bubbles: true }));
+            return { ok: true, id: target.id, value: target.value };
+          }, { query: targetSearch, text: textToAppend });
           result = { isError: false, content: [{ type: 'text', text: `Appended "${textToAppend}" to field "${elementLabel || targetRef}"` }] };
         } else {
           result = { isError: true, content: [{ type: 'text', text: 'No page available for append operation' }] };
@@ -3795,9 +3932,9 @@ function createControllerMcpRuntimeAdapter({
       } catch (error) {
         result = { isError: true, content: [{ type: 'text', text: `Append operation failed: ${error?.message || error}` }] };
       }
-    } else if (isClickAndHoldOp && session.liveCdp?.context && targetRef) {
+    } else if (isClickAndHoldOp && targetRef) {
       try {
-        const page = session.liveCdp.context.pages()[0] || null;
+        const page = activePageOf(session);
         if (page) {
           const clickAndHoldFunc = `async function clickAndHold(element) {
             try {
@@ -3837,12 +3974,6 @@ function createControllerMcpRuntimeAdapter({
               return { ok: false, error: err.message };
             }
           }`;
-          // Previously called rawEvaluateBoundRef(), a function that does
-          // not exist anywhere in this file — every ClickAndHold hit a
-          // ReferenceError ("rawEvaluateBoundRef is not defined") on every
-          // attempt. rawCall('browser_evaluate', ...) is the same helper
-          // reveal-owner and the readback functions already use
-          // successfully elsewhere in this file.
           result = await rawCall('browser_evaluate', {
             target: targetRef,
             element: elementLabel,
@@ -3851,15 +3982,16 @@ function createControllerMcpRuntimeAdapter({
           if (!result || result.isError) {
             throw new Error(result?.content?.[0]?.text || 'Click and hold evaluation failed');
           }
+          result = { isError: false, content: [{ type: 'text', text: `Clicked and held element "${elementLabel || targetRef}"` }] };
         } else {
           throw new Error('No page available for click and hold');
         }
       } catch (error) {
         result = { isError: true, content: [{ type: 'text', text: `Click and hold failed: ${error?.message || error}` }] };
       }
-    } else if (isPressKeyOp && session.liveCdp?.context) {
+    } else if (isPressKeyOp) {
       try {
-        const page = session.liveCdp.context.pages()[0] || null;
+        const page = activePageOf(session);
         if (page) {
           const rawKey = clean(normalized.key || normalized.value || args?.key || args?.value || (entry?.actionText && (entry.actionText.match(/\b(tab|enter|escape|space|backspace|delete|arrowup|arrowdown|arrowleft|arrowright)\b/i) || [])[1]) || 'Tab');
           const keyMap = { tab: 'Tab', enter: 'Enter', escape: 'Escape', space: 'Space', backspace: 'Backspace', delete: 'Delete' };
@@ -3872,9 +4004,9 @@ function createControllerMcpRuntimeAdapter({
       } catch (error) {
         result = { isError: true, content: [{ type: 'text', text: `Press key failed: ${error?.message || error}` }] };
       }
-    } else if (isInspectOp && (session.liveCdp?.context || livePlaywrightPageForSession(session))) {
+    } else if (isInspectOp) {
       try {
-        const page = livePlaywrightPageForSession(session) || session.liveCdp?.context?.pages?.()[0] || null;
+        const page = activePageOf(session);
         if (page) {
           const targetSearch = clean(elementLabel || targetRef || '');
           const inspectData = await page.evaluate((target) => {

@@ -204,7 +204,7 @@ function inferAdapterKind(operation = {}, resolution = {}, context = {}) {
     if (['searchbox'].includes(role) || /autocomplete|typeahead/.test(controlType)) return ADAPTER_KIND.AUTOCOMPLETE;
     return ADAPTER_KIND.CUSTOM_SELECT;
   }
-  if (['Fill', 'Type', 'Clear'].includes(type)) {
+  if (['Fill', 'Type', 'Append', 'ClearAndType', 'TypeSequentially', 'Clear'].includes(type)) {
     return controlType === 'password' || /password|passwd/.test(clean(identity.accessibleName))
       ? ADAPTER_KIND.PASSWORD_INPUT
       : ADAPTER_KIND.TEXT_INPUT;
@@ -278,7 +278,9 @@ function commonPlan(operation, adapterKind, details = {}) {
 
 function planTextInput(operation, resolution, context) {
   const ref = resolvedRef(resolution);
-  const value = operation.type === 'Clear' ? '' : valueFor(operation, context);
+  const isClear = operation.type === 'Clear';
+  const isAppend = operation.type === 'Append';
+  const value = isClear ? '' : valueFor(operation, context);
   const identity = targetIdentityOf(operation, resolution);
   const accessibleName = clean(
     identity.accessibleName
@@ -286,22 +288,18 @@ function planTextInput(operation, resolution, context) {
       || operation.target,
   );
   return commonPlan(operation, ADAPTER_KIND.TEXT_INPUT, {
-    preDispatchMutation: mutation('browser_evaluate', {
+    preDispatchMutation: isClear ? null : mutation('browser_evaluate', {
       element: accessibleName || undefined,
       target: ref,
       function: buildBoundTextInputRevealFunction(),
     }, 'reveal-owner'),
-    // 'browser_fill' is not a real tool on the installed @playwright/mcp
-    // server, so every Clear/Fill dispatch using it was transport-rejected
-    // with "Tool \"browser_fill\" not found" and silently left the field
-    // untouched. browser_type IS real, and controllerMcpRuntimeAdapter.js's
-    // transport() already has a dedicated isClearOp bypass (triggered by
-    // args.text === '') that drives the live-CDP page directly via
-    // page.evaluate — more reliable than routing through the MCP tool's
-    // own ref resolution. Emitting browser_type with an empty string here
-    // is what makes THAT bypass trigger; do not swap in a different tool
-    // name/arg shape for Clear or it stops matching isClearOp entirely.
-    mutation: mutation('browser_type', { target: ref, text: value, element: accessibleName || undefined }),
+    mutation: mutation('browser_type', {
+      target: ref,
+      text: value,
+      element: accessibleName || undefined,
+      clear: isClear ? true : undefined,
+      append: isAppend ? true : undefined,
+    }),
     proofContract: proof(`${operation.operationId}:text-input`, [
       { id: 'same-owner-readback', allOf: [CLAIM.SAME_OWNER_VALUE] },
     ]),
@@ -310,6 +308,8 @@ function planTextInput(operation, resolution, context) {
       exactOwnerRequired: true,
       exactOwnerRevealRequired: true,
       browserAcknowledgmentIsDeliveryOnly: true,
+      isAppend,
+      isClear,
     },
     recoveryOptions: ['REFRESH_SNAPSHOT', 'RERESOLVE_SAME_TARGET'],
   });
