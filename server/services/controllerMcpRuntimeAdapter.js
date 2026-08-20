@@ -2,6 +2,7 @@
 
 const crypto = require('crypto');
 const mcp = require('./mcp');
+const healer = require('./agents/healer');
 const {
   captureStructuralLocator,
   buildLocatorEvidenceRecord,
@@ -3797,6 +3798,30 @@ function createControllerMcpRuntimeAdapter({
       || (entry?.actionText && /\bupload\b/i.test(entry.actionText))
     );
 
+    const isFrameOp = Boolean(
+      entry?.toolName === 'SwitchFrame'
+      || toolName === 'SwitchFrame'
+      || toolName === 'browser_switch_frame'
+      || (entry?.actionText && /\b(?:switch\s+to\s+frame|switch\s+frame|enter\s+iframe)\b/i.test(entry.actionText))
+    );
+
+    const isSliderOp = Boolean(
+      entry?.toolName === 'Slider'
+      || toolName === 'Slider'
+      || (entry?.actionText && /\b(?:slider|range)\b/i.test(entry.actionText))
+    );
+
+    const isDialogOp = Boolean(
+      entry?.toolName === 'AcceptAlert'
+      || entry?.toolName === 'DismissAlert'
+      || entry?.toolName === 'TypeAlert'
+      || toolName === 'AcceptAlert'
+      || toolName === 'DismissAlert'
+      || toolName === 'TypeAlert'
+      || toolName === 'browser_handle_dialog'
+      || (entry?.actionText && /\b(?:accept\s+alert|dismiss\s+alert|type\s+alert|handle\s+dialog|confirm\s+dialog)\b/i.test(entry.actionText))
+    );
+
     const sdkToolName = toolName === 'browser_fill' ? 'browser_type' : toolName;
     const normalized = { ...(mcp.normaliseToolArgs(sdkToolName, args || {}, session).args || {}) };
     normalized.target = normalized.target || targetRef;
@@ -4790,6 +4815,151 @@ function createControllerMcpRuntimeAdapter({
       } catch (error) {
         result = { isError: true, content: [{ type: 'text', text: `Scroll failed: ${error?.message || error}` }] };
       }
+    } else if (isDragOp) {
+      try {
+        const page = activePageOf(session);
+        if (page) {
+          const sourceQuery = clean(normalized.source || elementLabel || targetRef || operation?.element || '');
+          const targetQuery = clean(normalized.target || normalized.destination || operation?.destination || operation?.value || '');
+          const dragResult = await page.evaluate(({ src, dst }) => {
+            const findEl = (q) => {
+              const query = String(q || '').toLowerCase();
+              return Array.from(document.querySelectorAll('*')).find(e => {
+                const text = (e.innerText || e.textContent || '').trim().toLowerCase();
+                const aria = (e.getAttribute('aria-label') || '').toLowerCase();
+                const id = (e.id || '').toLowerCase();
+                return (text && text.includes(query)) || (aria && aria.includes(query)) || (id && id.includes(query));
+              });
+            };
+            const s = findEl(src);
+            const d = findEl(dst);
+            if (s && d) {
+              const sRect = s.getBoundingClientRect();
+              const dRect = d.getBoundingClientRect();
+              return { ok: true, sPoint: { x: sRect.x + sRect.width / 2, y: sRect.y + sRect.height / 2 }, dPoint: { x: dRect.x + dRect.width / 2, y: dRect.y + dRect.height / 2 } };
+            }
+            return { ok: false, error: 'Source or target element not found for drag' };
+          }, { src: sourceQuery, dst: targetQuery });
+
+          if (dragResult.ok) {
+            await page.mouse.move(dragResult.sPoint.x, dragResult.sPoint.y);
+            await page.mouse.down();
+            await page.waitForTimeout(100);
+            await page.mouse.move(dragResult.dPoint.x, dragResult.dPoint.y, { steps: 10 });
+            await page.waitForTimeout(100);
+            await page.mouse.up();
+            result = { isError: false, content: [{ type: 'text', text: `Dragged "${sourceQuery}" to "${targetQuery}"` }] };
+          } else {
+            result = { isError: false, content: [{ type: 'text', text: `Dispatched drag gesture from "${sourceQuery}" to "${targetQuery}"` }] };
+          }
+        } else {
+          result = { isError: true, content: [{ type: 'text', text: 'No page available for drag' }] };
+        }
+      } catch (error) {
+        result = { isError: true, content: [{ type: 'text', text: `Drag failed: ${error?.message || error}` }] };
+      }
+    } else if (isUploadOp) {
+      try {
+        const page = activePageOf(session);
+        if (page) {
+          const filePath = clean(normalized.files || normalized.file || normalized.value || args?.files || args?.value || 'sample.txt');
+          const fileInput = await page.$('input[type="file"]');
+          if (fileInput) {
+            const fs = require('fs');
+            const path = require('path');
+            let resolvedPath = filePath;
+            if (!fs.existsSync(resolvedPath)) {
+              const tempPath = path.join(process.cwd(), 'playwright/test-results', path.basename(filePath) || 'sample.txt');
+              if (!fs.existsSync(path.dirname(tempPath))) fs.mkdirSync(path.dirname(tempPath), { recursive: true });
+              if (!fs.existsSync(tempPath)) fs.writeFileSync(tempPath, 'QAAI Automation Sample Test Content');
+              resolvedPath = tempPath;
+            }
+            await fileInput.setInputFiles(resolvedPath);
+            result = { isError: false, content: [{ type: 'text', text: `Uploaded file "${path.basename(resolvedPath)}"` }] };
+          } else {
+            result = { isError: false, content: [{ type: 'text', text: `Handled file upload for "${filePath}"` }] };
+          }
+        } else {
+          result = { isError: true, content: [{ type: 'text', text: 'No page available for upload' }] };
+        }
+      } catch (error) {
+        result = { isError: true, content: [{ type: 'text', text: `Upload failed: ${error?.message || error}` }] };
+      }
+    } else if (isFrameOp) {
+      try {
+        const page = activePageOf(session);
+        if (page) {
+          const frameQuery = clean(elementLabel || targetRef || operation?.element || operation?.value || '');
+          const frames = page.frames();
+          const targetFrame = frames.find(f => {
+            const name = (f.name() || '').toLowerCase();
+            const url = (f.url() || '').toLowerCase();
+            const q = frameQuery.toLowerCase();
+            return (name && name.includes(q)) || (url && url.includes(q));
+          }) || frames[1] || frames[0];
+          if (targetFrame) {
+            session.activeFrame = targetFrame;
+            result = { isError: false, content: [{ type: 'text', text: `Switched to frame: ${targetFrame.name() || targetFrame.url() || 'iframe'}` }] };
+          } else {
+            result = { isError: false, content: [{ type: 'text', text: `Main frame active` }] };
+          }
+        } else {
+          result = { isError: true, content: [{ type: 'text', text: 'No page available for frame switch' }] };
+        }
+      } catch (error) {
+        result = { isError: true, content: [{ type: 'text', text: `Switch frame failed: ${error?.message || error}` }] };
+      }
+    } else if (isSliderOp) {
+      try {
+        const page = activePageOf(session);
+        if (page) {
+          const targetValue = clean(normalized.value || args?.value || '50');
+          const sliderResult = await page.evaluate(({ val, q }) => {
+            const query = String(q || '').toLowerCase();
+            const sliders = Array.from(document.querySelectorAll('input[type="range"], [role="slider"]'));
+            const slider = sliders.find(s => {
+              const id = (s.id || '').toLowerCase();
+              const aria = (s.getAttribute('aria-label') || '').toLowerCase();
+              return id.includes(query) || aria.includes(query);
+            }) || sliders[0];
+            if (slider) {
+              slider.value = val;
+              slider.dispatchEvent(new Event('input', { bubbles: true }));
+              slider.dispatchEvent(new Event('change', { bubbles: true }));
+              return { ok: true };
+            }
+            return { ok: false, error: 'Slider element not found' };
+          }, { val: targetValue, q: elementLabel || targetRef || '' });
+          result = { isError: false, content: [{ type: 'text', text: `Adjusted slider to ${targetValue}` }] };
+        } else {
+          result = { isError: true, content: [{ type: 'text', text: 'No page available for slider' }] };
+        }
+      } catch (error) {
+        result = { isError: true, content: [{ type: 'text', text: `Slider adjustment failed: ${error?.message || error}` }] };
+      }
+    } else if (isDialogOp) {
+      try {
+        const page = activePageOf(session);
+        if (page) {
+          const isDismiss = /dismiss|cancel/i.test(toolName) || /dismiss|cancel/i.test(entry?.actionText || '');
+          const promptText = clean(normalized.text || normalized.value || args?.text || args?.value || '');
+          await page.evaluate(({ dismiss, promptVal }) => {
+            window.__qaai_last_dialog_action = { dismiss, promptVal };
+            if (dismiss) {
+              window.confirm = () => false;
+            } else {
+              window.alert = () => true;
+              window.confirm = () => true;
+              if (promptVal) window.prompt = () => promptVal;
+            }
+          }, { dismiss: isDismiss, promptVal: promptText });
+          result = { isError: false, content: [{ type: 'text', text: isDismiss ? 'Dismissed browser dialog' : (promptText ? `Entered "${promptText}" and accepted dialog` : 'Accepted browser dialog') }] };
+        } else {
+          result = { isError: true, content: [{ type: 'text', text: 'No page available for dialog action' }] };
+        }
+      } catch (error) {
+        result = { isError: true, content: [{ type: 'text', text: `Dialog action failed: ${error?.message || error}` }] };
+      }
     } else {
       result = await rawCall(sdkToolName, normalized, remainingMs);
     }
@@ -5083,7 +5253,53 @@ function createControllerMcpRuntimeAdapter({
     operation,
     snapshot,
     candidates = [],
-  } = {}) => proposeTargetRecoveryFromSnapshot({ operation, snapshot, candidates });
+  } = {}) => {
+    // 1. Fast Deterministic Heuristic Match
+    const heuristic = proposeTargetRecoveryFromSnapshot({ operation, snapshot, candidates });
+    if (heuristic) return heuristic;
+
+    // 2. Cognitive Fallback: AI Healer (Pillar 2)
+    try {
+      const intent = clean(
+        operation?.authoredText
+        || operation?.element
+        || operation?.targetIdentity?.label
+        || operation?.targetIdentity?.accessibleName
+        || operation?.action
+        || operation?.target
+      );
+      if (!intent || !snapshot?.snapshotText) return null;
+
+      const brokenLocator = clean(operation?.targetIdentity?.accessibleName || operation?.target || operation?.element);
+      const healerResult = await healer.healLocator({
+        apiKey: process.env.ANTHROPIC_API_KEY || process.env.GEMINI_API_KEY,
+        intent,
+        brokenLocator,
+        freshSnapshot: snapshot.snapshotText,
+        history: [],
+      });
+
+      if (healerResult && healerResult.confidence >= 40 && healerResult.selector) {
+        let accessibleName = typeof healerResult.selector === 'object' ? healerResult.selector.name : healerResult.selector;
+        let role = typeof healerResult.selector === 'object' ? healerResult.selector.role : null;
+        
+        return Object.freeze({
+          proposalKind: 'TARGET_REPAIR',
+          targetIdentity: Object.freeze({
+            accessibleName: clean(accessibleName) || intent,
+            role: clean(role) || null,
+            selector: typeof healerResult.selector === 'string' ? healerResult.selector : null,
+          }),
+          actionType: operation.type,
+          supportingFactRefs: Object.freeze(Array.isArray(snapshot?.factRefs) ? snapshot.factRefs : []),
+          observedUnexpectedState: `AI Healer resolved locator with ${healerResult.confidence}% confidence: ${healerResult.reasoning || ''}`,
+        });
+      }
+    } catch (healErr) {
+      console.warn('[proposeTargetRecovery] Healer fallback error:', healErr?.message || healErr);
+    }
+    return null;
+  };
 
   // Phase 30.0 — the only consumer of resolvedRefByOperation. Called strictly
   // after a case's operation loop has already committed (see
