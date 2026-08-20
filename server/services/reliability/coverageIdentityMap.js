@@ -98,6 +98,7 @@ function identityForItem(item = {}) {
 }
 
 function entriesFromManifest(manifest = {}) {
+  if (!manifest || typeof manifest !== 'object') return [];
   if (Array.isArray(manifest)) return manifest;
   if (Array.isArray(manifest.items)) return manifest.items;
   if (Array.isArray(manifest.requiredCoverage)) return manifest.requiredCoverage;

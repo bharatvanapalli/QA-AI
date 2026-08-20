@@ -639,7 +639,7 @@ function createBrowserTransactionController({
       deadlineMs,
       context,
     });
-    if (pre.proof.manualBoundary || pre.proof.sessionLost || pre.proof.status === PROOF_STATUS.MATCHED) {
+    if (pre.proof.manualBoundary || pre.proof.sessionLost || (pre.proof.status === PROOF_STATUS.MATCHED && (operation.kind !== OPERATION_KIND.ACTION || plan.proofMetadata?.observationFirst === true))) {
       const terminal = terminalFromProof({
         machine,
         operation,

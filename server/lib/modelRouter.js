@@ -47,6 +47,7 @@ const TIERS = Object.freeze(['flagship', 'mid']);
 const MID_TIER_MODELS = Object.freeze({
   claude:  'claude-haiku-4-5-20251001',
   gemini:  'gemini-2.5-flash',
+  copilot: 'copilot-gpt-4o',
 });
 
 // Flagship fallbacks, used only when the caller didn't supply a

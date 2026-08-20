@@ -26,8 +26,8 @@ const { sanitizeWarningList, sanitizeDegradations } = require('../lib/userFacing
 // real rows. Anything else (PDF/DOCX/image/binary) read by the CSV fallback
 // becomes mojibake "rows". Whitelist by FORMAT (extension or mime fragment),
 // never by any site-specific value (generic rule).
-const TEST_DATA_EXTS = new Set(['xlsx', 'xlsm', 'xls', 'csv', 'tsv', 'txt', 'text']);
-const TEST_DATA_MIME_FRAGMENTS = ['spreadsheet', 'excel', 'csv', 'text/plain', 'application/octet-stream'];
+const TEST_DATA_EXTS = new Set(['xlsx', 'xlsm', 'xls', 'csv', 'tsv', 'txt', 'text', 'json']);
+const TEST_DATA_MIME_FRAGMENTS = ['spreadsheet', 'excel', 'csv', 'text/plain', 'application/octet-stream', 'json', 'application/json'];
 
 function testDataExtOf(name) {
   const s = String(name || '').toLowerCase();
@@ -220,6 +220,18 @@ async function loadDocumentUnderstanding(projectId, sprintId = null) {
     }),
   ]);
   return buildDocumentUnderstanding({ documents, requirementClauses });
+}
+
+async function getRawStoryText(projectId, sprintId = null) {
+  const scoped = { projectId, ...(sprintId ? { sprintId } : {}) };
+  const [docs, clauses] = await Promise.all([
+    safeFindMany('document', { where: scoped, select: { content: true } }),
+    safeFindMany('requirementClause', { where: scoped, select: { behaviourText: true } })
+  ]);
+  const text = [];
+  for (const d of docs) if (d.content) text.push(d.content);
+  for (const c of clauses) if (c.behaviourText) text.push(c.behaviourText);
+  return text.join('\n\n');
 }
 
 function mergeScenarioHints(documentAwareMapping, scenarioMapping) {
@@ -520,13 +532,15 @@ router.post('/:tdId/map', requireCsrf, async (req, res, next) => {
     const mapper = dataMapper();
     if (typeof mapper?.mapTestData === 'function') {
       const scenarios = await loadCurrentScenarios(project.id);
-      if (scenarios.length) {
+      const storyText = await getRawStoryText(project.id, row.sprintId || null);
+      if (scenarios.length || storyText) {
         const creds = await resolveAiCredentials(req.user.id, project);
         providerName = creds.provider;
         const provider = creds.apiKey && creds.integration?.status === 'valid' ? getProvider(providerName) : null;
         const scenarioMapping = await mapper.mapTestData({
           sheets: parsed.sheets || [],
           scenarios,
+          storyText,
           provider,
           apiKey: provider ? creds.apiKey : null,
           model: provider ? creds.model : null,

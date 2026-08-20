@@ -201,17 +201,39 @@ function cloneBoundedArray(value, { itemLimit = 30, byteLimit = 12000 } = {}) {
   }
 }
 
+function cleanElementLabel(val) {
+  if (typeof val !== 'string' || !val.trim()) return null;
+  let s = val.trim();
+  // Strip leading/trailing quotes
+  s = s.replace(/^['"`]+|['"`]+$/g, '').trim();
+  // Strip trailing keywords like 'input, ' field, ' button, ' dropdown, input field, etc.
+  s = s.replace(/['"`]?\s*(?:input\s*field|field|button|dropdown|combobox|textbox|checkbox|radio\s*button|options?|control|link)\s*$/i, '').trim();
+  // Strip any lingering quotes
+  s = s.replace(/^['"`]+|['"`]+$/g, '').trim();
+  return s || null;
+}
+
 function actionFromAuthoredText(value) {
   const text = cleanString(value, 4000);
   if (!text) return null;
   const match = text.match(
-    /^(?:(?:given|when|then|and|but|after|before|if|unless)\s+)?(?:the\s+user\s+)?(navigate|open|visit|go\s+to|click|press|submit|enter|fill|type|input|select|choose|pick|check|uncheck|tick|upload|download|hover|scroll|expand|collapse|wait|verify|validate|assert|expect|confirm|ensure)\b/i
+    /^(?:(?:given|when|then|and|but|after|before|if|unless)\s+)?(?:the\s+user\s+)?(navigate|open|visit|go\s+to|click\s+and\s+hold|click|press|tap|submit|enter|fill|type|input|append|clear|read|select|multi\s*select|choose|pick|check|uncheck|tick|radio|upload|download|hover|scroll|expand|collapse|wait\s+for\s+state|wait\s+until|wait|verify|validate|assert|expect|confirm|ensure|print|measure|inspect|hold|switch\s+to\s+frame|switch\s+to\s+tab|switch\s+frame|switch\s+tab|switch|close\s+all\s+windows|close\s+all\s+tabs|close\s+tab|close\s+window|close)\b/i
   );
   if (!match) return null;
-  const normalized = match[1].replace(/\s+/g, ' ').trim();
-  return normalized.toLowerCase() === 'go to'
-    ? 'Navigate'
-    : normalized.charAt(0).toUpperCase() + normalized.slice(1).toLowerCase();
+  const low = match[1].replace(/\s+/g, ' ').trim().toLowerCase();
+  if (low === 'go to' || low === 'open' || low === 'visit') return 'Navigate';
+  if (low === 'enter' || low === 'type' || low === 'input') return 'Fill';
+  if (low === 'read' || low === 'validate' || low === 'assert' || low === 'confirm' || low === 'expect' || low === 'ensure') return 'Verify';
+  if (low === 'multi select' || low === 'multiselect') return 'SelectMultiple';
+  if (low === 'print' || low === 'measure') return 'Inspect';
+  if (low === 'click and hold' || low === 'hold') return 'ClickAndHold';
+  if (low === 'switch to frame' || low === 'switch frame') return 'SwitchFrame';
+  if (low === 'switch to tab' || low === 'switch tab') return 'SwitchTab';
+  if (low === 'close all windows' || low === 'close all tabs') return 'CloseAllTabs';
+  if (low === 'close tab' || low === 'close window') return 'CloseTab';
+  if (low === 'wait for state' || low === 'wait until') return 'WaitForState';
+  if (low === 'tap' || low === 'submit') return 'Click';
+  return low.charAt(0).toUpperCase() + low.slice(1);
 }
 
 // Preserve an authored wait contract across the persisted-step -> prompt seam.
@@ -383,6 +405,7 @@ function normaliseStepShape(s, fallbackOrder = 0) {
   if (!s || typeof s !== 'object') return null;
   const interpretation = cloneBoundedObject(s.interpretation || s.interpreted);
   const authoredText = [
+    s.step,
     s.authoredText,
     s.authored_text,
     s.instruction,
@@ -390,23 +413,116 @@ function normaliseStepShape(s, fallbackOrder = 0) {
     s.text,
   ].find((value) => typeof value === 'string') || '';
   const authoredTextForInference = cleanString(authoredText, 4000);
-  const explicitAction = cleanString(s.action || s.verb || s.actionType || s.type, 120);
-  const action = explicitAction
+  const explicitAction = cleanString(s.action || s.verb || s.step || s.actionType || s.type, 120);
+  let action = explicitAction
     || cleanString(interpretation && interpretation.action, 120)
     || actionFromAuthoredText(authoredTextForInference)
     || (authoredTextForInference ? 'Interpret' : '');
   if (!action) return null;
+
+  // Map camelCase / human-authored action tokens
+  const actionLower = action.toLowerCase().replace(/[^a-z]/g, '');
+  if (actionLower === 'entertext' || actionLower === 'typetext' || actionLower === 'inputtext' || actionLower === 'fill' || actionLower === 'type' || actionLower === 'enter' || actionLower === 'write' || actionLower === 'populate') action = 'Fill';
+  else if (actionLower === 'appendtext' || actionLower === 'append' || actionLower === 'addtext') action = 'Append';
+  else if (actionLower === 'cleartext' || actionLower === 'clear' || actionLower === 'erase' || actionLower === 'empty') action = 'Clear';
+  else if (actionLower === 'selectbyvisibletext' || actionLower === 'selectbyvalue' || actionLower === 'selectradio' || actionLower === 'select' || actionLower === 'choose' || actionLower === 'pick') action = 'Select';
+  else if (actionLower === 'multiselect' || actionLower === 'selectmultiple' || actionLower === 'choosemultiple') action = 'SelectMultiple';
+  else if (actionLower === 'clickandhold' || actionLower === 'hold' || actionLower === 'longpress') action = 'ClickAndHold';
+  else if (actionLower === 'doubleclick' || actionLower === 'dblclick') action = 'DoubleClick';
+  else if (actionLower === 'rightclick' || actionLower === 'contextclick') action = 'RightClick';
+  else if (actionLower === 'hover' || actionLower === 'mouseover' || actionLower === 'moveto') action = 'Hover';
+  else if (actionLower === 'presskey' || actionLower === 'hotkey' || actionLower === 'sendkeys' || actionLower === 'keypress' || actionLower === 'typekey' || actionLower === 'hitkey' || actionLower === 'hit') action = 'PressKey';
+  else if (actionLower === 'click' || actionLower === 'tap' || actionLower === 'press') action = 'Click';
+  else if (actionLower.startsWith('print') || actionLower === 'log' || actionLower === 'display' || actionLower === 'output' || actionLower === 'echo' || actionLower === 'show') action = 'Print';
+  else if (actionLower.startsWith('measure') || actionLower.startsWith('examine') || actionLower.startsWith('observe') || actionLower === 'inspect' || actionLower === 'read' || actionLower === 'gettext') action = 'Inspect';
+  else if (actionLower === 'acceptalert' || actionLower === 'confirmalert' || actionLower === 'okalert') action = 'AcceptAlert';
+  else if (actionLower === 'dismissalert' || actionLower === 'cancelalert') action = 'DismissAlert';
+  else if (actionLower === 'typealert' || actionLower === 'promptalert' || actionLower === 'inputalert') action = 'TypeAlert';
+  else if (actionLower.includes('alert') || actionLower.includes('dialog')) action = 'HandleAlert';
+  else if (actionLower === 'checkcheckbox' || actionLower === 'check' || actionLower === 'tick' || actionLower === 'mark') action = 'Check';
+  else if (actionLower === 'uncheck' || actionLower === 'untick' || actionLower === 'unmark') action = 'Uncheck';
+  else if (actionLower === 'radio') action = 'Radio';
+  else if (actionLower === 'draganddrop' || actionLower === 'drag' || actionLower === 'dragdrop') action = 'DragAndDrop';
+  else if (actionLower === 'scrollintoview' || actionLower === 'scrollto' || actionLower === 'scroll') action = 'ScrollIntoView';
+  else if (actionLower === 'upload' || actionLower === 'uploadfile' || actionLower === 'attachfile' || actionLower === 'attach') action = 'Upload';
+  else if (actionLower === 'download' || actionLower === 'downloadfile') action = 'Download';
+  else if (actionLower === 'slider' || actionLower === 'setslider' || actionLower === 'slide') action = 'Slider';
+  else if (actionLower === 'screenshot' || actionLower === 'takescreenshot') action = 'Screenshot';
+  else if (actionLower === 'evaluate' || actionLower === 'executescript' || actionLower === 'runscript') action = 'Evaluate';
+  else if (actionLower === 'extractdata' || actionLower === 'storevariable' || actionLower === 'savedata') action = 'ExtractData';
+  else if (actionLower.includes('switch') && actionLower.includes('tab')) action = 'SwitchTab';
+  else if (actionLower.includes('switch') && actionLower.includes('frame')) action = 'SwitchFrame';
+  else if (actionLower.includes('navigateback') || actionLower.includes('goback')) action = 'NavigateBack';
+  else if (actionLower.includes('closeall')) action = 'CloseAllTabs';
+  else if (actionLower.includes('close') && (actionLower.includes('tab') || actionLower.includes('window'))) action = 'CloseTab';
+  else if (actionLower === 'navigate' || actionLower === 'open' || actionLower === 'visit' || actionLower === 'goto' || actionLower === 'load') action = 'Navigate';
+  else if (actionLower === 'waitforstate' || actionLower === 'wait' || actionLower === 'pause' || actionLower === 'sleep') action = 'WaitForState';
+  else if (actionLower === 'verify' || actionLower === 'assert' || actionLower === 'validate' || actionLower === 'confirm' || actionLower === 'ensure') action = 'Verify';
+
+  let element = typeof s.element === 'string' && s.element.trim().length
+    ? s.element.trim().slice(0, 200)
+    : (typeof s.locator === 'string' && s.locator.trim().length
+      ? s.locator.trim().slice(0, 200)
+      : (typeof s.field === 'string' && s.field.trim().length
+        ? s.field.trim().slice(0, 200)
+        : (typeof s.button === 'string' && s.button.trim().length
+          ? s.button.trim().slice(0, 200)
+          : (typeof s.dropdown === 'string' && s.dropdown.trim().length
+            ? s.dropdown.trim().slice(0, 200)
+            : (typeof s.tab === 'string' && s.tab.trim().length
+              ? s.tab.trim().slice(0, 200)
+              : (typeof s.property === 'string' && s.property.trim().length
+                ? s.property.trim().slice(0, 200)
+                : (typeof s.target === 'string' && s.target.trim().length
+                  ? s.target.trim().slice(0, 200)
+                  : null)))))));
+  let locator_hint = typeof s.locator_hint === 'string' && s.locator_hint.trim().length
+    ? s.locator_hint.trim().slice(0, 200)
+    : null;
+
+  if (action === 'Inspect' && !s.value && s.property) {
+    s.value = s.property;
+  }
+  if (action === 'Inspect' && !s.value && Array.isArray(s.properties)) {
+    s.value = s.properties.join(', ');
+  }
+  if (action === 'SwitchTab' && !s.value && s.tab) {
+    s.value = s.tab;
+  }
+  if (action === 'CloseTab' && !s.value && s.tab) {
+    s.value = s.tab;
+  }
+
+  // Extract structured parts when action is an authored sentence
+  const parsedVerb = actionFromAuthoredText(action);
+  if (parsedVerb && (parsedVerb !== action || !element)) {
+    const rawActionText = action;
+    action = parsedVerb;
+    if (!element) {
+      const singleQuotes = Array.from(rawActionText.matchAll(/'([^']+)'/g)).map((m) => m[1].trim());
+      if (singleQuotes.length > 1 && (parsedVerb === 'Fill' || parsedVerb === 'Append' || parsedVerb === 'Select')) {
+        // First quote is value, second is element
+        if (!s.value) s.value = singleQuotes[0];
+        element = singleQuotes[singleQuotes.length - 1];
+      } else if (singleQuotes.length > 0) {
+        element = singleQuotes[singleQuotes.length - 1];
+      }
+    }
+    if (!s.value) {
+      const doubleQuoteMatch = rawActionText.match(/"([^"]+)"/);
+      if (doubleQuoteMatch) {
+        s.value = doubleQuoteMatch[1].trim();
+      } else if (action === 'Navigate') {
+        const urlMatch = rawActionText.match(/https?:\/\/[^\s'"]+/i);
+        if (urlMatch) s.value = urlMatch[0].trim();
+      }
+    }
+  }
+
   const semanticInstruction = !explicitAction
     || s.semanticInstruction === true
     || s.executionMode === 'semantic'
     || action === 'Interpret';
-
-  let element = typeof s.element === 'string' && s.element.trim().length
-    ? s.element.trim().slice(0, 200)
-    : null;
-  let locator_hint = typeof s.locator_hint === 'string' && s.locator_hint.trim().length
-    ? s.locator_hint.trim().slice(0, 200)
-    : null;
   if (!element && interpretation) {
     element = cleanString(interpretation.target || interpretation.element || interpretation.field, 200);
   }
@@ -421,25 +537,66 @@ function normaliseStepShape(s, fallbackOrder = 0) {
     }
   }
 
+  // Clean element name from enclosing quotes and trailing keywords (e.g. 'Enter your full Name'input -> Enter your full Name)
+  if (element) {
+    element = cleanElementLabel(element);
+  }
+
   const interpretedValue = interpretation && (interpretation.value ?? interpretation.input);
   let value = typeof s.value === 'string' && s.value.length
     ? s.value.slice(0, 200)
-    : (typeof s.value === 'boolean' || Number.isFinite(s.value)
-      ? s.value
-      : (typeof interpretedValue === 'string' || typeof interpretedValue === 'boolean' || Number.isFinite(interpretedValue)
-        ? (typeof interpretedValue === 'string' ? interpretedValue.slice(0, 200) : interpretedValue)
-        : null));
+    : (typeof s.input === 'string' && s.input.length
+      ? s.input.slice(0, 200)
+      : (typeof s.url === 'string' && s.url.length
+        ? s.url.slice(0, 200)
+        : (Array.isArray(s.values) && s.values.length
+          ? s.values.join(', ')
+          : (Array.isArray(s.properties) && s.properties.length
+            ? s.properties.join(', ')
+            : (typeof s.value === 'boolean' || Number.isFinite(s.value)
+              ? s.value
+              : (typeof interpretedValue === 'string' || typeof interpretedValue === 'boolean' || Number.isFinite(interpretedValue)
+                ? (typeof interpretedValue === 'string' ? interpretedValue.slice(0, 200) : interpretedValue)
+                : null))))));
+
+  if (typeof value === 'string') {
+    // Strip surrounding quotes if wrapped
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1).trim();
+    }
+  }
+
+  if (!s.verify) {
+    const cond = typeof s.condition === 'string' ? s.condition.toLowerCase() : '';
+    if (actionLower === 'verifydisabled' || cond === 'disabled') {
+      s.verify = { kind: 'disabled' };
+    } else if (actionLower === 'verifyreadonly' || cond === 'readonly' || cond === 'read only') {
+      s.verify = { kind: 'readonly' };
+    } else if (s.expected && typeof s.expected === 'string' && action === 'Verify') {
+      s.verify = { kind: 'value', equals: s.expected };
+    }
+  }
   // Collapse redundant slashes in a URL-shaped Navigate value so a malformed
   // ".../index.php//viewAdminModule" can't ship.
   if (typeof value === 'string' && /^[a-z]+:\/\//i.test(value)) value = collapseUrlSlashes(value);
   const interpretedExpected = interpretation && (interpretation.validation ?? interpretation.expected);
-  const expected = typeof s.expected === 'string' && s.expected.length
+  let expected = typeof s.expected === 'string' && s.expected.length
     ? s.expected.slice(0, 200)
-    : (typeof s.expected === 'boolean' || Number.isFinite(s.expected)
-      ? s.expected
-      : (typeof interpretedExpected === 'string' || typeof interpretedExpected === 'boolean' || Number.isFinite(interpretedExpected)
-        ? (typeof interpretedExpected === 'string' ? interpretedExpected.slice(0, 200) : interpretedExpected)
-        : null));
+    : (typeof s.validation === 'string' && s.validation.length
+      ? s.validation.slice(0, 200)
+      : (typeof s.expectedChange === 'string' && s.expectedChange.length
+        ? s.expectedChange.slice(0, 200)
+        : (typeof s.expected === 'boolean' || Number.isFinite(s.expected)
+          ? s.expected
+          : (typeof interpretedExpected === 'string' || typeof interpretedExpected === 'boolean' || Number.isFinite(interpretedExpected)
+            ? (typeof interpretedExpected === 'string' ? interpretedExpected.slice(0, 200) : interpretedExpected)
+            : null))));
+
+  if (typeof expected === 'string') {
+    if ((expected.startsWith('"') && expected.endsWith('"')) || (expected.startsWith("'") && expected.endsWith("'"))) {
+      expected = expected.slice(1, -1).trim();
+    }
+  }
   const expectedKind = normaliseExpectedKind(s.expectedKind || s.expected_kind || s.assertionKind);
   const oracleRef = normaliseOracleRef(s.oracleRef || s.oracle_ref || s.assertionId || s.assertionRef || s.oracle);
   const verificationPoint = !!(s.verificationPoint === true
@@ -471,13 +628,27 @@ function normaliseStepShape(s, fallbackOrder = 0) {
     expectedKind,
   });
   // Deterministic url-verify hygiene (the LLM is unreliable here): collapse '//', and if the url
-  // is prose rather than a path/URL/token it can never match — drop the broken url contract (the
-  // case's declaredAssertions carry the real check; a Navigate's landing is verified by the next step).
-  if (verify && verify.kind === 'url') {
-    const cleaned = collapseUrlSlashes(typeof verify.url === 'string' ? verify.url.trim() : '');
-    verify = isPathLikeUrl(cleaned) ? { ...verify, url: cleaned } : null;
+  if (!element) {
+    if (action === 'NavigateBack' || action === 'NavigateForward') element = 'Browser History';
+    else if (action === 'Refresh') element = 'Current Page';
+    else if (action === 'SetViewport') element = 'Browser Window';
+    else if (action === 'AcceptAlert' || action === 'DismissAlert' || action === 'TypeAlert' || action === 'HandleAlert') element = 'Alert Dialog';
+    else if (action === 'CloseAllTabs') element = 'All Windows';
+    else if (action === 'CloseTab') element = 'Active Tab';
+    else if (action === 'SwitchTab') element = 'New Tab';
+    else if (action === 'SwitchFrame') element = 'Target Frame';
   }
-  const stepKind = (s.stepKind === 'verification' || s.stepKind === 'action') ? s.stepKind : null;
+
+  let stepKind = s.stepKind;
+  if (stepKind === 'observation' || stepKind === 'verification' || stepKind === 'action') {
+    // Valid explicit stepKind
+  } else if (/^(inspect|print|read|observe|gettext|readtext)$/i.test(action)) {
+    stepKind = 'observation';
+  } else if (/^(verify|assert|validate|confirm|check|ensure)$/i.test(action) || actionLower.startsWith('verify') || actionLower.startsWith('assert')) {
+    stepKind = 'verification';
+  } else {
+    stepKind = 'action';
+  }
   const contractStepId = cleanString(s.contractStepId || s.contract_step_id || s.stepId || s.step_id || s.id, 180);
   const sourceContractStepId = cleanString(s.sourceContractStepId || s.source_contract_step_id || s.sourceStepId, 180);
   const logicalStepId = cleanString(s.logicalStepId || s.logical_step_id, 180);
@@ -501,6 +672,11 @@ function normaliseStepShape(s, fallbackOrder = 0) {
     element,
     locator_hint,
     value,
+    values: Array.isArray(s.values) && s.values.length
+      ? s.values.map(v => String(v).trim())
+      : (action === 'SelectMultiple' && typeof value === 'string' && value.includes(',')
+        ? value.split(',').map(v => v.trim()).filter(Boolean)
+        : undefined),
     expected,
     expectedKind,
     operationCheck,

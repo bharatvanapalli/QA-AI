@@ -241,8 +241,15 @@ function assertionContractOf(step = {}) {
     if (payload.expectedValue == null && payload.value != null) payload.expectedValue = payload.value;
     const inferred = inferredVerifyAssertion(step, payload);
     if (inferred) return inferred;
+    const fallbackType = step.verify.type
+      || step.verify.kind
+      || (step.verify.visible !== undefined ? (step.verify.visible ? 'VISIBLE' : 'HIDDEN') : null)
+      || (step.expected === 'visible' ? 'VISIBLE' : step.expected === 'hidden' ? 'HIDDEN' : null)
+      || step.type
+      || step.action
+      || 'VISIBLE';
     return {
-      type: step.verify.type || step.verify.kind,
+      type: fallbackType,
       payload,
     };
   }

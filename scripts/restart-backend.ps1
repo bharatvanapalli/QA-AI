@@ -110,7 +110,7 @@ try {
 }
 Write-Host "[server:restart] Launched PID $($child.Id); waiting for verified listener ownership and health"
 
-$deadline = (Get-Date).AddSeconds(15)
+$deadline = (Get-Date).AddSeconds(30)
 $lastError = $null
 $lastOwners = @()
 do {
@@ -135,7 +135,7 @@ do {
   }
 
   try {
-    $resp = Invoke-WebRequest -UseBasicParsing -Uri "http://localhost:$port/api/health" -TimeoutSec 2
+    $resp = Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:$port/api/health" -TimeoutSec 2
     if ($resp.StatusCode -eq 200) {
       Write-Host "[server:restart] Backend healthy on verified PID $($child.Id): $($resp.Content)"
       exit 0

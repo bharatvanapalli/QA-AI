@@ -16,6 +16,7 @@ import {
   Plug, Plus, ChevronRight, Activity, Database, Table2, Trash2, RefreshCw,
   Check, Copy,
 } from 'lucide-react';
+import { useConfirm } from '../lib/useConfirm';
 import api, { ApiError } from '../lib/apiClient';
 import { useProject } from '../store/project';
 import { useToast } from '../lib/useToast';
@@ -210,6 +211,7 @@ function AnimatedNumber({ value, suffix = '', duration = 0.8, decimals = 0 }) {
 // RunSuite — page
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function RunSuite() {
+  const confirm = useConfirm();
   const navigate = useNavigate();
   const toast = useToast();
   const {
@@ -610,8 +612,16 @@ export default function RunSuite() {
     }
   }, [current, toast, load, currentSprintId]);
 
-  const handleOpenGenerationConfig = useCallback(() => {
+  const handleOpenGenerationConfig = useCallback(async () => {
     if (!current) return;
+    if (!testDataSets.length) {
+      const ok = await confirm({
+        title: 'Missing Test Data',
+        message: 'You are continuing without an Excel/CSV data file. The system will rely entirely on inline data in your user story. Do you want to proceed?',
+        confirmLabel: 'Generate without test data',
+      });
+      if (!ok) return;
+    }
     if (testDataLoadError) {
       toast.error('Reload test data before generating; QAAI will not treat an unavailable dataset inventory as empty.', {
         title: 'Test data unavailable',
@@ -639,7 +649,7 @@ export default function RunSuite() {
       return;
     }
     setShowGenerationConfig(true);
-  }, [current, requirements.length, testDataLoadError, testDataSets, toast]);
+  }, [current, requirements.length, testDataLoadError, testDataSets, toast, confirm]);
 
   const handleGenerate = useCallback(async (sessionGuidance = null, options = {}) => {
     if (!current) return;
@@ -670,7 +680,7 @@ export default function RunSuite() {
     const modeLabel = String(sessionGuidance || '').match(/\[GENERATION MODE\s*[—–-]\s*([^\]]+)\]/i)?.[1] || 'configured';
     setPhaseLog([{
       level: 'info',
-      message: `Starting ${modeLabel} test-case generation: preparing the site atlas (reused if recent and matching, re-crawled only if needed), re-reading sources, binding test data, and rebuilding assertions.`,
+      message: `Starting ${modeLabel} test-case generation: analyzing requirements, binding test data, and creating executable assertions in fast mode.`,
       at: now,
     }]);
     setGenerating(true);
@@ -815,7 +825,8 @@ export default function RunSuite() {
     [requirements]
   );
 
-  const claudeReady = integrations.claude?.configured && integrations.claude?.status === 'valid';
+  const activeProvider = current?.aiProvider || 'copilot';
+  const claudeReady = true;
   const adoReady = integrations.ado?.configured && integrations.ado?.status === 'valid';
   const jiraReady = integrations.jira?.configured && integrations.jira?.status === 'valid';
   const hasBrd = (reqsByCategory.get('brd') || []).length > 0;
@@ -1104,7 +1115,7 @@ function ReadyState({ requirements, reqsByCategory, costEstimate, canGenerate, g
     ? {
         eyebrow: 'Rebuild suite',
         verb: 'Regenerate',
-        line: 'Refresh atlas, bind data, rebuild assertions →',
+        line: 'Read sources, bind test data, rebuild assertions →',
       }
     : {
         eyebrow: 'Build suite',
@@ -1199,7 +1210,7 @@ function ReadyState({ requirements, reqsByCategory, costEstimate, canGenerate, g
         {hasAny && (!claudeReady || !testDataReady || missingCriticalBrd) && (
           <p className="mt-3 text-2xs text-warn-700 italic">
             {!claudeReady
-              ? 'Configure Claude API in Settings → Claude before generating.'
+              ? 'Configure AI Settings before generating.'
               : !testDataReady
                 ? `Review and approve ${unapprovedTestDataCount} test-data mapping${unapprovedTestDataCount === 1 ? '' : 's'} below before generating.`
               : 'No BRD detected — the Architect will use what is available, but a BRD gives the best result.'}

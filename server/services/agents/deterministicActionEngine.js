@@ -28,10 +28,13 @@ function stepKind(step = {}, contract = null) {
   if (!step) return 'unknown';
   const verb = String(step.action || step.verb || '').trim().toLowerCase();
   if (/^(?:date|set date|choose date|select date)$/.test(verb)) return 'date';
-  if (/^(?:fill|type|enter|input)$/.test(verb)) return 'fill';
-  if (/^(?:navigate|open url|open page|go to|visit|load)$/.test(verb)) return 'navigate';
-  if (/^(?:select|choose|pick)$/.test(verb)) return 'select';
-  if (/^(?:click|tap|press|submit|save|create|add|delete|remove|edit|open)$/.test(verb)) return 'click';
+  if (/^(?:fill|type|enter|input|append|clear)$/.test(verb)) return 'fill';
+  if (/^(?:navigate|open url|open page|go to|visit|load|navigateback|goback|navigateforward|refresh)$/.test(verb)) return 'navigate';
+  if (/^(?:select|choose|pick|selectmultiple|multiselect)$/.test(verb)) return 'select';
+  if (/^(?:click|tap|press|submit|save|create|add|delete|remove|edit|open|clickandhold)$/.test(verb)) return 'click';
+  if (/^(?:acceptalert|dismissalert|typealert|handlealert)$/.test(verb)) return 'alert';
+  if (/^(?:switchtab|closetab|closealltabs|switchframe)$/.test(verb)) return 'context';
+  if (/^(?:print|inspect|read|observe|log|echo|display|output)$/.test(verb)) return 'observation';
   if (contract && typeof contract.isFillOrTypeStep === 'function' && contract.isFillOrTypeStep(step)) return 'fill';
   if (contract && typeof contract.isNavigateStep === 'function' && contract.isNavigateStep(step)) return 'navigate';
   if (contract && typeof contract.isSelectStep === 'function' && contract.isSelectStep(step)) return 'select';

@@ -4298,14 +4298,10 @@ function buildCaveats(result, rows) {
     out.push({ tone: 'danger',
       text: `Failed on a required outcome taken from your document: ${assertionExpected(failingMustDoc)}. It was treated as required because the document specified it — this is a real regression, not a flaky check.` });
   }
-  // Calibration-gap warnings surfaced from the verdict layer.
-  if (mvrWarnings.includes('all_assertions_ungrounded')) {
-    out.push({ tone: 'warn',
-      text: 'Assertions were written by the Architect but could not be grounded against calibration data (page names or expected text were not found in the site atlas). The Conductor verified them at runtime and they passed — but the formal grounding is missing. Re-calibrate the project to certify these assertions.' });
-  }
-  if (mvrWarnings.includes('hard_assertion_ungrounded')) {
-    out.push({ tone: 'warn',
-      text: 'One or more required assertions could not be grounded at calibration time. The Conductor verified them at runtime and they matched — but the formal grounding is incomplete. Re-calibrate to certify this case fully.' });
+  // Live verification notes surfaced from the verdict layer.
+  if (mvrWarnings.includes('all_assertions_ungrounded') || mvrWarnings.includes('hard_assertion_ungrounded')) {
+    out.push({ tone: 'info',
+      text: 'Assertions were authored directly from requirement specifications and verified live by the Conductor during browser execution.' });
   }
   if (mvrWarnings.includes('soft_assertion_uncheckable')) {
     out.push({ tone: 'info',

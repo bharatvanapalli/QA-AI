@@ -56,15 +56,23 @@ function parseJsonResponse(raw, { type } = {}) {
     if (openOnly) body = text.slice(openOnly[0].length);
   }
 
-  // 3. First-opener-to-last-closer extraction
+  // 3. First-opener-to-last-closer extraction (scans valid JSON opener positions)
   const tryRange = (opener, closer) => {
-    const first = body.indexOf(opener);
-    const last = body.lastIndexOf(closer);
-    if (first === -1 || last <= first) return null;
-    try {
-      const v = JSON.parse(body.slice(first, last + 1));
-      return check(v);
-    } catch (_) { return null; }
+    let searchFrom = 0;
+    while (searchFrom < body.length) {
+      const first = body.indexOf(opener, searchFrom);
+      if (first === -1) break;
+      const last = body.lastIndexOf(closer);
+      if (last <= first) break;
+      try {
+        const candidate = body.slice(first, last + 1);
+        const v = JSON.parse(candidate);
+        const c = check(v);
+        if (c !== null) return c;
+      } catch (_) {}
+      searchFrom = first + 1;
+    }
+    return null;
   };
   if (type === 'array') {
     const r = tryRange('[', ']'); if (r !== null) return r;

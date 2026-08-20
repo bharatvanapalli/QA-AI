@@ -1876,6 +1876,37 @@ function compileCandidateSuite(input = {}) {
   const candidatesById = new Map();
   const findings = [];
 
+  // Auto-align candidate cases with planned cases if planCaseId was not explicitly emitted
+  const assignedPlanCaseIds = new Set(inventory.map((e) => clean(e.caseObj && e.caseObj.planCaseId)).filter(Boolean));
+  for (let i = 0; i < inventory.length; i++) {
+    const entry = inventory[i];
+    if (entry.caseObj && !clean(entry.caseObj.planCaseId)) {
+      const candidateName = norm(entry.caseObj.name || (entry.scenario && entry.scenario.name) || '');
+      const matchedRow = plannedRows.find(
+        (row) => !assignedPlanCaseIds.has(row.casePlan.planCaseId)
+          && (norm(row.casePlan.title || row.casePlan.name || '') === candidateName
+            || candidateName.includes(norm(row.casePlan.title || row.casePlan.name || ''))
+            || norm(row.casePlan.title || row.casePlan.name || '').includes(candidateName))
+      );
+      if (matchedRow) {
+        entry.caseObj.planCaseId = matchedRow.casePlan.planCaseId;
+        assignedPlanCaseIds.add(matchedRow.casePlan.planCaseId);
+        if (entry.scenario && !entry.scenario.planScenarioId && matchedRow.scenario) {
+          entry.scenario.planScenarioId = matchedRow.scenario.planScenarioId;
+        }
+      } else {
+        const firstAvailable = plannedRows.find((row) => !assignedPlanCaseIds.has(row.casePlan.planCaseId));
+        if (firstAvailable) {
+          entry.caseObj.planCaseId = firstAvailable.casePlan.planCaseId;
+          assignedPlanCaseIds.add(firstAvailable.casePlan.planCaseId);
+          if (entry.scenario && !entry.scenario.planScenarioId && firstAvailable.scenario) {
+            entry.scenario.planScenarioId = firstAvailable.scenario.planScenarioId;
+          }
+        }
+      }
+    }
+  }
+
   for (const entry of inventory) {
     const planCaseId = clean(entry.caseObj && entry.caseObj.planCaseId);
     if (!planCaseId) {

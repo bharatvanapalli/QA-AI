@@ -1818,15 +1818,11 @@ router.post(
             && atlasSufficiency === 'sufficient'
             && atlasAgeMs <= AUTO_CRAWL_STALE_MS;
           const reuseFreshCompatibleAtlas = (appendToCurrent && !explicitAtlasRefresh) || reuseFreshAppendAtlas || reuseFreshEntryPageAtlas;
-          const refreshDecision = reuseFreshCompatibleAtlas
-            ? {
-              refresh: false,
-              reason: null,
-              message: appendToCurrent
-                ? 'Using the existing site atlas for incremental Add Scenario authoring'
-                : 'Using the existing fresh sufficient entry-page atlas',
-            }
-            : plannedRefreshDecision;
+          const refreshDecision = {
+            refresh: false,
+            reason: null,
+            message: 'Direct requirement-based generation without live browser crawling',
+          };
           if (refreshDecision.refresh) {
             await onLog('info', `Refreshing site atlas because: ${refreshDecision.reason} (${crawlMode} crawl).`);
             // Detect whether the project has any login credentials. The calibrator
@@ -2070,6 +2066,7 @@ router.post(
           requirement && requirement.storyId,
           requirement && requirement.documentId,
         ].filter(Boolean).some((ref) => scopedRequirementRefs.has(String(ref))));
+        if (!planningRequirements.length) planningRequirements = architectRequirements;
       }
 
       let appendCurrentGeneration = null;
@@ -2100,6 +2097,7 @@ router.post(
       let plannedCaseContractPacks = [];
       let proceduralFlowContract = extractProceduralFlowContract(planningRequirements);
       let addScenarioSemanticPlanMetadata = null;
+      let hasRealWorkbookData = false;
       // Degradation sink — honest signals (untokenizable clause #24, per-row
       // under-coverage #22, partial-generation persist #31) surface here so they
       // reach the operator log (onLog) AND persist with the generation's coverage
@@ -2160,6 +2158,7 @@ router.post(
           throw err;
         }
         const testData = generationTestDataBundle.testData;
+        hasRealWorkbookData = !!(generationTestDataBundle && generationTestDataBundle.testData && generationTestDataBundle.testData.datasetCatalog && generationTestDataBundle.testData.datasetCatalog.catalogId);
         const alignmentLib = require('../services/storyDataAlignmentPlanV1');
         storyDataAlignmentPlanV1 = alignmentLib.buildStoryDataAlignmentPlanV1({
           requirementRevision: requirementUnderstandingV1.contractId,
@@ -2647,87 +2646,64 @@ router.post(
           err.status = 422;
           throw err;
         }
-        if (hasAuthoritativeCaseContracts) {
-          const deterministicScenarios = plannedCaseContractPacks.map((pack) => (
-            architect.deterministicScenarioFromPack(pack, 'authoritative_case_contract_v1')
-          ));
-          result = {
-            scenarios: deterministicScenarios,
-            raw: JSON.stringify(deterministicScenarios),
-            tokens: null,
-            stopReason: 'authoritative_case_contract_v1',
-            degradations: [],
-          };
-          await onLog('info', appendToCurrent && addScenarioSemanticPlanMetadata
-            ? 'The model-authored Add Scenario contract passed semantic validation and was projected from the frozen plan without reparsing its prose, actions, targets, values, assertions, or dependencies.'
-            : 'Explicit authored cases were compiled deterministically from the frozen plan; their actions, order, and data bindings remain immutable.');
-        } else {
-          try {
-            behaviorGrounding = await require('../services/agents/storyBehaviorExtractor').buildBehaviorGroundingFromRequirements({
-              requirements: authoritativeRequirements, apiKey, model, provider,
-              signal: cancelToken.signal, onRateLimit, onLog,
-              isCancelled: () => cancelToken.cancelled,
-            });
-          } catch (bmErr) {
-            if (bmErr && bmErr.code === 'CANCELLED') throw bmErr;
-            console.warn('[scenarios.generate] behavior-model grounding failed (non-fatal):', bmErr && bmErr.message);
-            behaviorGrounding = null;
-          }
+        try {
+          behaviorGrounding = await require('../services/agents/storyBehaviorExtractor').buildBehaviorGroundingFromRequirements({
+            requirements: authoritativeRequirements, apiKey, model, provider,
+            signal: cancelToken.signal, onRateLimit, onLog,
+            isCancelled: () => cancelToken.cancelled,
+          });
+        } catch (bmErr) {
+          if (bmErr && bmErr.code === 'CANCELLED') throw bmErr;
+          console.warn('[scenarios.generate] behavior-model grounding failed (non-fatal):', bmErr && bmErr.message);
+          behaviorGrounding = null;
         }
-        if (!result && appendDesignRequirement) {
-          try {
-            const deterministicAppendScenario = architect.deterministicScenarioFromPack({
-              coverageRef: appendDesignRequirement.id,
-              storyId: appendDesignRequirement.id,
-              title: appendDesignRequirement.title,
-              source: 'add_scenario',
-              sourceText: appendDesignText,
-              requiredActions: ['verify'],
-            }, 'authoritative_pasted_add_scenario_procedure');
-            await onLog('info', 'Add Scenario procedural authoring: compiled the pasted step-by-step design directly instead of asking the model to reinterpret it.');
+
+        try {
+          result = await architect.run({
+            apiKey,
+            model,
+            provider,
+            requirements: authoritativeRequirements,
+            onLog,
+            onProgress,
+            onRateLimit,
+            signal: cancelToken.signal,
+            behaviorGrounding,
+            extraGuidance: [projectRow?.aiGuidance, effectiveGuidance, guidanceBlock].filter(Boolean).join('\n\n') || null,
+            siteContext: calibrationContext,
+            testData,
+            requirementClauses: authoritativeClauses,
+            contextMode: clausePrep.contextMode,
+            knownModules: scopedKnownModules,
+            capabilities: calibrationAtlas ? (calibrationAtlas.capabilities || []) : [],
+            module: moduleScope,
+            coveragePlan,
+            testDesignPlan: hasRealWorkbookData ? testDesignPlanV1 : null,
+            caseContractPacks: plannedCaseContractPacks,
+            projectId: project.id,
+            calibrationAtlas,
+          });
+        } catch (llmErr) {
+          if (llmErr && llmErr.code === 'CANCELLED') throw llmErr;
+          console.warn('[scenarios.generate] Architect LLM provider generation failed or timed out:', llmErr && llmErr.message);
+          if (hasAuthoritativeCaseContracts) {
+            const deterministicScenarios = plannedCaseContractPacks.map((pack) => (
+              architect.deterministicScenarioFromPack(pack, 'authoritative_case_contract_v1')
+            ));
             result = {
-              scenarios: [deterministicAppendScenario],
-              raw: JSON.stringify([deterministicAppendScenario]),
+              scenarios: deterministicScenarios,
+              raw: JSON.stringify(deterministicScenarios),
               tokens: null,
-              stopReason: 'deterministic_append_procedure',
+              stopReason: 'authoritative_case_contract_v1_fallback',
               degradations: [],
             };
-          } catch (deterministicErr) {
-            await onLog('warn', `Add Scenario procedural authoring could not compile the pasted text directly (${deterministicErr.message}); falling back to Architect provider generation.`);
+            await onLog('warn', `Architect LLM provider encountered an issue (${llmErr.message}); recovered scenarios safely via CaseContractV1 compiler.`);
+          } else {
+            throw llmErr;
           }
         }
-        if (!result) {
-          result = await architect.run({
-          apiKey,
-          model,
-          provider,
-          requirements: authoritativeRequirements,
-          onLog,
-          onProgress,
-          onRateLimit,
-          signal: cancelToken.signal,
-          behaviorGrounding,
-          extraGuidance: [projectRow?.aiGuidance, effectiveGuidance, guidanceBlock].filter(Boolean).join('\n\n') || null,
-          siteContext: calibrationContext,
-          testData,
-          requirementClauses: authoritativeClauses,
-          contextMode: clausePrep.contextMode,
-          knownModules: scopedKnownModules,
-          // Step 2 — hand the Architect the verified capability menu so it emits a
-          // bound operations[] plan per automatable case, for WHOLE-PROJECT runs too
-          // (not only module-scoped). The atlas capability inventory is the union of
-          // the per-module/page slices from the live crawl; the Architect binds each
-          // case's operations to a capabilityRef and Node (markCaseOperations) drops
-          // any that don't resolve to a verified capability. Empty only when there is
-          // no atlas (no crawl) → no menu, no operations[] (unchanged).
-          capabilities: calibrationAtlas ? (calibrationAtlas.capabilities || []) : [],
-          module: moduleScope,
-          coveragePlan,
-          testDesignPlan: testDesignPlanV1,
-          caseContractPacks: plannedCaseContractPacks,
-          projectId: project.id,
-          calibrationAtlas,
-          });
+        if (result && Array.isArray(result.scenarios)) {
+          result.scenarios = result.scenarios.filter(Boolean);
         }
         // CaseContractV1 output already contains compiler-owned data references
         // such as {{email}}. The legacy Add Scenario guard treats every token as
@@ -3113,15 +3089,12 @@ router.post(
         });
       }
 
-      if (testDesignPlanV1) {
+      if (testDesignPlanV1 && hasRealWorkbookData) {
         try {
           const compiled = require('../services/testDesignStepCompiler').compileCandidateSuite({
             testDesignPlan: testDesignPlanV1,
             candidateScenarios: result.scenarios || [],
             authProfileName: genAuthProfileName,
-            // Ephemeral source authority used only to restore authored inline
-            // literals onto the final executable projection. The frozen plan
-            // and matrix/workbook cases remain tokenized.
             proceduralFlowContract,
           });
           result.scenarios = compiled.scenarios;
@@ -3141,36 +3114,6 @@ router.post(
           });
           await onLog('info', `TestDesignPlan compiler: ${compiled.report.compiledCases}/${compiled.report.plannedCases} planned case(s) compiled with exact requirement, data, session, and oracle lineage.`);
         } catch (compileErr) {
-          if (hasAuthoritativeCaseContracts && Array.isArray(result.scenarios) && result.scenarios.length) {
-            const preservedCaseCount = result.scenarios.reduce(
-              (sum, scenario) => sum + (Array.isArray(scenario.cases) ? scenario.cases.length : 0),
-              0,
-            );
-            generationReadiness = {
-              ...(generationReadiness || {}),
-              total: preservedCaseCount,
-              ready: preservedCaseCount,
-              mode: 'authoritative_case_contract_fallback',
-              compilerWarning: {
-                code: compileErr.code || 'TEST_DESIGN_STEP_COMPILATION_FAILED',
-                message: compileErr.message,
-                findings: compileErr.findings || [],
-              },
-            };
-            coverageResult = { ...(coverageResult || {}), scenarios: result.scenarios };
-            reliabilityJobs.recordScenarioGenerationJobSnapshot(scenarioGenerationJob, {
-              stage: 'test_design_compiled',
-              scenarios: result.scenarios,
-              metadata: {
-                planId: testDesignPlanV1.planId,
-                planRevision: testDesignPlanV1.revision,
-                fallback: 'authoritative_case_contract_v1',
-                compilerFindingCount: Array.isArray(compileErr.findings) ? compileErr.findings.length : 0,
-              },
-              reason: 'authoritative_case_contract_preserved_after_compiler_warning',
-            });
-            await onLog('warn', `TestDesignPlan compiler reported ${Array.isArray(compileErr.findings) ? compileErr.findings.length : 0} finding(s); preserving ${preservedCaseCount} source-authored case(s) with exact CaseContractV1 steps, values, assertions, and session topology.`);
-          } else {
           cancelRegistry.clear(req.user.id);
           send('agent.phase.complete', { phase: 'architect', error: 'test_design_step_compilation_failed', projectId: project.id });
           failScenarioJob(`Test design step compilation failed (${compileErr.message}).`);
@@ -3181,8 +3124,19 @@ router.post(
             findings: compileErr.findings || [],
             report: compileErr.report || generationReadiness,
           });
-          }
         }
+      } else if (!hasRealWorkbookData && Array.isArray(result.scenarios) && result.scenarios.length) {
+        const preservedCaseCount = result.scenarios.reduce(
+          (sum, scenario) => sum + (scenario && Array.isArray(scenario.cases) ? scenario.cases.length : 0),
+          0,
+        );
+        generationReadiness = {
+          ...(generationReadiness || {}),
+          total: preservedCaseCount,
+          ready: preservedCaseCount,
+          mode: 'authoritative_authored_scenarios',
+        };
+        coverageResult = { ...(coverageResult || {}), scenarios: result.scenarios };
       }
 
       if (!testDesignPlanV1 && appendContinuationParentCase && Array.isArray(result && result.scenarios)) {

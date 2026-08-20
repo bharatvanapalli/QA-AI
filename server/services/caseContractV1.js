@@ -106,11 +106,11 @@ const ASSERTION_SECTIONS = new Set([
 
 const META_DATA_LABEL_RE = /^(?:target url|scenario|test cases?|steps?|session mode|failure policy|depends on ids?|expected (?:scenario|test case) count|reason|authoring rule|data binding rule)$/i;
 const SENSITIVE_LABEL_RE = /\b(?:password|passcode|passwd|pwd|secret|token|api[ _-]?key|client[ _-]?secret|private[ _-]?key|access[ _-]?key|otp|one[ _-]?time[ _-]?password|pin|credential)\b/i;
-const ACTION_VERB_RE = /\b(?:navigate|open|go to|visit|enter|fill|type|input|select|choose|pick|set|check|tick|click|press|submit|hover|wait|scroll|expand|collapse|verify|validate|assert|confirm|expect|capture|screenshot|download|upload|close|dismiss)\b/i;
-const DECLARATIVE_ASSERTION_RE = /\b(?:is|are|must be|should be|remains?|becomes?)\b[^.!?]{0,160}\b(?:visible|hidden|displayed|shown|present|absent|enabled|disabled|selected|checked|open|closed|empty)\b/i;
+const ACTION_VERB_RE = /\b(?:navigate|open|go to|visit|enter|fill|type|append|clear|select|choose|pick|set|check|uncheck|tick|click|press|submit|hover|wait|scroll|expand|collapse|verify|validate|assert|confirm|expect|capture|screenshot|download|upload|close|dismiss|read|print|inspect)\b/i;
+const DECLARATIVE_ASSERTION_RE = /\b(?:is|are|must be|should be|remains?|becomes?)\b[^.!?]{0,160}\b(?:visible|hidden|displayed|shown|present|absent|enabled|disabled|read[\s-]*only|readonly|selected|checked|open|closed|empty)\b/i;
 const ASSERTION_VERB_RE = /\b(?:assert|verify|validate|confirm|expect)\b/i;
-const BROWSER_ACTION_VERB_RE = /\b(?:navigate|go to|visit|open|enter|fill|input|type|select|choose|pick|set|check|tick|click|press|submit|hover|wait|scroll|expand|collapse|capture|screenshot|download|upload|close|dismiss)\b/i;
-const ATOMIC_OPERATION_BOUNDARY_RE = /(?:,\s*(?:and\s+)?|\s+(?:and\s+then|then|and)\s+)(?=(?:navigate|go\s+to|visit|open|enter|fill|input|type|select|choose|pick|set|check|tick|click|press|submit|hover|wait|scroll|expand|collapse|capture|screenshot|download|upload|close|dismiss|assert|verify|validate|confirm|expect)\b)/i;
+const BROWSER_ACTION_VERB_RE = /\b(?:navigate|go to|visit|open|enter|fill|input|type|append|clear|select|choose|pick|set|check|uncheck|tick|click|press|submit|hover|wait|scroll|expand|collapse|capture|screenshot|download|upload|close|dismiss|read|print|inspect)\b/i;
+const ATOMIC_OPERATION_BOUNDARY_RE = /^(?:,\s*(?:and\s+then|and\s+also|and\s+|then\s+)|(?:\s+(?:and\s+then|and\s+also|then|and)\s+))(?=(?:navigate|go\s+to|visit|open|enter|fill|input|type|append|clear|clear\s+and\s+type|select|choose|pick|set|check|uncheck|tick|click|press|submit|hover|wait|scroll|expand|collapse|capture|screenshot|download|upload|close|dismiss|assert|verify|validate|confirm|expect|read|print|inspect)\b)/i;
 const BLOCKED_PROSE_SECTIONS = new Set([
   ...DATA_SECTIONS,
   ...ASSERTION_SECTIONS,
@@ -751,7 +751,10 @@ function collectStepTexts(lines) {
       }
       continue;
     }
-    if (!STEP_SECTIONS.has(section)) continue;
+    // If inside explicit step section OR if not inside blocked metadata/data sections:
+    if (BLOCKED_PROSE_SECTIONS.has(section)) continue;
+    if (hasExplicitStepSection && !STEP_SECTIONS.has(section)) continue;
+
     const listed = String(rawLine || '').match(/^(\s*)(?:\d+[.)]|[-*+])\s+(.+)$/);
     if (listed) {
       const indentation = listed[1].replace(/\t/g, '    ').length;
@@ -775,7 +778,7 @@ function collectStepTexts(lines) {
     }
     if (currentIndex >= 0) {
       steps[currentIndex] = clean(`${steps[currentIndex]} ${continuation}`);
-    } else if (isExecutableCandidate(continuation)) {
+    } else if (isExecutableCandidate(continuation) && !hasExplicitStepSection) {
       steps.push(continuation);
       currentIndex = steps.length - 1;
     }
@@ -893,6 +896,60 @@ function collapseControlOpenAndSelection(clauses) {
   return collapsed;
 }
 
+function splitAtomicOperations(text) {
+  const value = clean(text);
+  if (!value) return [];
+
+  const clauses = [];
+  let current = '';
+  let inSingleQuote = false;
+  let inDoubleQuote = false;
+  let inBacktick = false;
+
+  let i = 0;
+  while (i < value.length) {
+    const char = value[i];
+    const prevChar = i > 0 ? value[i - 1] : '';
+
+    if (char === "'" && prevChar !== '\\' && !inDoubleQuote && !inBacktick) {
+      inSingleQuote = !inSingleQuote;
+      current += char;
+      i++;
+      continue;
+    } else if (char === '"' && prevChar !== '\\' && !inSingleQuote && !inBacktick) {
+      inDoubleQuote = !inDoubleQuote;
+      current += char;
+      i++;
+      continue;
+    } else if (char === '`' && prevChar !== '\\' && !inSingleQuote && !inDoubleQuote) {
+      inBacktick = !inBacktick;
+      current += char;
+      i++;
+      continue;
+    }
+
+    if (!inSingleQuote && !inDoubleQuote && !inBacktick) {
+      const remaining = value.slice(i);
+      const match = remaining.match(ATOMIC_OPERATION_BOUNDARY_RE);
+      if (match && current.trim()) {
+        clauses.push(current.trim());
+        current = '';
+        i += match[0].length;
+        continue;
+      }
+    }
+
+    current += char;
+    i++;
+  }
+
+  if (current.trim()) {
+    clauses.push(current.trim());
+  }
+
+  return clauses;
+}
+
 function decomposeStepText(text) {
   const value = clean(text);
   if (!value || isOptionListProse(value)) return value ? [value] : [];
@@ -900,7 +957,7 @@ function decomposeStepText(text) {
   if (/^if\b[^.;]{0,240},\s*(?:click|open|expand|close|collapse|select|choose|fill|enter|dismiss)\b/i.test(value)) {
     return [value];
   }
-  if (/^(?:in|into|on|from|within|using|after)\b[^.;]{0,220},\s*(?:navigate|go\s+to|visit|open|enter|fill|input|type|select|choose|pick|set|check|tick|click|press|submit|hover|wait|scroll|expand|collapse|capture|download|upload|close|dismiss)\b/i.test(value)) {
+  if (/^(?:in|into|on|from|within|using|after)\b[^.;]{0,220},\s*(?:navigate|go\s+to|visit|open|enter|fill|input|type|append|clear|select|choose|pick|set|check|uncheck|tick|click|press|submit|hover|wait|scroll|expand|collapse|capture|download|upload|close|dismiss)\b/i.test(value)) {
     return splitAssertionClauses(value);
   }
   const assertionIndex = firstMatchIndex(value, ASSERTION_VERB_RE);
@@ -908,9 +965,12 @@ function decomposeStepText(text) {
   if (actionIndex >= 0 && assertionIndex > actionIndex && isOptionListProse(value.slice(assertionIndex))) {
     return [value];
   }
-  const operationClauses = value.split(ATOMIC_OPERATION_BOUNDARY_RE).map(clean).filter(Boolean);
+  const operationClauses = splitAtomicOperations(value).map(clean).filter(Boolean);
   if (operationClauses.length > 1) {
     const openedControl = (operationClauses[0].match(/\bopen\s+(?:the\s+)?(.+?\b(?:dropdown|calendar|picker|list|menu))\b/i) || [])[1];
+    const sharedTargetMatch = value.match(/(?:in|into|on|from|of)\s+('[^']+'|"[^"]+")/i) || value.match(/('[^']+')/);
+    const sharedTarget = sharedTargetMatch ? sharedTargetMatch[1] : null;
+
     const contextualized = operationClauses.flatMap((rawClause, index) => {
       let clause = rawClause;
       if (index > 0
@@ -918,6 +978,10 @@ function decomposeStepText(text) {
         && /^\s*(?:select|choose|pick)\b/i.test(clause)
         && !/\b(?:dropdown|calendar|picker|list|menu)\b/i.test(clause)) {
         clause = `${clause.replace(/[.!?]\s*$/, '')} from the ${clean(openedControl)}`;
+      } else if (sharedTarget && !/'[^']+'/.test(clause) && !/\b(?:in|into|on|from|of)\b/i.test(clause)) {
+        if (/^\s*(?:append|enter|fill|type|clear|click|press|read|print|inspect)\b/i.test(clause)) {
+          clause = `${clause.replace(/[.!?]\s*$/, '')} in ${sharedTarget}`;
+        }
       }
       return splitAssertionClauses(punctuateAtomicClause(clause));
     });
@@ -1039,35 +1103,49 @@ function inferStepTarget(type, text, previousControlTarget = null) {
     return tidyTarget(alertTarget && alertTarget[1] || 'alert');
   }
 
+  // Priority 1: Check for explicit single-quoted element target e.g. 'Enter your full Name' or 'Button Hold!'
+  // When single quotes are present, they are authoritatively the UI element target!
+  const quotedTargetMatches = [...value.matchAll(/'([^']{2,120})'/g)];
+  if (quotedTargetMatches.length > 0) {
+    const lastQuoted = quotedTargetMatches[quotedTargetMatches.length - 1][1];
+    if (lastQuoted && !/^(?:true|false|null|undefined|\d+)$/i.test(lastQuoted)) {
+      return tidyTarget(lastQuoted);
+    }
+  }
+
   if (previousControlTarget && explicitlyReferencesPriorControl(value)) return previousControlTarget;
 
   if (isAssertionType(type)) {
     const assertion = assertionCoreClause(value)
       .replace(/^\s*(?:verify|assert|validate|confirm|expect)(?:\s+that)?\s+/i, '')
       .replace(/[.!?]+$/, '');
-    const visibleSubject = assertion.match(/^(.+?)(?=\s*(?:is|are)\s+(?:visible|hidden|displayed|shown|present|absent|enabled|disabled)\b)/i);
+    const visibleSubject = assertion.match(/^(.+?)(?=\s*(?:is|are)\s+(?:visible|hidden|displayed|shown|present|absent|enabled|disabled|read[\s-]*only|readonly)\b)/i);
     const subject = visibleSubject || assertion.match(/^(.+?)(?=\s*(?:contains?|displays?|shows?|represents?|has|(?:automatically\s+)?changes?|matches?|equals?|must|should)\b)/i);
     let resolvedTarget = tidyTarget(subject && subject[1] || assertion);
-    resolvedTarget = resolvedTarget.replace(/\s*(?:is|are)\s+(?:visible|hidden|displayed|shown|present|absent|enabled|disabled)\s*$/i, '').trim();
+    resolvedTarget = resolvedTarget.replace(/\s*(?:is|are)\s+(?:visible|hidden|displayed|shown|present|absent|enabled|disabled|read[\s-]*only|readonly)\s*$/i, '').trim();
     return tidyTarget(resolvedTarget);
   }
 
   const actionBody = value.replace(/^if\b[^.;]{0,240},\s*/i, '');
-  if (['Click', 'Hover'].includes(type)) {
+  if (['Click', 'Hover', 'ClickAndHold', 'DoubleClick', 'RightClick'].includes(type)) {
     const identified = actionBody.match(/\bidentified\s+as\s+["']?([^"'.;]+)["']?/i);
     if (identified) return tidyTarget(identified[1]);
-    const direct = actionBody.match(/^\s*(?:click|press|submit|open|hover(?:\s+over)?|dismiss|choose)\s+(?:the\s+)?(.+?)(?:[.;]|$)/i);
+    const direct = actionBody.match(/^\s*(?:click(?:\s+on)?|press|submit|open|hover(?:\s+over)?|dismiss|choose)\s+(?:the\s+)?(.+?)(?:[.;]|$)/i);
     if (direct) return tidyTarget(direct[1]);
   }
   const control = '(?:field|input|box|textarea|dropdown|list|menu|picker|calendar|control|button|link|option|section|panel|heading|page|dashboard|tab|message|form|icon|prompt|alert|dialog|modal|popup)';
-  const controlMatches = [...value.matchAll(new RegExp(`\\b(?:in|into|from|within|using|on)\\s+(?:the\\s+)?([^,;.]+?\\b${control})\\b`, 'ig'))];
+  const controlMatches = [...value.matchAll(new RegExp(`\\b(?:in|into|from|within|using|on|of)\\s+(?:the\s+)?([^,;.]+?\\b${control})\\b`, 'ig'))];
   if (controlMatches.length) return tidyTarget(controlMatches[controlMatches.length - 1][1]);
 
-  if (['Fill', 'Type'].includes(type)) {
+  if (['Fill', 'Type', 'Append', 'ClearAndType'].includes(type)) {
     const intoTarget = value.match(/\b(?:in|into)\s+(?:the\s+)?(.+?)(?:[.;]|$)/i);
     if (intoTarget) return tidyTarget(intoTarget[1]);
-    const leading = value.match(/^\s*(?:fill|type)\s+(?:the\s+)?(.+?)(?=\s+(?:with|using)\b|[.;]|$)/i);
+    const leading = value.match(/^\s*(?:fill|type|append)\s+(?:the\s+)?(.+?)(?=\s+(?:with|using)\b|[.;]|$)/i);
     if (leading) return tidyTarget(leading[1]);
+  }
+  if (type === 'Clear') {
+    const clearTarget = value.match(/\bclear\s+(?:the\s+)?(?:text\s+(?:present\s+in\s+|in\s+)?)?(.+?)(?:[.;]|$)/i);
+    if (clearTarget) return tidyTarget(clearTarget[1]);
   }
   if (type === 'Radio') {
     const selected = value.match(/^\s*(?:select|choose|check)\s+(?:the\s+)?(.+?)(?:\s+only)?(?:\s+(?:if|when|unless)\b|[.;]|$)/i);
@@ -1084,7 +1162,7 @@ function inferStepTarget(type, text, previousControlTarget = null) {
     const waited = value.match(/\bwait\s+(?:up\s+to\s+\d+\s+seconds?\s+)?(?:until|for)\s+(?:the\s+)?(.+?)(?:\s+(?:is|are|to\s+become|becomes?)\b|[.;]|$)/i);
     if (waited) return tidyTarget(waited[1]);
   }
-  const leadingAction = actionBody.match(/^\s*(?:click|press|submit|open|hover(?:\s+over)?|dismiss|choose)\s+(?:the\s+)?(.+?)(?:[.;]|$)/i);
+  const leadingAction = actionBody.match(/^\s*(?:click(?:\s+on)?|press|submit|open|hover(?:\s+over)?|dismiss|choose)\s+(?:the\s+)?(.+?)(?:[.;]|$)/i);
   return tidyTarget(leadingAction && leadingAction[1]) || previousControlTarget || null;
 }
 
@@ -1133,11 +1211,13 @@ function conditionForText(type, text) {
 }
 
 function nonSensitiveInlineValue(type, text, target) {
-  if (!['Fill', 'Type', 'Time', 'DateTime'].includes(type) || SENSITIVE_LABEL_RE.test(target || '')) return null;
+  if (!['Fill', 'Type', 'Append', 'ClearAndType', 'Time', 'DateTime'].includes(type) || SENSITIVE_LABEL_RE.test(target || '')) return null;
   const value = clean(text);
+  const quoted = value.match(/["“]([^"“”]+)["”]/);
+  if (quoted) return clean(quoted[1]);
   const withValue = value.match(/\b(?:with|using)\s+(.+?)(?:[.!?]|$)/i);
   if (withValue) return unquote(clean(withValue[1]));
-  const enterValue = value.match(/\b(?:enter|type|input)\s+(.+?)\s+(?:in|into)\s+(?:the\s+)?/i);
+  const enterValue = value.match(/\b(?:enter|type|input|append)\s+(.+?)\s+(?:in|into)\s+(?:the\s+)?/i);
   return unquote(clean(enterValue && enterValue[1])) || null;
 }
 
@@ -1186,6 +1266,10 @@ function stepSemanticMetadata(type, text, { previousControlTarget = null, hasDat
   if (type === 'AcceptAlert' || type === 'DismissAlert') {
     return { ...common, target: target || 'alert', element: target || 'alert' };
   }
+  if (type === 'PressKey' || type === 'Hotkey') {
+    const keyVal = explicitDispatchedValue(type, text, target);
+    return { ...common, value: keyVal || 'Tab' };
+  }
   if (type === 'Scroll') return { ...common, ...scrollSemantics(text) };
   if (type === 'Radio') {
     const unchecked = /\b(?:uncheck|clear|deselect|not selected|not checked)\b/i.test(text);
@@ -1232,17 +1316,40 @@ function stepSemanticMetadata(type, text, { previousControlTarget = null, hasDat
   }
   if (type === 'Expand' || type === 'Collapse') return { ...common, ...disclosureSemantics(type, text) };
   if (isAssertionType(type)) {
-    const expected = assertionCoreClause(text).replace(/^\s*(?:verify|assert|validate|confirm|expect)(?:\s+that)?\s+/i, '');
-    const verify = type === 'AssertVisible'
-      ? { kind: 'visible', element: { name: target || expected } }
-      : (type === 'AssertHidden'
-        ? { kind: 'hidden', element: { name: target || expected } }
-        : (type === 'AssertUrl' ? { kind: 'url', url: expected } : { kind: 'text', text: expected }));
+    const rawClause = assertionCoreClause(text).replace(/^\s*(?:verify|assert|validate|confirm|expect)(?:\s+that)?\s+/i, '');
+    let expected = rawClause;
+    let verify;
+    if (type === 'AssertDisabled') {
+      expected = target ? `${target} is disabled.` : rawClause;
+      verify = { kind: 'disabled', control: { name: target || expected } };
+    } else if (type === 'AssertReadonly') {
+      expected = target ? `${target} is read-only.` : rawClause;
+      verify = { kind: 'readonly', control: { name: target || expected } };
+    } else if (type === 'AssertEnabled') {
+      expected = target ? `${target} is enabled.` : rawClause;
+      verify = { kind: 'enabled', control: { name: target || expected } };
+    } else if (type === 'AssertChecked') {
+      expected = target ? `${target} is checked.` : rawClause;
+      verify = { kind: 'checked', control: { name: target || expected }, checked: true };
+    } else if (type === 'AssertSelected') {
+      expected = target ? `${target} is selected.` : rawClause;
+      verify = { kind: 'selected', control: { name: target || expected } };
+    } else if (type === 'AssertVisible') {
+      expected = target ? `${target} is visible.` : rawClause;
+      verify = { kind: 'visible', element: { name: target || expected } };
+    } else if (type === 'AssertHidden') {
+      expected = target ? `${target} is hidden.` : rawClause;
+      verify = { kind: 'hidden', element: { name: target || expected } };
+    } else if (type === 'AssertUrl') {
+      verify = { kind: 'url', url: expected };
+    } else {
+      verify = { kind: 'text', text: expected };
+    }
     return { ...common, expected, verificationPoint: true, stepKind: 'verification', verify };
   }
   const inlineValue = hasDataRef ? null : nonSensitiveInlineValue(type, text, target);
   const assertionText = inlineActionVerification(text);
-  const valueVerification = assertionText && ['Fill', 'Type'].includes(type)
+  const valueVerification = assertionText && ['Fill', 'Type', 'Append', 'ClearAndType'].includes(type)
     ? { kind: 'value', field: { name: target, role: 'textbox' }, equals: inlineValue || assertionText }
     : null;
   return {
@@ -1254,36 +1361,88 @@ function stepSemanticMetadata(type, text, { previousControlTarget = null, hasDat
 }
 
 function assertionStepType(value) {
-  if (/\b(?:no|zero)\b[^.!?]{0,180}\b(?:visible|displayed|shown|present|appears?)\b|\b(?:hidden|not visible|not displayed|absent|does not appear|disappears)\b/i.test(value)) return 'AssertHidden';
-  if (/\burl\b|https?:\/\//i.test(value)) return 'AssertUrl';
-  if (isQuantitativeAssertion(value)) return 'AssertNumber';
-  if (/\b(?:visible|displayed|shown|appears|present)\b/i.test(value)) return 'AssertVisible';
+  const fullText = clean(value);
+  const text = fullText.replace(/'[^']*'/g, '').replace(/"[^"]*"/g, '');
+  if (/\b(?:is|are)\s+disabled\b|\bdisabled\s+(?:to\s+select|field|input|button)\b|\bdisabled\b/i.test(text) || /\bdisabled\b/i.test(fullText)) return 'AssertDisabled';
+  if (/\b(?:is|are)\s+read[\s-]*only\b|\bread[\s-]*only\b|\breadonly\b/i.test(text) || /\bread[\s-]*only\b|\breadonly\b/i.test(fullText)) return 'AssertReadonly';
+  if (/\b(?:is|are)\s+enabled\b|\benabled\b/i.test(text)) return 'AssertEnabled';
+  if (/\b(?:is|are)\s+checked\b|\bchecked\b/i.test(text)) return 'AssertChecked';
+  if (/\b(?:is|are)\s+selected\b|\bselected\b/i.test(text)) return 'AssertSelected';
+  if (/\b(?:no|zero)\b[^.!?]{0,180}\b(?:visible|displayed|shown|present|appears?)\b|\b(?:hidden|not visible|not displayed|absent|does not appear|disappears)\b/i.test(text)) return 'AssertHidden';
+  if (/\burl\b|https?:\/\//i.test(fullText)) return 'AssertUrl';
+  if (/\b(?:count|number of rows|number of)\b/i.test(text) || isQuantitativeAssertion(text)) return 'AssertNumber';
+  if (/\b(?:visible|displayed|shown|appears|present)\b/i.test(text)) return 'AssertVisible';
   return 'AssertText';
 }
 
 function actionStepType(value) {
-  if (/^\s*(?:accept|ok)\s+(?:the\s+)?(?:alert|prompt|dialog)\b|^\s*accept\s+(?:alert|prompt)\b/i.test(value)) return 'AcceptAlert';
-  if (/^\s*(?:dismiss|cancel)\s+(?:the\s+)?(?:alert|prompt|dialog)\b|^\s*dismiss\s+(?:alert|prompt)\b/i.test(value)) return 'DismissAlert';
-  if (/^\s*confirm\s+(?:the\s+)?(?:alert|prompt|dialog)\b/i.test(value)) return 'AcceptAlert';
-  if (isConditionalExpandInstruction(value) || /\bexpand\b/i.test(value)) return 'Expand';
-  if (isConditionalCollapseInstruction(value) || /\bcollapse\b/i.test(value)) return 'Collapse';
-  if (/\bscroll\b/i.test(value)) return 'Scroll';
-  if (/\bnavigate\b|\bgo to\b|\bvisit\b|\bopen\b[^.]*https?:\/\//i.test(value)) return 'Navigate';
-  if (/\btype\b/i.test(value)) return 'Type';
-  if (/\b(?:enter|fill|input)\b/i.test(value)) return 'Fill';
-  const idempotentSelection = /\b(?:radio|radio button|checkbox)\b/i.test(value)
-    || (!/\b(?:dropdown|list|menu)\b/i.test(value)
-      && /\b(?:(?:if|when) (?:it )?is not|unless) already (?:selected|checked)\b/i.test(value));
-  if (/\b(?:select|choose|pick|set)\b/i.test(value) && canonicalIsoDate(value)) return 'Date';
-  if (/\b(?:select|choose|check|tick)\b/i.test(value) && idempotentSelection) return 'Radio';
-  if (/\bchoose\s+(?:the\s+)?option\s+that\b/i.test(value) && !/\b(?:dropdown|list|menu|picker)\b/i.test(value)) return 'Click';
-  if (/\bselect\b|\b(?:choose|pick)\b[^.]*\b(?:option|dropdown|list)\b/i.test(value)) return 'Select';
-  if (/\bhover\b/i.test(value)) return 'Hover';
-  if (/\bwait\b/i.test(value)) return 'WaitForState';
-  if (/\bscreenshot\b|\bcapture\b[^.]*\bscreen/i.test(value)) return 'Screenshot';
-  if (/\bdownload\b/i.test(value)) return 'Download';
-  if (/\bpopup\b|\bnew (?:tab|window)\b/i.test(value)) return 'Popup';
-  if (/\b(?:click|press|submit|choose|open)\b/i.test(value)) return 'Click';
+  const fullText = clean(value);
+  const text = fullText.replace(/'[^']*'/g, '').replace(/"[^"]*"/g, '');
+
+  // Dialogs & Alerts
+  if (/^\s*(?:accept|ok)\s+(?:the\s+)?(?:alert|prompt|dialog)\b|^\s*accept\s+(?:alert|prompt)\b/i.test(text)) return 'AcceptAlert';
+  if (/^\s*(?:dismiss|cancel)\s+(?:the\s+)?(?:alert|prompt|dialog)\b|^\s*dismiss\s+(?:alert|prompt)\b/i.test(text)) return 'DismissAlert';
+  if (/^\s*confirm\s+(?:the\s+)?(?:alert|prompt|dialog)\b/i.test(text)) return 'AcceptAlert';
+  if (/^\s*(?:type|enter|input)\s+.*?\s+in(?:to)?\s+(?:the\s+)?(?:prompt|alert|dialog)\b/i.test(text)) return 'TypeAlert';
+
+  // Navigation
+  if (/^\s*(?:navigate\s+back|go\s+back)\b/i.test(text)) return 'GoBack';
+  if (/^\s*(?:navigate\s+forward|go\s+forward)\b/i.test(text)) return 'GoForward';
+  if (/^\s*(?:refresh|reload)\b/i.test(text)) return 'Refresh';
+  if (/\bnavigate\b|\bgo to\b|\bvisit\b|\bopen\b[^.]*https?:\/\//i.test(fullText)) return 'Navigate';
+
+  // Tabs & Windows
+  if (/\b(?:goto|switch\s+to|switch)\s+(?:the\s+)?(?:newly\s+opened\s+tab|new\s+tab|child\s+window|tab|window)\b/i.test(text)) return 'SwitchTab';
+  if (/\b(?:close\s+all\s+(?:the\s+)?windows|close\s+(?:the\s+)?child\s+window|close\s+tab|close\s+window)\b/i.test(text)) return 'CloseTab';
+
+  // Frames
+  if (/\b(?:switch\s+to\s+frame|switch\s+frame|enter\s+iframe|enter\s+frame)\b/i.test(text)) return 'SwitchFrame';
+
+  // Mouse gestures
+  if (/\b(?:click\s*and\s*hold|hold\s+button|long\s*press|press\s*and\s*hold)\b/i.test(text)) return 'ClickAndHold';
+  if (/\b(?:double\s*click)\b/i.test(text)) return 'DoubleClick';
+  if (/\b(?:right\s*click|context\s*menu)\b/i.test(text)) return 'RightClick';
+
+  // Keyboard
+  if (/\b(?:press\s+shortcut|hotkey|press\s+combination|key\s+combination)\b/i.test(text)) return 'Hotkey';
+  if (/\bpress\s+(?:the\s+)?(?:keyboard\s+)?(?:tab|enter|escape|backspace|delete|arrow\w*|control|alt|shift|space|home|end|page\s*(?:up|down)|f\d{1,2})\b/i.test(text)) return 'PressKey';
+
+  // Inspection / Read and Print
+  if (/\b(?:read\s+the\s+text|print\s+all|print\s+the|print|inspect|extract)\b/i.test(text)) return 'Inspect';
+
+  // Inputs
+  if (/\bappend\b/i.test(text)) return 'Append';
+  if (/\bclear\s+and\s+(?:type|enter|fill)\b/i.test(text)) return 'ClearAndType';
+  if (/\bclear\b/i.test(text)) return 'Clear';
+  if (/\btype\b/i.test(text)) return 'Type';
+  if (/\b(?:enter|fill|input)\b/i.test(text)) return 'Fill';
+
+  // Expands / Collapses
+  if (isConditionalExpandInstruction(text) || /\bexpand\b/i.test(text)) return 'Expand';
+  if (isConditionalCollapseInstruction(text) || /\bcollapse\b/i.test(text)) return 'Collapse';
+
+  // Selections
+  if (/\bmulti\s*select\b/i.test(text)) return 'MultiSelect';
+  const idempotentSelection = /\b(?:radio|radio button|checkbox)\b/i.test(text)
+    || (!/\b(?:dropdown|list|menu)\b/i.test(text)
+      && /\b(?:(?:if|when) (?:it )?is not|unless) already (?:selected|checked)\b/i.test(text));
+  if (/\b(?:select|choose|pick|set)\b/i.test(text) && canonicalIsoDate(text)) return 'Date';
+  if (/\b(?:select|choose|check|tick)\b/i.test(text) && idempotentSelection) return 'Radio';
+  if (/\bcheck\s+(?:the\s+)?(?:check\s*box|checkbox)\b|^\s*check\b/i.test(text)) return 'Check';
+  if (/\buncheck\b/i.test(text)) return 'Uncheck';
+  if (/\bchoose\s+(?:the\s+)?option\s+that\b/i.test(text) && !/\b(?:dropdown|list|menu|picker)\b/i.test(text)) return 'Click';
+  if (/\bselect\b|\b(?:choose|pick)\b[^.]*\b(?:option|dropdown|list)\b/i.test(text)) return 'Select';
+
+  // Others
+  if (/\bhover\b/i.test(text)) return 'Hover';
+  if (/\bscroll\b/i.test(text)) return 'Scroll';
+  if (/\bscreenshot\b|\bcapture\b[^.]*\bscreen/i.test(text)) return 'Screenshot';
+  if (/\bdownload\b/i.test(text)) return 'Download';
+  if (/\bupload\b/i.test(text)) return 'Upload';
+  if (/\bpopup\b|\bnew (?:tab|window)\b/i.test(text)) return 'Popup';
+  if (/\b(?:click|press|submit|choose|open)\b/i.test(text)) return 'Click';
+  if (/\bwait\b/i.test(text)) return 'WaitForState';
+
   return 'WaitForState';
 }
 
@@ -1309,13 +1468,27 @@ function isAssertionType(type) {
 
 function explicitDispatchedValue(type, text, target) {
   const value = clean(text);
-  if (['Fill', 'Type'].includes(type)) {
+  if (['Fill', 'Type', 'Append', 'ClearAndType'].includes(type)) {
+    const quoted = value.match(/["“]([^"“”]+)["”]/);
+    if (quoted) return clean(quoted[1]);
     const withValue = value.match(/\b(?:with|using)\s+(.+?)(?:[.!?]|$)/i);
     if (withValue) return clean(withValue[1]);
-    const entered = value.match(/\b(?:enter|type|input)\s+(.+?)\s+(?:in|into)\s+(?:the\s+)?/i);
+    const entered = value.match(/\b(?:enter|type|input|append)\s+(.+?)\s+(?:in|into)\s+(?:the\s+)?/i);
     return clean(entered && entered[1]) || null;
   }
-  if (['Select', 'Date', 'Calendar', 'Radio', 'Check'].includes(type)) {
+  if (type === 'PressKey') {
+    const keyMatch = value.match(/\b(?:press\s+(?:the\s+)?(?:keyboard\s+)?|key\s+)(tab|enter|escape|backspace|delete|arrow\w*|control|alt|shift|space|home|end|page\s*(?:up|down)|f\d{1,2})\b/i);
+    if (keyMatch) {
+      const k = keyMatch[1].toLowerCase();
+      if (k === 'tab') return 'Tab';
+      if (k === 'enter') return 'Enter';
+      if (k === 'escape') return 'Escape';
+      if (k === 'space') return 'Space';
+      if (k === 'backspace') return 'Backspace';
+      return keyMatch[1];
+    }
+  }
+  if (['Select', 'Date', 'Calendar', 'Radio', 'Check', 'MultiSelect'].includes(type)) {
     const quoted = value.match(/["']([^"']+)["']/);
     if (quoted) return clean(quoted[1]);
     const selected = value.match(
@@ -1459,6 +1632,7 @@ function buildSteps(caseId, stepTexts, dataDefinitions, rawBindings) {
       authoredText: authoredBound.text,
       atomicOrdinal: Number(entry.atomicOrdinal) || 1,
       atomicCount: Number(entry.atomicCount) || 1,
+      action: type,
       type,
       text: bound.text,
       dataRefs: bound.dataRefs,
@@ -1469,12 +1643,9 @@ function buildSteps(caseId, stepTexts, dataDefinitions, rawBindings) {
     };
     steps.push(step);
     const target = clean(step.target || step.element);
-    if (target && (
-      ['Select', 'Date', 'Radio'].includes(type)
-      || (type === 'Click' && /\b(?:open|dropdown|list|menu|picker|calendar|suggestion)\b/i.test(bound.text))
-    )) {
+    if (target && !['Navigate', 'GoBack', 'GoForward', 'Refresh', 'Screenshot'].includes(type)) {
       activeControlScope = { target };
-    } else if (stateChanging && !['WaitForState', 'Screenshot'].includes(type)) {
+    } else if (['Navigate', 'GoBack', 'GoForward', 'Refresh'].includes(type)) {
       activeControlScope = null;
     }
     if (stateChanging) lastStateChangingStepId = id;
@@ -1500,30 +1671,48 @@ function addDefaultOperationChecks(steps) {
     const step = rows[index];
     if (!step || step.operationCheck || isAssertionType(step.type)) continue;
     const target = clean(step.target || step.element || step.text) || 'requested control';
-    const next = rows.slice(index + 1).find((candidate) => candidate && candidate.type !== 'Screenshot') || null;
-    const nextTarget = clean(next && (next.target || next.element));
     const controlValue = authoredControlValue(step);
-    if (['Fill', 'Type'].includes(step.type)) {
+
+    if (['Fill', 'Type', 'Append', 'ClearAndType'].includes(step.type)) {
       step.operationCheck = {
         kind: 'input_accepted',
         target,
         expected: controlValue != null
-          ? `${target} contains the approved value.`
-          : `${target} accepts the provided value.`,
+          ? `${target} contains "${String(controlValue)}".`
+          : `${target} accepts the provided input.`,
         required: true,
         ...(controlValue != null ? { condition: { value: controlValue } } : {}),
       };
       continue;
     }
-    if (['Select', 'Date', 'Radio'].includes(step.type)) {
+    if (step.type === 'Clear') {
+      step.operationCheck = {
+        kind: 'input_accepted',
+        target,
+        expected: `${target} is cleared.`,
+        required: true,
+      };
+      continue;
+    }
+    if (['Select', 'Date', 'Radio', 'MultiSelect'].includes(step.type)) {
       step.operationCheck = {
         kind: 'control_state',
         target,
         expected: controlValue != null
-          ? `${target} displays the selected value ${String(controlValue)}.`
+          ? `${target} displays the selected value "${String(controlValue)}".`
           : `${target} reflects the requested selection.`,
         required: true,
         ...(controlValue != null ? { condition: { value: controlValue } } : {}),
+      };
+      continue;
+    }
+    if (['Check', 'Uncheck'].includes(step.type)) {
+      step.operationCheck = {
+        kind: 'control_state',
+        target,
+        expected: `${target} is ${step.type === 'Check' ? 'checked' : 'unchecked'}.`,
+        required: true,
+        condition: { checked: step.type === 'Check' },
       };
       continue;
     }
@@ -1536,11 +1725,44 @@ function addDefaultOperationChecks(steps) {
       };
       continue;
     }
-    if (step.type === 'Click') {
+    if (['GoBack', 'GoForward', 'Refresh'].includes(step.type)) {
+      step.operationCheck = {
+        kind: 'page_ready',
+        target: 'page',
+        expected: 'Page navigation completes successfully.',
+        required: true,
+      };
+      continue;
+    }
+    if (step.type === 'PressKey' || step.type === 'Hotkey') {
+      step.operationCheck = {
+        kind: 'action_completed',
+        target,
+        expected: `Key "${step.value || 'key'}" is pressed.`,
+        required: true,
+      };
+      continue;
+    }
+    if (step.type === 'Inspect') {
+      step.operationCheck = {
+        kind: 'observation_completed',
+        target,
+        expected: `${target} text is inspected and logged.`,
+        required: false,
+      };
+      continue;
+    }
+    if (step.type === 'SwitchTab' || step.type === 'CloseTab') {
+      step.operationCheck = {
+        kind: 'context_changed',
+        target,
+        expected: step.type === 'SwitchTab' ? 'Switched to the requested tab.' : 'Child window is closed.',
+        required: true,
+      };
+      continue;
+    }
+    if (['Click', 'DoubleClick', 'RightClick', 'ClickAndHold'].includes(step.type)) {
       const opensControl = /\b(?:dropdown|list|menu|picker|calendar|suggestion)\b/i.test(`${target} ${step.text}`);
-      const opensAlert = /\b(?:alert|dialog|prompt|confirm)\b/i.test(`${target} ${step.text}`)
-        || (next && ['AcceptAlert', 'DismissAlert'].includes(next.type));
-      const cleanedNext = nextTarget ? nextTarget.replace(/\s+(?:button|btn|link|icon|input|field|textbox|checkbox|modal|dialog|popup)$/i, '').trim() : '';
       step.operationCheck = opensControl
         ? {
           kind: 'menu_opened',
@@ -1548,22 +1770,12 @@ function addDefaultOperationChecks(steps) {
           expected: `${target} options are visible after opening the control.`,
           required: true,
         }
-        : (opensAlert
-          ? {
-            kind: 'action_completed',
-            target,
-            expected: `${target} action completes.`,
-            required: true,
-          }
-          : {
-            kind: cleanedNext ? 'page_ready' : 'action_completed',
-            target: cleanedNext || target,
-            expected: cleanedNext
-              ? `${cleanedNext} is available after activating ${target}.`
-              : `${target} action completes.`,
-            required: true,
-            ...(cleanedNext ? { condition: { text: cleanedNext } } : {}),
-          });
+        : {
+          kind: 'action_completed',
+          target,
+          expected: `${target} action completes.`,
+          required: true,
+        };
       continue;
     }
     if (['Expand', 'Collapse'].includes(step.type)) {
@@ -1574,6 +1786,7 @@ function addDefaultOperationChecks(steps) {
         required: true,
         condition: { expanded: step.type === 'Expand' },
       };
+      continue;
     }
   }
   return rows;

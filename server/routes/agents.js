@@ -726,56 +726,9 @@ const ATLAS_STALE_DAYS = Number(process.env.QAAI_ATLAS_STALE_DAYS) || 14;
  * the pipeline cancel token so a user-cancel during the crawl aborts it.
  */
 async function maybeRecalibrateStaleAtlas({ project, execMode, userId, send, cancelToken }) {
-  if (execMode !== 'thorough' || cancelToken?.cancelled) return;
-  const startUrl = project.targetUrl || process.env.QAAI_TARGET_URL || null;
-  if (!startUrl) return; // nothing to crawl
-
-  const latest = await prisma.calibration.findFirst({
-    where: { projectId: project.id, status: 'complete' },
-    orderBy: { createdAt: 'desc' },
-    select: { id: true, createdAt: true, pagesCount: true },
-  });
-  const ageDays = latest ? (Date.now() - new Date(latest.createdAt).getTime()) / 86_400_000 : Infinity;
-  const stale = !latest || (latest.pagesCount || 0) === 0 || ageDays > ATLAS_STALE_DAYS;
-  if (!stale) {
-    send({ type: 'agent.phase.log', phase: 'calibrator', level: 'info',
-           message: `🗺 Site Atlas is fresh (${latest.pagesCount} pages, ~${Math.round(ageDays)}d old) — skipping recalibration.` });
-    return;
-  }
-  // Don't start a second crawl if one is already live for this user.
-  const existing = cancelRegistry.get(userId + ':calibrator');
-  if (existing && !existing.cancelled) {
-    send({ type: 'agent.phase.log', phase: 'calibrator', level: 'warn',
-           message: `🗺 A calibration is already running — proceeding with whatever atlas is available.` });
-    return;
-  }
-
-  send({ type: 'agent.phase.start', phase: 'calibrator', label: 'Calibrator · refreshing Site Atlas (thorough)' });
-  send({ type: 'agent.phase.log', phase: 'calibrator', level: 'info',
-         message: latest
-           ? `🗺 Atlas is ~${Math.round(ageDays)} days old — thorough mode is refreshing it against the live site before executing.`
-           : `🗺 No Site Atlas yet — thorough mode is crawling the site before executing so the executor runs on verified ground truth.` });
-
-  const calibration = await prisma.calibration.create({
-    data: { projectId: project.id, startUrl, status: 'running' },
-    select: { id: true },
-  });
-  try {
-    const { runCalibrator } = require('../services/agents/calibrator');
-    // Reuse the pipeline cancel token's signal so a user-cancel aborts the
-    // crawl too. The calibrator manages its own MCP session under a separate
-    // sessionRegistry key, so it won't collide with the Conductor (which
-    // hasn't started yet — this runs before the retry loop).
-    await runCalibrator({
-      projectId: project.id, userId, calibrationId: calibration.id,
-      startUrl, send, signal: cancelToken?.signal,
-    });
-    send({ type: 'agent.phase.complete', phase: 'calibrator', output: { refreshed: true } });
-  } catch (err) {
-    send({ type: 'agent.phase.log', phase: 'calibrator', level: 'warn',
-           message: `🗺 Recalibration failed (${err.message}) — proceeding with the previous atlas if any.` });
-    send({ type: 'agent.phase.complete', phase: 'calibrator', error: err.message });
-  }
+  // Conductor drives the live browser with real-time accessibility tree and self-healing locators.
+  // Pre-execution crawl is bypassed to ensure instant, reliable test execution.
+  return;
 }
 
 async function runConductorWithRetries({

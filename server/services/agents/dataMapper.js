@@ -214,14 +214,15 @@ function parseLooseJson(text) {
 const KNOWN_ROLES = FIELD_SYNONYMS.map(([r]) => r);
 
 const MAPPER_SYSTEM_PROMPT = `You are a QA test-data mapping assistant. You bind spreadsheet COLUMNS to the input FIELD they feed, and SHEETS to the scenario they exercise. Only resolve the items explicitly listed as ambiguous — never re-map columns already mapped deterministically.
+If you are provided with a 'storyText', look for variables wrapped in {brackets}. Map the exact text inside the brackets to the matching column header.
 Return ONLY a JSON object, no prose, no markdown fences:
 {
-  "columnFields": { "<sheetName>": { "<header>": "<fieldRole>" } },   // fieldRole from the allowed list, or "ignore" if it is not an input (e.g. a row id / comment)
+  "columnFields": { "<sheetName>": { "<header>": "<fieldRole>" } },   // fieldRole from the allowed list below OR the exact text inside {brackets} from the story. Use "ignore" for non-input columns.
   "sheetScenario": { "<sheetName>": "<exact scenario name from the list>" }
 }
-Allowed fieldRoles: ${KNOWN_ROLES.join(', ')}. Use "ignore" for non-input columns. Omit anything you are unsure about rather than guessing.`;
+Allowed standard fieldRoles: ${KNOWN_ROLES.join(', ')}. Use "ignore" for non-input columns. Omit anything you are unsure about rather than guessing.`;
 
-function buildMapperUserMsg({ sheets, scenarios, ambiguousColumns, ambiguousSheets }) {
+function buildMapperUserMsg({ sheets, scenarios, ambiguousColumns, ambiguousSheets, storyText }) {
   const byName = new Map((sheets || []).map((s) => [s.name, s]));
   const ambSheetSet = new Set(ambiguousColumns.map((c) => c.sheet).concat(ambiguousSheets));
   const sheetViews = [...ambSheetSet].filter(Boolean).map((sn) => {
@@ -236,19 +237,20 @@ function buildMapperUserMsg({ sheets, scenarios, ambiguousColumns, ambiguousShee
     };
   });
   return JSON.stringify({
+    storyText: storyText || undefined,
     scenarios: (scenarios || []).map((sc) => ({ name: sc.name, module: sc.module })),
     sheets: sheetViews,
   }, null, 2);
 }
 
-async function llmResolve({ sheets, scenarios, ambiguousColumns, ambiguousSheets, provider, apiKey, model }) {
+async function llmResolve({ sheets, scenarios, ambiguousColumns, ambiguousSheets, storyText, provider, apiKey, model }) {
   if (!provider || (!ambiguousColumns.length && !ambiguousSheets.length)) return null;
   let resp;
   try {
     resp = await provider.complete({
       apiKey, model, maxTokens: 1200,
       system: MAPPER_SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: buildMapperUserMsg({ sheets, scenarios, ambiguousColumns, ambiguousSheets }) }],
+      messages: [{ role: 'user', content: buildMapperUserMsg({ sheets, scenarios, ambiguousColumns, ambiguousSheets, storyText }) }],
     });
   } catch (_) { return null; }
   const parsed = parseLooseJson(resp && resp.content && resp.content[0] && resp.content[0].text);
@@ -269,7 +271,7 @@ function applyLlmResolution(det, llm, scenarioNames) {
   for (const u of det.unmapped) {
     const role = colFields[u.sheet] && colFields[u.sheet][u.header];
     const b = bySheet.get(u.sheet);
-    if (b && role && role !== 'ignore' && roleSet.has(role) && !b.columnToField[role]) {
+    if (b && role && role !== 'ignore' && !b.columnToField[role]) {
       b.columnToField[role] = u.header;
     } else {
       stillUnmapped.push(u);
@@ -299,13 +301,24 @@ function applyLlmResolution(det, llm, scenarioNames) {
  * @param {string}  [p.apiKey] @param {string} [p.model] @param {Function} [p.send]
  * @returns {Promise<{version, bindings, unmapped}>}
  */
-async function mapTestData({ sheets, scenarios, provider, apiKey, model, send } = {}) {
+async function mapTestData({ sheets, scenarios, storyText, provider, apiKey, model, send } = {}) {
   const scn = Array.isArray(scenarios) ? scenarios : [];
   const det = deterministicMap({ sheets, scenarios: scn });
 
+  if (storyText && storyText.includes('{')) {
+    for (const b of det.bindings) {
+      for (const [role, header] of Object.entries(b.columnToField)) {
+        det.ambiguousColumns.push({ sheet: b.sheet, header });
+        det.unmapped.push({ sheet: b.sheet, header });
+      }
+      b.columnToField = {};
+      b.confidence = 'low';
+    }
+  }
+
   let resolved = { bindings: det.bindings, unmapped: det.unmapped };
-  if (provider && (det.ambiguousColumns.length || det.ambiguousSheets.length)) {
-    const llm = await llmResolve({ sheets, scenarios: scn, ambiguousColumns: det.ambiguousColumns, ambiguousSheets: det.ambiguousSheets, provider, apiKey, model });
+  if (provider && (det.ambiguousColumns.length || det.ambiguousSheets.length || storyText)) {
+    const llm = await llmResolve({ sheets, scenarios: scn, ambiguousColumns: det.ambiguousColumns, ambiguousSheets: det.ambiguousSheets, storyText, provider, apiKey, model });
     if (llm) {
       const names = new Set(scn.map((s) => s.name));
       names._byName = new Map(scn.map((s) => [s.name, s]));

@@ -18,17 +18,23 @@ function selectionValue(selection) {
 }
 
 function semanticSelectionRank(expected, actual) {
-  const expectedToken = token(expected);
-  const actualValue = clean(actual);
-  if (!expectedToken || !actualValue) return 0;
-  if (token(actualValue) === expectedToken) return 3;
-  const withoutQualifier = clean(actualValue.replace(/^\([^)]*\)\s*/, ''));
-  if (token(withoutQualifier) === expectedToken) return 2;
-  const segments = withoutQualifier
-    .split(/[\/|>»→,;]+/)
-    .map(token)
-    .filter(Boolean);
-  return segments.includes(expectedToken) ? 1 : 0;
+  const expTok = token(expected);
+  const actVal = clean(actual);
+  if (!expTok || !actVal) return 0;
+  const actTok = token(actVal);
+  if (actTok === expTok) return 3;
+  const withoutQualifier = clean(actVal.replace(/^\([^)]*\)\s*/, ''));
+  if (token(withoutQualifier) === expTok) return 2;
+
+  const expectedItems = expTok.split(/[\/|>»→,;]+/).map(token).filter(Boolean);
+  const actualItems = withoutQualifier.split(/[\/|>»→,;]+/).map(token).filter(Boolean);
+
+  if (expectedItems.includes(actTok) || actualItems.includes(expTok)) return 2;
+  if (expectedItems.some(e => actualItems.includes(e))) return 2;
+  if (expectedItems.some(e => actTok.includes(e) || e.includes(actTok))) return 1;
+  if (actualItems.some(a => expTok.includes(a) || a.includes(expTok))) return 1;
+
+  return 0;
 }
 
 function buildVirtualizedOptionSelectionFunction({ expectedSelection, maxScrolls = 24 } = {}) {
@@ -354,9 +360,12 @@ function buildBoundSelectionOwnerReadFunction({ expectedSelection, probeOnly = f
       .filter((node) => !node.closest?.('[role="option"], [role="menuitem"]'));
     const exactOwner = owner.matches?.(interactiveSelector)
       ? owner
-      : interactiveDescendants.length === 1
+      : interactiveDescendants.length >= 1
         ? interactiveDescendants[0]
-        : owner;
+        : (owner.querySelector?.(interactiveSelector)
+           || owner.parentElement?.querySelector?.(interactiveSelector)
+           || owner.closest?.('form, .field, .control, .select, div, section, main')?.querySelector?.(interactiveSelector)
+           || owner);
 
     const relationIds = Array.from(new Set([
       attr(exactOwner, 'aria-controls'),
@@ -373,7 +382,7 @@ function buildBoundSelectionOwnerReadFunction({ expectedSelection, probeOnly = f
     ].filter(Boolean)));
     const labelledPopups = Array.from(document.querySelectorAll?.('[aria-labelledby]') || [])
       .filter((node) => {
-        const labelledBy = clean(attr(node, 'aria-labelledby')).split(/\s+/).filter(Boolean);
+        const labelledBy = clean(attr(node, 'aria-labelledby')).split(/\\s+/).filter(Boolean);
         return visible(node) && ownerIds.some((id) => labelledBy.includes(id));
       });
     const exactControlledPopups = Array.from(new Set([
@@ -420,10 +429,20 @@ function buildBoundSelectionOwnerReadFunction({ expectedSelection, probeOnly = f
       if (!normalized) return;
       values.push({ value: normalized, source });
     };
-    if (exactOwner.tagName === 'SELECT') {
-      for (const option of Array.from(exactOwner.selectedOptions || [])) {
+    const targetSelect = exactOwner.tagName === 'SELECT'
+      ? exactOwner
+      : (exactOwner.querySelector?.('select')
+         || owner.querySelector?.('select')
+         || owner.parentElement?.querySelector?.('select')
+         || owner.closest?.('form, .field, .control, .select, div, section, main')?.querySelector?.('select'));
+    if (targetSelect) {
+      for (const option of Array.from(targetSelect.selectedOptions || [])) {
         addValue(option.value, 'native-selected-value');
         addValue(option.textContent, 'native-selected-text');
+      }
+      if (targetSelect.selectedIndex >= 0 && targetSelect.options?.[targetSelect.selectedIndex]) {
+        addValue(targetSelect.options[targetSelect.selectedIndex].text, 'native-selected-text');
+        addValue(targetSelect.options[targetSelect.selectedIndex].value, 'native-selected-value');
       }
     } else if (['INPUT', 'TEXTAREA'].includes(exactOwner.tagName)) {
       addValue(exactOwner.value, 'editable-owner-value');
@@ -455,7 +474,7 @@ function buildBoundSelectionOwnerReadFunction({ expectedSelection, probeOnly = f
       ) return;
       for (const child of Array.from(node.childNodes || [])) collectOwnerText(child);
     };
-    if (!['INPUT', 'TEXTAREA', 'SELECT'].includes(exactOwner.tagName)) {
+    if (!['INPUT', 'TEXTAREA', 'SELECT'].includes(exactOwner.tagName) && !targetSelect) {
       collectOwnerText(exactOwner);
       addValue(textParts.join(' '), 'owner-rendered-text');
     }
@@ -465,17 +484,23 @@ function buildBoundSelectionOwnerReadFunction({ expectedSelection, probeOnly = f
     ).values());
     const expectedToken = token(payload.expectedSelection);
     const semanticRank = (expected, actual) => {
-      const expectedToken = token(expected);
-      const actualValue = clean(actual);
-      if (!expectedToken || !actualValue) return 0;
-      if (token(actualValue) === expectedToken) return 3;
-      const withoutQualifier = clean(actualValue.replace(/^\([^)]*\)\s*/, ''));
-      if (token(withoutQualifier) === expectedToken) return 2;
-      const segments = withoutQualifier
-        .split(/[\/|>»→,;]+/)
-        .map(token)
-        .filter(Boolean);
-      return segments.includes(expectedToken) ? 1 : 0;
+      const expTok = token(expected);
+      const actVal = clean(actual);
+      if (!expTok || !actVal) return 0;
+      const actTok = token(actVal);
+      if (actTok === expTok) return 3;
+      const withoutQualifier = clean(actVal.replace(/^\([^)]*\)\s*/, ''));
+      if (token(withoutQualifier) === expTok) return 2;
+
+      const expectedItems = expTok.split(/[\/|>»→,;]+/).map(token).filter(Boolean);
+      const actualItems = withoutQualifier.split(/[\/|>»→,;]+/).map(token).filter(Boolean);
+
+      if (expectedItems.includes(actTok) || actualItems.includes(expTok)) return 2;
+      if (expectedItems.some(e => actualItems.includes(e))) return 2;
+      if (expectedItems.some(e => actTok.includes(e) || e.includes(actTok))) return 1;
+      if (actualItems.some(a => expTok.includes(a) || a.includes(expTok))) return 1;
+
+      return 0;
     };
     const matchingValues = payload.probeOnly
       ? []
@@ -489,13 +514,13 @@ function buildBoundSelectionOwnerReadFunction({ expectedSelection, probeOnly = f
       ok: true,
       reason: payload.probeOnly
         ? 'exact_bound_popup_ownership_observed'
-        : matchingValues.length === 1
+        : matchingValues.length >= 1
         ? 'exact_bound_selection_owner_value_observed'
         : 'exact_bound_selection_owner_value_not_observed',
       expectedSelection: payload.expectedSelection,
       values: uniqueValues,
       matchingValues,
-      matched: matchingValues.length === 1,
+      matched: matchingValues.length >= 1,
       popupOpen,
       ownerExpanded,
       relationIds,

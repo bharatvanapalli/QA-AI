@@ -19,20 +19,17 @@ async function handleChatCompletion(req, res) {
       const payload = JSON.parse(bodyStr || '{}');
       log(`Received request for model: ${payload.model || 'copilot-default'}`);
 
-      // 1. Select Copilot chat model from VS Code Language Model API
+      // 1. Select all available models from VS Code Language Model API
       let models = [];
       try {
-        models = await vscode.lm.selectChatModels({ vendor: 'copilot', family: 'gpt-4o' });
+        models = await vscode.lm.selectChatModels({});
       } catch (e) {
-        log(`Select gpt-4o failed: ${e.message}`);
+        log(`Select all models failed: ${e.message}`);
       }
       if (!models || models.length === 0) {
         try {
           models = await vscode.lm.selectChatModels({ vendor: 'copilot' });
         } catch (_) {}
-      }
-      if (!models || models.length === 0) {
-        models = await vscode.lm.selectChatModels({});
       }
 
       if (!models || models.length === 0) {
@@ -47,14 +44,26 @@ async function handleChatCompletion(req, res) {
 
       log(`Available VS Code LM models: ${models.map(m => `${m.id} (${m.name})`).join(', ')}`);
 
-      // Pick selected model, preferring gpt-4o or standard copilot models over restricted ones
-      const targetModelName = (payload.model || '').toLowerCase();
-      let selectedModel = models.find((m) => (m.id.toLowerCase().includes(targetModelName) || m.name.toLowerCase().includes(targetModelName)) && !m.id.includes('fable'))
-        || models.find((m) => m.id.includes('gpt-4o') || m.family === 'gpt-4o')
-        || models.find((m) => !m.id.includes('fable'))
-        || models[0];
+      // Filter out restricted/internal models that reject standard LM sendRequest
+      const isUsable = (m) => !/(fable|search-agent|exec-agent|compaction|aitk|no-project|^auto$)/i.test(m.id || '');
+      const usable = models.filter(isUsable);
 
-      log(`Using Copilot Model: ${selectedModel.id} (${selectedModel.name})`);
+      const targetModelName = (payload.model || '').toLowerCase();
+      let preferred = [];
+      if (targetModelName.includes('sonnet') || targetModelName.includes('claude')) {
+        preferred = usable.filter(m => /sonnet/i.test(m.id || m.name || ''));
+      } else {
+        preferred = [
+          ...usable.filter(m => m.id === 'gpt-4o-2024-11-20' || m.family === 'gpt-4o'),
+          ...usable.filter(m => m.id === 'gpt-4o-mini-2024-07-18' || m.family === 'gpt-4o-mini'),
+          ...usable.filter(m => /gpt-4/i.test(m.id || '')),
+        ];
+      }
+
+      const candidateModels = [
+        ...preferred,
+        ...usable,
+      ].filter((m, idx, self) => self.findIndex((x) => x.id === m.id) === idx);
 
       // 2. Build VS Code LanguageModelChatMessage array
       const lmMessages = [];
@@ -79,18 +88,35 @@ async function handleChatCompletion(req, res) {
         }
       }
 
-      // 3. Send request to Copilot via VS Code API
-      const tokenSource = new vscode.CancellationTokenSource();
-      req.on('close', () => tokenSource.cancel());
-
-      const response = await selectedModel.sendRequest(lmMessages, {}, tokenSource.token);
-
+      // 3. Send request to Copilot via VS Code API with model fallback
       let textResult = '';
-      for await (const fragment of response.text) {
-        textResult += fragment;
+      let successfulModel = null;
+      let lastErr = null;
+      for (const modelCandidate of candidateModels) {
+        try {
+          log(`Attempting completion with model: ${modelCandidate.id} (${modelCandidate.name})`);
+          const tokenSource = new vscode.CancellationTokenSource();
+          req.on('close', () => tokenSource.cancel());
+          const response = await modelCandidate.sendRequest(lmMessages, {}, tokenSource.token);
+          let currentText = '';
+          for await (const fragment of response.text) {
+            currentText += fragment;
+          }
+          if (currentText.length > 0) {
+            textResult = currentText;
+            successfulModel = modelCandidate;
+            log(`Copilot completion finished via ${modelCandidate.id} (${textResult.length} chars)`);
+            break;
+          }
+        } catch (modelErr) {
+          log(`Model ${modelCandidate.id} failed: ${modelErr.message}`);
+          lastErr = modelErr;
+        }
       }
 
-      log(`Copilot completion finished (${textResult.length} chars)`);
+      if (!textResult && lastErr) {
+        throw lastErr;
+      }
 
       // 4. Check if textResult contains a JSON tool call or structured JSON
       let toolCalls = null;
@@ -118,7 +144,7 @@ async function handleChatCompletion(req, res) {
         id: `chatcmpl-copilot-${Date.now()}`,
         object: 'chat.completion',
         created: Math.floor(Date.now() / 1000),
-        model: selectedModel.id,
+        model: successfulModel ? successfulModel.id : (payload.model || 'copilot-gpt-4o'),
         choices: [
           {
             index: 0,
@@ -188,6 +214,27 @@ function startServer(port = 5005) {
       return handleChatCompletion(req, res);
     }
 
+    if (req.method === 'GET' && (req.url === '/models' || req.url === '/v1/models')) {
+      (async () => {
+        try {
+          const models = await vscode.lm.selectChatModels({});
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            data: models.map(m => ({
+              id: m.id,
+              name: m.name,
+              family: m.family,
+              vendor: m.vendor,
+            })),
+          }));
+        } catch (e) {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ data: [] }));
+        }
+      })();
+      return;
+    }
+
     res.writeHead(404, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'Endpoint not found' }));
   });
@@ -198,9 +245,9 @@ function startServer(port = 5005) {
   });
 
   server.on('error', (err) => {
-    if (err.code === 'EADDRINUSE' && port === 5005) {
-      log(`Port 5005 in use, trying 5006...`);
-      startServer(5006);
+    if (err.code === 'EADDRINUSE') {
+      log(`Port 5005 in use, retrying in 1s...`);
+      setTimeout(() => startServer(5005), 1000);
     } else {
       log(`Server error: ${err.message}`);
     }

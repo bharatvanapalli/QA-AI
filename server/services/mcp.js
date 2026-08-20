@@ -1921,6 +1921,13 @@ async function captureLiveEvidenceScreenshot(session, {
     }),
     timeoutMs,
   );
+  try {
+    await page.evaluate(() => {
+      if (typeof window.__qaai_clear_highlights === 'function') {
+        window.__qaai_clear_highlights();
+      }
+    });
+  } catch (_) {}
   if (!Buffer.isBuffer(image) || image.length === 0) return null;
   const viewport = (() => {
     try { return page.viewportSize?.() || null; } catch (_) { return null; }

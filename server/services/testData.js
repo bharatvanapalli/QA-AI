@@ -74,6 +74,11 @@ function isCsv({ name, mimeType, mime }) {
   return mt.includes('csv') || extOf(name) === 'csv';
 }
 
+function isJson({ name, mimeType, mime }) {
+  const mt = String(mimeType || mime || '').toLowerCase();
+  return mt.includes('json') || extOf(name) === 'json';
+}
+
 function cleanCell(value) {
   if (value == null) return '';
   return String(value)
@@ -318,6 +323,69 @@ function parseWorkbook({ content, name, mimeType } = {}) {
       parserManifest: parserManifest({
         sourceHash,
         sourceSheetCount,
+        parsedSheetCount: sheets.length,
+        sourceRowCount,
+        parsedRowCount: rowCount,
+        sourceColumnCounts,
+        truncations,
+      }),
+    };
+  }
+
+  if (isJson(meta)) {
+    try {
+      const data = JSON.parse(decoded.text);
+      let arr = data;
+      if (!Array.isArray(data)) {
+        const keys = Object.keys(data);
+        if (keys.length === 1 && Array.isArray(data[keys[0]])) {
+           arr = data[keys[0]];
+        } else {
+           arr = [data]; // single flat object
+        }
+      }
+      
+      const matrix = [];
+      let headers = [];
+      for (const obj of arr) {
+         if (obj && typeof obj === 'object') {
+            for (const key of Object.keys(obj)) {
+               if (!headers.includes(key)) headers.push(key);
+            }
+         }
+      }
+      matrix.push(headers);
+      for (const obj of arr) {
+         if (obj && typeof obj === 'object') {
+            const row = headers.map(h => obj[h] !== undefined ? (typeof obj[h] === 'object' ? JSON.stringify(obj[h]) : obj[h]) : '');
+            matrix.push(row);
+         }
+      }
+      
+      const rawColumnCount = headers.length;
+      sourceRowCount = Math.max(0, matrix.length - 1);
+      sourceColumnCounts.push({ sheet: baseName(name, 'JSON'), sourceCount: rawColumnCount, parsedCount: Math.min(rawColumnCount, MAX_COLUMNS) });
+      if (rawColumnCount > MAX_COLUMNS) {
+        truncations.push({ kind: 'column_limit', sheet: baseName(name, 'JSON'), sourceCount: rawColumnCount, parsedCount: MAX_COLUMNS });
+      }
+      const parsed = matrixToSheet(baseName(name, 'JSON'), matrix, warnings, MAX_ROWS);
+      sheets.push(parsed.sheet);
+      rowCount += parsed.consumed;
+      if (parsed.capped) truncations.push({ kind: 'row_limit', sheet: parsed.sheet.name, sourceCount: sourceRowCount, parsedCount: parsed.consumed });
+      
+    } catch (err) {
+      warnings.push(`JSON parse failed: ${err.message}`);
+      truncations.push({ kind: 'parse_error', reason: err.message });
+    }
+    
+    return {
+      sheets,
+      rowCount,
+      warnings,
+      sourceHash,
+      parserManifest: parserManifest({
+        sourceHash,
+        sourceSheetCount: 1,
         parsedSheetCount: sheets.length,
         sourceRowCount,
         parsedRowCount: rowCount,

@@ -112,22 +112,16 @@ const CRAWL_DEPTH_RANK = { shallow: 1, focused: 2, standard: 2, deep: 3 };
 function crawlBudget(crawlMode) {
   switch (String(crawlMode || '').toLowerCase()) {
     case 'shallow':
-      return { crawlMode: 'shallow', topModules: 5, pagesPerModule: 1, otherPagesPerModule: 1,
-        tabsPerPage: 0, openFilters: false, probeBudgetPerPage: 3, modalProbeBudgetPerPage: 0,
-        scrollSnapshotsPerPage: 0, totalPageCap: 12 };
+      return { crawlMode: 'shallow', topModules: 20, pagesPerModule: 20, otherPagesPerModule: 20,
+        tabsPerPage: 20, openFilters: true, probeBudgetPerPage: 20, modalProbeBudgetPerPage: 10,
+        scrollSnapshotsPerPage: 6, totalPageCap: 100 };
     case 'deep':
-      return { crawlMode: 'deep', topModules: Infinity, pagesPerModule: 12, otherPagesPerModule: 12,
-        tabsPerPage: 24, openFilters: true, probeBudgetPerPage: 20, modalProbeBudgetPerPage: 8,
-        scrollSnapshotsPerPage: 4, totalPageCap: 120 };
     case 'focused':
-      return { crawlMode: 'focused', topModules: Infinity, pagesPerModule: 10, otherPagesPerModule: 1,
-        tabsPerPage: 16, openFilters: true, probeBudgetPerPage: 14, modalProbeBudgetPerPage: 6,
-        scrollSnapshotsPerPage: 4, totalPageCap: 45 };
     case 'standard':
     default:
-      return { crawlMode: 'standard', topModules: Infinity, pagesPerModule: 2, otherPagesPerModule: 2,
-        tabsPerPage: 8, openFilters: false, probeBudgetPerPage: 8, modalProbeBudgetPerPage: 2,
-        scrollSnapshotsPerPage: 2, totalPageCap: 36 };
+      return { crawlMode: 'deep', topModules: Infinity, pagesPerModule: 500, otherPagesPerModule: 500,
+        tabsPerPage: 100, openFilters: true, probeBudgetPerPage: 100, modalProbeBudgetPerPage: 50,
+        scrollSnapshotsPerPage: 15, totalPageCap: 500 };
   }
 }
 
@@ -135,6 +129,8 @@ function crawlBudget(crawlMode) {
 // A "row" is a parsed snapshot node the CALLER builds from mcp.parseSnapshotLine
 // plus the raw line's flags: { role, name, ref, flags:{ haspopup, selected,
 // current, disabled, expanded } }. Classification is pure word-shape + role.
+
+const TAB_NAME_HINT_RE = /\b(tab|panel|overview|details|settings|profile|general|history|logs|activity|billing|security|permissions|notifications|preferences|members|team|integration|integrations)\b/i;
 
 /**
  * Classify one affordance into exactly one safety class. DESTRUCTIVE wins over
@@ -147,8 +143,11 @@ function classifyAffordance(row) {
   const flags = (row && row.flags) || {};
   // 1) destructive / mutating / logout — NEVER actionable by the crawl.
   if (name && (DESTRUCTIVE_NAME_RE.test(name) || AUTH_LINK_RE.test(name))) return 'destructive';
-  // 2) tabs — role=tab (panel switch, no URL change). Safe to enumerate.
+  // 2) tabs — role=tab or custom tab button/link with tab flags/names (panel switch, no URL change). Safe to enumerate.
   if (role === 'tab') return 'tab';
+  if ((role === 'button' || role === 'link' || role === 'listitem' || role === 'menuitem') && (flags.selected || flags.current || TAB_NAME_HINT_RE.test(name))) {
+    return 'tab';
+  }
   // 3) filter/search/sort affordances — safe to open + restore.
   if (name && FILTER_NAME_RE.test(name) && (role === 'button' || role === 'combobox' || role === 'searchbox' || role === 'textbox')) return 'filter';
   // 4) selection dropdowns / popup-menu buttons — safe to open + restore.
@@ -158,11 +157,30 @@ function classifyAffordance(row) {
   return 'other';
 }
 
-/** Bucket many rows by class. */
-function classifyAffordances(rows) {
+/** Bucket many rows by class using LLM or rule classifier. */
+async function classifyAffordances(rows, context = {}) {
   const out = { destructive: [], tab: [], filter: [], dropdown: [], nav: [], other: [] };
-  for (const row of (Array.isArray(rows) ? rows : [])) {
-    out[classifyAffordance(row)].push(row);
+  const rowsArr = Array.isArray(rows) ? rows : [];
+  if (!rowsArr.length) return out;
+  
+  const { classifyAndRankAffordances } = require('../services/agents/intentClassifier');
+  const rankedMap = await classifyAndRankAffordances(rowsArr, context).catch(() => new Map());
+
+  for (const row of rowsArr) {
+    const fallbackClass = classifyAffordance(row);
+    const rowId = row.id || row.ref || (row.role ? `${row.role}:${row.name}` : null);
+    const ranked = rowId ? rankedMap.get(rowId) : null;
+    const safetyClass = ranked ? ranked.safetyClass : fallbackClass;
+    row._relevanceScore = ranked ? ranked.relevanceScore : 50; // Attach for ranking later
+    
+    // Safety check: if fallback says destructive, ALWAYS trust fallback (defense in depth)
+    const finalClass = (fallbackClass === 'destructive') ? 'destructive' : safetyClass;
+    
+    if (out[finalClass]) {
+      out[finalClass].push(row);
+    } else {
+      out.other.push(row);
+    }
   }
   return out;
 }
@@ -178,11 +196,21 @@ function isSafeToProbe(kind) {
  * dropdowns/filters share probeBudgetPerPage. DESTRUCTIVE is always excluded.
  * Returns { tabs, probes } — disjoint lists of rows to open.
  */
-function selectProbeTargets(rows, budget) {
-  const c = classifyAffordances(rows);
+async function selectProbeTargets(rows, budget, context = {}) {
+  const c = await classifyAffordances(rows, context);
+  
+  // Rank by relevance score (descending)
+  c.tab.sort((a, b) => (b._relevanceScore || 0) - (a._relevanceScore || 0));
+  c.dropdown.sort((a, b) => (b._relevanceScore || 0) - (a._relevanceScore || 0));
+  c.filter.sort((a, b) => (b._relevanceScore || 0) - (a._relevanceScore || 0));
+
   const tabs = (budget.tabsPerPage > 0) ? c.tab.slice(0, budget.tabsPerPage) : [];
   const probePool = [...c.dropdown, ...(budget.openFilters ? c.filter : [])];
+  
+  // Re-sort the combined probe pool to ensure highest relevance wins
+  probePool.sort((a, b) => (b._relevanceScore || 0) - (a._relevanceScore || 0));
   const probes = probePool.slice(0, Math.max(0, budget.probeBudgetPerPage || 0));
+  
   return { tabs, probes, classified: c };
 }
 
@@ -201,19 +229,34 @@ function hashTextCorpus(textCorpus) {
 
 /**
  * The composite state key. Two screens with the SAME normalized URL but a
- * different active tab / heading / content corpus get DIFFERENT keys (so a tab
- * substate is recorded once); two URLs that render the identical screen get the
- * SAME key (so the crawl doesn't re-map it). controlSig distinguishes substates
- * opened by clicking a specific control (e.g. "tab:Job Titles").
+ * different active tab / heading / structural layout get DIFFERENT keys.
+ * A structural DOM hash is computed from the snapshot rows (roles) to dedup
+ * content-identical states (e.g. User A profile vs User B profile) even if the URL changes.
+ * controlSig distinguishes substates opened by clicking a specific control (e.g. "tab:Job Titles").
  */
-function computeStateKey({ normalizedUrl, pageRole, heading, activeNav, textCorpus, textHash, controlSig } = {}) {
+function computeStateKey({ normalizedUrl, pageRole, heading, activeNav, textCorpus, textHash, controlSig, rows } = {}) {
+  let structuralHash = '0';
+  if (Array.isArray(rows) && rows.length > 0) {
+    // Phase C Upgrade: Embedding-Based (Structural) State Deduplication
+    // We hash the sequence of roles to represent the layout structure.
+    const structureTokens = rows
+      .map(r => r.role ? _norm(r.role) : '')
+      .filter(role => role && !['text', 'generic'].includes(role));
+    if (structureTokens.length > 0) {
+      structuralHash = crypto.createHash('sha1').update(structureTokens.join(',')).digest('hex').slice(0, 12);
+    }
+  }
+
   const th = textHash != null ? String(textHash) : hashTextCorpus(textCorpus);
+  
+  // We combine the URL, structural hash, and active UI states.
   return [
     _norm(normalizedUrl),
     _norm(pageRole),
     _norm(heading),
     _norm(activeNav),
-    th,
+    structuralHash, // structural layout identity
+    th, // text content identity
     _norm(controlSig),
   ].join('|');
 }

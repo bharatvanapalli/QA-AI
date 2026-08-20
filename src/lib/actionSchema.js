@@ -173,6 +173,18 @@ export const ACTION_SCHEMA = {
     category:         'Keyboard & Shortcuts',
   },
 
+  TypeSequentially: {
+    targetRequired:   true,
+    valueRequired:    true,
+    valueLabel:       'Text to type character-by-character',
+    validationAllowed: true,
+    fields:           ['target', 'value'],
+    adapterKind:      'TEXT_INPUT',
+    toolName:         'browser_type',
+    narrationTemplate: 'Typed "{{value}}" sequentially into "{{target}}"',
+    category:         'Keyboard & Shortcuts',
+  },
+
   // ─── Files & Downloads ───────────────────────────────────────────────────
   Upload: {
     targetRequired:   true,
@@ -324,6 +336,18 @@ export const ACTION_SCHEMA = {
     category:         'Mouse & Interaction',
   },
 
+  ClearAndType: {
+    targetRequired:   true,
+    valueRequired:    true,
+    valueLabel:       'Text to type after clearing',
+    validationAllowed: true,
+    fields:           ['target', 'value', 'validation', 'condition'],
+    adapterKind:      'TEXT_INPUT',
+    toolName:         'browser_type',
+    narrationTemplate: 'Cleared "{{target}}" and entered "{{value}}"',
+    category:         'Mouse & Interaction',
+  },
+
   Select: {
     targetRequired:   true,
     valueRequired:    true,
@@ -333,6 +357,18 @@ export const ACTION_SCHEMA = {
     adapterKind:      'NATIVE_SELECT',
     toolName:         'browser_select',
     narrationTemplate: 'Selected "{{value}}" from the "{{target}}" dropdown',
+    category:         'Mouse & Interaction',
+  },
+
+  SelectMultiple: {
+    targetRequired:   true,
+    valueRequired:    true,
+    valueLabel:       'Option labels or values (comma-separated)',
+    validationAllowed: true,
+    fields:           ['target', 'value', 'validation'],
+    adapterKind:      'NATIVE_SELECT',
+    toolName:         'browser_select_option',
+    narrationTemplate: 'Selected options {{value}} from the "{{target}}" multi-select dropdown',
     category:         'Mouse & Interaction',
   },
 
@@ -355,6 +391,17 @@ export const ACTION_SCHEMA = {
     adapterKind:      'BOOLEAN',
     toolName:         'browser_uncheck',
     narrationTemplate: 'Unchecked the "{{target}}" checkbox',
+    category:         'Mouse & Interaction',
+  },
+
+  Radio: {
+    targetRequired:   true,
+    valueRequired:    false,
+    validationAllowed: false,
+    fields:           ['target'],
+    adapterKind:      'BUTTON_OR_LINK',
+    toolName:         'browser_click',
+    narrationTemplate: 'Selected radio button "{{target}}"',
     category:         'Mouse & Interaction',
   },
 
@@ -389,6 +436,18 @@ export const ACTION_SCHEMA = {
     adapterKind:      'GENERIC',
     toolName:         'browser_evaluate',
     narrationTemplate: '"{{target}}" is {{width}}px × {{height}}px',
+    category:         'Element Properties & Visual Proofs',
+  },
+
+  Inspect: {
+    targetRequired:   true,
+    valueRequired:    false,
+    valueLabel:       'Property to inspect (text, state, value)',
+    validationAllowed: true,
+    fields:           ['target', 'value', 'validation'],
+    adapterKind:      'GENERIC',
+    toolName:         'browser_evaluate',
+    narrationTemplate: 'Inspected "{{target}}"',
     category:         'Element Properties & Visual Proofs',
   },
 

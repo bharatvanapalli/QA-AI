@@ -13,17 +13,23 @@ const ERROR_CODE = 'SEMANTIC_CASE_CONTRACT_INVALID';
 const DEFAULT_MAX_STEPS = 100;
 
 const VALID_STEP_TYPES = Object.freeze([
-  'Navigate', 'GoBack', 'GoForward', 'Refresh',
-  'Click', 'DoubleClick', 'RightClick', 'ClickAndHold', 'MiddleClick', 'HoverAndClick',
-  'Fill', 'Type', 'Append', 'Clear', 'ClearAndType', 'Select', 'Deselect', 'MultiSelect',
-  'Check', 'Uncheck', 'Radio', 'Date', 'Time', 'DateTime', 'Upload',
-  'Download', 'Hover', 'Scroll', 'ScrollIntoView', 'ScrollToTop', 'ScrollToBottom',
-  'Expand', 'Collapse', 'Submit', 'WaitForState', 'PressKey', 'Hotkey', 'DragAndDrop', 'Slider',
-  'SwitchContext', 'SwitchTab', 'SwitchFrame', 'AccessShadow', 'Close',
-  'AcceptAlert', 'DismissAlert', 'TypeAlert',
-  'Copy', 'Paste', 'ExtractData', 'StoreVariable', 'Evaluate', 'human_input', 'human_verification',
+  'Navigate', 'NavigateBack', 'NavigateForward', 'GoBack', 'GoForward', 'Refresh', 'Reload', 'SetViewport',
+  'Click', 'DoubleClick', 'RightClick', 'ClickAndHold', 'MiddleClick', 'HoverAndClick', 'Hover', 'DragAndDrop',
+  'Focus', 'Blur', 'MouseDown', 'MouseUp', 'MouseMove', 'KeyDown', 'KeyUp', 'Swipe', 'Pinch',
+  'Fill', 'Type', 'TypeSequentially', 'Append', 'Clear', 'ClearAndType', 'Select', 'Deselect', 'MultiSelect', 'SelectMultiple',
+  'Check', 'Uncheck', 'Radio', 'Date', 'Time', 'DateTime', 'Slider', 'Upload', 'UploadFile',
+  'Download', 'DownloadFile', 'Scroll', 'ScrollIntoView', 'ScrollToTop', 'ScrollToBottom',
+  'Expand', 'Collapse', 'Submit', 'WaitForState', 'WaitForElement', 'WaitForHidden', 'WaitForNetworkIdle', 'WaitForResponse', 'WaitForRequest', 'WaitForNavigation', 'Sleep', 'Delay', 'PressKey', 'Hotkey',
+  'SwitchContext', 'SwitchTab', 'NewTab', 'CloseTab', 'SwitchFrame', 'AccessShadow', 'Close',
+  'AcceptAlert', 'DismissAlert', 'TypeAlert', 'HandleAlert',
+  'ClearCookies', 'SetCookie', 'GetCookie', 'ClearLocalStorage', 'SetLocalStorage', 'GetLocalStorage', 'ClearSessionStorage', 'LoadStorageState', 'ClearStorageState',
+  'RouteNetwork', 'MockResponse', 'BlockUrl', 'SetHeaders', 'SpyRequest',
+  'EmulateGeolocation', 'EmulateTimezone', 'EmulateMediaFeature', 'EmulateNetworkConditions',
+  'Copy', 'Paste', 'ReadClipboard', 'WriteClipboard', 'ExtractData', 'StoreVariable', 'ExtractAttribute', 'ExtractCSS', 'GetBoundingBox', 'Evaluate', 'Inspect', 'ReadAndPrint', 'Print', 'human_input', 'human_verification',
   'FindRow', 'CountRows', 'SortColumn',
-  'Screenshot', 'Semantic'
+  'Screenshot', 'Semantic',
+  'Verify', 'AssertText', 'AssertRegex', 'AssertUrl', 'AssertNumber', 'AssertVisible', 'AssertHidden',
+  'AssertEnabled', 'AssertDisabled', 'AssertReadonly', 'AssertSelected', 'AssertChecked', 'AssertValue', 'AssertAttribute',
 ]);
 
 const VALID_ASSERTION_TYPES = Object.freeze([
@@ -222,8 +228,16 @@ const ASSERTION_INSTRUCTION_RE = /^(?:verify|assert|validate|confirm|expect)(?:\
 const UNRESOLVED_REFERENCE_RE = /\b(?:it|them|they|this value|that value|these values|those values|the selected (?:time|date|value|option|item)|the entered (?:text|value)|the chosen (?:value|option|item)|the (?:above|below|previous|same) (?:value|time|date|option|item))\b/i;
 const HIDDEN_DOUBLE_NEGATIVE_RE = /^(?:no|required absence of|absence of|without)\s+(?:required[- ]field\s+)?(?:validation|error|warning|message|element|control|item|option|text)\b|\b(?:is not|isn't|does not|hidden|invisible|absent)\b/i;
 const SENSITIVE_RE = /(?:^|[^a-z0-9])(?:pass(?:word)?|pwd|secret|token|api[_ -]?key|credential|otp|mfa|pin)(?:$|[^a-z0-9])/i;
-const VALUE_STEP_TYPES = new Set(['Fill', 'Type', 'Date', 'Time', 'DateTime', 'Upload', 'PressKey']);
-const TARGET_OPTIONAL_TYPES = new Set(['Navigate', 'SwitchContext', 'Screenshot', 'PressKey']);
+const VALUE_STEP_TYPES = new Set(['Fill', 'Type', 'Date', 'Time', 'DateTime', 'Upload', 'PressKey', 'KeyDown', 'KeyUp', 'SetCookie', 'SetLocalStorage', 'SetHeaders', 'MockResponse', 'BlockUrl', 'WriteClipboard', 'EmulateGeolocation', 'EmulateTimezone', 'EmulateMediaFeature', 'EmulateNetworkConditions', 'Sleep', 'Delay']);
+const TARGET_OPTIONAL_TYPES = new Set([
+  'Navigate', 'SwitchContext', 'Screenshot', 'PressKey', 'KeyDown', 'KeyUp',
+  'ClearCookies', 'GetCookie', 'SetCookie', 'ClearLocalStorage', 'GetLocalStorage', 'SetLocalStorage', 'ClearSessionStorage', 'LoadStorageState', 'ClearStorageState',
+  'RouteNetwork', 'MockResponse', 'BlockUrl', 'SetHeaders', 'SpyRequest',
+  'EmulateGeolocation', 'EmulateTimezone', 'EmulateMediaFeature', 'EmulateNetworkConditions',
+  'Sleep', 'Delay', 'WaitForNetworkIdle', 'WaitForNavigation', 'WaitForResponse', 'WaitForRequest',
+  'ReadClipboard', 'WriteClipboard', 'AcceptAlert', 'DismissAlert', 'TypeAlert', 'HandleAlert',
+  'CloseTab', 'SwitchTab', 'NewTab', 'CloseAllTabs', 'SwitchFrame',
+]);
 const COLLECTION_SET = new Set(COLLECTION_COMPARATORS);
 const TEMPORAL_SET = new Set(TEMPORAL_COMPARATORS);
 const FAILURE_SET = new Set(VALID_FAILURE_BEHAVIORS);

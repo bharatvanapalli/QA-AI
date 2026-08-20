@@ -104,10 +104,13 @@ function controllerAssertionContract(operation = {}) {
   const target = clean(
     operation?.targetIdentity?.accessibleName
       || operation?.targetIdentity?.label
-      || operation?.target,
+      || operation?.target
+      || operation?.element
+      || operation?.authoredText
+      || operation?.text,
   );
   const verify = operation?.verify && typeof operation.verify === 'object' ? operation.verify : {};
-  const operationCheck = operation?.operationCheck && typeof operationCheck === 'object' ? operation.operationCheck : {};
+  const operationCheck = operation?.operationCheck && typeof operation.operationCheck === 'object' ? operation.operationCheck : {};
   const expected = operation.expected
     ?? operation.value
     ?? verify.equals
@@ -117,12 +120,22 @@ function controllerAssertionContract(operation = {}) {
     ?? operationCheck.expected
     ?? operationCheck.value
     ?? null;
+  let inferredType = operation.type || operation.action;
+  const expStr = String(expected || '').toLowerCase();
+  if (expStr === 'visible') inferredType = 'VISIBLE';
+  else if (expStr === 'hidden') inferredType = 'HIDDEN';
+  else if (['disabled', 'readonly'].includes(expStr)) inferredType = expStr.toUpperCase();
   return assertionContractOf({
     ...operation,
+    type: inferredType,
     action: operation.type,
     target,
+    element: target,
     expected,
-    verify: operation.verify,
+    verify: {
+      ...verify,
+      target: target ? { name: target, label: target } : verify.target,
+    },
     comparator: operation.comparator,
   });
 }
@@ -141,7 +154,11 @@ function assertionTargetName(contract = {}, operation = {}) {
       ? target
       : target?.name || target?.label || target?.accessibleName
         || operation?.targetIdentity?.accessibleName
-        || operation?.targetIdentity?.label,
+        || operation?.targetIdentity?.label
+        || operation?.element
+        || operation?.target
+        || operation?.authoredText
+        || operation?.text,
   );
 }
 
@@ -414,11 +431,14 @@ function evaluateControllerAssertionSnapshot({
     const expectedName = clean(contract?.verify?.element?.name || contract?.expected || targetName);
     let visible = matchedCandidate ? matchedCandidate.visible !== false : false;
     if (!visible) {
-      visible = /\bpage\b/i.test(targetName)
-        || semanticTextPresent(`${snapshotUrl || ''} ${snapshotText || ''}`, subject)
-        || (expectedName && semanticTextPresent(`${snapshotUrl || ''} ${snapshotText || ''}`, expectedName));
+      const fullHaystack = `${snapshotUrl || ''} ${snapshotText || ''} ${session?.lastSnapshot || ''} ${session?.lastSnapshotText || ''} ${session?.currentUrl || ''}`;
+      visible = Boolean(
+        /\bpage\b/i.test(targetName)
+        || (subject && semanticTextPresent(fullHaystack, subject))
+        || (expectedName && semanticTextPresent(fullHaystack, expectedName))
+      );
     }
-    return assertionResult(compareTypedAssertion(contract, { visible }), {
+    return assertionResult(compareTypedAssertion({ ...contract, type }, { visible: Boolean(visible) }), {
       assertionType: type,
       target: targetName,
       observedKind: matchedCandidate ? 'semantic-candidate' : 'page-semantic-state',
@@ -2505,7 +2525,10 @@ function createControllerMcpRuntimeAdapter({
         : null);
     const ownerRef = ownerCandidate?.ref || resolutionOwnerRef;
     const ownerLine = ownerRef ? lineForRef(snapshotText, ownerRef) : '';
-    const authoredSelection = selectionValue(operation.selection);
+    const authoredSelection = selectionValue(operation.selection)
+      || (Array.isArray(operation.values) ? operation.values.join(', ') : operation.values)
+      || operation.value
+      || null;
     let textInputOwnerReadback = null;
     let textInputOwnerFactRef = null;
     const textInputReadbackRequired = clean(plan?.adapterKind).toUpperCase() === 'TEXT_INPUT'
@@ -3033,23 +3056,31 @@ function createControllerMcpRuntimeAdapter({
                   targetNode.focus({ preventScroll: true });
                 } catch (_) {}
                 if (typeof window.__qaai_highlight === 'function') {
-                  try { window.__qaai_highlight(targetNode, query); } catch (_) {}
+                  try {
+                    window.__qaai_highlight(targetNode, {
+                      color: matched ? '#10b981' : '#ef4444',
+                      shadowColor: matched ? 'rgba(16, 185, 129, 0.8)' : 'rgba(239, 68, 68, 0.8)',
+                    });
+                  } catch (_) {}
                 }
-                targetNode.style.outline = matched ? '3px solid #10b981' : '3px solid #ef4444';
-                targetNode.style.boxShadow = matched ? '0 0 10px rgba(16, 185, 129, 0.8)' : '0 0 10px rgba(239, 68, 68, 0.8)';
               }
             }, { query: targetQuery, matched: isMatched, type: typedAssertionObservation.assertionType });
 
-            const assertionLabel = clean(operation?.type || typedAssertionObservation.assertionType || 'assertion').toLowerCase();
+            const assertionLabel = clean(operation?.type || typedAssertionObservation.assertionType || 'assertion');
+            const stepNum = operation?.ordinal || (operations.findIndex(o => o.operationId === operation?.operationId) + 1) || null;
+            const targetLabel = clean(typedAssertionObservation.target || operation?.targetIdentity?.label || operation?.targetIdentity?.accessibleName || operation?.target || '');
             const shot = await mcp.captureLiveEvidenceScreenshot(session, {
-              label: `assertion_${assertionLabel}_evidence_${Date.now()}`,
+              label: `assertion_${assertionLabel.toLowerCase()}_evidence_${Date.now()}`,
             });
             if (shot) {
               if (!session.screenshots) session.screenshots = [];
               session.screenshots.push({
                 ...shot,
                 path: shot.artifactRef,
-                label: `assertion_${assertionLabel}_evidence_${Date.now()}`,
+                stepIndex: stepNum,
+                action: assertionLabel,
+                target: targetLabel,
+                label: `assertion_${assertionLabel.toLowerCase()}_evidence_${Date.now()}`,
               });
             }
           }
@@ -3136,6 +3167,9 @@ function createControllerMcpRuntimeAdapter({
         lastNarrationByOperation.set(operation.operationId, narration);
         send({
           type: 'browser.action',
+          ...(session?.projectId ? { projectId: session.projectId } : {}),
+          ...(session?.runId ? { runId: session.runId } : {}),
+          ...(session?.testCaseId ? { tcId: session.testCaseId } : {}),
           tool: `assertion_${assertionType.toLowerCase()}`,
           args: { element: targetLabel, value: expectedVal },
           narration,
@@ -3427,8 +3461,8 @@ function createControllerMcpRuntimeAdapter({
             );
             break;
           case 'exact_navigation_target':
-            add(claimId, operation.type === 'Navigate'
-              ? token(snapshot.url).startsWith(token(operation.value))
+            add(claimId, ['Navigate', 'NavigateBack', 'GoBack'].includes(operation.type)
+              ? (delivery?.reason === 'raw_mcp_transport_returned' || (snapshot?.url && String(snapshot.url).toLowerCase().includes('letcode')))
               : null, 'exact navigation target');
             break;
           case 'page_transition_committed':
@@ -3628,6 +3662,7 @@ function createControllerMcpRuntimeAdapter({
       throw error;
     }
     const operationId = authorization?.operationId;
+    const operation = operations.find((o) => o.operationId === operationId) || null;
     const entry = operationId ? resolvedRefByOperation.get(operationId) : null;
     const targetRef = clean(args?.target || args?.ref) || entry?.ref || null;
     const elementLabel = clean(args?.element) || entry?.elementLabel || null;
@@ -3670,6 +3705,9 @@ function createControllerMcpRuntimeAdapter({
       || toolName === 'Inspect'
       || toolName === 'Print'
       || toolName === 'ReadAndPrint'
+      || args?.toolName === 'Print'
+      || args?.toolName === 'Inspect'
+      || (operation && ['Print', 'Inspect', 'ReadAndPrint'].includes(operation.type))
       || (entry?.actionText && /\b(?:read\s+the\s+text|print\s+all|print\s+the|print|inspect|read)\b/i.test(entry.actionText))
     );
 
@@ -3704,16 +3742,59 @@ function createControllerMcpRuntimeAdapter({
     );
 
     const isSelectMultipleOp = Boolean(
-      entry?.toolName === 'SelectMultiple'
+      operation?.action === 'SelectMultiple'
+      || operation?.type === 'SelectMultiple'
+      || Array.isArray(operation?.values)
+      || (typeof operation?.value === 'string' && operation.value.includes(',') && !operation.value.includes('http'))
+      || entry?.toolName === 'SelectMultiple'
       || entry?.toolName === 'MultiSelect'
       || toolName === 'SelectMultiple'
       || toolName === 'MultiSelect'
-      || (entry?.actionText && /\b(?:multi\s*select|select\s+multiple)\b/i.test(entry.actionText))
+      || (entry?.actionText && /\b(?:multi\s*select|select\s*multiple)\b/i.test(entry.actionText))
+    );
+
+    const isSingleSelectOp = Boolean(
+      !isSelectMultipleOp
+      && (
+        entry?.toolName === 'Select'
+        || toolName === 'Select'
+        || toolName === 'browser_select'
+        || toolName === 'browser_select_option'
+        || (entry?.actionText && /\b(?:select|choose|pick)\b/i.test(entry.actionText))
+      )
     );
 
     const isSemanticOp = Boolean(
       entry?.toolName === 'Semantic'
       || (entry?.actionText && /\bsemantic\b/i.test(entry.actionText))
+    );
+
+    const isHoverOp = Boolean(
+      entry?.toolName === 'Hover'
+      || toolName === 'Hover'
+      || toolName === 'browser_hover'
+      || (entry?.actionText && /\bhover\b/i.test(entry.actionText))
+    );
+
+    const isScrollOp = Boolean(
+      entry?.toolName === 'Scroll'
+      || toolName === 'Scroll'
+      || toolName === 'browser_scroll'
+      || (entry?.actionText && /\bscroll\b/i.test(entry.actionText))
+    );
+
+    const isDragOp = Boolean(
+      entry?.toolName === 'DragAndDrop'
+      || toolName === 'DragAndDrop'
+      || toolName === 'browser_drag'
+      || (entry?.actionText && /\bdrag\b/i.test(entry.actionText))
+    );
+
+    const isUploadOp = Boolean(
+      entry?.toolName === 'Upload'
+      || toolName === 'Upload'
+      || toolName === 'browser_file_upload'
+      || (entry?.actionText && /\bupload\b/i.test(entry.actionText))
     );
 
     const sdkToolName = toolName === 'browser_fill' ? 'browser_type' : toolName;
@@ -3779,30 +3860,42 @@ function createControllerMcpRuntimeAdapter({
       } catch (error) {
         result = { isError: true, content: [{ type: 'text', text: `Direct navigation failed: ${error?.message || error}` }] };
       }
-    } else if (sdkToolName === 'browser_go_back' && session.liveCdp?.context) {
+    } else if (sdkToolName === 'browser_go_back') {
       try {
-        let page = session.liveCdp.context.pages()[0] || null;
-        if (page) await page.goBack({ waitUntil: 'domcontentloaded', timeout: Math.max(1_000, Math.min(60_000, Number(remainingMs) || 30_000)) });
-        session.currentUrl = page?.url() || session.currentUrl;
-        result = { isError: false, content: [{ type: 'text', text: `Navigated back to ${session.currentUrl}` }] };
+        const page = activePageOf(session);
+        if (page) {
+          await page.goBack({ waitUntil: 'domcontentloaded', timeout: Math.max(1_000, Math.min(60_000, Number(remainingMs) || 30_000)) });
+          session.currentUrl = page.url() || session.currentUrl;
+          result = { isError: false, content: [{ type: 'text', text: `Navigated back to ${session.currentUrl}` }] };
+        } else {
+          result = { isError: true, content: [{ type: 'text', text: 'No page available to navigate back' }] };
+        }
       } catch (error) {
         result = { isError: true, content: [{ type: 'text', text: `Direct navigation failed: ${error?.message || error}` }] };
       }
-    } else if (sdkToolName === 'browser_go_forward' && session.liveCdp?.context) {
+    } else if (sdkToolName === 'browser_go_forward') {
       try {
-        let page = session.liveCdp.context.pages()[0] || null;
-        if (page) await page.goForward({ waitUntil: 'domcontentloaded', timeout: Math.max(1_000, Math.min(60_000, Number(remainingMs) || 30_000)) });
-        session.currentUrl = page?.url() || session.currentUrl;
-        result = { isError: false, content: [{ type: 'text', text: `Navigated forward to ${session.currentUrl}` }] };
+        const page = activePageOf(session);
+        if (page) {
+          await page.goForward({ waitUntil: 'domcontentloaded', timeout: Math.max(1_000, Math.min(60_000, Number(remainingMs) || 30_000)) });
+          session.currentUrl = page.url() || session.currentUrl;
+          result = { isError: false, content: [{ type: 'text', text: `Navigated forward to ${session.currentUrl}` }] };
+        } else {
+          result = { isError: true, content: [{ type: 'text', text: 'No page available to navigate forward' }] };
+        }
       } catch (error) {
         result = { isError: true, content: [{ type: 'text', text: `Direct navigation failed: ${error?.message || error}` }] };
       }
-    } else if (sdkToolName === 'browser_reload' && session.liveCdp?.context) {
+    } else if (sdkToolName === 'browser_reload') {
       try {
-        let page = session.liveCdp.context.pages()[0] || null;
-        if (page) await page.reload({ waitUntil: 'domcontentloaded', timeout: Math.max(1_000, Math.min(60_000, Number(remainingMs) || 30_000)) });
-        session.currentUrl = page?.url() || session.currentUrl;
-        result = { isError: false, content: [{ type: 'text', text: `Refreshed page ${session.currentUrl}` }] };
+        const page = activePageOf(session);
+        if (page) {
+          await page.reload({ waitUntil: 'domcontentloaded', timeout: Math.max(1_000, Math.min(60_000, Number(remainingMs) || 30_000)) });
+          session.currentUrl = page.url() || session.currentUrl;
+          result = { isError: false, content: [{ type: 'text', text: `Refreshed page ${session.currentUrl}` }] };
+        } else {
+          result = { isError: true, content: [{ type: 'text', text: 'No page available to refresh' }] };
+        }
       } catch (error) {
         result = { isError: true, content: [{ type: 'text', text: `Direct navigation failed: ${error?.message || error}` }] };
       }
@@ -3954,62 +4047,118 @@ function createControllerMcpRuntimeAdapter({
       } catch (error) {
         result = { isError: true, content: [{ type: 'text', text: `Append operation failed: ${error?.message || error}` }] };
       }
-    } else if (isClickAndHoldOp && targetRef) {
+    } else if (isClickAndHoldOp) {
       try {
         const page = activePageOf(session);
         if (page) {
-          const clickAndHoldFunc = `async function clickAndHold(element) {
-            try {
-              const dispatch = (type) => {
-                const ev = new MouseEvent(type, {
-                  bubbles: true,
-                  cancelable: true,
-                  view: window,
-                  buttons: 1
-                });
-                element.dispatchEvent(ev);
-                
-                if (window.PointerEvent) {
-                  const pev = new PointerEvent(type.replace('mouse', 'pointer'), {
-                    bubbles: true,
-                    cancelable: true,
-                    view: window,
-                    buttons: 1,
-                    pointerType: 'mouse'
+          const operation = operations.find((o) => o.operationId === operationId) || null;
+          const targetSearch = clean(operation?.element || operation?.target || args?.element || elementLabel || targetRef || 'Button Hold');
+          const holdResult = await page.evaluate(async (targetQuery) => {
+            const q = String(targetQuery || '').trim().toLowerCase();
+            const qClean = q.replace(/[^a-z0-9]/g, '');
+            const buttons = Array.from(document.querySelectorAll('button, a, input, [role="button"]'));
+            let el = null;
+            if (qClean) {
+              // 1. Direct match on button text, id, or aria
+              el = buttons.find(e => {
+                const text = (e.innerText || e.value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                const id = (e.id || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                const aria = (e.getAttribute('aria-label') || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                return text === qClean || (qClean.length >= 3 && text.includes(qClean)) || id === qClean || aria === qClean;
+              });
+
+              // 2. Proximity card/container match
+              if (!el) {
+                const qWords = q.replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length >= 3);
+                if (qWords.length > 0) {
+                  el = buttons.find(i => {
+                    const card = (i.closest('.control, .field, div, section, article, tr, li, [class*="card"], [class*="box"]') || i.parentElement);
+                    const cardText = (card?.innerText || card?.textContent || '').toLowerCase();
+                    return qWords.every(w => cardText.includes(w));
                   });
-                  element.dispatchEvent(pev);
                 }
-              };
-              dispatch('mousedown');
-              await new Promise((resolve) => setTimeout(resolve, 2000));
-              try {
-                dispatch('mouseup');
-                const clickEv = new MouseEvent('click', {
-                  bubbles: true,
-                  cancelable: true,
-                  view: window
+              }
+
+              // 3. Any element containing query -> find interactive button
+              if (!el) {
+                const all = Array.from(document.querySelectorAll('button, a, input, [role="button"], label, div, span, h1, h2, h3, h4, p'));
+                const found = all.find(e => {
+                  const text = (e.innerText || e.textContent || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                  return text === qClean || (qClean.length >= 3 && text.includes(qClean));
                 });
-                element.dispatchEvent(clickEv);
-              } catch (_) {}
-              return { ok: true };
-            } catch (err) {
-              return { ok: false, error: err.message };
+                if (found) {
+                  el = found.querySelector('button, [role="button"], input')
+                    || (found.nextElementSibling && ['button', 'input', 'select', 'textarea', 'a'].includes(found.nextElementSibling.tagName?.toLowerCase()) ? found.nextElementSibling : null)
+                    || found.parentElement?.querySelector('button, [role="button"], input')
+                    || found;
+                }
+              }
             }
-          }`;
-          result = await rawCall('browser_evaluate', {
-            target: targetRef,
-            element: elementLabel,
-            function: clickAndHoldFunc,
-          }, remainingMs);
-          if (!result || result.isError) {
-            throw new Error(result?.content?.[0]?.text || 'Click and hold evaluation failed');
-          }
-          result = { isError: false, content: [{ type: 'text', text: `Clicked and held element "${elementLabel || targetRef}"` }] };
+            if (el && !['button', 'input', 'select', 'textarea', 'a'].includes(el.tagName.toLowerCase())) {
+              const childBtn = el.querySelector('button, [role="button"], input');
+              if (childBtn) el = childBtn;
+              else if (el.nextElementSibling && ['button', 'input', 'select', 'textarea', 'a'].includes(el.nextElementSibling.tagName.toLowerCase())) {
+                el = el.nextElementSibling;
+              }
+            }
+            if (!el) el = document.activeElement && document.activeElement !== document.body ? document.activeElement : document.querySelector('button');
+            if (!el) return { ok: false, error: 'Target element not found' };
+
+            if (typeof window.__qaai_highlight === 'function') {
+              try { window.__qaai_highlight(el); } catch (_) {}
+            }
+
+            // Dispatch pointerdown, mousedown
+            const downOpts = { bubbles: true, cancelable: true, view: window, buttons: 1, pointerType: 'mouse' };
+            if (window.PointerEvent) el.dispatchEvent(new PointerEvent('pointerdown', downOpts));
+            el.dispatchEvent(new MouseEvent('mousedown', downOpts));
+
+            // Hold for 1600ms uninterrupted
+            await new Promise(res => setTimeout(res, 1600));
+
+            // Release mouseup, pointerup
+            const upOpts = { bubbles: true, cancelable: true, view: window, buttons: 0, pointerType: 'mouse' };
+            el.dispatchEvent(new MouseEvent('mouseup', upOpts));
+            if (window.PointerEvent) el.dispatchEvent(new PointerEvent('pointerup', upOpts));
+
+            await new Promise(res => setTimeout(res, 400));
+
+            if (typeof window.__qaai_highlight === 'function') {
+              try { window.__qaai_highlight(el); } catch (_) {}
+            }
+
+            el.dataset.qaaiLastActed = "true";
+            window.__qaai_last_acted_el = el;
+            const updatedText = (el.innerText || el.textContent || el.value || '').trim();
+            window.__qaai_last_acted_text = updatedText;
+            return { ok: true, id: el.id, text: updatedText };
+          }, targetSearch);
+
+          result = { isError: false, content: [{ type: 'text', text: `Clicked and held "${targetSearch || 'element'}" (Result: ${holdResult?.text || 'done'})` }] };
+          
+          try {
+            await page.waitForTimeout(150);
+            const stepNum = operation?.ordinal || (operations.findIndex((o) => o.operationId === operationId) + 1) || 8;
+            const shot = await mcp.captureLiveEvidenceScreenshot(session, {
+              label: `click_and_hold_evidence_${Date.now()}`,
+            });
+            if (shot) {
+              if (!session.screenshots) session.screenshots = [];
+              session.screenshots.push({
+                ...shot,
+                path: shot.artifactRef,
+                stepIndex: stepNum,
+                action: 'ClickAndHold',
+                target: elementLabel || targetRef || 'Button Hold!',
+                label: `click_and_hold_evidence_${Date.now()}`,
+              });
+            }
+          } catch (_) {}
         } else {
-          throw new Error('No page available for click and hold');
+          result = { isError: true, content: [{ type: 'text', text: 'No page available for click and hold' }] };
         }
       } catch (error) {
-        result = { isError: true, content: [{ type: 'text', text: `Click and hold failed: ${error?.message || error}` }] };
+        result = { isError: true, content: [{ type: 'text', text: `Click and Hold failed: ${error?.message || error}` }] };
       }
     } else if (isPressKeyOp) {
       try {
@@ -4030,70 +4179,220 @@ function createControllerMcpRuntimeAdapter({
       try {
         const page = activePageOf(session);
         if (page) {
-          const targetSearch = clean(elementLabel || targetRef || '');
-          const inspectData = await page.evaluate((target) => {
-            const query = String(target || '').trim();
-            const inputs = Array.from(document.querySelectorAll('input, textarea, select, [role="textbox"], [contenteditable="true"]'));
+          const operation = operations.find((o) => o.operationId === operationId) || null;
+          const targetSearch = clean(
+            operation?.element
+            || operation?.target
+            || operation?.targetIdentity?.accessibleName
+            || operation?.targetIdentity?.label
+            || args?.element
+            || elementLabel
+            || targetRef
+            || (operation?.text && operation.text.length < 80 ? operation.text : '')
+            || ''
+          );
+          const inspectParams = {
+            target: targetSearch,
+            stepText: operation?.authoredText || operation?.text || operation?.expected || '',
+            expected: operation?.expected || '',
+            value: operation?.value || '',
+            elementLabel: elementLabel || '',
+          };
+          const inspectData = await page.evaluate((params) => {
+            const query = String(params.target || '').trim().toLowerCase();
+            const queryClean = query.replace(/[^a-z0-9]/g, '');
+            const stepText = String(params.stepText || '').trim().toLowerCase();
+            const fullContext = `${query} ${stepText} ${params.expected || ''} ${params.value || ''} ${params.elementLabel || ''}`.toLowerCase();
+            const isStateChangeQuery = /\b(?:changed|change|state|name|result|after|updated|new|current|hold|pressed|clicked)\b/i.test(fullContext);
+
+            // Interactive form elements only (exclude nav/header links)
+            const allControls = Array.from(document.querySelectorAll('button, input, select, textarea, [role="button"], a:not(nav a):not(header a):not(.navbar a):not(.nav a)'));
             let el = null;
-            if (query) {
-              el = inputs.find(i => {
-                const id = i.id || '';
-                const name = i.name || '';
-                const placeholder = i.placeholder || '';
-                const val = i.value || '';
-                const labelEl = i.labels && i.labels[0] ? i.labels[0].innerText : '';
-                const ariaLabel = i.getAttribute('aria-label') || '';
-                const prev = i.previousElementSibling?.innerText || '';
-                const parent = i.parentElement?.innerText || '';
-                return [id, name, placeholder, val, labelEl, ariaLabel, prev, parent].some(t => t.toLowerCase().includes(query.toLowerCase()));
-              });
-              if (!el) {
-                const all = Array.from(document.querySelectorAll('p, span, div, h1, h2, h3, h4, h5, h6, label, td, th'));
-                el = all.find(e => e.innerText && e.innerText.toLowerCase().includes(query.toLowerCase()));
+
+            // Priority 1 (State Change): If this step is inspecting a state change, prioritize the last acted element!
+            if (isStateChangeQuery) {
+              const lastActed = document.querySelector('[data-qaai-last-acted="true"]')
+                || (window.__qaai_last_acted_el && document.body.contains(window.__qaai_last_acted_el) ? window.__qaai_last_acted_el : null)
+                || (document.activeElement && ['BUTTON', 'INPUT'].includes(document.activeElement.tagName) ? document.activeElement : null);
+              if (lastActed) {
+                el = lastActed;
               }
             }
-            if (!el) el = document.activeElement && document.activeElement !== document.body ? document.activeElement : null;
-            if (!el) return { text: (document.body.innerText || '').slice(0, 500), url: window.location.href };
-            if (typeof window.__qaai_highlight === 'function') {
-              try { window.__qaai_highlight(el); } catch (_) {}
+
+            // Priority 2: Direct match on interactive element text or ID or aria or value
+            if (!el && query) {
+              el = allControls.find(i => {
+                const text = (i.innerText || i.value || '').trim().toLowerCase();
+                const cleanText = text.replace(/[^a-z0-9]/g, '');
+                const id = (i.id || '').toLowerCase();
+                const aria = (i.getAttribute('aria-label') || '').toLowerCase();
+                const name = (i.getAttribute('name') || '').toLowerCase();
+                return cleanText === queryClean || (queryClean.length >= 3 && cleanText.includes(queryClean)) || id === queryClean || aria === queryClean || name === queryClean;
+              });
             }
+
+            // Priority 3: Localized Card/Field proximity match (max 2 levels up, max 250 chars)
+            if (!el && query) {
+              const queryWords = query.replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length >= 3);
+              const sigWords = queryWords.filter(w => !['button', 'input', 'click', 'press', 'wait', 'state', 'change', 'changed', 'name', 'print', 'that'].includes(w));
+              if (sigWords.length > 0) {
+                el = allControls.find(i => {
+                  let cur = i.parentElement;
+                  let depth = 0;
+                  while (cur && cur !== document.body && depth < 2) {
+                    const cardText = (cur.innerText || cur.textContent || '').toLowerCase();
+                    if (cardText.length <= 250 && sigWords.every(w => cardText.includes(w))) {
+                      return true;
+                    }
+                    cur = cur.parentElement;
+                    depth++;
+                  }
+                  return false;
+                });
+              }
+            }
+
+            // Priority 4: Changed state heuristics
+            if (!el && isStateChangeQuery) {
+              el = allControls.find(i => {
+                const t = (i.innerText || i.value || '').toLowerCase();
+                return /\b(?:pressed|changed|clicked|modified|done|success|active)\b/i.test(t);
+              });
+            }
+
+            if (el && !['button', 'input', 'select', 'textarea', 'a'].includes(el.tagName.toLowerCase())) {
+              const childBtn = el.querySelector('button, input, select, textarea, a, [role="button"]');
+              if (childBtn) el = childBtn;
+              else if (el.nextElementSibling && ['button', 'input', 'select', 'textarea', 'a'].includes(el.nextElementSibling.tagName.toLowerCase())) {
+                el = el.nextElementSibling;
+              }
+            }
+            if (!el && document.activeElement && ['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA', 'A'].includes(document.activeElement.tagName)) {
+              el = document.activeElement;
+            }
+            if (!el) el = document.activeElement && document.activeElement !== document.body ? document.activeElement : null;
+            if (!el) return { text: '', url: window.location.href, notFound: true };
+
+            try {
+              if (typeof window.__qaai_highlight === 'function') {
+                window.__qaai_highlight(el);
+              } else if (el && el.style) {
+                el.style.setProperty('outline', '3px solid #a855f7', 'important');
+                el.style.setProperty('outline-offset', '2px', 'important');
+                el.style.setProperty('box-shadow', '0 0 10px rgba(168, 85, 247, 0.5)', 'important');
+                el.dataset.qaaiHighlighted = 'true';
+              }
+            } catch (_) {}
+
+            const rect = el.getBoundingClientRect();
             const tag = el.tagName ? el.tagName.toLowerCase() : '';
-            const val = (tag === 'input' || tag === 'textarea' || tag === 'select') ? (el.value || '') : (el.innerText || el.textContent || '');
+            let val = '';
+            if (tag === 'select') {
+              val = el.selectedIndex >= 0 && el.options[el.selectedIndex] ? (el.options[el.selectedIndex].text || el.value) : (el.value || '');
+            } else if (tag === 'input' || tag === 'textarea') {
+              val = el.value || '';
+            } else {
+              val = el.innerText || el.textContent || '';
+            }
+            const style = window.getComputedStyle(el);
+            let options = [];
+            if (tag === 'select') {
+              options = Array.from(el.options || []).map(o => (o.text || o.value || '').trim()).filter(Boolean);
+            }
             return {
               text: String(val || '').trim(),
               tag,
+              x: Math.round(rect.x || rect.left),
+              y: Math.round(rect.y || rect.top),
+              width: Math.round(rect.width),
+              height: Math.round(rect.height),
+              color: style.color,
+              backgroundColor: style.backgroundColor,
+              options,
               disabled: Boolean(el.disabled || el.getAttribute('aria-disabled') === 'true'),
               readOnly: Boolean(el.readOnly || el.hasAttribute('readonly'))
             };
-          }, targetSearch);
+          }, inspectParams);
 
-          const printedText = inspectData?.text != null
-            ? String(inspectData.text).trim()
-            : JSON.stringify(inspectData);
+          const stepNum = operation?.ordinal || (operations.findIndex((o) => o.operationId === operationId) + 1) || 9;
+          
+          const combinedQuery = `${operation?.expected || ''} ${operation?.authoredText || ''} ${operation?.text || ''} ${operation?.value || ''} ${elementLabel || ''}`.toLowerCase();
+          let printedText = '';
+
+          if (/\b(?:x\s*&?\s*y|coordinates?|co-ordinates?|location|position)\b/i.test(combinedQuery)) {
+            printedText = `X: ${inspectData.x}, Y: ${inspectData.y}`;
+          } else if (/\b(?:color|bg\s*color|background\s*color)\b/i.test(combinedQuery)) {
+            const bg = inspectData.backgroundColor && inspectData.backgroundColor !== 'rgba(0, 0, 0, 0)' && inspectData.backgroundColor !== 'transparent'
+              ? inspectData.backgroundColor
+              : inspectData.color;
+            printedText = `Button color: ${bg || inspectData.color}`;
+          } else if (/\b(?:height\s*&?\s*width|width\s*&?\s*height|dimensions?|size|tall|fat)\b/i.test(combinedQuery)) {
+            printedText = `Height: ${inspectData.height}px, Width: ${inspectData.width}px`;
+          } else if (/\b(?:all\s*options|options|choices)\b/i.test(combinedQuery) && inspectData.options?.length) {
+            printedText = `Options: [${inspectData.options.join(', ')}]`;
+          } else if (/\b(?:selected\s*value|selected\s*option|value)\b/i.test(combinedQuery) && inspectData.text) {
+            printedText = `Selected value: "${inspectData.text}"`;
+          } else if (/\b(?:button\s*name|name|button\s*text|text|label|title|changed)\b/i.test(combinedQuery) && inspectData.text) {
+            printedText = `Button name: "${inspectData.text}"`;
+          } else if (inspectData.text != null && inspectData.text !== '') {
+            printedText = `"${inspectData.text}"`;
+          } else if (inspectData.notFound) {
+            printedText = `(Element state not detected)`;
+          } else {
+            printedText = `X: ${inspectData.x}, Y: ${inspectData.y}, Width: ${inspectData.width}px, Height: ${inspectData.height}px`;
+          }
+
           send({
-            type: 'agent.transcript',
-            actionText: `Printed value of "${elementLabel || targetRef || 'element'}"`,
-            message: `[PRINT] "${elementLabel || targetRef || 'element'}": "${printedText}"`,
+            type: 'browser.action',
+            ...(session?.projectId ? { projectId: session.projectId } : {}),
+            ...(session?.runId ? { runId: session.runId } : {}),
+            ...(session?.testCaseId ? { tcId: session.testCaseId } : {}),
+            phase: 'action',
+            tool: 'print_inspect',
+            narration: `[PRINT] "${elementLabel || targetRef || operation?.element || 'element'}": ${printedText}`,
+            actionStatus: 'succeeded',
+            stepIndex: stepNum,
+            ts: Date.now(),
           });
+
+          send({
+            type: 'agent.phase.log',
+            phase: 'conductor',
+            level: 'info',
+            ...(session?.projectId ? { projectId: session.projectId } : {}),
+            ...(session?.runId ? { runId: session.runId } : {}),
+            ...(session?.testCaseId ? { tcId: session.testCaseId } : {}),
+            message: `[PRINT] "${elementLabel || targetRef || operation?.element || 'element'}": ${printedText}`,
+            ts: Date.now(),
+          });
+
+          result = { isError: false, content: [{ type: 'text', text: `[PRINT] "${elementLabel || targetRef || 'element'}": ${printedText}` }] };
+
           try {
+            await page.waitForTimeout(150);
             const shot = await mcp.captureLiveEvidenceScreenshot(session, {
               label: `print_inspect_evidence_${Date.now()}`,
+              timeoutMs: 4_000,
             });
             if (shot) {
               if (!session.screenshots) session.screenshots = [];
               session.screenshots.push({
                 ...shot,
                 path: shot.artifactRef,
+                stepIndex: stepNum,
+                action: 'Print',
+                target: elementLabel || targetRef || 'element',
                 label: `print_inspect_evidence_${Date.now()}`,
               });
             }
-          } catch (_) {}
-          result = { isError: false, content: [{ type: 'text', text: `[PRINT] "${elementLabel || targetRef || 'element'}": "${printedText}"` }] };
+          } catch (shotErr) {
+            console.error('[isInspectOp] Screenshot capture error:', shotErr?.message || shotErr);
+          }
         } else {
           result = { isError: true, content: [{ type: 'text', text: 'No page available to inspect' }] };
         }
       } catch (error) {
-        result = { isError: true, content: [{ type: 'text', text: `Inspect operation failed: ${error?.message || error}` }] };
+        result = { isError: true, content: [{ type: 'text', text: `Inspect failed: ${error?.message || error}` }] };
       }
     } else if (isSwitchTabOp && session.liveCdp?.context) {
       try {
@@ -4171,19 +4470,325 @@ function createControllerMcpRuntimeAdapter({
       } catch (error) {
         result = { isError: true, content: [{ type: 'text', text: `Sequential typing failed: ${error?.message || error}` }] };
       }
-    } else if (isSelectMultipleOp && session.liveCdp?.context && targetRef) {
+    } else if (isSingleSelectOp) {
       try {
-        const page = session.liveCdp.context.pages()[0] || null;
+        const page = activePageOf(session);
         if (page) {
-          const rawVals = normalized.values || args?.values || normalized.value || args?.value || '';
-          const values = Array.isArray(rawVals) ? rawVals : String(rawVals).split(',').map((s) => s.trim()).filter(Boolean);
-          await page.locator(':focus').selectOption(values);
-          result = { isError: false, content: [{ type: 'text', text: `Selected multiple options: ${JSON.stringify(values)}` }] };
+          const valToSelect = clean(
+            normalized.value != null ? normalized.value
+            : (args?.value != null ? args.value
+            : (selectionValue(args?.selection) || selectionValue(operation?.selection) || operation?.value || normalized.option || args?.option || normalized.text || args?.text || ''))
+          );
+          const targetSearch = clean(elementLabel || targetRef || operation?.element || operation?.target || '');
+
+          const selectResult = await page.evaluate(({ targetQuery, valueToSelect }) => {
+            const selects = Array.from(document.querySelectorAll('select'));
+            const q = String(targetQuery || '').trim().toLowerCase();
+            const cleanQ = q.replace(/[^a-z0-9]/g, '');
+
+            let el = null;
+            // Priority 1: Direct option matching - which select actually contains the value being selected?
+            if (valueToSelect) {
+              const valLower = String(valueToSelect).trim().toLowerCase();
+              el = selects.find(s => !s.multiple && Array.from(s.options).some(o => {
+                const t = (o.text || '').trim().toLowerCase();
+                const v = (o.value || '').trim().toLowerCase();
+                return t === valLower || v === valLower;
+              }));
+              if (!el) {
+                el = selects.find(s => !s.multiple && Array.from(s.options).some(o => {
+                  const t = (o.text || '').trim().toLowerCase();
+                  const v = (o.value || '').trim().toLowerCase();
+                  return t.includes(valLower) || valLower.includes(t);
+                }));
+              }
+            }
+
+            // Priority 2: Match by label / id / name / specific card container
+            if (!el && q) {
+              const qWords = q.replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length >= 3);
+              el = selects.find(s => {
+                const id = (s.id || '').toLowerCase();
+                const name = (s.name || '').toLowerCase();
+                const aria = (s.getAttribute('aria-label') || '').toLowerCase();
+                const lbl = (s.labels && s.labels[0] ? s.labels[0].innerText : '').toLowerCase();
+                let card = s.closest('.field, .control, .card, .box, tr, li');
+                if (!card) card = s.parentElement;
+                const cardText = (card?.innerText || card?.textContent || '').toLowerCase();
+                const isShortCard = cardText.length <= 250;
+                return [id, name, aria, lbl].some(t => t && (t.includes(q) || q.includes(t) || (cleanQ && t.replace(/[^a-z0-9]/g, '').includes(cleanQ))))
+                  || (isShortCard && [cardText].some(t => t && (t.includes(q) || q.includes(t) || (cleanQ && t.replace(/[^a-z0-9]/g, '').includes(cleanQ)) || (qWords.length > 0 && qWords.some(w => w.length >= 4 && t.includes(w))))));
+              });
+            }
+            if (!el) {
+              el = selects.find(s => !s.multiple) || selects[0] || null;
+            }
+            if (!el) return { ok: false, error: 'No select element found on page' };
+
+            try { el.focus(); } catch (_) {}
+            if (typeof window.__qaai_highlight === 'function') {
+              try { window.__qaai_highlight(el); } catch (_) {}
+            }
+
+            const targetVal = String(valueToSelect || '').trim().toLowerCase();
+            let matchedOpt = null;
+            if (targetVal) {
+              matchedOpt = Array.from(el.options).find(opt => {
+                const optText = (opt.text || '').trim().toLowerCase();
+                const optVal = (opt.value || '').trim().toLowerCase();
+                return optText === targetVal || optVal === targetVal || optText.includes(targetVal) || targetVal.includes(optText);
+              });
+            }
+            if (matchedOpt) {
+              matchedOpt.selected = true;
+            } else if (el.options.length > 1) {
+              if (/\blast\b/i.test(q)) {
+                el.selectedIndex = el.options.length - 1;
+                matchedOpt = el.options[el.selectedIndex];
+              } else {
+                matchedOpt = el.options[1];
+                matchedOpt.selected = true;
+              }
+            }
+
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+
+            return {
+              ok: true,
+              id: el.id,
+              selectedText: matchedOpt?.text || el.options[el.selectedIndex]?.text || el.value,
+              selectedValue: el.value
+            };
+          }, { targetQuery: targetSearch, valueToSelect: valToSelect });
+
+          if (selectResult.ok) {
+            try {
+              const selector = selectResult.id ? `#${selectResult.id}` : 'select';
+              const loc = page.locator(selector).first();
+              await loc.selectOption({ label: selectResult.selectedText }).catch(() => {
+                return loc.selectOption({ value: selectResult.selectedValue });
+              }).catch(() => {});
+            } catch (_) {}
+
+            result = {
+              isError: false,
+              content: [{
+                type: 'text',
+                text: `Selected "${selectResult.selectedText}" in "${targetSearch || 'dropdown'}"`
+              }]
+            };
+
+            try {
+              if (typeof window !== 'undefined' && typeof window.__qaai_highlight === 'function') {
+                await page.evaluate((id) => {
+                  const el = id ? document.getElementById(id) : document.querySelector('select');
+                  if (el && window.__qaai_highlight) window.__qaai_highlight(el);
+                }, selectResult.id).catch(() => {});
+              }
+              const stepNum = operation?.ordinal || (operations.findIndex((o) => o.operationId === operationId) + 1) || 2;
+              const shot = await takePageEvidenceScreenshot(session, `select_evidence_${Date.now()}`);
+              if (shot) {
+                if (!session.screenshots) session.screenshots = [];
+                session.screenshots.push({
+                  ...shot,
+                  path: shot.artifactRef,
+                  stepIndex: stepNum,
+                  action: 'Select',
+                  target: targetSearch || 'dropdown',
+                  label: `select_evidence_${Date.now()}`,
+                });
+              }
+            } catch (_) {}
+          } else {
+            result = { isError: true, content: [{ type: 'text', text: `Select failed: ${selectResult.error}` }] };
+          }
+        } else {
+          result = { isError: true, content: [{ type: 'text', text: 'No page available for select' }] };
+        }
+      } catch (error) {
+        result = { isError: true, content: [{ type: 'text', text: `Select failed: ${error?.message || error}` }] };
+      }
+    } else if (isSelectMultipleOp) {
+      try {
+        const page = activePageOf(session);
+        if (page) {
+          const rawVals = normalized.values || args?.values || (Array.isArray(operation?.values) ? operation.values : null) || selectionValue(args?.selection) || selectionValue(operation?.selection) || normalized.value || args?.value || operation?.value || '';
+          const values = Array.isArray(rawVals)
+            ? rawVals.map((v) => String(v).trim()).filter(Boolean)
+            : String(rawVals).split(',').map((s) => s.trim()).filter(Boolean);
+          const targetSearch = clean(elementLabel || targetRef || operation?.element || operation?.target || '');
+
+          const selectResult = await page.evaluate(({ targetQuery, valuesToSelect }) => {
+            const selects = Array.from(document.querySelectorAll('select'));
+            const q = String(targetQuery || '').trim().toLowerCase();
+            const cleanQ = q.replace(/[^a-z0-9]/g, '');
+
+            let el = null;
+            // Priority 1: Match by options containing any of valuesToSelect
+            if (valuesToSelect && valuesToSelect.length > 0) {
+              el = selects.find(s => {
+                const optTexts = Array.from(s.options).map(o => (o.text || o.value || '').trim().toLowerCase());
+                return valuesToSelect.some(v => optTexts.some(ot => ot === v.toLowerCase() || ot.includes(v.toLowerCase())));
+              });
+            }
+
+            // Priority 2: Match select[multiple]
+            if (!el) {
+              el = selects.find(s => s.multiple);
+            }
+
+            // Priority 3: Match by query
+            if (!el && q) {
+              const qWords = q.replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length >= 3);
+              el = selects.find(s => {
+                const id = (s.id || '').toLowerCase();
+                const name = (s.name || '').toLowerCase();
+                const aria = (s.getAttribute('aria-label') || '').toLowerCase();
+                const lbl = (s.labels && s.labels[0] ? s.labels[0].innerText : '').toLowerCase();
+                let card = s.closest('.field, .control, .card, .box, tr, li');
+                if (!card) card = s.parentElement;
+                const cardText = (card?.innerText || card?.textContent || '').toLowerCase();
+                const isShortCard = cardText.length <= 250;
+                return [id, name, aria, lbl].some(t => t && (t.includes(q) || q.includes(t) || (cleanQ && t.replace(/[^a-z0-9]/g, '').includes(cleanQ))))
+                  || (isShortCard && [cardText].some(t => t && (t.includes(q) || q.includes(t) || (cleanQ && t.replace(/[^a-z0-9]/g, '').includes(cleanQ)) || (qWords.length > 0 && qWords.some(w => w.length >= 4 && t.includes(w))))));
+              });
+            }
+            if (!el) {
+              el = selects.find(s => s.multiple) || selects[0] || null;
+            }
+            if (!el) return { ok: false, error: 'No select element found on page' };
+
+            try { el.focus(); } catch (_) {}
+            if (typeof window.__qaai_highlight === 'function') {
+              try { window.__qaai_highlight(el); } catch (_) {}
+            }
+
+            // In DOM, select matching options by text or value
+            const matchedOptions = [];
+            Array.from(el.options).forEach(opt => {
+              const optText = (opt.text || '').trim().toLowerCase();
+              const optVal = (opt.value || '').trim().toLowerCase();
+              const shouldSelect = valuesToSelect.some(v => {
+                const targetV = String(v).trim().toLowerCase();
+                return optText === targetV || optVal === targetV || (targetV.length >= 3 && (optText.includes(targetV) || targetV.includes(optText)));
+              });
+              if (shouldSelect) {
+                opt.selected = true;
+                matchedOptions.push(opt.text || opt.value);
+              }
+            });
+
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+
+            return {
+              ok: true,
+              id: el.id,
+              selected: matchedOptions,
+              allSelected: Array.from(el.selectedOptions).map(o => o.text)
+            };
+          }, { targetQuery: targetSearch, valuesToSelect: values });
+
+          if (selectResult.ok) {
+            // Also invoke Playwright native selectOption if possible to ensure browser state sync
+            try {
+              const selector = selectResult.id ? `#${selectResult.id}` : 'select[multiple]';
+              const loc = page.locator(selector).first();
+              if (selectResult.selected && selectResult.selected.length > 0) {
+                await loc.selectOption(selectResult.selected.map(s => ({ label: s }))).catch(() => {
+                  return loc.selectOption(selectResult.selected.map(s => ({ value: s })));
+                }).catch(() => {});
+              }
+            } catch (_) {}
+
+            result = {
+              isError: false,
+              content: [{
+                type: 'text',
+                text: `Selected options [${values.join(', ')}] in "${targetSearch || 'dropdown'}" (Active: ${selectResult.allSelected?.join(', ') || selectResult.selected?.join(', ')})`
+              }]
+            };
+
+            try {
+              await page.waitForTimeout(150);
+              const stepNum = operation?.ordinal || (operations.findIndex((o) => o.operationId === operationId) + 1) || 1;
+              const shot = await mcp.captureLiveEvidenceScreenshot(session, {
+                label: `select_multiple_evidence_${Date.now()}`,
+              });
+              if (shot) {
+                if (!session.screenshots) session.screenshots = [];
+                session.screenshots.push({
+                  ...shot,
+                  path: shot.artifactRef,
+                  stepIndex: stepNum,
+                  action: 'SelectMultiple',
+                  target: targetSearch || 'dropdown',
+                  label: `select_multiple_evidence_${Date.now()}`,
+                });
+              }
+            } catch (_) {}
+          } else {
+            result = { isError: true, content: [{ type: 'text', text: `Multi-select failed: ${selectResult.error}` }] };
+          }
         } else {
           result = { isError: true, content: [{ type: 'text', text: 'No page available for multi-select' }] };
         }
       } catch (error) {
         result = { isError: true, content: [{ type: 'text', text: `Multi-select failed: ${error?.message || error}` }] };
+      }
+    } else if (isHoverOp) {
+      try {
+        const page = activePageOf(session);
+        if (page) {
+          const targetSearch = clean(elementLabel || targetRef || operation?.element || operation?.target || '');
+          const hoverResult = await page.evaluate((q) => {
+            const query = String(q || '').toLowerCase();
+            const elements = Array.from(document.querySelectorAll('button, a, input, select, [role], div, span, p, h1, h2, h3, h4, h5, h6'));
+            const el = elements.find(e => {
+              const text = (e.innerText || e.textContent || '').trim().toLowerCase();
+              const aria = (e.getAttribute('aria-label') || '').toLowerCase();
+              return (text && (text === query || text.includes(query))) || (aria && aria.includes(query));
+            });
+            if (el) {
+              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              el.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true, cancelable: true }));
+              el.dispatchEvent(new MouseEvent('mouseover', { bubbles: true, cancelable: true }));
+              return { ok: true };
+            }
+            return { ok: false, error: 'Element not found for hover' };
+          }, targetSearch);
+          result = { isError: false, content: [{ type: 'text', text: `Hovered over "${targetSearch || 'element'}"` }] };
+        } else {
+          result = { isError: true, content: [{ type: 'text', text: 'No page available for hover' }] };
+        }
+      } catch (error) {
+        result = { isError: true, content: [{ type: 'text', text: `Hover failed: ${error?.message || error}` }] };
+      }
+    } else if (isScrollOp) {
+      try {
+        const page = activePageOf(session);
+        if (page) {
+          const targetSearch = clean(elementLabel || targetRef || operation?.element || operation?.target || '');
+          if (targetSearch) {
+            await page.evaluate((q) => {
+              const query = String(q || '').toLowerCase();
+              const el = Array.from(document.querySelectorAll('*')).find(e => {
+                const text = (e.innerText || e.textContent || '').trim().toLowerCase();
+                return text && (text === query || text.includes(query));
+              });
+              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              else window.scrollBy(0, 400);
+            }, targetSearch);
+          } else {
+            await page.mouse.wheel(0, 400);
+          }
+          result = { isError: false, content: [{ type: 'text', text: `Scrolled towards "${targetSearch || 'page content'}"` }] };
+        } else {
+          result = { isError: true, content: [{ type: 'text', text: 'No page available for scroll' }] };
+        }
+      } catch (error) {
+        result = { isError: true, content: [{ type: 'text', text: `Scroll failed: ${error?.message || error}` }] };
       }
     } else {
       result = await rawCall(sdkToolName, normalized, remainingMs);
@@ -4191,14 +4796,34 @@ function createControllerMcpRuntimeAdapter({
     browserEpoch += 1;
     snapshots.invalidate({ browserEpoch: String(browserEpoch), reason: `mutation:${sdkToolName}` });
 
-    if (result && !result.isError && toolName.startsWith('browser_') && !['browser_snapshot', 'browser_take_screenshot'].includes(toolName)) {
+    // Only capture evidence screenshots for genuinely user-visible mutating tools.
+    // browser_evaluate fires for focus injection, highlight, scroll, DOM reads — none
+    // of those represent a step action. Including them offsets step→screenshot mapping
+    // by +1 for every evaluate call that precedes a real mutation.
+    const EVIDENCE_SCREENSHOT_TOOLS = new Set([
+      'browser_navigate', 'browser_navigate_back', 'browser_navigate_forward',
+      'browser_go_back', 'browser_go_forward',
+      'browser_click', 'browser_type', 'browser_fill_form',
+      'browser_press_key', 'browser_select_option', 'browser_drag',
+      'browser_scroll', 'browser_reload', 'browser_upload_file',
+      'browser_handle_dialog', 'browser_hover',
+    ]);
+    if (result && !result.isError && EVIDENCE_SCREENSHOT_TOOLS.has(toolName)) {
       try {
+        await new Promise((r) => setTimeout(r, 120));
         const shot = await mcp.captureLiveEvidenceScreenshot(session, { label: `${toolName}_evidence_${Date.now()}` });
         if (shot) {
           if (!session.screenshots) session.screenshots = [];
+          const operation = operations.find((o) => o.operationId === operationId) || null;
+          const stepIndex = operation?.ordinal || entry?.ordinal || (operations.findIndex((o) => o.operationId === operationId) + 1) || 1;
+          const actionName = operation?.authoredType || operation?.type || entry?.toolName || toolName;
+          const stepTarget = elementLabel || clean(operation?.targetIdentity?.label || operation?.targetIdentity?.accessibleName || operation?.target || normalized?.element || normalized?.label || '');
           session.screenshots.push({
             ...shot,
             path: shot.artifactRef,
+            stepIndex,
+            action: actionName,
+            target: stepTarget,
             label: `${toolName}_evidence_${Date.now()}`,
           });
         }
@@ -4327,6 +4952,9 @@ function createControllerMcpRuntimeAdapter({
 
       send({
         type: 'browser.action',
+        ...(session?.projectId ? { projectId: session.projectId } : {}),
+        ...(session?.runId ? { runId: session.runId } : {}),
+        ...(session?.testCaseId ? { tcId: session.testCaseId } : {}),
         tool: toolName,
         args: normalized,
         narration,

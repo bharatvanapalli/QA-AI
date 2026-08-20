@@ -148,6 +148,25 @@ function normalizeRequirements(requirements) {
   return Array.from(byId.values()).sort((a, b) => a.id.localeCompare(b.id));
 }
 
+function synthesizeClausesFromRequirement(requirement) {
+  const content = text(requirement && requirement.content);
+  if (!content) return [];
+  const lines = content.split(/\r?\n/)
+    .map((l) => text(l.replace(/^\s*[-*•\d.]+\s*/, '')))
+    .filter((l) => l.length >= 6);
+  if (!lines.length) return [];
+  return lines.map((line, idx) => ({
+    id: `clause-auto-${requirement.id}-${idx + 1}`,
+    sourceType: text(requirement.sourceType) || 'USER_STORY',
+    sourceDocId: requirement.documentId || requirement.id,
+    storyId: requirement.storyId || requirement.sourceIdentifier || requirement.id,
+    spanStart: idx * 50,
+    behaviourText: line,
+    excerpt: line,
+    testable: true,
+  }));
+}
+
 function clauseText(clause) {
   return text(clause && (clause.behaviourText || clause.behaviorText || clause.excerpt));
 }
@@ -317,7 +336,16 @@ function buildRequirementUnderstandingV1({
     requirements: selectedRequirements,
     requirementClauses,
   });
-  const scopedClauses = filtered.clauses;
+  const scopedClauses = [...filtered.clauses];
+
+  // Auto-synthesize clauses for uploaded document sources if no pre-parsed DB clauses exist
+  for (const req of selectedRequirements) {
+    if (!requirementHasClause(req, scopedClauses) && DOCUMENT_SOURCE_TYPES.has(text(req.sourceType).toLowerCase())) {
+      const syn = synthesizeClausesFromRequirement(req);
+      for (const c of syn) scopedClauses.push(c);
+    }
+  }
+
   const behaviors = scopedClauses.map(behaviorFromClause);
 
   const provisionalRequirements = selectedRequirements.filter(

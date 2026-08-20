@@ -40,6 +40,7 @@ const ADAPTER_KIND = Object.freeze({
   DIALOG: 'DIALOG',
   UPLOAD: 'UPLOAD',
   NAVIGATION: 'NAVIGATION',
+  KEYBOARD: 'KEYBOARD',
   ASSERTION: 'ASSERTION',
   SYNCHRONIZATION: 'SYNCHRONIZATION',
   REVEAL: 'REVEAL',
@@ -173,7 +174,7 @@ function inferAdapterKind(operation = {}, resolution = {}, context = {}) {
   const hint = context.ignoreResolvedAdapterHint === true ? '' : adapterHint(resolution);
   if (Object.values(ADAPTER_KIND).includes(hint)) return hint;
 
-  if (['Navigate', 'GoBack', 'GoForward', 'Refresh'].includes(type)) return ADAPTER_KIND.NAVIGATION;
+  if (['Navigate', 'GoBack', 'NavigateBack', 'GoForward', 'NavigateForward', 'Refresh', 'Reload'].includes(type)) return ADAPTER_KIND.NAVIGATION;
   if (type === 'Scroll') return ADAPTER_KIND.REVEAL;
   if (type === 'Upload') return ADAPTER_KIND.UPLOAD;
   if (['SwitchContext'].includes(type) || ['frame', 'browser_context'].includes(role)) return ADAPTER_KIND.CONTEXT;
@@ -199,11 +200,12 @@ function inferAdapterKind(operation = {}, resolution = {}, context = {}) {
   if (['Close', 'AcceptAlert', 'DismissAlert', 'TypeAlert'].includes(type) || role === 'dialog' || (['Fill', 'Type'].includes(type) && (/\b(?:prompt|alert|native\s*dialog)\b/i.test(targetLower) || hasActiveNativeDialog))) return ADAPTER_KIND.DIALOG;
   if (type === 'Date') return ADAPTER_KIND.DATE;
   if (['Time', 'DateTime'].includes(type)) return ADAPTER_KIND.TIME;
-  if (type === 'Select') {
-    if (['select', 'select-one', 'native_select'].includes(controlType)) return ADAPTER_KIND.NATIVE_SELECT;
+  if (['Select', 'SelectMultiple', 'MultiSelect'].includes(type)) {
     if (['searchbox'].includes(role) || /autocomplete|typeahead/.test(controlType)) return ADAPTER_KIND.AUTOCOMPLETE;
-    return ADAPTER_KIND.CUSTOM_SELECT;
+    return ADAPTER_KIND.NATIVE_SELECT;
   }
+  if (['PressKey', 'KeyPress', 'Press'].includes(type) || ['browser_press_key'].includes(operation.mutationTool)) return ADAPTER_KIND.KEYBOARD;
+  if (['Navigate', 'GoBack', 'NavigateBack', 'GoForward', 'NavigateForward', 'Refresh', 'Reload'].includes(type)) return ADAPTER_KIND.NAVIGATION;
   if (['Fill', 'Type', 'Append', 'ClearAndType', 'TypeSequentially', 'Clear'].includes(type)) {
     return controlType === 'password' || /password|passwd/.test(clean(identity.accessibleName))
       ? ADAPTER_KIND.PASSWORD_INPUT
@@ -366,7 +368,7 @@ function planButton(operation, resolution, context = {}) {
   // pressed" on exactly this sequence).
   const isClickAndHold = operation.type === 'ClickAndHold';
   const exactActivationRef = resolvedInteractionRef(resolution);
-  const toolName = isClickAndHold ? 'browser_evaluate'
+  const toolName = isClickAndHold ? 'ClickAndHold'
     : operation.type === 'DoubleClick' ? 'browser_click'
       : operation.type === 'Hover' ? 'browser_hover'
         : 'browser_click';
@@ -394,17 +396,9 @@ function planButton(operation, resolution, context = {}) {
   const mutationArgs = isClickAndHold
     ? {
       target: exactActivationRef,
-      function: `async (el) => {
-        el.scrollIntoView({ block: 'center', inline: 'nearest' });
-        const rect = el.getBoundingClientRect();
-        const x = rect.left + rect.width / 2;
-        const y = rect.top + rect.height / 2;
-        const opts = { bubbles: true, cancelable: true, view: window, clientX: x, clientY: y };
-        el.dispatchEvent(new MouseEvent('mousedown', opts));
-        await new Promise((resolve) => setTimeout(resolve, 600));
-        el.dispatchEvent(new MouseEvent('mouseup', opts));
-        return { ok: true };
-      }`,
+      element: operation.target || operation.element || 'Button',
+      toolName: 'ClickAndHold',
+      duration: 2500,
     }
     : {
       target: exactActivationRef,
@@ -458,10 +452,20 @@ function planButton(operation, resolution, context = {}) {
 }
 
 function planNativeSelect(operation, resolution) {
+  const accessibleName = clean(
+    operation.element
+    || operation.targetIdentity?.accessibleName
+    || operation.targetIdentity?.label
+    || operation.target
+    || ''
+  );
   return commonPlan(operation, ADAPTER_KIND.NATIVE_SELECT, {
     mutation: mutation('browser_select_option', {
       target: resolvedRef(resolution),
       selection: operation.selection,
+      value: operation.value || operation.selection?.value || null,
+      values: operation.values || (operation.value ? [operation.value] : null),
+      element: accessibleName || undefined,
     }),
     proofContract: proof(`${operation.operationId}:native-select`, [
       {
@@ -594,9 +598,9 @@ function planUpload(operation, resolution, context) {
 
 function planNavigation(operation) {
   let sdkToolName = 'browser_navigate';
-  if (operation.type === 'GoBack') sdkToolName = 'browser_go_back';
-  if (operation.type === 'GoForward') sdkToolName = 'browser_go_forward';
-  if (operation.type === 'Refresh') sdkToolName = 'browser_reload';
+  if (['GoBack', 'NavigateBack'].includes(operation.type)) sdkToolName = 'browser_go_back';
+  if (['GoForward', 'NavigateForward'].includes(operation.type)) sdkToolName = 'browser_go_forward';
+  if (['Refresh', 'Reload'].includes(operation.type)) sdkToolName = 'browser_reload';
 
   const isDirectNavigate = operation.type === 'Navigate';
   const navUrl = clean(operation.value || operation.destination || operation.targetIdentity?.label || operation.targetIdentity?.accessibleName || operation.target || '');
@@ -629,15 +633,46 @@ function planObservation(operation, adapterKind) {
   });
 }
 
+function planKeyboard(operation) {
+  const key = clean(operation.key || operation.value || operation.target || 'Tab');
+  const accessibleName = clean(
+    operation.element
+    || operation.targetIdentity?.accessibleName
+    || operation.targetIdentity?.label
+    || operation.target
+    || ''
+  );
+  return commonPlan(operation, ADAPTER_KIND.KEYBOARD, {
+    mutation: mutation('browser_press_key', {
+      key,
+      element: accessibleName || undefined,
+      toolName: 'PressKey',
+    }),
+    proofContract: proof(`${operation.operationId}:keyboard`, [
+      { id: 'next-required-control', allOf: [CLAIM.NEXT_REQUIRED_CONTROL_ACTIONABLE] },
+    ]),
+    proofMetadata: {
+      observationFirst: false,
+      exactOwnerRequired: false,
+    },
+    recoveryOptions: ['REFRESH_SNAPSHOT'],
+  });
+}
+
 function planReveal(operation) {
   const identity = operation.targetIdentity || {};
   const label = clean(
-    identity.accessibleName
-      || identity.label
-      || operation.target,
+    operation.element
+    || identity.accessibleName
+    || identity.label
+    || operation.target,
   );
   return commonPlan(operation, ADAPTER_KIND.REVEAL, {
     mutation: mutation('browser_evaluate', {
+      element: label,
+      target: label,
+      toolName: 'Print',
+      expected: operation.expected || operation.authoredText || label,
       function: buildSemanticTargetRevealFunction({
         label,
         roleHints: [identity.role, 'region', 'group', 'heading']
@@ -654,7 +689,7 @@ function planReveal(operation) {
       { id: 'next-required-control', allOf: [CLAIM.NEXT_REQUIRED_CONTROL_ACTIONABLE] },
     ]),
     proofMetadata: {
-      observationFirst: true,
+      observationFirst: false,
       utilityMutation: true,
       exactOwnerRequired: false,
     },
@@ -686,6 +721,8 @@ function createTypedAdapterPlan({ operation, resolution = {}, context = {} } = {
       return planTextInput(operation, resolution, context);
     case ADAPTER_KIND.PASSWORD_INPUT:
       return planPasswordInput(operation, resolution, context);
+    case ADAPTER_KIND.KEYBOARD:
+      return planKeyboard(operation);
     case ADAPTER_KIND.BUTTON_OR_LINK:
       return planButton(operation, resolution, context);
     case ADAPTER_KIND.NATIVE_SELECT:

@@ -673,6 +673,7 @@ async function run({
           runId: runRow.id,
           tcId: testCase.id,
           ...event,
+          tcId: event?.tcId || testCase.id,
         }),
       });
       const gateway = createControllerActionExecutionGateway({
@@ -809,12 +810,16 @@ async function run({
             blockedReason: status === 'blocked' ? error : null,
             screenshots: encodeJson(
               Array.isArray(browserSession?.screenshots)
-                ? browserSession.screenshots.map((s, idx) => ({
-                    url: s.path || s.artifactRef || (typeof s === 'string' ? s : s.url),
-                    stepIndex: s.stepIndex ?? (idx + 1),
-                    action: s.action || s.label || 'Action evidence',
-                    ts: s.capturedAt || s.ts || Date.now(),
-                  })).filter((s) => s.url)
+                ? browserSession.screenshots
+                    .map((s, idx) => ({
+                      url: s.path || s.artifactRef || (typeof s === 'string' ? s : s.url),
+                      stepIndex: Number.isFinite(Number(s.stepIndex)) ? Number(s.stepIndex) : (idx + 1),
+                      action: s.action || s.label || 'Action evidence',
+                      target: s.target || null,
+                      ts: s.capturedAt || s.ts || Date.now(),
+                    }))
+                    .filter((s) => s.url)
+                    .sort((a, b) => a.stepIndex - b.stepIndex)
                 : []
             ),
             stepResults: encodeJson(steps),

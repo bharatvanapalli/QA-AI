@@ -17,6 +17,7 @@ const { sanitizeUserMessage } = require('./lib/userFacingErrors');
 const authRoutes = require('./routes/auth');
 const claudeRoutes = require('./routes/settings.claude');
 const geminiRoutes = require('./routes/settings.gemini');
+const copilotRoutes = require('./routes/settings.copilot');
 const adoRoutes = require('./routes/settings.ado');
 const jiraRoutes = require('./routes/settings.jira');
 const webhookRoutes = require('./routes/settings.webhook');
@@ -96,6 +97,7 @@ app.use('/report', express.static(path.join(PLAYWRIGHT_DIR, 'playwright-report')
 app.use('/api/auth', authRoutes);
 app.use('/api/settings/claude', claudeRoutes);
 app.use('/api/settings/gemini', geminiRoutes);
+app.use('/api/settings/copilot', copilotRoutes);
 app.use('/api/settings/ado', adoRoutes);
 app.use('/api/settings/jira', jiraRoutes);
 app.use('/api/settings/webhook', webhookRoutes);
@@ -361,7 +363,7 @@ server.on('error', (err) => {
   throw err;
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`[server] QAAI API listening on http://localhost:${PORT}`);
   console.log(`[server] WebSocket on ws://localhost:${PORT}`);
   console.log(`[server] CORS origin: ${ORIGIN}`);

@@ -32,7 +32,7 @@ const atlasSlice = require('../../lib/atlasSlice');
 const { recordDegradation } = require('../../lib/degradationSignal');
 const crawlPlanner = require('../../lib/crawlPlanner');
 
-const MAX_PAGES = 20;
+const MAX_PAGES = 500;
 const PAGE_ROLE_MAX_TOKENS = 60; // a 2-4 word label is tiny; cap discourages rambling
 const AUTH_INITIAL_SETTLE_MS = Number.parseInt(process.env.QAAI_AUTH_INITIAL_SETTLE_MS || '15000', 10);
 const AUTH_STAGE_SETTLE_MS = Number.parseInt(process.env.QAAI_AUTH_STAGE_SETTLE_MS || '10000', 10);
@@ -265,26 +265,23 @@ function createCrawlActionLedger(log = null) {
   };
 }
 
-async function probeInteractiveAffordances({ mcpSession, baselineSnap, pageUrl, log, signal, maxProbes = 6, actionLedger = null } = {}) {
+async function probeInteractiveAffordances({ mcpSession, baselineSnap, pageUrl, log, signal, maxProbes = 6, actionLedger = null, explicitCrawlHints = null, userStoryContext = null } = {}) {
   const revealedElements = [];
   const revealedText = [];
   if (!baselineSnap || !mcpSession || !mcpSession.client) return { revealedElements, revealedText, probes: 0 };
 
-  // Candidate openers: a ref + an opener role (combobox/tab) or a popup-menu
-  // button, whose NAME is NOT a mutation/destructive verb (the primary gate).
-  const candidates = [];
+  // Use the LLM-powered crawl planner to classify and rank probes
+  const rows = [];
   for (const line of String(baselineSnap).split(/\r?\n/)) {
     const p = mcp.parseSnapshotLine ? mcp.parseSnapshotLine(line) : null;
-    if (!p || !p.ref) continue;
-    const role = String(p.role || '').toLowerCase();
-    const name = String(p.name || '').trim();
-    const hasPopup = /haspopup/i.test(line);
-    const isOpener = PROBE_OPENER_ROLES.has(role) || (role === 'button' && hasPopup);
-    if (!isOpener) continue;
-    if (name && PROBE_DENY_NAME_RE.test(name)) continue;  // never touch mutation/destructive/logout controls
-    candidates.push({ ref: p.ref, role, name });
-    if (candidates.length >= maxProbes) break;
+    if (p && p.ref) rows.push(p);
   }
+  
+  const budget = { probeBudgetPerPage: maxProbes, openFilters: true, tabsPerPage: 0 };
+  const context = { pageUrl, explicitCrawlHints, userStoryContext };
+  const probeTargets = await crawlPlanner.selectProbeTargets(rows, budget, context);
+  const candidates = probeTargets.probes || [];
+
   if (!candidates.length) return { revealedElements, revealedText, probes: 0 };
 
   const baseReveal = countRevealRoles(baselineSnap);
@@ -505,7 +502,7 @@ async function probeModalAffordances({
       const modalText = extractTextCorpus(modalSnap);
       const heading = crawlPlanner.primaryHeading(modalRows) || cand.name || 'modal';
       const controlSig = `modal:${String(cand.name || cand.ref || '').toLowerCase()}`;
-      const stateKey = crawlPlanner.computeStateKey({ normalizedUrl, pageRole, heading, activeNav, textCorpus: modalText, controlSig });
+      const stateKey = crawlPlanner.computeStateKey({ normalizedUrl, pageRole, heading, activeNav, textCorpus: modalText, controlSig, rows: modalRows });
       if (seenStateKeys && seenStateKeys.has(stateKey)) {
         try { await callCalibratorTool(mcpSession, { name: 'browser_press_key', arguments: { key: 'Escape' } }); await cancellableDelay(150, signal); } catch (_) {}
         continue;
@@ -557,6 +554,104 @@ async function probeModalAffordances({
       + (captured < probed ? ` (${navigated} navigated, ${noDialog} no dialog, ${probed - captured - navigated - noDialog} skipped/errored)` : ''));
   }
   return { revealedElements, revealedText, substates, probed };
+}
+
+async function probePaginationAffordances({
+  mcpSession, pageUrl, normalizedUrl, pageRole, activeNav,
+  seenStateKeys, module, authProfileId, log, signal, maxPages = 5, actionLedger = null,
+} = {}) {
+  const revealedElements = [];
+  const revealedText = [];
+  const substates = [];
+  if (!mcpSession || !mcpSession.client || !maxPages) {
+    return { revealedElements, revealedText, substates, probed: 0 };
+  }
+
+  const fn = `() => {
+    const out = [];
+    const sel = '.pagination a, .pagination button, button.pagination-link, a.pagination-link, [aria-label*="pagination" i] a, [aria-label*="pagination" i] button, [class*="pagination" i] a, [class*="pagination" i] button';
+    const nodes = Array.from(document.querySelectorAll(sel)).slice(0, 15);
+    for (const el of nodes) {
+      const text = (el.textContent || '').trim();
+      const label = (el.getAttribute('aria-label') || text || '').trim();
+      if (!label || /first|last|previous|prev/i.test(label)) continue;
+      out.push({ text: label, href: el.getAttribute('href') || '' });
+    }
+    return out;
+  }`;
+
+  try {
+    const res = await callCalibratorTool(mcpSession, { name: 'browser_evaluate', arguments: { function: fn } });
+    const arr = mcp.parseEvaluateReturnValue(mcp.textOfContent(res && res.content) || '');
+    if (!Array.isArray(arr) || !arr.length) return { revealedElements, revealedText, substates, probed: 0 };
+
+    const baseKey = normalizeUrl(pageUrl);
+    let probed = 0;
+    for (const item of arr.slice(0, maxPages)) {
+      if (signal?.aborted) break;
+      const label = item.text;
+      if (!label) continue;
+      if (actionLedger && !actionLedger.markOnce(
+        ['pagination', baseKey, label],
+        `pagination "${label}" on ${baseKey}`,
+      )) {
+        continue;
+      }
+
+      try {
+        await callCalibratorTool(mcpSession, { name: 'browser_click', arguments: { element: label } });
+        probed += 1;
+        await cancellableDelay(450, signal);
+
+        const pageSnap = snapshotText(await callCalibratorTool(mcpSession, { name: 'browser_snapshot', arguments: {} }));
+        if (!pageSnap) continue;
+        const pageText = extractTextCorpus(pageSnap);
+        const pageRows = parseSnapshotRows(pageSnap);
+        const heading = crawlPlanner.primaryHeading(pageRows) || label;
+        const controlSig = `pagination:${label.toLowerCase()}`;
+        const stateKey = crawlPlanner.computeStateKey({ normalizedUrl, pageRole, heading, activeNav, textCorpus: pageText, controlSig, rows: pageRows });
+        if (seenStateKeys && seenStateKeys.has(stateKey)) continue;
+        if (seenStateKeys) seenStateKeys.add(stateKey);
+
+        const pageEls = extractElements(pageSnap);
+        let pageCaps = [];
+        try {
+          pageCaps = (classifyCapabilities({
+            elements: extractElements(pageSnap, CLASSIFIER_ROLES), textCorpus: pageText,
+            snapshot: pageSnap, pageUrl: normalizedUrl, module, authProfileId,
+          }).capabilities) || [];
+        } catch { pageCaps = []; }
+
+        for (const t of pageText) if (!revealedText.includes(t)) revealedText.push(t);
+        for (const el of pageEls) {
+          const key = el.selectorChain?.[0]?.selector || el.semanticLabel;
+          if (key && !revealedElements.some((e) => (e.selectorChain?.[0]?.selector || e.semanticLabel) === key)) {
+            revealedElements.push({ ...el, source: 'pagination-probe', revealedBy: label });
+          }
+        }
+
+        substates.push({
+          kind: 'pagination',
+          paginationLabel: label,
+          controlSig,
+          stateKey,
+          heading,
+          textCorpus: pageText.slice(0, 120),
+          elements: pageEls,
+          capabilities: pageCaps,
+        });
+      } catch (_) { /* ignore single pagination failure */ }
+    }
+
+    if (probed > 0) {
+      try { await callCalibratorTool(mcpSession, { name: 'browser_navigate', arguments: { url: pageUrl } }); await cancellableDelay(600, signal); } catch (_) {}
+    }
+    if (log && probed) {
+      log('info', `[calibrator] pagination substates on ${pageUrl}: ${substates.length}/${probed} captured`);
+    }
+  } catch (_) {}
+
+  return { revealedElements, revealedText, substates, probed: substates.length };
 }
 
 // Roles whose accessible "name" is layout noise rather than page copy — we do
@@ -1615,31 +1710,54 @@ async function extractLinksViaDom(mcpSession, baseOrigin, log, { contentOnly = f
  * the caller can merge them.
  */
 async function harvestInteractiveViaDom(mcpSession, log) {
-  // Run entirely in the page: collect a structural descriptor for each
-  // interactive node, then build a stable getBy*/locator() expression here.
+  // Run entirely in the page: collect structural descriptors for each
+  // interactive node in the main document AND any accessible nested iframes,
+  // then build stable frame-aware getBy*/locator() expressions.
   const fn = `() => {
     const out = [];
     const sel = 'button, a[href], input, select, textarea, [role], [onclick], [tabindex], [contenteditable="true"], [data-router], [data-href], [data-testid], [data-test]';
-    const nodes = Array.from(document.querySelectorAll(sel)).slice(0, 400);
-    for (const el of nodes) {
-      const tag = (el.tagName || '').toLowerCase();
-      const role = el.getAttribute('role') || '';
-      const type = (el.getAttribute('type') || '').toLowerCase();
-      const isInteractive = tag === 'button' || tag === 'a' || tag === 'input' || tag === 'select' || tag === 'textarea'
-        || role || el.hasAttribute('onclick') || el.getAttribute('tabindex') === '0'
-        || el.getAttribute('contenteditable') === 'true' || el.hasAttribute('data-router') || el.hasAttribute('data-href');
-      if (!isInteractive) continue;
-      const r = el.getBoundingClientRect ? el.getBoundingClientRect() : { width: 1, height: 1 };
-      if (r.width === 0 && r.height === 0) continue;
-      const text = (el.textContent || '').replace(/\\s+/g, ' ').trim().slice(0, 60);
-      out.push({
-        tag, role, type,
-        text,
-        name: (el.getAttribute('aria-label') || el.getAttribute('placeholder') || el.getAttribute('name') || el.getAttribute('title') || '').slice(0, 60),
-        testid: el.getAttribute('data-testid') || el.getAttribute('data-test') || '',
-        id: el.id || '',
-      });
+
+    function collectFromDoc(doc, framePrefix = '') {
+      if (!doc) return;
+      try {
+        const nodes = Array.from(doc.querySelectorAll(sel)).slice(0, 400);
+        for (const el of nodes) {
+          const tag = (el.tagName || '').toLowerCase();
+          const role = (el.getAttribute('role') || '').toLowerCase();
+          const type = (el.getAttribute('type') || '').toLowerCase();
+          const isInteractive = tag === 'button' || tag === 'a' || tag === 'input' || tag === 'select' || tag === 'textarea'
+            || role || el.hasAttribute('onclick') || el.getAttribute('tabindex') === '0'
+            || el.getAttribute('contenteditable') === 'true' || el.hasAttribute('data-router') || el.hasAttribute('data-href');
+          if (!isInteractive) continue;
+          const r = el.getBoundingClientRect ? el.getBoundingClientRect() : { width: 1, height: 1 };
+          if (r.width === 0 && r.height === 0) continue;
+          const text = (el.textContent || '').replace(/\\s+/g, ' ').trim().slice(0, 60);
+          out.push({
+            tag, role, type,
+            text,
+            name: (el.getAttribute('aria-label') || el.getAttribute('placeholder') || el.getAttribute('name') || el.getAttribute('title') || '').slice(0, 60),
+            testid: el.getAttribute('data-testid') || el.getAttribute('data-test') || '',
+            id: el.id || '',
+            framePrefix,
+          });
+        }
+      } catch (_) {}
+
+      try {
+        const frames = Array.from(doc.querySelectorAll('iframe, frame')).slice(0, 20);
+        for (const frame of frames) {
+          try {
+            const frameDoc = frame.contentDocument || (frame.contentWindow && frame.contentWindow.document);
+            if (!frameDoc) continue;
+            const frameId = frame.id ? '#' + frame.id : (frame.name ? '[name="' + frame.name + '"]' : (frame.src ? '[src*="' + frame.src.split('/').pop().split('?')[0].slice(0, 20) + '"]' : 'iframe'));
+            const subPrefix = (framePrefix ? framePrefix + ' > ' : '') + 'frameLocator(' + JSON.stringify(frameId) + ')';
+            collectFromDoc(frameDoc, subPrefix);
+          } catch (_) {}
+        }
+      } catch (_) {}
     }
+
+    collectFromDoc(document, '');
     return out;
   }`;
   try {
@@ -1657,26 +1775,26 @@ async function harvestInteractiveViaDom(mcpSession, log) {
       if (!d || typeof d !== 'object') continue;
       const role = String(d.role || d.tag || '').toLowerCase();
       const label = String(d.name || d.text || '').trim();
-      // Build a stability-ranked chain from STRUCTURE only — no invented names.
+      const prefix = d.framePrefix ? `${d.framePrefix}.` : '';
       const chain = [];
-      if (d.testid) chain.push({ selector: `getByTestId(${JSON.stringify(d.testid)})`, strategy: 'testid', verified: false, stabilityScore: 0.95 });
-      if (d.id) chain.push({ selector: `locator(${JSON.stringify('#' + d.id)})`, strategy: 'css-id', verified: false, stabilityScore: 0.6 });
-      if (d.role && label) chain.push({ selector: `getByRole(${JSON.stringify(d.role)}, { name: ${JSON.stringify(label)} })`, strategy: 'role', verified: false, stabilityScore: 0.55 });
-      if (label && label.length < 60) chain.push({ selector: `getByText(${JSON.stringify(label)})`, strategy: 'text', verified: false, stabilityScore: 0.45 });
-      if (!chain.length) continue;             // no addressable handle → skip
+      if (d.testid) chain.push({ selector: `${prefix}getByTestId(${JSON.stringify(d.testid)})`, strategy: 'testid', verified: false, stabilityScore: 0.95 });
+      if (d.id) chain.push({ selector: `${prefix}locator(${JSON.stringify('#' + d.id)})`, strategy: 'css-id', verified: false, stabilityScore: 0.6 });
+      if ((d.role || d.tag) && label) chain.push({ selector: `${prefix}getByRole(${JSON.stringify(role || d.tag)}, { name: ${JSON.stringify(label)} })`, strategy: 'role', verified: false, stabilityScore: 0.55 });
+      if (label && label.length < 60) chain.push({ selector: `${prefix}getByText(${JSON.stringify(label)})`, strategy: 'text', verified: false, stabilityScore: 0.45 });
+      if (!chain.length) continue;
       const key = chain[0].selector;
       if (seen.has(key)) continue;
       seen.add(key);
       chain.sort((a, b) => b.stabilityScore - a.stabilityScore);
       elements.push({
-        semanticLabel: `${role || 'element'} "${label}"`,
+        semanticLabel: `${d.framePrefix ? '[frame] ' : ''}${role || 'element'} "${label}"`,
         selectorChain: chain,
         ariaRole: role,
-        parentContext: '',
-        source: 'dom-eval',                    // provenance: structurally harvested, not a11y-verified
+        parentContext: d.framePrefix || '',
+        source: 'dom-eval',
       });
     }
-    if (log) log('info', `[calibrator] DOM interactive-eval → ${elements.length} structural elements (ARIA-poor fallback)`);
+    if (log) log('info', `[calibrator] DOM interactive-eval → ${elements.length} structural elements (including iframes)`);
     return elements;
   } catch (err) {
     if (log) log('info', `[calibrator] DOM interactive-eval threw: ${err.message}`);
@@ -1715,16 +1833,29 @@ function looksLikeChallengeOrError(snap, textCorpus) {
 async function extractRouterLinksViaDom(mcpSession, baseOrigin, log, { contentOnly = false } = {}) {
   const fn = `() => {
     const urls = [];
-    const add = (v) => { if (typeof v === 'string' && v) urls.push(v); };
-    for (const el of Array.from(document.querySelectorAll('[data-href], [data-router], [data-route], [data-to], [role="link"]'))) {
+    const add = (v) => {
+      if (typeof v === 'string' && v && !v.startsWith('javascript:') && !v.startsWith('#')) {
+        urls.push(v);
+      }
+    };
+    const sel = 'a[href], [data-href], [data-router], [data-route], [data-to], [routerlink], [ng-reflect-router-link], [data-navigate], [role="link"], .navbar-item[href], .navbar-link[href], .pagination a[href], a.pagination-link';
+    for (const el of Array.from(document.querySelectorAll(sel))) {
       if (${contentOnly ? 'true' : 'false'} && (!el.closest('main, [role="main"]') || el.closest('header, nav, aside, footer, [role="navigation"]'))) continue;
+      add(el.getAttribute('href'));
+      add(el.href);
       add(el.getAttribute('data-href'));
       add(el.getAttribute('data-route'));
       add(el.getAttribute('data-to'));
+      add(el.getAttribute('routerlink'));
+      add(el.getAttribute('ng-reflect-router-link'));
+      add(el.getAttribute('data-navigate'));
       const a = el.closest && el.closest('a[href]');
-      if (a) add(a.getAttribute('href'));
+      if (a) {
+        add(a.getAttribute('href'));
+        add(a.href);
+      }
     }
-    return Array.from(new Set(urls)).slice(0, 200);
+    return Array.from(new Set(urls)).slice(0, 300);
   }`;
   try {
     const res = await callCalibratorTool(mcpSession, { name: 'browser_evaluate', arguments: { function: fn } });
@@ -1747,25 +1878,63 @@ async function extractRouterLinksViaDom(mcpSession, baseOrigin, log, { contentOn
   } catch { return []; }
 }
 
-/**
- * Classify a page's role via a single cheap LLM call.
- * Returns a short string like "login page", "product list", "dashboard".
- */
-async function classifyPageRole(snap, provider, apiKey, model) {
-  if (!provider || !apiKey) return null;
-  try {
-    const resp = await provider.complete({
-      apiKey,
-      model,
-      maxTokens: PAGE_ROLE_MAX_TOKENS,
-      systemPrompt: 'You are a web page classifier. Reply with ONLY a short 2-4 word page-type label in lowercase. No markdown, no headings, no asterisks, no punctuation, no explanation. Examples of a valid reply: login page | dashboard | product list | checkout | user profile | admin settings.',
-      messages: [{ role: 'user', content: `Classify this page (label only):\n${snap.slice(0, 2000)}` }],
-    });
-    const raw = resp?.content?.find((b) => b.type === 'text')?.text || '';
-    return cleanPageRole(raw);
-  } catch {
-    return null;
+function heuristicPageRole(url, snap, textCorpus = []) {
+  const normUrl = (url || '').toLowerCase();
+  const textStr = (Array.isArray(textCorpus) ? textCorpus.join(' ') : String(textCorpus || '')).toLowerCase();
+  const snapStr = String(snap || '').toLowerCase();
+
+  if (normUrl.includes('/edit') || normUrl.includes('input') || textStr.includes('enter your full name')) {
+    return 'form input page';
   }
+  if (normUrl.includes('/button') || textStr.includes('goto home') || textStr.includes('find location')) {
+    return 'button actions page';
+  }
+  if (normUrl.includes('/dropdown') || textStr.includes('select fruit') || textStr.includes('select the apple')) {
+    return 'dropdown selection page';
+  }
+  if (normUrl.includes('/alert') || textStr.includes('simple alert') || textStr.includes('confirm alert')) {
+    return 'alert dialog page';
+  }
+  if (normUrl.includes('/frame') || textStr.includes('first name') || textStr.includes('enter details')) {
+    return 'nested frames page';
+  }
+  if (normUrl.includes('/radio') || normUrl.includes('checkbox') || textStr.includes('remember me')) {
+    return 'radio and checkbox page';
+  }
+  if (normUrl.includes('/window') || textStr.includes('multiple windows') || textStr.includes('open home page')) {
+    return 'window and tabs page';
+  }
+  if (textStr.includes('login') || snapStr.includes('password')) return 'login page';
+  if (textStr.includes('dashboard')) return 'dashboard';
+
+  try {
+    const path = new URL(url).pathname.replace(/^\//, '').replace(/-/g, ' ');
+    if (path) return `${path} page`;
+  } catch (_) {}
+
+  return 'interactive test page';
+}
+
+/**
+ * Classify a page's role via LLM call or deterministic heuristic fallback.
+ * Guaranteed to return a valid page-type string (never null).
+ */
+async function classifyPageRole(snap, provider, apiKey, model, url = '', textCorpus = []) {
+  if (provider && apiKey && typeof provider.complete === 'function') {
+    try {
+      const resp = await provider.complete({
+        apiKey,
+        model,
+        maxTokens: PAGE_ROLE_MAX_TOKENS,
+        systemPrompt: 'You are a web page classifier. Reply with ONLY a short 2-4 word page-type label in lowercase. Examples of a valid reply: login page | dashboard | product list | form input page | dropdown selection page.',
+        messages: [{ role: 'user', content: `Classify this page (label only):\n${snap.slice(0, 2000)}` }],
+      });
+      const raw = resp?.content?.find((b) => b.type === 'text')?.text || '';
+      const cleaned = cleanPageRole(raw);
+      if (cleaned) return cleaned;
+    } catch (_) {}
+  }
+  return heuristicPageRole(url, snap, textCorpus);
 }
 
 /**
@@ -1887,13 +2056,16 @@ async function enumerateTabSubstates(args) {
   let freshSnap = '';
   try { freshSnap = snapshotText(await callCalibratorTool(mcpSession, { name: 'browser_snapshot', arguments: {} })); } catch (_) { freshSnap = ''; }
   const rows = parseSnapshotRows(freshSnap);
-  const tabs = crawlPlanner.selectProbeTargets(rows, budget).tabs
+  const context = { pageUrl, pageTitle: crawlPlanner.primaryHeading(rows) || 'tab_state', explicitCrawlHints: args.explicitCrawlHints, userStoryContext: args.userStoryContext };
+  const probeTargets = await crawlPlanner.selectProbeTargets(rows, budget, context);
+  const tabs = probeTargets.tabs
     .filter((t) => t.ref && !t.flags.disabled && !t.flags.selected && !t.flags.current);
   const discovered = tabs.length;
   if (!discovered) return { substates, discovered: 0, visited: 0 };
   const baseKey = normalizeUrl(pageUrl);
   let visited = 0;
   let navigatedCount = 0, emptyCount = 0, dupCount = 0;
+  const revealedLinks = [];
   for (const tab of tabs) {
     if (signal && signal.aborted) break;
     try {
@@ -1919,11 +2091,23 @@ async function enumerateTabSubstates(args) {
       }
       const tabSnap = snapshotText(await callCalibratorTool(mcpSession, { name: 'browser_snapshot', arguments: {} }));
       if (!tabSnap) { emptyCount += 1; if (log) log('info', `[calibrator] tab "${tab.name || '(unnamed)'}" — empty snapshot after click, skipped`); continue; }
+      
+      // Harvest inner links revealed inside this tab panel so multi-page tab content is queued
+      try {
+        let baseOriginForTab = '';
+        try { baseOriginForTab = new URL(pageUrl).origin; } catch (_) {}
+        const innerDomLinks = await extractLinksViaDom(mcpSession, baseOriginForTab, null);
+        const innerRouterLinks = await extractRouterLinksViaDom(mcpSession, baseOriginForTab, null);
+        for (const l of [...(innerDomLinks || []), ...(innerRouterLinks || [])]) {
+          if (l && !revealedLinks.includes(l)) revealedLinks.push(l);
+        }
+      } catch (_) {}
+
       const tabText = extractTextCorpus(tabSnap);
       const tabRows = parseSnapshotRows(tabSnap);
       const heading = crawlPlanner.primaryHeading(tabRows) || tab.name;
       const controlSig = `tab:${(tab.name || '').toLowerCase()}`;
-      const stateKey = crawlPlanner.computeStateKey({ normalizedUrl, pageRole, heading, activeNav, textCorpus: tabText, controlSig });
+      const stateKey = crawlPlanner.computeStateKey({ normalizedUrl, pageRole, heading, activeNav, textCorpus: tabText, controlSig, rows: tabRows });
       if (seenStateKeys.has(stateKey)) { dupCount += 1; if (log) log('info', `[calibrator] tab "${tab.name || '(unnamed)'}" — identical panel state already recorded, skipped (dedup)`); continue; }
       seenStateKeys.add(stateKey);
       const tabElements = extractElements(tabSnap);
@@ -1960,7 +2144,7 @@ async function enumerateTabSubstates(args) {
     log('info', `[calibrator] tab substates on ${pageUrl}: ${visited}/${discovered} captured`
       + (visited < discovered ? ` (${navigatedCount} navigate as routes, ${dupCount} duplicate, ${emptyCount} empty, ${discovered - visited - navigatedCount - dupCount - emptyCount} errored)` : ''));
   }
-  return { substates, discovered, visited };
+  return { substates, discovered, visited, revealedLinks };
 }
 
 /**
@@ -1993,6 +2177,9 @@ async function runCalibrator({
   generationMode = null,
   focusModule = null,
   crawlScope = null,
+  explicitCrawlHints = null,
+  explicitSeedUrls = [],
+  userStoryContext = null,
 }) {
   const broadcast = send || (() => {});
   // Crawl depth scales with the generation mode (smoke→shallow … complete→deep),
@@ -2155,10 +2342,18 @@ async function runCalibrator({
       log('info', `[calibrator] menu discovery skipped (${planErr.message}); using plain BFS`);
     }
 
-    // BFS crawl. Seed the planned module roots FIRST (menu-first), then the
-    // post-login landing URL, then startUrl so the login page itself is mapped.
+    // BFS crawl. Seed explicit requirement URLs FIRST, then planned module roots,
+    // then post-login landing URL, then startUrl so all user-story pages are mapped.
     const visited = new Set();
     const queue = [];
+    if (Array.isArray(explicitSeedUrls) && explicitSeedUrls.length > 0) {
+      for (const su of explicitSeedUrls) {
+        if (su && typeof su === 'string' && /^https?:\/\//i.test(su.trim())) {
+          queue.push(su.trim());
+          if (log) log('info', `[calibrator] user-story seed URL queued: ${su.trim()}`);
+        }
+      }
+    }
     for (const u of planSeed) queue.push(u);
     if (postLoginUrl && postLoginUrl !== startUrl) queue.push(postLoginUrl);
     queue.push(startUrl);
@@ -2294,7 +2489,7 @@ async function runCalibrator({
         const stateRows = parseSnapshotRows(snap);
         const pageHeading = crawlPlanner.primaryHeading(stateRows);
         const activeNav = crawlPlanner.activeNavItem(stateRows);
-        const stateKey = crawlPlanner.computeStateKey({ normalizedUrl, pageRole: null, heading: pageHeading, activeNav, textCorpus });
+        const stateKey = crawlPlanner.computeStateKey({ normalizedUrl, pageRole: null, heading: pageHeading, activeNav, textCorpus, rows: stateRows });
         if (seenStateKeys.has(stateKey)) {
           duplicateStatesSkipped += 1;
           log('info', `[calibrator] ${url} is a duplicate UI-state (the same screen was already mapped) — skipping`);
@@ -2303,22 +2498,15 @@ async function runCalibrator({
         seenStateKeys.add(stateKey);
         if (recordRouteTemplate) seenRecordRouteTemplates.add(recordRouteTemplate);
 
-        // #7 — ARIA-poor SPA fallback. extractElements is a11y-snapshot-bound; a
-        // custom-widget SPA (clickable divs, role-less anchors, unlabelled icon
-        // buttons) yields almost nothing there. When the snapshot produced very few
-        // interactive candidates, harvest interactive elements STRUCTURALLY from the
-        // live DOM and merge them so the page still gets usable vocabulary. Keyed
-        // off element COUNT (a structural signal), never a site identity.
-        if (elements.length < 3) {
-          throwIfAborted(signal);
-          const domElements = await harvestInteractiveViaDom(mcpSession, log);
-          if (domElements.length) {
-            const seenLabels = new Set(elements.map((e) => e.semanticLabel));
-            for (const de of domElements) {
-              if (seenLabels.has(de.semanticLabel)) continue;
-              seenLabels.add(de.semanticLabel);
-              elements.push(de);
-            }
+        // Always run DOM interactive evaluation to catch iframe elements and structural controls
+        throwIfAborted(signal);
+        const domElements = await harvestInteractiveViaDom(mcpSession, log);
+        if (domElements.length) {
+          const seenLabels = new Set(elements.map((e) => e.semanticLabel));
+          for (const de of domElements) {
+            if (seenLabels.has(de.semanticLabel)) continue;
+            seenLabels.add(de.semanticLabel);
+            elements.push(de);
           }
         }
 
@@ -2381,9 +2569,9 @@ async function runCalibrator({
           log('info', `[calibrator] page interior scroll skipped for ${url}: ${interiorErr.message}`);
         }
 
-        // Classify page role
+        // Classify page role (guaranteed non-null via heuristic fallback)
         throwIfAborted(signal);
-        const pageRole = await classifyPageRole(snap, provider, apiKey, classificationModel);
+        const pageRole = await classifyPageRole(snap, provider, apiKey, classificationModel, url, textCorpus);
         throwIfAborted(signal);
 
         // ARIA landmark labels, captured apart so the structural-label gate can
@@ -2430,6 +2618,8 @@ async function runCalibrator({
           const probe = await probeInteractiveAffordances({
             mcpSession, baselineSnap: snap, pageUrl: url, log, signal, maxProbes: budget.probeBudgetPerPage,
             actionLedger: crawlActionLedger,
+            explicitCrawlHints,
+            userStoryContext
           });
           if (probe.revealedElements.length) {
             const seenLabels = new Set(elements.map((e) => e.semanticLabel));
@@ -2463,10 +2653,15 @@ async function runCalibrator({
             mcpSession, budget, pageUrl: url, normalizedUrl, pageRole, activeNav,
             seenStateKeys, module, authProfileId, log, signal,
             actionLedger: crawlActionLedger,
+            explicitCrawlHints,
+            userStoryContext
           });
           substates = tabResult.substates;
           tabsDiscovered += tabResult.discovered;
           tabsVisited += tabResult.visited;
+          if (Array.isArray(tabResult.revealedLinks) && tabResult.revealedLinks.length) {
+            pageInteriorLinks.push(...tabResult.revealedLinks);
+          }
           for (const ss of substates) {
             const seenLabels = new Set(elements.map((e) => e.semanticLabel));
             for (const el of (ss.elements || [])) {
@@ -2530,6 +2725,45 @@ async function runCalibrator({
         } catch (modalErr) {
           if (modalErr?.code === 'CANCELLED' || signal?.aborted) throw modalErr;
           log('info', `[calibrator] modal probing skipped for ${url}: ${modalErr.message}`);
+        }
+
+        try {
+          const pagResult = await probePaginationAffordances({
+            mcpSession,
+            pageUrl: url,
+            normalizedUrl,
+            pageRole,
+            activeNav,
+            seenStateKeys,
+            module,
+            authProfileId,
+            log,
+            signal,
+            maxPages: 5,
+            actionLedger: crawlActionLedger,
+          });
+          if (pagResult.substates.length) {
+            substates.push(...pagResult.substates);
+          }
+          if (pagResult.revealedElements.length) {
+            const seenLabels = new Set(elements.map((e) => e.semanticLabel));
+            for (const el of pagResult.revealedElements) {
+              if (seenLabels.has(el.semanticLabel)) continue;
+              seenLabels.add(el.semanticLabel);
+              elements.push(el);
+            }
+          }
+          if (pagResult.revealedText.length) {
+            const seenText = new Set(textCorpus);
+            for (const t of pagResult.revealedText) {
+              if (!seenText.has(t)) {
+                seenText.add(t);
+                textCorpus.push(t);
+              }
+            }
+          }
+        } catch (pagErr) {
+          if (pagErr?.code === 'CANCELLED' || signal?.aborted) throw pagErr;
         }
 
         // Persist CalibrationPage. capabilitiesJson is written on the rich attempt

@@ -15,7 +15,12 @@ function transformMessagesToOpenAI(system, messages) {
   const openAiMessages = [];
 
   if (system) {
-    openAiMessages.push({ role: 'system', content: String(system) });
+    const systemText = Array.isArray(system)
+      ? system.map((b) => (typeof b === 'string' ? b : b?.text || '')).filter(Boolean).join('\n\n')
+      : (typeof system === 'string' ? system : (system?.text || String(system)));
+    if (systemText && systemText.trim()) {
+      openAiMessages.push({ role: 'system', content: systemText.trim() });
+    }
   }
 
   if (Array.isArray(messages)) {
@@ -118,8 +123,13 @@ async function complete({ apiKey, model, system, messages, tools, maxTokens, sig
   const targetUrl = (baseUrl || process.env.COPILOT_BRIDGE_URL || DEFAULT_BRIDGE_URL).replace(/\/+$/, '');
   const endpoint = `${targetUrl}/v1/chat/completions`;
 
+  let effectiveModel = model;
+  if (!effectiveModel || effectiveModel === 'auto' || effectiveModel === 'default') {
+    effectiveModel = 'copilot-gpt-4o';
+  }
+
   const payload = {
-    model: model || 'copilot-gpt-4o',
+    model: effectiveModel,
     messages: transformMessagesToOpenAI(system, messages),
     ...(tools ? { tools: transformToolsToOpenAI(tools) } : {}),
     ...(maxTokens ? { max_tokens: Math.min(16384, maxTokens) } : {}),

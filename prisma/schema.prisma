@@ -281,7 +281,7 @@ model Project {
   // keeps existing projects working unchanged. 'gemini' routes via the
   // Google Generative AI SDK with the same canonical message shape; see
   // server/lib/providers/gemini.js for the Anthropic <-> Gemini translation.
-  aiProvider               String   @default("claude") // 'claude' | 'gemini'
+  aiProvider               String   @default("copilot") // 'claude' | 'gemini' | 'copilot'
   // Phase F (cost control) — execution mode for the Conductor pipeline.
   //   'fast'     (default) — 12 turns/case, 1 conductor attempt, no Supervisor
   //                          finalise pass, inline Critic on errors only.

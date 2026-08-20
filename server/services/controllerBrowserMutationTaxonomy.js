@@ -19,6 +19,7 @@ const ALWAYS_MUTATING_TOOLS = new Set([
   'browser_file_upload', 'browser_upload_file', 'browser_handle_dialog',
   'browser_resize', 'browser_close', 'browser_install',
   'browser_evaluate', 'browser_run_code', 'browser_run_code_unsafe',
+  'ClickAndHold', 'browser_click_and_hold', 'Print', 'Inspect', 'ReadAndPrint', 'PressKey',
   'playwright_context_new_page', 'playwright_page_goto', 'playwright_page_bring_to_front',
   'playwright_frame_install_event_recorder',
   'playwright_locator_add_capture_marker', 'playwright_locator_remove_capture_marker',

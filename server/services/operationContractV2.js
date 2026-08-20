@@ -544,9 +544,27 @@ function normalizeAction(source, context, findings) {
         { exactAuthoredValue: source.value },
       )
     : null;
-  if (!optionActivation && type !== 'Select' && (source.selectionCriteria != null || source.selection != null)) {
-    findings.push(finding(`${path}.selection`, 'selection_forbidden', 'Only Select accepts a selection contract.'));
-  }
+  const values = Array.isArray(source.values)
+    ? source.values.map(clean).filter(Boolean)
+    : (source.value && typeof source.value === 'string' && source.value.includes(',') && !source.value.includes('http')
+      ? source.value.split(',').map(clean).filter(Boolean)
+      : null);
+
+  const element = clean(
+    source.element
+    || explicitTarget?.label
+    || explicitTarget?.accessibleName
+    || (typeof explicitTarget === 'string' ? explicitTarget : '')
+    || source.target
+    || ''
+  ) || null;
+
+  const key = clean(
+    source.key
+    || (type === 'PressKey' || type === 'Hotkey' ? (source.value || source.text) : '')
+    || (source.action && (source.action.match(/\b(tab|enter|escape|space|backspace|delete|arrowup|arrowdown|arrowleft|arrowright)\b/i) || [])[1])
+    || ''
+  ) || null;
 
   return Object.freeze({
     schemaVersion: CONTRACT_VERSION,
@@ -564,6 +582,14 @@ function normalizeAction(source, context, findings) {
     targetAliases: normalizeTargetAliases(source, targetIdentity),
     value: normalizedValue.value,
     valueRef: normalizedValue.valueRef,
+    values,
+    element,
+    key,
+    action: clean(source.action) || null,
+    authoredText: clean(source.authoredText || source.text) || null,
+    text: clean(source.text) || null,
+    properties: clone(source.properties || source.property || null),
+    attribute: clean(source.attribute || source.attr || null) || null,
     selection,
     condition: clone(source.condition || null),
     expected: clone(source.expected ?? null),
@@ -609,7 +635,7 @@ function normalizeAssertion(source, context, findings) {
 
   // Infer target from action text when no explicit target is provided.
   // Patterns: 'Confirm the "Field Name" field is X' → target = "Field Name"
-  let target = source.targetIdentity ?? source.target;
+  let target = source.targetIdentity ?? source.target ?? source.element;
   if (target == null) {
     const actionText = [source.authoredText, source.text, source.atomicText, source.action].filter(Boolean).join(' ');
     const targetMatch = actionText.match(/["']([^"']+)["']\s*(?:field|input|element|text\s*box|button|control)?/i);
@@ -652,6 +678,10 @@ function normalizeAssertion(source, context, findings) {
     payload: clone(source.payload || null),
     verify: clone(source.verify || null),
     expected: clone(expected),
+    element: clean(source.element) || null,
+    action: clean(source.action) || null,
+    authoredText: clean(source.authoredText || source.text) || null,
+    text: clean(source.text) || null,
     dependencies: normalizeDependencies(source.dependsOn || source.dependencies),
     optional: false,
     required: source.required !== false,

@@ -90,7 +90,7 @@ router.post('/', requireCsrf, async (req, res, next) => {
           userId,
           calibrationId: calibration.id,
           startUrl: resolvedUrl,
-          maxPages: typeof maxPages === 'number' ? Math.min(maxPages, 30) : undefined,
+          maxPages: typeof maxPages === 'number' ? Math.min(maxPages, 500) : undefined,
           module: sliceModule,
           authProfileId: sliceAuthProfileId,
           crawlScope: resolvedCrawlScope,

@@ -369,8 +369,8 @@ function ProviderStatusRow({ status, collapsed }) {
       ? { dot: 'bg-danger-400', text: 'text-danger-300', label: 'Invalid' }
       : { dot: 'bg-warn-400', text: 'text-warn-300', label: 'Missing key' };
 
-  const providerLabel = provider === 'gemini' ? 'Gemini' : 'Claude';
-  const settingsTo = `/settings/${provider}`;
+  const providerLabel = provider === 'copilot' ? 'Copilot (VS Code)' : (provider === 'gemini' ? 'Gemini' : 'Claude');
+  const settingsTo = provider === 'copilot' ? '/settings' : `/settings/${provider}`;
 
   // Collapsed mode: a single status dot under the Settings cog. Tooltip
   // carries the human label so it's still discoverable.

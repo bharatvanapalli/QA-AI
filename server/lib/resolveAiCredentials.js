@@ -28,8 +28,8 @@ const DEFAULT_MODEL_BY_PROVIDER = {
 };
 
 async function resolveAiCredentials(userId, project) {
-  const raw = project?.aiProvider || 'claude';
-  const provider = isValidProvider(raw) ? raw.toLowerCase() : 'claude';
+  const raw = project?.aiProvider || 'copilot';
+  const provider = isValidProvider(raw) ? raw.toLowerCase() : 'copilot';
 
   if (provider === 'copilot') {
     const model = project?.aiModel || DEFAULT_MODEL_BY_PROVIDER.copilot;

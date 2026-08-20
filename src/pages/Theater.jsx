@@ -1162,9 +1162,18 @@ const ActionTrail = React.memo(function ActionTrail({ actions, scenarios, conduc
               </div>
             ) : null,
             ...visibleActions.map((a, i) => {
-            const previous = i > 0 ? visibleActions[i - 1] : null;
-            const showBoundary = a.tcId && (!previous || previous.tcId !== a.tcId);
-            const info = showBoundary ? tcMap.get(a.tcId) : null;
+              const previous = i > 0 ? visibleActions[i - 1] : null;
+              // Find previous action that had a defined tcId to avoid splitting a test case
+              // into multiple sections if an intermediate action has undefined tcId.
+              let lastSeenTcId = null;
+              for (let j = i - 1; j >= 0; j--) {
+                if (visibleActions[j]?.tcId) {
+                  lastSeenTcId = visibleActions[j].tcId;
+                  break;
+                }
+              }
+              const showBoundary = a.tcId && (!lastSeenTcId || lastSeenTcId !== a.tcId);
+              const info = showBoundary ? tcMap.get(a.tcId) : null;
             // Phase 5 — data-row iteration divider. A data-driven case re-runs its
             // steps once PER ROW; without a divider the repeated "Step 1..N"
             // sequences read as "gone mad / repeating randomly" (issue #4). When a
@@ -1884,6 +1893,21 @@ const ActionLine = React.memo(function ActionLine({ action }) {
               Required precondition was not met. Remaining dependent steps were not executed.
             </div>
           </div>
+        </div>
+      </div>
+    );
+  }
+  if (action.tool === 'print_inspect' || String(action.narration || '').startsWith('[PRINT]')) {
+    const raw = String(action.narration || '').replace(/^\[PRINT\]\s*/, '');
+    return (
+      <div className="pl-3 py-1.5 border-l-2 border-accent-400 bg-accent-50/50 rounded-r-md">
+        <div className="flex items-center gap-2">
+          <span className="text-2xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-pill bg-accent-100 text-accent-800">
+            PRINT
+          </span>
+          <span className="text-xs font-mono font-semibold text-ink-900 leading-snug">
+            {raw}
+          </span>
         </div>
       </div>
     );

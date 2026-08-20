@@ -976,13 +976,20 @@ function renderCaseContractPackBlock(packs = []) {
     'For each case, include semantic tokens, row intent, and a structured oracle. Do not invent generic demo-application filler.',
   ];
   for (const pack of rows.slice(0, 80)) {
-    lines.push(`- ${pack.coverageRef} planCaseId=${pack.planCaseId || 'none'} module=${pack.module || 'unknown'} story=${pack.storyId || 'unknown'} title="${pack.title}"`);
-    lines.push(`  requiredFields=${pack.requiredFields.join(', ') || 'none'}`);
-    lines.push(`  tokens=${Object.entries(pack.semanticTokenMap || {}).map(([field, token]) => `${field}:${token}`).join(', ') || 'none'}`);
+    lines.push(`- ${pack.coverageRef || 'ref'} planCaseId=${pack.planCaseId || 'none'} module=${pack.module || 'unknown'} story=${pack.storyId || 'unknown'} title="${pack.title || ''}"`);
+    lines.push(`  requiredFields=${Array.isArray(pack.requiredFields) ? pack.requiredFields.join(', ') : 'none'}`);
+    lines.push(`  tokens=${pack.semanticTokenMap ? Object.entries(pack.semanticTokenMap).map(([field, token]) => `${field}:${token}`).join(', ') : 'none'}`);
     lines.push(`  rows=${pack.rowIntent && pack.rowIntent.sheet || 'none'}:${pack.rowIntent && pack.rowIntent.rowIds && pack.rowIntent.rowIds.length ? pack.rowIntent.rowIds.join(',') : pack.rowIntent && pack.rowIntent.rowSource || 'none'}`);
-    lines.push(`  oracle=${pack.requiredOracle.kind}:${pack.requiredOracle.target}:${JSON.stringify(pack.requiredOracle.expected)}`);
-    if (pack.capabilityHints && pack.capabilityHints.length) {
-      lines.push(`  capabilities=${pack.capabilityHints.map((hint) => `${hint.label || hint.fieldId}:${hint.locatorStrategy || 'unknown'}:${hint.selectorConfidence == null ? 'n/a' : hint.selectorConfidence}`).join('; ')}`);
+    if (pack.requiredOracle) {
+      lines.push(`  oracle=${pack.requiredOracle.kind || 'generic'}:${pack.requiredOracle.target || 'none'}:${JSON.stringify(pack.requiredOracle.expected || '')}`);
+    } else {
+      lines.push(`  oracle=none`);
+    }
+    if (Array.isArray(pack.capabilityHints) && pack.capabilityHints.length) {
+      lines.push(`  capabilities=${pack.capabilityHints.map((hint) => `${hint.label || hint.fieldId || ''}:${hint.locatorStrategy || 'unknown'}:${hint.selectorConfidence == null ? 'n/a' : hint.selectorConfidence}`).join('; ')}`);
+    }
+    if (pack.sourceText && String(pack.sourceText).trim()) {
+      lines.push(`  sourceStoryText:\n${String(pack.sourceText).trim().split('\n').map(l => '    ' + l).join('\n')}`);
     }
   }
   return lines.join('\n');

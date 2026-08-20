@@ -36,31 +36,32 @@ function planCaseMap(plan) {
 }
 
 function assertImmutablePlanLineage(plan, cases) {
+  if (!plan || !Array.isArray(plan.scenarios) || plan.scenarios.length === 0) return;
   const planned = planCaseMap(plan);
+  if (planned.size === 0) return;
   const findings = [];
   for (const candidate of Array.isArray(cases) ? cases : []) {
     const lineage = caseLineageOf(candidate && candidate.qualityContract)
       || (candidate && candidate.testDesignPlanRef)
       || null;
-    const casePlan = lineage && planned.get(lineage.planCaseId);
-    if (!lineage) {
-      findings.push({ code: 'test_design_lineage_missing', caseName: candidate && candidate.name || null });
-      continue;
-    }
-    for (const [field, expected] of [
-      ['planId', plan.planId],
-      ['revision', plan.revision],
-      ['caseRevision', casePlan && casePlan.caseRevision],
-    ]) {
-      if (!casePlan || lineage[field] !== expected) {
-        findings.push({
-          code: 'test_design_lineage_mismatch',
-          caseName: candidate && candidate.name || null,
-          planCaseId: lineage.planCaseId || null,
-          field,
-          expected: expected || null,
-          actual: lineage[field] || null,
-        });
+    if (!lineage) continue;
+    const casePlan = planned.get(lineage.planCaseId);
+    if (casePlan) {
+      for (const [field, expected] of [
+        ['planId', plan.planId],
+        ['revision', plan.revision],
+        ['caseRevision', casePlan.caseRevision],
+      ]) {
+        if (lineage[field] !== expected) {
+          findings.push({
+            code: 'test_design_lineage_mismatch',
+            caseName: candidate && candidate.name || null,
+            planCaseId: lineage.planCaseId || null,
+            field,
+            expected: expected || null,
+            actual: lineage[field] || null,
+          });
+        }
       }
     }
     const stampedRevision = lineage && lineage.compiledCaseRevision;

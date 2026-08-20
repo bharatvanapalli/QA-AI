@@ -982,6 +982,9 @@ export function GenerateConfigCard({ projectId, onGenerate, generating, onCancel
   // a deeper mode than the existing atlas, or staleness). Turning this ON forces
   // a fresh crawl regardless — the "I want to re-map the site now" escape hatch.
   const [rebuildAtlas, setRebuildAtlas] = useState(false);
+  
+  const [enableExplicitCrawlHints, setEnableExplicitCrawlHints] = useState(false);
+  const [explicitCrawlHints, setExplicitCrawlHints] = useState('');
 
   const depthMeta = DEPTH_OPTIONS.find((d) => d.value === depth);
   const detectedModules = modulePreview?.preview?.modules || [];
@@ -1094,6 +1097,8 @@ export function GenerateConfigCard({ projectId, onGenerate, generating, onCancel
       // Only force a re-crawl when the user explicitly asked; otherwise the backend
       // reuses a recent matching atlas (no more unconditional recrawl on every run).
       ...(rebuildAtlas ? { forceAtlasRefresh: true } : {}),
+      // Pass the explicit crawl hints string to the crawler intentClassifier
+      ...(enableExplicitCrawlHints && explicitCrawlHints.trim() ? { explicitCrawlHints: explicitCrawlHints.trim() } : {}),
     });
   };
 
@@ -4958,9 +4963,23 @@ function StepRow({ step, index, status, error, operationCheck, assertion }) {
   const plannedOperationCheck = step.operationCheck || step.syncState || null;
   const check = operationCheck || plannedOperationCheck;
   const checkText = check && typeof check === 'object' ? check.expected : null;
+  const isObservation = step.stepKind === 'observation' || /^(?:Print|Inspect|Read|Observe|Log|GetText)$/i.test(actionName);
   const isVerification = step.verificationPoint || step.stepKind === 'verification' || /^Assert/i.test(actionName) || !!step.verify;
+  const isKeyboard = /^(?:PressKey|Hotkey|KeyPress)$/i.test(actionName);
+  const isNavigate = /^Navigate$/i.test(actionName);
+  const isAlertAction = /^(?:AcceptAlert|DismissAlert)$/i.test(actionName);
+  
+  const rawElement = step.element || step.target || '';
+  const isSyntheticElement = /^(?:keyboard|Alert Dialog|Target URL|Active Tab|Browser Window|Browser History)$/i.test(rawElement);
+  const meaningfulElement = (!isSyntheticElement && !isNavigate) ? rawElement : null;
+
+  const keyToPress = isKeyboard ? (step.value || step.key || displayValue) : null;
+  const navigateUrl = isNavigate ? (step.value || rawElement) : null;
+  const hideDisplayValue = isKeyboard || isNavigate || isAlertAction;
+
   const assertionText = assertion?.expected || (isVerification ? (step.expected || step.text) : null);
-  const legacyExpectedText = !checkText && !assertionText ? step.expected : null;
+  const observationText = isObservation ? (step.expected || step.text) : null;
+  const legacyExpectedText = !checkText && !assertionText && !observationText ? step.expected : null;
   return (
     <div className={`grid min-w-0 grid-cols-[32px_1fr] gap-2 rounded-lg px-2 py-2 ${badge ? `ring-1 ring-inset ${badge.ring}` : ''}`}>
       <div className="flex items-start">
@@ -4974,16 +4993,26 @@ function StepRow({ step, index, status, error, operationCheck, assertion }) {
           </span>
         ) : (
           <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-info-100/80 text-info-700 text-2xs font-bold tabular-nums">
-            {step.order || index}
+            {index ?? step.order}
           </span>
         )}
       </div>
       <div className="min-w-0">
         <div className="flex items-baseline gap-2 flex-wrap">
           <span className="text-sm font-semibold text-ink-900">{displayAction}</span>
-          {(step.element || step.target) && (
+          {keyToPress && (
+            <kbd className="inline-flex items-center px-1.5 py-0.5 text-xs font-mono font-bold text-ink-800 bg-ink-100 border border-ink-300 rounded shadow-2xs">
+              {String(keyToPress)}
+            </kbd>
+          )}
+          {navigateUrl && (
             <span className="text-xs text-ink-600">
-              on <span className="text-ink-700 bg-white/70 px-1 rounded">{step.element || step.target}</span>
+              to <span className="font-mono text-ink-800 bg-white/70 px-1 rounded">{navigateUrl}</span>
+            </span>
+          )}
+          {meaningfulElement && (
+            <span className="text-xs text-ink-600">
+              on <span className="text-ink-700 bg-white/70 px-1 rounded">{meaningfulElement}</span>
             </span>
           )}
           {step.locator_hint && (
@@ -4997,7 +5026,7 @@ function StepRow({ step, index, status, error, operationCheck, assertion }) {
             </span>
           )}
         </div>
-        {displayValue !== undefined && displayValue !== null && displayValue !== '' && (
+        {!hideDisplayValue && displayValue !== undefined && displayValue !== null && displayValue !== '' && (
           <div className="text-xs text-ink-600 mt-0.5">
             <span className="text-ink-400">value: </span>
             <span className="font-mono text-ink-800 bg-white/70 px-1 rounded">"{String(displayValue)}"</span>
@@ -5007,6 +5036,12 @@ function StepRow({ step, index, status, error, operationCheck, assertion }) {
           <div className="text-xs text-ink-600 mt-0.5">
             <span className="text-ink-400">when: </span>
             {conditionText}
+          </div>
+        )}
+        {observationText && (
+          <div className="text-xs text-accent-700 mt-0.5">
+            <span className="text-ink-400">output: </span>
+            {observationText}
           </div>
         )}
         {(checkText || legacyExpectedText) && (
@@ -5651,7 +5686,7 @@ function stepLogicalIdentity(step, sourceIndex = 0) {
     || step?.stepId
     || step?.caseContractStepId
     || step?.contractStepId
-    || `legacy-step-${sourceIndex + 1}`;
+    || (step?.order ? `step_${step.order}` : `legacy-step-${sourceIndex + 1}`);
 }
 
 export function mergeStepMutationResult(testCase, result, fallbackSteps) {

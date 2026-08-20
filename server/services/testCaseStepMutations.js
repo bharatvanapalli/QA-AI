@@ -17,32 +17,36 @@ const ACTION_RULES = [
   { pattern: /^\s*(?:right\s*click|context\s*menu)\b/i, action: 'RightClick' },
   { pattern: /^\s*(?:middle\s*click|aux\s*click)\b/i, action: 'MiddleClick' },
   { pattern: /^\s*(?:click\s*and\s*hold|hold\s+button|long\s*press|press\s*and\s*hold)\b/i, action: 'ClickAndHold' },
+  { pattern: /^\s*(?:double\s*click)\b/i, action: 'DoubleClick' },
   // PressKey & Hotkey before generic Click
   { pattern: /^\s*(?:press\s+shortcut|hotkey|press\s+combination|key\s+combination)\b/i, action: 'Hotkey' },
   { pattern: /^\s*press\s+(?:the\s+)?(?:tab|enter|escape|backspace|delete|arrowup|arrowdown|arrowleft|arrowright|arrow\s+\w+|control|alt|shift|space|home|end|pageup|pagedown|page\s+up|page\s+down|f\d{1,2})\b/i, action: 'PressKey' },
   // Dialog / Alert handling
-  { pattern: /^\s*(?:accept\s+(?:the\s+)?alert|confirm\s+(?:the\s+)?alert|ok\s+(?:the\s+)?alert)\b/i, action: 'AcceptAlert' },
-  { pattern: /^\s*(?:dismiss\s+(?:the\s+)?alert|cancel\s+(?:the\s+)?alert)\b/i, action: 'DismissAlert' },
-  { pattern: /^\s*(?:type|enter|input)\s+into\s+(?:the\s+)?(?:prompt|alert)\b/i, action: 'TypeAlert' },
+  { pattern: /^\s*(?:accept\s*(?:the\s+)?alert|confirm\s*(?:the\s+)?alert|ok\s*(?:the\s+)?alert)\b/i, action: 'AcceptAlert' },
+  { pattern: /^\s*(?:dismiss\s*(?:the\s+)?alert|cancel\s*(?:the\s+)?alert)\b/i, action: 'DismissAlert' },
+  { pattern: /^\s*(?:type\s*alert|type|enter|input)\s+into\s+(?:the\s+)?(?:prompt|alert)\b/i, action: 'TypeAlert' },
   // Clipboard & Data
   { pattern: /^\s*(?:copy|copy\s+to\s+clipboard)\b/i, action: 'Copy' },
   { pattern: /^\s*(?:paste|paste\s+from\s+clipboard)\b/i, action: 'Paste' },
   { pattern: /^\s*(?:extract\s+data|extract|save\s+to\s+variable|store\s+variable|record)\b/i, action: 'ExtractData' },
   // Frame, Shadow DOM & Tab switching
-  { pattern: /^\s*(?:switch\s+to\s+tab|switch\s+tab|switch\s+window)\b/i, action: 'SwitchTab' },
-  { pattern: /^\s*(?:switch\s+to\s+frame|switch\s+frame|enter\s+iframe)\b/i, action: 'SwitchFrame' },
-  { pattern: /^\s*(?:access\s+shadow|enter\s+shadow|access\s+open\s+shadow|access\s+closed\s+shadow)\b/i, action: 'AccessShadow' },
+  { pattern: /^\s*(?:switch\s*to\s*tab|switch\s*tab|switch\s*window)\b/i, action: 'SwitchTab' },
+  { pattern: /^\s*(?:switch\s*to\s*frame|switch\s*frame|enter\s+iframe)\b/i, action: 'SwitchFrame' },
+  { pattern: /^\s*(?:access\s*shadow|enter\s*shadow|access\s*open\s*shadow|access\s*closed\s*shadow)\b/i, action: 'AccessShadow' },
   // Inputs & Actions
   { pattern: /^\s*append\b/i, action: 'Type' },
-  { pattern: /^\s*clear\s+and\s+(?:type|enter|fill)\b/i, action: 'ClearAndType' },
+  { pattern: /^\s*clear\s*and\s*(?:type|enter|fill)\b/i, action: 'ClearAndType' },
   { pattern: /^\s*clear\b/i, action: 'Clear' },
-  { pattern: /^\s*(?:drag\s+and\s+drop|drag)\b/i, action: 'DragAndDrop' },
-  { pattern: /^\s*(?:set\s+slider|adjust\s+slider|slide)\b/i, action: 'Slider' },
+  { pattern: /^\s*(?:type\s*sequentially|human\s*typing)\b/i, action: 'TypeSequentially' },
+  { pattern: /^\s*(?:drag\s*and\s*drop|drag)\b/i, action: 'DragAndDrop' },
+  { pattern: /^\s*(?:set\s*slider|adjust\s*slider|slide)\b/i, action: 'Slider' },
   { pattern: /^\s*(?:enter|fill|type|input|provide|populate)\b/i, action: 'Fill' },
+  { pattern: /^\s*(?:multi\s*select|select\s*multiple|choose\s+multiple)\b/i, action: 'SelectMultiple' },
   { pattern: /^\s*deselect\b/i, action: 'Deselect' },
   { pattern: /^\s*(?:select|choose|pick)\b/i, action: 'Select' },
   { pattern: /^\s*uncheck\b/i, action: 'Uncheck' },
   { pattern: /^\s*check\b/i, action: 'Check' },
+  { pattern: /^\s*(?:radio|select\s+radio)\b/i, action: 'Radio' },
   { pattern: /^\s*(?:click|press|tap|submit)\b/i, action: 'Click' },
   { pattern: /^\s*upload\b/i, action: 'Upload' },
   { pattern: /^\s*download\b/i, action: 'Download' },
@@ -56,6 +60,7 @@ const ACTION_RULES = [
   { pattern: /^\s*(?:find\s+row|locate\s+row)\b/i, action: 'FindRow' },
   { pattern: /^\s*(?:count\s+rows|count\s+visible)\b/i, action: 'CountRows' },
   { pattern: /^\s*(?:sort|click\s+header)\b/i, action: 'SortColumn' },
+  { pattern: /^\s*(?:inspect|read\s+(?:the\s+)?text|observe)\b/i, action: 'Inspect' },
   { pattern: /^\s*(?:verify|validate|assert|expect|confirm|ensure)\b/i, action: 'Verify' },
 ];
 
@@ -126,8 +131,12 @@ function ensureStableSteps(value) {
   const logicalByLegacyKey = new Map();
   return source.map((raw, index) => {
     const step = technicalClone(raw);
+    const orderNum = Number.isFinite(Number(step.order)) ? Number(step.order) : index + 1;
     let id = stepIdentity(step);
-    if (!id || seenStepIds.has(id)) id = newId('step');
+    if (!id || seenStepIds.has(id)) {
+      id = (step.order ? `step_${step.order}` : `step_${index + 1}`);
+      if (seenStepIds.has(id)) id = newId('step');
+    }
     seenStepIds.add(id);
 
     const explicitLogicalId = logicalIdentity(step);
@@ -147,7 +156,7 @@ function ensureStableSteps(value) {
       id,
       contractStepId: boundedString(step.contractStepId || step.contract_step_id, 180) || id,
       logicalStepId,
-      order: Number.isFinite(Number(step.order)) ? Number(step.order) : index + 1,
+      order: orderNum,
     };
   });
 }
@@ -228,7 +237,7 @@ function inferAction(text, structured = {}) {
 
 function stripLeadingAction(text) {
   return text
-    .replace(/^\s*(?:navigate\s+back|go\s+back|navigate\s+forward|go\s+forward|refresh|reload|navigate|go\s+to|visit|load|open|right\s*click|middle\s*click|click\s*and\s*hold|hold\s+button|long\s*press|press\s+shortcut|hotkey|press\s+combination|accept\s+alert|dismiss\s+alert|type\s+into\s+prompt|copy|paste|extract\s+data|extract|save\s+to\s+variable|store\s+variable|switch\s+to\s+tab|switch\s+tab|switch\s+window|switch\s+to\s+frame|switch\s+frame|access\s+shadow|enter\s+shadow|append|clear\s+and\s+type|clear|drag\s+and\s+drop|drag|set\s+slider|adjust\s+slider|enter|fill|type|input|provide|populate|deselect|select|choose|pick|uncheck|check|click|press|tap|submit|upload|download|wait|pause|hover|scroll\s+into\s+view|scroll\s+to|scroll|expand|collapse|find\s+row|locate\s+row|count\s+rows|sort|click\s+header|verify|validate|assert|expect|confirm|ensure)\b\s*/i, '')
+    .replace(/^\s*(?:navigate\s+back|go\s+back|navigate\s+forward|go\s+forward|refresh|reload|navigate|go\s+to|visit|load|open|right\s*click|middle\s*click|click\s*and\s*hold|hold\s+button|long\s*press|press\s+shortcut|hotkey|press\s+combination|accept\s+alert|dismiss\s+alert|type\s+into\s+prompt|copy|paste|extract\s+data|extract|save\s+to\s+variable|store\s+variable|switch\s+to\s+tab|switch\s+tab|switch\s+window|switch\s+to\s+frame|switch\s+frame|access\s+shadow|enter\s+shadow|append|clear\s*and\s*type|clear|type\s*sequentially|human\s*typing|drag\s+and\s+drop|drag|set\s+slider|adjust\s+slider|enter|fill|type|input|provide|populate|multi\s*select|select\s*multiple|choose\s+multiple|deselect|select|choose|pick|uncheck|check|radio|select\s+radio|click|press|tap|submit|upload|download|wait|pause|hover|scroll\s+into\s+view|scroll\s+to|scroll|expand|collapse|find\s+row|locate\s+row|count\s+rows|sort|click\s+header|inspect|verify|validate|assert|expect|confirm|ensure)\b\s*/i, '')
     .replace(/^\s*that\b\s*/i, '')
     .replace(/[.\s]+$/g, '')
     .trim();
@@ -241,16 +250,26 @@ function inferExecutionFields(text, structured = {}) {
   let expected = boundedString(structured.expected || structured.validation, 1_000);
   const rest = stripLeadingAction(text);
 
-  if ((action === 'Fill' || action === 'Select' || action === 'ClearAndType') && !element) {
+  if ((action === 'Fill' || action === 'Select' || action === 'SelectMultiple' || action === 'ClearAndType' || action === 'TypeSequentially') && !element) {
+    const onWithMatch = rest.match(/^(?:on|in|into|from)\s+(.+?)\s+(?:with|as|value)\s+(.+)$/i);
     const quoted = rest.match(/^[\"']([^\"']+)[\"']\s+(?:in|into|on|from)\s+(.+)$/i);
     const unquoted = rest.match(/^(.+?)\s+(?:in|into|on|from)\s+(.+)$/i);
-    const match = quoted || unquoted;
-    if (match) {
-      if (value === undefined || value === null || value === '') value = match[1].trim();
-      element = match[2].trim();
+    const justOnMatch = rest.match(/^(?:on|in|into|from)\s+(.+)$/i);
+
+    if (onWithMatch) {
+      element = onWithMatch[1].trim();
+      if (value === undefined || value === null || value === '') value = onWithMatch[2].trim();
+    } else if (quoted) {
+      if (value === undefined || value === null || value === '') value = quoted[1].trim();
+      element = quoted[2].trim();
+    } else if (unquoted) {
+      if (value === undefined || value === null || value === '') value = unquoted[1].trim();
+      element = unquoted[2].trim();
+    } else if (justOnMatch) {
+      element = justOnMatch[1].trim();
     }
   }
-  if (!element && ['Click', 'RightClick', 'MiddleClick', 'ClickAndHold', 'Check', 'Uncheck', 'Open', 'Hover', 'Scroll', 'ScrollIntoView', 'Expand', 'Collapse', 'DragAndDrop', 'FindRow', 'SortColumn', 'AccessShadow', 'SwitchFrame'].includes(action)) {
+  if (!element && ['Click', 'RightClick', 'MiddleClick', 'ClickAndHold', 'Check', 'Uncheck', 'Open', 'Hover', 'Scroll', 'ScrollIntoView', 'Expand', 'Collapse', 'DragAndDrop', 'FindRow', 'SortColumn', 'AccessShadow', 'SwitchFrame', 'Radio', 'Inspect'].includes(action)) {
     element = rest || null;
   }
   if ((action === 'Navigate' || action === 'SwitchTab') && (value === undefined || value === null || value === '')) {
@@ -583,10 +602,28 @@ function finalise(groups, diagnostics = []) {
 function resolveGroupIndex(groups, requestedId) {
   const id = boundedString(requestedId, 180);
   if (!id) fail(400, 'MISSING_STEP_ID', 'A stable step ID is required.');
-  return groups.findIndex((group) => (
+
+  // 1. Direct match by logicalStepId, id, or contractStepId
+  let index = groups.findIndex((group) => (
     group.logicalStepId === id
     || group.steps.some((step) => step.id === id || step.contractStepId === id)
   ));
+  if (index >= 0) return index;
+
+  // 2. Legacy / ordinal fallback match (e.g. "legacy-step-4", "step_4", "step-4", "4")
+  const legacyMatch = id.match(/^(?:legacy-step-|step[_-]|step)?(\d+)$/i);
+  if (legacyMatch) {
+    const num = parseInt(legacyMatch[1], 10);
+    // Try matching group logicalOrdinal or 1-based index
+    index = groups.findIndex((group, gIdx) => (
+      group.logicalOrdinal === num
+      || gIdx + 1 === num
+      || group.steps.some((step, sIdx) => step.order === num || sIdx + 1 === num)
+    ));
+    if (index >= 0) return index;
+  }
+
+  return -1;
 }
 
 function addStep(stepsInput, input, options = {}) {
