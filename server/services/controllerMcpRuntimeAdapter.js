@@ -4228,14 +4228,63 @@ function createControllerMcpRuntimeAdapter({
             const queryClean = query.replace(/[^a-z0-9]/g, '');
             const stepText = String(params.stepText || '').trim().toLowerCase();
             const fullContext = `${query} ${stepText} ${params.expected || ''} ${params.value || ''} ${params.elementLabel || ''}`.toLowerCase();
-            const isStateChangeQuery = /\b(?:changed|change|state|name|result|after|updated|new|current|hold|pressed|clicked)\b/i.test(fullContext);
+            
+            // Only consider state-change if explicitly referring to long press / hold / changed result without a specific field name
+            const isStateChangeQuery = /\b(?:after\s+holding|long\s+pressed|changed\s+text|hold\s+button|button\s+hold)\b/i.test(fullContext);
 
-            // Interactive form elements only (exclude nav/header links)
             const allControls = Array.from(document.querySelectorAll('button, input, select, textarea, [role="button"], a:not(nav a):not(header a):not(.navbar a):not(.nav a)'));
             let el = null;
 
-            // Priority 1 (State Change): If this step is inspecting a state change, prioritize the last acted element!
-            if (isStateChangeQuery) {
+            // Priority 1: Direct Associated Label Match (e.g. <label>Confirm text is readonly</label><input ...>)
+            if (query) {
+              const labels = Array.from(document.querySelectorAll('label, .label, p, span, h1, h2, h3, h4, h5, h6, td, th'));
+              const matchingLabel = labels.find(l => {
+                const lt = (l.innerText || l.textContent || '').trim().toLowerCase();
+                return lt && (lt === query || (query.length >= 4 && lt.includes(query)) || (lt.length >= 4 && query.includes(lt)));
+              });
+              if (matchingLabel) {
+                const forId = matchingLabel.getAttribute('for');
+                if (forId) {
+                  el = document.getElementById(forId);
+                }
+                if (!el) {
+                  el = matchingLabel.querySelector('input, select, textarea, button');
+                }
+                if (!el && matchingLabel.parentElement) {
+                  el = matchingLabel.parentElement.querySelector('input, select, textarea, button');
+                }
+              }
+            }
+
+            // Priority 2: Direct match on control properties (placeholder, aria, id, name, value, text)
+            if (!el && query) {
+              el = allControls.find(i => {
+                const text = (i.innerText || i.value || '').trim().toLowerCase();
+                const cleanText = text.replace(/[^a-z0-9]/g, '');
+                const id = (i.id || '').toLowerCase();
+                const aria = (i.getAttribute('aria-label') || '').toLowerCase();
+                const name = (i.getAttribute('name') || '').toLowerCase();
+                const placeholder = (i.getAttribute('placeholder') || '').toLowerCase();
+                return cleanText === queryClean
+                  || (queryClean.length >= 3 && cleanText.includes(queryClean))
+                  || id === queryClean
+                  || aria === queryClean
+                  || name === queryClean
+                  || placeholder === queryClean
+                  || (query.length >= 4 && placeholder.includes(query));
+              });
+            }
+
+            // Priority 3: State-specific selectors (readonly / disabled inputs)
+            if (!el && /\breadonly\b/i.test(fullContext)) {
+              el = document.querySelector('input[readonly], textarea[readonly]');
+            }
+            if (!el && /\bdisabled\b/i.test(fullContext)) {
+              el = document.querySelector('input:disabled, button:disabled, select:disabled');
+            }
+
+            // Priority 4: State Change / Last Acted fallback
+            if (!el && isStateChangeQuery) {
               const lastActed = document.querySelector('[data-qaai-last-acted="true"]')
                 || (window.__qaai_last_acted_el && document.body.contains(window.__qaai_last_acted_el) ? window.__qaai_last_acted_el : null)
                 || (document.activeElement && ['BUTTON', 'INPUT'].includes(document.activeElement.tagName) ? document.activeElement : null);
@@ -4244,29 +4293,17 @@ function createControllerMcpRuntimeAdapter({
               }
             }
 
-            // Priority 2: Direct match on interactive element text or ID or aria or value
-            if (!el && query) {
-              el = allControls.find(i => {
-                const text = (i.innerText || i.value || '').trim().toLowerCase();
-                const cleanText = text.replace(/[^a-z0-9]/g, '');
-                const id = (i.id || '').toLowerCase();
-                const aria = (i.getAttribute('aria-label') || '').toLowerCase();
-                const name = (i.getAttribute('name') || '').toLowerCase();
-                return cleanText === queryClean || (queryClean.length >= 3 && cleanText.includes(queryClean)) || id === queryClean || aria === queryClean || name === queryClean;
-              });
-            }
-
-            // Priority 3: Localized Card/Field proximity match (max 2 levels up, max 250 chars)
+            // Priority 5: Localized Card/Field proximity match
             if (!el && query) {
               const queryWords = query.replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length >= 3);
-              const sigWords = queryWords.filter(w => !['button', 'input', 'click', 'press', 'wait', 'state', 'change', 'changed', 'name', 'print', 'that'].includes(w));
+              const sigWords = queryWords.filter(w => !['button', 'input', 'click', 'press', 'wait', 'state', 'change', 'changed', 'name', 'print', 'that', 'confirm', 'is'].includes(w));
               if (sigWords.length > 0) {
                 el = allControls.find(i => {
                   let cur = i.parentElement;
                   let depth = 0;
-                  while (cur && cur !== document.body && depth < 2) {
+                  while (cur && cur !== document.body && depth < 3) {
                     const cardText = (cur.innerText || cur.textContent || '').toLowerCase();
-                    if (cardText.length <= 250 && sigWords.every(w => cardText.includes(w))) {
+                    if (cardText.length <= 300 && sigWords.every(w => cardText.includes(w))) {
                       return true;
                     }
                     cur = cur.parentElement;
@@ -4277,25 +4314,9 @@ function createControllerMcpRuntimeAdapter({
               }
             }
 
-            // Priority 4: Changed state heuristics
-            if (!el && isStateChangeQuery) {
-              el = allControls.find(i => {
-                const t = (i.innerText || i.value || '').toLowerCase();
-                return /\b(?:pressed|changed|clicked|modified|done|success|active)\b/i.test(t);
-              });
-            }
-
-            if (el && !['button', 'input', 'select', 'textarea', 'a'].includes(el.tagName.toLowerCase())) {
-              const childBtn = el.querySelector('button, input, select, textarea, a, [role="button"]');
-              if (childBtn) el = childBtn;
-              else if (el.nextElementSibling && ['button', 'input', 'select', 'textarea', 'a'].includes(el.nextElementSibling.tagName.toLowerCase())) {
-                el = el.nextElementSibling;
-              }
-            }
             if (!el && document.activeElement && ['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA', 'A'].includes(document.activeElement.tagName)) {
               el = document.activeElement;
             }
-            if (!el) el = document.activeElement && document.activeElement !== document.body ? document.activeElement : null;
             if (!el) return { text: '', url: window.location.href, notFound: true };
 
             try {
@@ -4311,11 +4332,14 @@ function createControllerMcpRuntimeAdapter({
 
             const rect = el.getBoundingClientRect();
             const tag = el.tagName ? el.tagName.toLowerCase() : '';
+            const type = (el.getAttribute('type') || '').toLowerCase();
             let val = '';
+            let selectedText = '';
             if (tag === 'select') {
-              val = el.selectedIndex >= 0 && el.options[el.selectedIndex] ? (el.options[el.selectedIndex].text || el.value) : (el.value || '');
-            } else if (tag === 'input' || tag === 'textarea') {
               val = el.value || '';
+              selectedText = el.selectedIndex >= 0 && el.options[el.selectedIndex] ? (el.options[el.selectedIndex].text || el.value) : (el.value || '');
+            } else if (tag === 'input' || tag === 'textarea') {
+              val = el.value != null ? el.value : (el.getAttribute('value') || '');
             } else {
               val = el.innerText || el.textContent || '';
             }
@@ -4326,7 +4350,9 @@ function createControllerMcpRuntimeAdapter({
             }
             return {
               text: String(val || '').trim(),
+              selectedText: String(selectedText || '').trim(),
               tag,
+              type,
               x: Math.round(rect.x || rect.left),
               y: Math.round(rect.y || rect.top),
               width: Math.round(rect.width),
@@ -4340,9 +4366,12 @@ function createControllerMcpRuntimeAdapter({
           }, inspectParams);
 
           const stepNum = operation?.ordinal || (operations.findIndex((o) => o.operationId === operationId) + 1) || 9;
-          
           const combinedQuery = `${operation?.expected || ''} ${operation?.authoredText || ''} ${operation?.text || ''} ${operation?.value || ''} ${elementLabel || ''}`.toLowerCase();
           let printedText = '';
+
+          const isButton = inspectData.tag === 'button' || inspectData.type === 'button' || inspectData.type === 'submit';
+          const isSelect = inspectData.tag === 'select';
+          const isInput = inspectData.tag === 'input' || inspectData.tag === 'textarea';
 
           if (/\b(?:x\s*&?\s*y|coordinates?|co-ordinates?|location|position)\b/i.test(combinedQuery)) {
             printedText = `X: ${inspectData.x}, Y: ${inspectData.y}`;
@@ -4350,15 +4379,19 @@ function createControllerMcpRuntimeAdapter({
             const bg = inspectData.backgroundColor && inspectData.backgroundColor !== 'rgba(0, 0, 0, 0)' && inspectData.backgroundColor !== 'transparent'
               ? inspectData.backgroundColor
               : inspectData.color;
-            printedText = `Button color: ${bg || inspectData.color}`;
+            printedText = isButton ? `Button color: ${bg || inspectData.color}` : `Color: ${bg || inspectData.color}`;
           } else if (/\b(?:height\s*&?\s*width|width\s*&?\s*height|dimensions?|size|tall|fat)\b/i.test(combinedQuery)) {
             printedText = `Height: ${inspectData.height}px, Width: ${inspectData.width}px`;
           } else if (/\b(?:all\s*options|options|choices)\b/i.test(combinedQuery) && inspectData.options?.length) {
             printedText = `Options: [${inspectData.options.join(', ')}]`;
-          } else if (/\b(?:selected\s*value|selected\s*option|value)\b/i.test(combinedQuery) && inspectData.text) {
-            printedText = `Selected value: "${inspectData.text}"`;
-          } else if (/\b(?:button\s*name|name|button\s*text|text|label|title|changed)\b/i.test(combinedQuery) && inspectData.text) {
+          } else if (isSelect && (/\b(?:selected\s*value|selected\s*option|value)\b/i.test(combinedQuery) || inspectData.selectedText)) {
+            printedText = `Selected value: "${inspectData.selectedText || inspectData.text}"`;
+          } else if (isButton && inspectData.text) {
             printedText = `Button name: "${inspectData.text}"`;
+          } else if (isInput && inspectData.readOnly) {
+            printedText = `Readonly value: "${inspectData.text}"`;
+          } else if (isInput && inspectData.text != null) {
+            printedText = `Input value: "${inspectData.text}"`;
           } else if (inspectData.text != null && inspectData.text !== '') {
             printedText = `"${inspectData.text}"`;
           } else if (inspectData.notFound) {
@@ -5271,8 +5304,18 @@ function createControllerMcpRuntimeAdapter({
       if (!intent || !snapshot?.snapshotText) return null;
 
       const brokenLocator = clean(operation?.targetIdentity?.accessibleName || operation?.target || operation?.element);
+      const { resolveAiCredentials } = require('../lib/resolveAiCredentials');
+      let creds = null;
+      try {
+        if (session?.userId && session?.project) {
+          creds = await resolveAiCredentials(session.userId, session.project);
+        }
+      } catch (_) {}
+
       const healerResult = await healer.healLocator({
-        apiKey: process.env.ANTHROPIC_API_KEY || process.env.GEMINI_API_KEY,
+        apiKey: creds?.apiKey || process.env.ANTHROPIC_API_KEY || process.env.GEMINI_API_KEY || 'copilot-bridge-active',
+        provider: creds?.provider || 'copilot',
+        model: creds?.model,
         intent,
         brokenLocator,
         freshSnapshot: snapshot.snapshotText,
