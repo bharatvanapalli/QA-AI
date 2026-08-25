@@ -2890,6 +2890,11 @@ function createControllerMcpRuntimeAdapter({
         actionOccurrenceId: clean(operation.actionOccurrenceId) || null,
       });
     }
+    const winningRecipe = session?.projectId ? await lookupWinningRecipe({
+      projectId: session.projectId,
+      element: operation.targetIdentity?.accessibleName || operation.targetIdentity?.label || operation.target || operation.element,
+      pageUrl: snapshot.snapshot.url,
+    }) : null;
     return {
       status: RESOLUTION_STATUS.RESOLVED,
       target: {
@@ -2904,6 +2909,8 @@ function createControllerMcpRuntimeAdapter({
           backendNodeId: null,
         },
         candidate: resolved.candidate,
+        adapterKind: winningRecipe?.adapterKind || null,
+        winningRecipe: winningRecipe || null,
       },
       factRefs: Object.freeze([...snapshot.factRefs, resolved.candidate.factRef]),
     };
@@ -6793,6 +6800,20 @@ function createControllerMcpRuntimeAdapter({
       // before it ever looks at the (still-true) nested proof — so the prior
       // diagnostic marking is cleared here, from the real proof it already
       // carries, before the identity-bound rewrap.
+      if (session?.projectId && (elementLabel || entry?.elementLabel)) {
+        recordSuccessfulLocator({
+          projectId: session.projectId,
+          element: elementLabel || entry?.elementLabel,
+          pageUrl: entry?.pageUrl || '',
+          selector: captured.selector || captured.primary?.selector || (typeof captured.expression === 'string' ? captured.expression : ''),
+          strategy: captured.strategy || captured.primary?.strategy || 'role',
+          accessibleName: captured.accessibleName || elementLabel || entry?.elementLabel,
+          role: captured.role || captured.primary?.role || null,
+          adapterKind: entry?.adapterKind || null,
+          winningStrategy: captured.strategy || 'role',
+          updatedByRunId: session?.runId || null,
+        }).catch(() => null);
+      }
       if (!entry?.contractStepId) return captured;
       const provenNotYetBound = { ...captured, verified: true, diagnosticOnly: false };
       return buildLocatorEvidenceRecord({
