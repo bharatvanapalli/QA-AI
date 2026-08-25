@@ -24,6 +24,9 @@ const {
 const {
   buildBoundActivationRecoveryFunction,
 } = require('./semanticActivationState');
+const {
+  detectDesignSystemSignature,
+} = require('./controllerDesignSystemSignatures');
 
 const ADAPTER_REGISTRY_VERSION = 'qaai-controller-typed-adapter-registry-v1';
 
@@ -161,7 +164,6 @@ function classifyLiveWidget(resolution = {}, operation = {}, context = {}) {
   const expanded = Boolean(attributes['aria-expanded'] === 'true' || attributes['aria-expanded'] === true || identity.ariaExpanded);
   const inputType = String(attributes.type || identity.type || controlType || '').toLowerCase();
   const type = clean(operation.type);
-
   // 1. Text / Password Input Family:
   if (['Fill', 'Type', 'Append', 'ClearAndType', 'TypeSequentially', 'Clear'].includes(type)) {
     if (inputType === 'password' || /password|passwd/i.test(identity.accessibleName || '')) {
@@ -172,7 +174,17 @@ function classifyLiveWidget(resolution = {}, operation = {}, context = {}) {
     return ADAPTER_KIND.TEXT_INPUT;
   }
 
-  // 2. Select / Dropdown Family:
+  // 2. Temporal (Date / Time) Family:
+  if (type === 'Date' || inputType === 'date' || role === 'datepicker') return ADAPTER_KIND.DATE;
+  if (['Time', 'DateTime'].includes(type) || inputType === 'time') return ADAPTER_KIND.TIME;
+
+  // 3. Design System Framework Signature Match:
+  const dsSignature = detectDesignSystemSignature(identity, resolution);
+  if (dsSignature && dsSignature.adapterKind && (type !== 'Click' || hasPopup || role === 'combobox')) {
+    return dsSignature.adapterKind;
+  }
+
+  // 4. Select / Dropdown Family:
   if (['Select', 'SelectMultiple', 'MultiSelect'].includes(type) || (type !== 'Click' && (hasPopup || role === 'combobox'))) {
     if (tagName === 'SELECT') return ADAPTER_KIND.NATIVE_SELECT;
     if (role === 'searchbox' || /autocomplete|typeahead/.test(controlType) || /autocomplete|typeahead/.test(inputType)) {
@@ -184,26 +196,22 @@ function classifyLiveWidget(resolution = {}, operation = {}, context = {}) {
     return ADAPTER_KIND.CUSTOM_SELECT;
   }
 
-  // 3. Temporal (Date / Time) Family:
-  if (type === 'Date' || inputType === 'date' || role === 'datepicker') return ADAPTER_KIND.DATE;
-  if (['Time', 'DateTime'].includes(type) || inputType === 'time') return ADAPTER_KIND.TIME;
-
-  // 4. Boolean (Checkbox / Radio / Switch):
+  // 5. Boolean (Checkbox / Radio / Switch):
   if (['Check', 'Uncheck', 'Radio'].includes(type) || ['checkbox', 'radio', 'switch'].includes(role)) {
     return ADAPTER_KIND.BOOLEAN;
   }
 
-  // 5. Accordion (Expand / Collapse):
+  // 6. Accordion (Expand / Collapse):
   if (['Expand', 'Collapse'].includes(type) || (expanded !== undefined && role === 'button' && (attributes['aria-controls'] || attributes['data-target']))) {
     return ADAPTER_KIND.ACCORDION;
   }
 
-  // 6. Dialog:
+  // 7. Dialog:
   if (['Close', 'AcceptAlert', 'DismissAlert', 'TypeAlert'].includes(type) || role === 'dialog') {
     return ADAPTER_KIND.DIALOG;
   }
 
-  // 7. Button or Link:
+  // 8. Button or Link:
   if (['Click', 'DoubleClick', 'Submit', 'Download', 'Hover', 'RightClick'].includes(type) || ['button', 'link'].includes(role) || tagName === 'BUTTON' || tagName === 'A') {
     return ADAPTER_KIND.BUTTON_OR_LINK;
   }
@@ -256,9 +264,17 @@ function inferAdapterKind(operation = {}, resolution = {}, context = {}) {
     }
   }
 
-  // Precedence 1: Stored winning recipe from KnowledgeBaseLocator
+  // Precedence 1: Stored winning recipe from KnowledgeBaseLocator (type-family guarded)
   if (context?.recipeAdapterKind && Object.values(ADAPTER_KIND).includes(context.recipeAdapterKind)) {
-    return context.recipeAdapterKind;
+    if (['Date', 'DateTime'].includes(type) && context.recipeAdapterKind !== ADAPTER_KIND.DATE) {
+      // Do not allow a generic button recipe to override a Date operation
+    } else if (type === 'Time' && context.recipeAdapterKind !== ADAPTER_KIND.TIME) {
+      // Do not allow a generic button recipe to override a Time operation
+    } else if (['Fill', 'Type', 'Append', 'ClearAndType'].includes(type) && ![ADAPTER_KIND.TEXT_INPUT, ADAPTER_KIND.PASSWORD_INPUT].includes(context.recipeAdapterKind)) {
+      // Do not allow a button recipe to override text input
+    } else {
+      return context.recipeAdapterKind;
+    }
   }
 
   // Precedence 2: Live Runtime Classification from real DOM
@@ -946,6 +962,7 @@ module.exports = {
   inferAdapterKind,
   classifyLiveWidget,
   getNextLadderStrategy,
+  detectDesignSystemSignature,
   ensureSyntheticUploadFixture,
   createTypedAdapterPlan,
 };

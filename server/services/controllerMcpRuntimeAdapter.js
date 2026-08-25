@@ -44,6 +44,10 @@ const {
   assertionContractOf,
 } = require('./universalActionKernel');
 const {
+  resolveVisualTargetCoordinates,
+  dispatchPhysicalMouseAction,
+} = require('./controllerVisualGrounding');
+const {
   OUTCOMES: ASSERTION_OUTCOMES,
   compareTypedAssertion,
 } = require('./typedAssertionComparator');
@@ -2787,6 +2791,44 @@ function createControllerMcpRuntimeAdapter({
     }
     const resolved = candidateForOperation(operation, snapshot.snapshot.candidates);
     if (resolved.status !== RESOLUTION_STATUS.RESOLVED) {
+      const page = activePageOf(session);
+      const targetLabel = clean(operation?.targetIdentity?.accessibleName || operation?.targetIdentity?.label || operation?.target);
+      const visualCoords = (page && targetLabel) ? await resolveVisualTargetCoordinates(page, {
+        targetText: targetLabel,
+        targetRole: operation?.targetIdentity?.role,
+        selector: operation?.selector,
+      }).catch(() => null) : null;
+
+      if (visualCoords && visualCoords.centerX > 0 && visualCoords.centerY > 0) {
+        const visualCandidate = {
+          ref: `visual:${visualCoords.centerX}:${visualCoords.centerY}`,
+          interactionRef: `visual:${visualCoords.centerX}:${visualCoords.centerY}`,
+          accessibleName: targetLabel,
+          role: operation?.targetIdentity?.role || 'button',
+          factRef: `fact:visual:${visualCoords.centerX}:${visualCoords.centerY}`,
+          visualCoords,
+          isVisualFallback: true,
+        };
+        return {
+          status: RESOLUTION_STATUS.RESOLVED,
+          target: {
+            ref: visualCandidate.ref,
+            interactionRef: visualCandidate.interactionRef,
+            identity: {
+              accessibleName: targetLabel,
+              role: visualCandidate.role,
+              form: null,
+              section: null,
+              framePath: [],
+              backendNodeId: null,
+            },
+            candidate: visualCandidate,
+            visualCoords,
+          },
+          factRefs: Object.freeze([...snapshot.factRefs, visualCandidate.factRef]),
+        };
+      }
+
       const diagnosticCandidates = diagnosticCandidatesForOperation(
         operation,
         snapshot.snapshot.candidates,
@@ -4452,6 +4494,22 @@ function createControllerMcpRuntimeAdapter({
     if (targetRef && !normalized.ref) normalized.ref = targetRef;
     if (elementLabel && !normalized.element) normalized.element = elementLabel;
     normalized.target = normalized.target || targetRef;
+
+    if (targetRef && targetRef.startsWith('visual:')) {
+      const parts = targetRef.split(':');
+      const x = Number(parts[1]);
+      const y = Number(parts[2]);
+      const page = activePageOf(session);
+      if (page && !Number.isNaN(x) && !Number.isNaN(y)) {
+        await dispatchPhysicalMouseAction(page, { x, y, actionType: toolName === 'browser_dblclick' ? 'dblclick' : 'click' });
+        return {
+          status: 'COMMITTED',
+          deliveryStatus: DELIVERY_STATUS.DELIVERED,
+          factRefs: [],
+          observation: null,
+        };
+      }
+    }
 
     if (isAppendOp) {
       normalized.text = clean(args?.text != null ? args.text : (normalized.text != null ? normalized.text : args?.value || ''));
