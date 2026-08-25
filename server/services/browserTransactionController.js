@@ -691,6 +691,36 @@ function createBrowserTransactionController({
           factRefs: composite?.proof?.factRefs,
         });
       }
+      if (composite?.positivelyNotDelivered === true || (composite?.proof && composite.proof.status !== PROOF_STATUS.MATCHED)) {
+        if (context.fastPathAttempted === true && Number(now()) < deadlineMs - 1500) {
+          report(operation, CONTROLLER_STATE.RESOLVING, {
+            reason: 'fast_path_miss_falling_back_to_live_discovery',
+            fromAdapterKind: plan.adapterKind,
+          });
+          return execute(operation, {
+            ...context,
+            fastPathAttempted: false,
+            ignoreFastPath: true,
+            ignoreResolvedAdapterHint: true,
+            forceFreshSnapshot: true,
+          });
+        }
+        const nextLadder = getNextLadderStrategy(plan.adapterKind, context.ladderIndex || 0);
+        if (nextLadder && Number(now()) < deadlineMs - 1500) {
+          report(operation, CONTROLLER_STATE.RESOLVING, {
+            reason: 'strategy_mismatch_escalating_ladder',
+            fromAdapterKind: plan.adapterKind,
+            toAdapterKind: nextLadder.kind,
+            ladderIndex: nextLadder.ladderIndex,
+          });
+          return execute(operation, {
+            ...context,
+            strategyOverride: nextLadder.kind,
+            ladderIndex: nextLadder.ladderIndex,
+            forceFreshSnapshot: true,
+          });
+        }
+      }
       if (composite?.positivelyNotDelivered === true) {
         const recoverableNonDelivery = composite?.delivery?.recoverable === true;
         const terminal = machine.transition(CONTROLLER_STATE.EXECUTION_ERROR, {
@@ -1062,6 +1092,19 @@ function createBrowserTransactionController({
     if (terminal?.terminalDecision?.state === CONTROLLER_STATE.EXECUTION_ERROR
       && operation.kind === OPERATION_KIND.ACTION
       && Number(now()) < deadlineMs - 1500) {
+      if (context.fastPathAttempted === true) {
+        report(operation, CONTROLLER_STATE.RESOLVING, {
+          reason: 'fast_path_miss_falling_back_to_live_discovery',
+          fromAdapterKind: plan.adapterKind,
+        });
+        return execute(operation, {
+          ...context,
+          fastPathAttempted: false,
+          ignoreFastPath: true,
+          ignoreResolvedAdapterHint: true,
+          forceFreshSnapshot: true,
+        });
+      }
       const nextLadder = getNextLadderStrategy(plan.adapterKind, context.ladderIndex || 0);
       if (nextLadder) {
         report(operation, CONTROLLER_STATE.RESOLVING, {

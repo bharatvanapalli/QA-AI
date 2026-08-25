@@ -2890,7 +2890,7 @@ function createControllerMcpRuntimeAdapter({
         actionOccurrenceId: clean(operation.actionOccurrenceId) || null,
       });
     }
-    const winningRecipe = session?.projectId ? await lookupWinningRecipe({
+    const winningRecipe = (session?.projectId && context.ignoreFastPath !== true) ? await lookupWinningRecipe({
       projectId: session.projectId,
       element: operation.targetIdentity?.accessibleName || operation.targetIdentity?.label || operation.target || operation.element,
       pageUrl: snapshot.snapshot.url,

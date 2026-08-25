@@ -1372,7 +1372,26 @@ async function launchLiveCdpBrowser({ sessionId, viewport, userDataDir, project,
       });
     } catch (_) {}
   };
-  context.on('page', (p) => setupDialogListener(p));
+  context.on('page', (newPage) => {
+    setupDialogListener(newPage);
+    try {
+      liveCdpResult.activePage = newPage;
+      newPage.bringToFront().catch(() => {});
+      (broadcast || (() => {}))({
+        type: 'agent.phase.log',
+        phase: 'conductor',
+        level: 'info',
+        message: `[mcp] auto-switched focus to newly opened tab/popup: ${newPage.url() || 'about:blank'}`,
+      });
+      newPage.on('close', () => {
+        const remaining = context.pages().filter((p) => p !== newPage && !p.isClosed());
+        if (remaining.length) {
+          liveCdpResult.activePage = remaining[remaining.length - 1];
+          remaining[remaining.length - 1].bringToFront().catch(() => {});
+        }
+      });
+    } catch (_) {}
+  });
   context.pages().forEach((p) => setupDialogListener(p));
 
   if (contextExtras?.initScriptPath) {
@@ -2147,7 +2166,17 @@ async function findCandidateWithShadowWalk(page, { role, name, text, selector } 
       }
       return Boolean(walk(document.body, ${JSON.stringify(role || '')}, ${JSON.stringify(name || '')}, ${JSON.stringify(text || '')}, ${JSON.stringify(selector || '')}));
     })()`;
-    return await page.evaluate(shadowDiscoveryScript).catch(() => false);
+    const foundMain = await page.evaluate(shadowDiscoveryScript).catch(() => false);
+    if (foundMain) return true;
+
+    if (typeof page.frames === 'function') {
+      for (const frame of page.frames()) {
+        if (frame === page.mainFrame()) continue;
+        const foundFrame = await frame.evaluate(shadowDiscoveryScript).catch(() => false);
+        if (foundFrame) return true;
+      }
+    }
+    return false;
   } catch (_) {
     return false;
   }

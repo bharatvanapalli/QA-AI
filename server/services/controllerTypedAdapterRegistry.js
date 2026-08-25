@@ -1,5 +1,8 @@
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
+
 const {
   createProofContract,
 } = require('./browserProofContract');
@@ -676,16 +679,55 @@ function planAccordion(operation, resolution) {
   });
 }
 
+function ensureSyntheticUploadFixture(rawFileName) {
+  const cleanName = String(rawFileName || 'sample_document.pdf').replace(/^["']|["']$/g, '').trim();
+  const baseName = path.basename(cleanName) || 'sample_document.pdf';
+  const ext = path.extname(baseName).toLowerCase() || '.pdf';
+  
+  if (fs.existsSync(cleanName)) {
+    return cleanName;
+  }
+  
+  const fixturesDir = path.resolve(__dirname, '../../playwright/test-results/fixtures');
+  if (!fs.existsSync(fixturesDir)) {
+    fs.mkdirSync(fixturesDir, { recursive: true });
+  }
+  
+  const targetPath = path.join(fixturesDir, baseName);
+  if (fs.existsSync(targetPath)) {
+    return targetPath;
+  }
+  
+  if (ext === '.pdf') {
+    const pdfContent = '%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Count 1/Kids[3 0 R]>>endobj\n3 0 obj<</Type/Page/MediaBox[0 0 612 792]/Parent 2 0 R/Resources<<>>>>endobj\nxref\n0 4\n0000000000 65535 f\n0000000009 00000 n\n0000000052 00000 n\n0000000101 00000 n\ntrailer<</Size 4/Root 1 0 R>>\nstartxref\n178\n%%EOF';
+    fs.writeFileSync(targetPath, pdfContent, 'binary');
+  } else if (ext === '.csv') {
+    const csvContent = 'id,name,email,amount,status\n1,Test User,testuser@testqaai.com,150.00,COMPLETED\n2,Sample Order,sample@testqaai.com,275.50,PENDING\n';
+    fs.writeFileSync(targetPath, csvContent, 'utf8');
+  } else if (ext === '.png') {
+    const pngBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+    fs.writeFileSync(targetPath, Buffer.from(pngBase64, 'base64'));
+  } else if (ext === '.json') {
+    fs.writeFileSync(targetPath, JSON.stringify({ test: true, createdAt: new Date().toISOString() }, null, 2), 'utf8');
+  } else {
+    fs.writeFileSync(targetPath, `Sample test content for ${baseName}\nCreated at: ${new Date().toISOString()}\n`, 'utf8');
+  }
+  
+  return targetPath;
+}
+
 function planUpload(operation, resolution, context) {
+  const rawFile = valueFor(operation, context) || operation.value || operation.targetIdentity?.value || 'sample_document.pdf';
+  const resolvedFilePath = ensureSyntheticUploadFixture(rawFile);
   return commonPlan(operation, ADAPTER_KIND.UPLOAD, {
     mutation: mutation('browser_file_upload', {
       target: resolvedRef(resolution),
-      files: valueFor(operation, context),
+      files: resolvedFilePath,
     }),
     proofContract: proof(`${operation.operationId}:upload`, [
       { id: 'same-owner-files', allOf: [CLAIM.UPLOAD_OWNER_STATE] },
     ]),
-    proofMetadata: { exactOwnerRequired: true },
+    proofMetadata: { exactOwnerRequired: true, filePath: resolvedFilePath },
     recoveryOptions: ['REFRESH_SNAPSHOT', 'RERESOLVE_SAME_TARGET'],
   });
 }
@@ -904,5 +946,6 @@ module.exports = {
   inferAdapterKind,
   classifyLiveWidget,
   getNextLadderStrategy,
+  ensureSyntheticUploadFixture,
   createTypedAdapterPlan,
 };
