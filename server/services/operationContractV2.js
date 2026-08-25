@@ -388,6 +388,19 @@ function normalizeSelection(value, path, findings, { exactAuthoredValue = null }
   return Object.freeze({ kind, value: clone(criterion) });
 }
 
+function interpolateDynamicValue(val) {
+  if (typeof val !== 'string') return val;
+  return val
+    .replace(/\{\{\s*dynamic_email\s*\}\}|\{\{\s*email\s*\}\}/gi, () => `testuser_${Date.now()}_${Math.floor(Math.random()*1000)}@testqaai.com`)
+    .replace(/\{\{\s*timestamp\s*\}\}/gi, () => String(Date.now()))
+    .replace(/\{\{\s*random_string\s*\}\}|\{\{\s*random\s*\}\}/gi, () => Math.random().toString(36).substring(2, 10))
+    .replace(/\{\{\s*future_date\s*\}\}/gi, () => {
+      const d = new Date();
+      d.setDate(d.getDate() + 7);
+      return d.toISOString().slice(0, 10);
+    });
+}
+
 function normalizeValue(type, source, path, findings) {
   // A `value` key present but explicitly null means "no value" — the same as
   // the key being absent. The user-authored step-edit pipeline
@@ -407,7 +420,7 @@ function normalizeValue(type, source, path, findings) {
     findings.push(finding(path, 'action_value_required', `${type} requires value or valueRef.`));
     return Object.freeze({ value: null, valueRef: null });
   }
-  let value = hasValue ? clone(source.value) : null;
+  let value = hasValue ? interpolateDynamicValue(clone(source.value)) : null;
   if (type === 'Navigate' && !value && !valueRef) {
     const rawCandidate = clean(
       (typeof source.target === 'string' ? source.target : textFromTarget(source.target))

@@ -135,8 +135,21 @@ const BLOCKED_PROSE_SECTIONS = new Set([
   'expected test case shape',
 ]);
 
+function interpolateDynamicValue(val) {
+  if (typeof val !== 'string') return val;
+  return val
+    .replace(/\{\{\s*dynamic_email\s*\}\}|\{\{\s*email\s*\}\}/gi, () => `testuser_${Date.now()}_${Math.floor(Math.random()*1000)}@testqaai.com`)
+    .replace(/\{\{\s*timestamp\s*\}\}/gi, () => String(Date.now()))
+    .replace(/\{\{\s*random_string\s*\}\}|\{\{\s*random\s*\}\}/gi, () => Math.random().toString(36).substring(2, 10))
+    .replace(/\{\{\s*future_date\s*\}\}/gi, () => {
+      const d = new Date();
+      d.setDate(d.getDate() + 7);
+      return d.toISOString().slice(0, 10);
+    });
+}
+
 function clean(value) {
-  return String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
+  return interpolateDynamicValue(String(value == null ? '' : value).replace(/\s+/g, ' ').trim());
 }
 
 function normalize(value) {

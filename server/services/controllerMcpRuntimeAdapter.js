@@ -6827,6 +6827,111 @@ function createControllerMcpRuntimeAdapter({
   });
 }
 
+async function recordSuccessfulLocator({
+  projectId,
+  element,
+  pageUrl = '',
+  selector,
+  strategy = 'role',
+  accessibleName = null,
+  role = null,
+  adapterKind = null,
+  winningStrategy = null,
+  ladderIndex = 0,
+  interactionRecipe = null,
+  updatedByRunId = null,
+} = {}) {
+  if (!projectId || !element) return null;
+  const prisma = require('../prisma');
+  const cleanElement = String(element).trim();
+  const cleanPageUrl = String(pageUrl || '').trim();
+  const cleanSelector = String(selector || '').trim();
+
+  const recipe = interactionRecipe || {
+    adapterKind,
+    winningStrategy,
+    ladderIndex,
+    recordedAt: new Date().toISOString(),
+  };
+  const interactionRecipeJson = JSON.stringify(recipe);
+
+  try {
+    const existing = await prisma.knowledgeBaseLocator.findFirst({
+      where: {
+        projectId,
+        element: cleanElement,
+        pageUrl: cleanPageUrl,
+      },
+    });
+
+    if (existing) {
+      return await prisma.knowledgeBaseLocator.update({
+        where: { id: existing.id },
+        data: {
+          selector: cleanSelector || existing.selector,
+          strategy: strategy || existing.strategy,
+          accessibleName: accessibleName || existing.accessibleName,
+          role: role || existing.role,
+          occurrences: { increment: 1 },
+          healthScore: Math.min(100, (existing.healthScore || 100) + 5),
+          interactionRecipeJson,
+          lastUsedAt: new Date(),
+          updatedByRunId: updatedByRunId || existing.updatedByRunId,
+          deprecated: false,
+        },
+      });
+    }
+
+    return await prisma.knowledgeBaseLocator.create({
+      data: {
+        projectId,
+        element: cleanElement,
+        pageUrl: cleanPageUrl,
+        selector: cleanSelector || cleanElement,
+        strategy: strategy || 'role',
+        accessibleName,
+        role,
+        occurrences: 1,
+        healthScore: 100,
+        interactionRecipeJson,
+        lastUsedAt: new Date(),
+        updatedByRunId,
+      },
+    });
+  } catch (err) {
+    console.warn(`[KB] Failed to persist locator for ${cleanElement}:`, err?.message);
+    return null;
+  }
+}
+
+async function lookupWinningRecipe({ projectId, element, pageUrl = '' } = {}) {
+  if (!projectId || !element) return null;
+  const prisma = require('../prisma');
+  try {
+    const row = await prisma.knowledgeBaseLocator.findFirst({
+      where: {
+        projectId,
+        element: String(element).trim(),
+        deprecated: false,
+        healthScore: { gte: 30 },
+      },
+      orderBy: [
+        { healthScore: 'desc' },
+        { occurrences: 'desc' },
+        { lastUsedAt: 'desc' },
+      ],
+    });
+    if (row?.interactionRecipeJson) {
+      try {
+        return JSON.parse(row.interactionRecipeJson);
+      } catch (_) {}
+    }
+    return null;
+  } catch (_) {
+    return null;
+  }
+}
+
 module.exports = {
   MCP_ADAPTER_VERSION,
   ControllerMcpRuntimeAdapterError,
@@ -6869,4 +6974,6 @@ module.exports = {
   assertionTargetName,
   evaluateControllerAssertionSnapshot,
   createControllerMcpRuntimeAdapter,
+  recordSuccessfulLocator,
+  lookupWinningRecipe,
 };

@@ -129,6 +129,85 @@ function adapterHint(resolution = {}) {
   ).toUpperCase();
 }
 
+const STRATEGY_LADDERS = Object.freeze({
+  [ADAPTER_KIND.NATIVE_SELECT]: [ADAPTER_KIND.NATIVE_SELECT, ADAPTER_KIND.CUSTOM_SELECT, ADAPTER_KIND.AUTOCOMPLETE],
+  [ADAPTER_KIND.CUSTOM_SELECT]: [ADAPTER_KIND.CUSTOM_SELECT, ADAPTER_KIND.AUTOCOMPLETE, ADAPTER_KIND.TEXT_INPUT],
+  [ADAPTER_KIND.AUTOCOMPLETE]: [ADAPTER_KIND.AUTOCOMPLETE, ADAPTER_KIND.CUSTOM_SELECT, ADAPTER_KIND.TEXT_INPUT],
+  [ADAPTER_KIND.DATE]: [ADAPTER_KIND.DATE, ADAPTER_KIND.TEXT_INPUT],
+  [ADAPTER_KIND.TIME]: [ADAPTER_KIND.TIME, ADAPTER_KIND.CUSTOM_SELECT, ADAPTER_KIND.TEXT_INPUT],
+  [ADAPTER_KIND.BUTTON_OR_LINK]: [ADAPTER_KIND.BUTTON_OR_LINK, ADAPTER_KIND.KEYBOARD, ADAPTER_KIND.GENERIC],
+  [ADAPTER_KIND.TEXT_INPUT]: [ADAPTER_KIND.TEXT_INPUT, ADAPTER_KIND.KEYBOARD],
+});
+
+function getNextLadderStrategy(currentKind, ladderIndex = 0) {
+  const ladder = STRATEGY_LADDERS[currentKind] || [currentKind];
+  const nextIndex = Number(ladderIndex || 0) + 1;
+  if (nextIndex < ladder.length) {
+    return { kind: ladder[nextIndex], ladderIndex: nextIndex };
+  }
+  return null;
+}
+
+function classifyLiveWidget(resolution = {}, operation = {}, context = {}) {
+  const identity = targetIdentityOf(operation, resolution);
+  const role = roleToken(identity);
+  const controlType = controlTypeToken(identity);
+  const tagName = String(identity.tagName || resolution.target?.tagName || '').toUpperCase();
+  const attributes = identity.attributes || resolution.target?.attributes || {};
+  const hasPopup = Boolean(attributes['aria-haspopup'] || attributes.haspopup || identity.ariaHasPopup || identity.hasPopup);
+  const expanded = Boolean(attributes['aria-expanded'] === 'true' || attributes['aria-expanded'] === true || identity.ariaExpanded);
+  const inputType = String(attributes.type || identity.type || controlType || '').toLowerCase();
+  const type = clean(operation.type);
+
+  // 1. Text / Password Input Family:
+  if (['Fill', 'Type', 'Append', 'ClearAndType', 'TypeSequentially', 'Clear'].includes(type)) {
+    if (inputType === 'password' || /password|passwd/i.test(identity.accessibleName || '')) {
+      return ADAPTER_KIND.PASSWORD_INPUT;
+    }
+    if (inputType === 'date') return ADAPTER_KIND.DATE;
+    if (inputType === 'time') return ADAPTER_KIND.TIME;
+    return ADAPTER_KIND.TEXT_INPUT;
+  }
+
+  // 2. Select / Dropdown Family:
+  if (['Select', 'SelectMultiple', 'MultiSelect'].includes(type) || (type !== 'Click' && (hasPopup || role === 'combobox'))) {
+    if (tagName === 'SELECT') return ADAPTER_KIND.NATIVE_SELECT;
+    if (role === 'searchbox' || /autocomplete|typeahead/.test(controlType) || /autocomplete|typeahead/.test(inputType)) {
+      return ADAPTER_KIND.AUTOCOMPLETE;
+    }
+    if (['checkbox', 'radio', 'switch'].includes(role) || ['checkbox', 'radio', 'switch'].includes(controlType)) {
+      return ADAPTER_KIND.BOOLEAN;
+    }
+    return ADAPTER_KIND.CUSTOM_SELECT;
+  }
+
+  // 3. Temporal (Date / Time) Family:
+  if (type === 'Date' || inputType === 'date' || role === 'datepicker') return ADAPTER_KIND.DATE;
+  if (['Time', 'DateTime'].includes(type) || inputType === 'time') return ADAPTER_KIND.TIME;
+
+  // 4. Boolean (Checkbox / Radio / Switch):
+  if (['Check', 'Uncheck', 'Radio'].includes(type) || ['checkbox', 'radio', 'switch'].includes(role)) {
+    return ADAPTER_KIND.BOOLEAN;
+  }
+
+  // 5. Accordion (Expand / Collapse):
+  if (['Expand', 'Collapse'].includes(type) || (expanded !== undefined && role === 'button' && (attributes['aria-controls'] || attributes['data-target']))) {
+    return ADAPTER_KIND.ACCORDION;
+  }
+
+  // 6. Dialog:
+  if (['Close', 'AcceptAlert', 'DismissAlert', 'TypeAlert'].includes(type) || role === 'dialog') {
+    return ADAPTER_KIND.DIALOG;
+  }
+
+  // 7. Button or Link:
+  if (['Click', 'DoubleClick', 'Submit', 'Download', 'Hover', 'RightClick'].includes(type) || ['button', 'link'].includes(role) || tagName === 'BUTTON' || tagName === 'A') {
+    return ADAPTER_KIND.BUTTON_OR_LINK;
+  }
+
+  return null;
+}
+
 function inferAdapterKind(operation = {}, resolution = {}, context = {}) {
   if (operation.kind === 'assertion') {
     const role = roleToken(targetIdentityOf(operation, resolution));
@@ -138,6 +217,9 @@ function inferAdapterKind(operation = {}, resolution = {}, context = {}) {
   }
   if (operation.kind === 'synchronization' || operation.type === 'WaitForState') {
     return ADAPTER_KIND.SYNCHRONIZATION;
+  }
+  if (context?.strategyOverride && Object.values(ADAPTER_KIND).includes(context.strategyOverride)) {
+    return context.strategyOverride;
   }
   const identity = targetIdentityOf(operation, resolution);
   const role = roleToken(identity);
@@ -169,6 +251,17 @@ function inferAdapterKind(operation = {}, resolution = {}, context = {}) {
     ) {
       return ADAPTER_KIND.TIME;
     }
+  }
+
+  // Precedence 1: Stored winning recipe from KnowledgeBaseLocator
+  if (context?.recipeAdapterKind && Object.values(ADAPTER_KIND).includes(context.recipeAdapterKind)) {
+    return context.recipeAdapterKind;
+  }
+
+  // Precedence 2: Live Runtime Classification from real DOM
+  const liveClassification = classifyLiveWidget(resolution, operation, context);
+  if (liveClassification && Object.values(ADAPTER_KIND).includes(liveClassification)) {
+    return liveClassification;
   }
 
   const hint = context.ignoreResolvedAdapterHint === true ? '' : adapterHint(resolution);
@@ -806,7 +899,10 @@ module.exports = {
   ADAPTER_REGISTRY_VERSION,
   ADAPTER_KIND,
   CLAIM,
+  STRATEGY_LADDERS,
   ControllerTypedAdapterError,
   inferAdapterKind,
+  classifyLiveWidget,
+  getNextLadderStrategy,
   createTypedAdapterPlan,
 };

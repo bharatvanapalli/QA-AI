@@ -24,6 +24,9 @@ const {
 const {
   RECOVERY_RESULT,
 } = require('./controllerRecoveryCoordinator');
+const {
+  getNextLadderStrategy,
+} = require('./controllerTypedAdapterRegistry');
 
 const CONTROLLER_VERSION = 'qaai-browser-transaction-controller-v1';
 
@@ -216,15 +219,16 @@ function createBrowserTransactionController({
   };
 
   const waitBeforeReconciliationObservation = async (operation, attempt, deadlineMs) => {
-    if (attempt <= 1) return;
-    const requestedMs = Math.min(1_500, 100 * (2 ** Math.min(4, attempt - 2)));
+    const requestedMs = attempt <= 1
+      ? (operation.kind === 'assertion' ? 120 : 80)
+      : Math.min(1_500, 100 * (2 ** Math.min(4, attempt - 2)));
     const remainingMs = deadlineMs - Number(now());
     const waitMs = Math.max(0, Math.min(requestedMs, remainingMs - 1));
     if (waitMs <= 0) return;
     report(operation, CONTROLLER_STATE.RECONCILING, {
       attempt,
       waitMs,
-      reason: 'bounded_framework_settle_backoff',
+      reason: attempt <= 1 ? 'initial_dom_quiescence_settle' : 'bounded_framework_settle_backoff',
     });
     await new Promise((resolve) => {
       setTimer(resolve, waitMs);
@@ -1055,6 +1059,25 @@ function createBrowserTransactionController({
       && /(?:-32001|timeout|timed\s*out|deadline|response.{0,20}lost|connection.{0,20}closed)/i
         .test(clean(delivery.reason));
     let recoveryRecommendation = null;
+    if (terminal?.terminalDecision?.state === CONTROLLER_STATE.EXECUTION_ERROR
+      && operation.kind === OPERATION_KIND.ACTION
+      && Number(now()) < deadlineMs - 1500) {
+      const nextLadder = getNextLadderStrategy(plan.adapterKind, context.ladderIndex || 0);
+      if (nextLadder) {
+        report(operation, CONTROLLER_STATE.RESOLVING, {
+          reason: 'strategy_mismatch_escalating_ladder',
+          fromAdapterKind: plan.adapterKind,
+          toAdapterKind: nextLadder.kind,
+          ladderIndex: nextLadder.ladderIndex,
+        });
+        return execute(operation, {
+          ...context,
+          strategyOverride: nextLadder.kind,
+          ladderIndex: nextLadder.ladderIndex,
+          forceFreshSnapshot: true,
+        });
+      }
+    }
     if (terminal?.terminalDecision?.state === CONTROLLER_STATE.EXECUTION_ERROR
       && last.proof.status === PROOF_STATUS.UNKNOWN
       && transportUncertainty

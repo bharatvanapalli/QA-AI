@@ -2120,6 +2120,64 @@ function authoritativeDescriptorLocator(scope, descriptor = {}) {
   return locator && expression ? { locator, expression } : null;
 }
 
+async function findCandidateWithShadowWalk(page, { role, name, text, selector } = {}) {
+  if (!page) return false;
+  try {
+    const shadowDiscoveryScript = `(() => {
+      function walk(root, targetRole, targetName, targetText, targetSel) {
+        const queue = [root];
+        while (queue.length > 0) {
+          const node = queue.shift();
+          if (!node) continue;
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            const elRole = (node.getAttribute('role') || node.tagName.toLowerCase()).toLowerCase();
+            const elName = (node.getAttribute('aria-label') || node.innerText || node.textContent || node.getAttribute('placeholder') || '').trim().toLowerCase();
+            if (targetRole && elRole === targetRole.toLowerCase()) {
+              if (!targetName || elName.includes(targetName.toLowerCase())) return true;
+            }
+            if (targetText && elName.includes(targetText.toLowerCase())) return true;
+            if (targetSel && node.matches && node.matches(targetSel)) return true;
+            if (node.shadowRoot) queue.push(node.shadowRoot);
+          }
+          if (node.children) {
+            for (let i = 0; i < node.children.length; i++) queue.push(node.children[i]);
+          }
+        }
+        return false;
+      }
+      return Boolean(walk(document.body, ${JSON.stringify(role || '')}, ${JSON.stringify(name || '')}, ${JSON.stringify(text || '')}, ${JSON.stringify(selector || '')}));
+    })()`;
+    return await page.evaluate(shadowDiscoveryScript).catch(() => false);
+  } catch (_) {
+    return false;
+  }
+}
+
+async function dismissBlockingOverlays(page) {
+  if (!page) return false;
+  try {
+    const dismissScript = `(() => {
+      let dismissed = false;
+      const candidates = Array.from(document.querySelectorAll('button, a, [role="button"], [aria-label*="close" i], [aria-label*="dismiss" i]'));
+      for (const btn of candidates) {
+        const txt = (btn.innerText || btn.textContent || btn.getAttribute('aria-label') || '').trim().toLowerCase();
+        if (/^(accept all|accept cookies|i accept|i agree|got it|agree & close|allow all|close|dismiss|agree|accept)$/i.test(txt) && btn.offsetParent !== null) {
+          const rect = btn.getBoundingClientRect();
+          if (rect.width > 0 && rect.height > 0 && rect.top >= 0) {
+            btn.click();
+            dismissed = true;
+            break;
+          }
+        }
+      }
+      return dismissed;
+    })()`;
+    return await page.evaluate(dismissScript).catch(() => false);
+  } catch (_) {
+    return false;
+  }
+}
+
 async function verifyAuthoritativeCandidateBatch({ session, page, scope, capture, descriptors, phase, requireBackendMatch = true } = {}) {
   const expectedBackendNodeId = Number(capture?.identity?.backendNodeId) || null;
   if (!page || !scope || !expectedBackendNodeId) return [];
