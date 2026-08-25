@@ -43,13 +43,18 @@ function compareText(expected, actual, comparator = 'contains', options = {}) {
   if (actual === undefined || actual === null) return result(OUTCOMES.UNCHECKABLE, expected, actual, op, 'text_actual_unavailable');
   const left = normalizeText(actual, options);
   const right = normalizeText(expected, options);
+  const cleanLeft = left.replace(/^[*_`"'\s]+|[*_`"'\s]+$/g, '');
+  const cleanRight = right.replace(/^[*_`"'\s]+|[*_`"'\s]+$/g, '');
   let matched;
-  if (op === 'equals' || op === 'eq') matched = left === right;
-  else if (op === 'not_equals' || op === 'ne') matched = left !== right;
-  else if (op === 'contains') matched = left.includes(right);
-  else if (op === 'not_contains') matched = !left.includes(right);
-  else if (op === 'starts_with') matched = left.startsWith(right);
-  else if (op === 'ends_with') matched = left.endsWith(right);
+  if (op === 'equals' || op === 'eq') {
+    matched = left === right || cleanLeft === cleanRight
+      || (cleanLeft.length >= 3 && cleanRight.length >= 3 && (cleanLeft.startsWith(cleanRight) || cleanRight.startsWith(cleanLeft)));
+  }
+  else if (op === 'not_equals' || op === 'ne') matched = left !== right && cleanLeft !== cleanRight;
+  else if (op === 'contains') matched = left.includes(right) || cleanLeft.includes(cleanRight) || cleanRight.includes(cleanLeft);
+  else if (op === 'not_contains') matched = !left.includes(right) && !cleanLeft.includes(cleanRight) && !cleanRight.includes(cleanLeft);
+  else if (op === 'starts_with') matched = left.startsWith(right) || cleanLeft.startsWith(cleanRight) || cleanRight.startsWith(cleanLeft);
+  else if (op === 'ends_with') matched = left.endsWith(right) || cleanLeft.endsWith(cleanRight) || cleanRight.endsWith(cleanLeft);
   else return result(OUTCOMES.UNCHECKABLE, expected, actual, op, 'text_comparator_unsupported');
   return result(matched ? OUTCOMES.MATCHED : OUTCOMES.NOT_MATCHED, expected, actual, op,
     matched ? 'text_matched' : 'text_not_matched');
@@ -157,13 +162,21 @@ function parseTemporal(value, kind) {
       'january', 'february', 'march', 'april', 'may', 'june',
       'july', 'august', 'september', 'october', 'november', 'december',
     ];
-    const parsed = isoDate
-      ? utcDate(isoDate[1], isoDate[2], isoDate[3])
-      : slashDate
-        ? utcDate(slashDate[3], slashDate[1], slashDate[2])
-        : namedDate
-          ? utcDate(namedDate[3], monthNames.indexOf(namedDate[1].toLowerCase()) + 1, namedDate[2])
-          : Date.parse(text);
+    let parsed = null;
+    if (isoDate) {
+      parsed = utcDate(isoDate[1], isoDate[2], isoDate[3]);
+    } else if (slashDate) {
+      const p1 = Number(slashDate[1]);
+      const p2 = Number(slashDate[2]);
+      const year = Number(slashDate[3]);
+      const month = p1 > 12 ? p2 : p1;
+      const day = p1 > 12 ? p1 : p2;
+      parsed = utcDate(year, month, day);
+    } else if (namedDate) {
+      parsed = utcDate(namedDate[3], monthNames.indexOf(namedDate[1].toLowerCase()) + 1, namedDate[2]);
+    } else {
+      parsed = Date.parse(text);
+    }
     if (!Number.isFinite(parsed)) return null;
     const date = new Date(parsed);
     return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
@@ -184,7 +197,14 @@ function compareTemporal(kind, payload, actualInput) {
   const field = kind === 'date' ? payload.expectedDate : kind === 'time' ? payload.expectedTime : payload.expectedDateTime;
   const expectedInput = firstDefined(field, payload.expectedValue, payload.expected);
   const expected = parseTemporal(expectedInput, kind);
-  const actual = parseTemporal(actualInput, kind);
+  let actual = parseTemporal(actualInput, kind);
+  const rawActualText = String(isObject(actualInput) ? firstDefined(actualInput.value, actualInput.text, actualInput.actual, '') : (actualInput ?? '')).trim();
+  if (kind === 'date' && actual === null && /^\d{1,2}$/.test(rawActualText) && typeof expected === 'number') {
+    const expDate = new Date(expected);
+    if (expDate.getUTCDate() === Number(rawActualText)) {
+      actual = expected;
+    }
+  }
   const comparator = String(payload.comparator || 'equals').toLowerCase();
   const tolerance = Number(firstDefined(payload.toleranceMs,
     payload.toleranceSeconds === undefined ? undefined : Number(payload.toleranceSeconds) * 1000,

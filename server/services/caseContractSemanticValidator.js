@@ -976,7 +976,11 @@ function validateSemanticCaseContract(contract, {
         continue;
       }
       validateSemanticString(value, `${path}.${key}`);
-      if (IMPERATIVE_TARGET_RE.test(value)) {
+      const isChainedInstruction = IMPERATIVE_TARGET_RE.test(value) && (
+        /\b(?:and\s+then|then\s+|into\s+|with\s+value|to\s+submit|and\s+verify|should\s+be)\b/i.test(value)
+        || value.length > 75
+      );
+      if (isChainedInstruction) {
         push(FINDING_CODES.TARGET_IDENTITY_IMPERATIVE, `${path}.${key}`, 'Target identity names a control/scope; it must not issue an action.', value);
         valid = false;
       }
@@ -1080,10 +1084,11 @@ function validateSemanticCaseContract(contract, {
     if (!VALID_STEP_TYPES.includes(step.type)) push(FINDING_CODES.STEP_TYPE_UNSUPPORTED, `${path}.type`, 'Unsupported universal step type.', step.type);
     if (typeof step.text !== 'string' || !step.text) push(FINDING_CODES.STEP_TEXT_MISSING, `${path}.text`, 'Source-faithful display text is required.');
     else {
+      const unquotedText = step.text.replace(/"[^"]*"/g, '""').replace(/'[^']*'/g, "''");
       ACTION_VERB_RE.lastIndex = 0;
       ASSERTION_VERB_RE.lastIndex = 0;
-      const actionCount = [...step.text.matchAll(ACTION_VERB_RE)].length;
-      const assertionCount = [...step.text.matchAll(ASSERTION_VERB_RE)].length;
+      const actionCount = [...unquotedText.matchAll(ACTION_VERB_RE)].length;
+      const assertionCount = [...unquotedText.matchAll(ASSERTION_VERB_RE)].length;
       if (actionCount > 1 || assertionCount > 0) push(FINDING_CODES.STEP_NOT_ATOMIC, `${path}.text`, 'One step may contain one browser action and no assertion instruction.', { actionCount, assertionCount });
     }
     if (!TARGET_OPTIONAL_TYPES.has(step.type)) validateTarget(step.targetIdentity, `${path}.targetIdentity`);

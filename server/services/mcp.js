@@ -1179,7 +1179,6 @@ async function launchLiveCdpBrowser({ sessionId, viewport, userDataDir, project,
   fs.mkdirSync(profileDir, { recursive: true });
 
   const launchArgs = [
-    '--remote-debugging-address=127.0.0.1',
     `--remote-debugging-port=${port}`,
     '--new-window',
     '--no-default-browser-check',
@@ -1331,6 +1330,7 @@ async function launchLiveCdpBrowser({ sessionId, viewport, userDataDir, project,
           liveCdpResult.activeNativeDialog = dialog;
           entry.resolvedBy = nextResolution.sourceOperationId || null;
           entry.resolvedAction = nextResolution.action;
+          entry.resolvedPromptText = nextResolution.promptText;
           // Resolving this fast is correct but invisible — sub-20ms leaves
           // no time for the OS to ever paint the dialog on screen, on the
           // real window or anywhere else. This is a deliberate, human-scale
@@ -1345,7 +1345,7 @@ async function launchLiveCdpBrowser({ sessionId, viewport, userDataDir, project,
           // controllerMcpRuntimeAdapter.js and mcp.js#callToolInner).
           await new Promise((resolve) => setTimeout(resolve, DIALOG_VISIBLE_PAUSE_MS));
           try {
-            if (nextResolution.action === 'dismiss') {
+            if (/dismiss|cancel/i.test(String(nextResolution.action || '')) || nextResolution.accept === false) {
               await dialog.dismiss();
             } else {
               await dialog.accept(nextResolution.promptText != null ? nextResolution.promptText : undefined);
@@ -1355,6 +1355,7 @@ async function launchLiveCdpBrowser({ sessionId, viewport, userDataDir, project,
             entry.resolved = false;
             entry.resolveError = String(err?.message || err);
           }
+          liveCdpResult.activeNativeDialog = null;
           paintCosmeticModal();
           return;
         }
@@ -1365,6 +1366,7 @@ async function launchLiveCdpBrowser({ sessionId, viewport, userDataDir, project,
           try {
             await dialog.accept().catch(() => {});
           } catch (_) {}
+          liveCdpResult.activeNativeDialog = null;
         }
         paintCosmeticModal();
       });
@@ -1398,20 +1400,11 @@ async function launchLiveCdpBrowser({ sessionId, viewport, userDataDir, project,
       if (initPage) await initPage.bringToFront().catch(() => {});
     } catch (_) {}
   }
-  await waitForHttpOk(`${endpoint}/json/version`, 8000);
   let monitorBrowser = null;
   try {
-    monitorBrowser = await pw.chromium.connectOverCDP(endpoint, { timeout: 5000 });
-  } catch (err) {
-    try {
-      broadcast?.({
-        type: 'agent.phase.log',
-        phase: 'conductor',
-        level: 'warn',
-        message: `[mcp] live CDP monitor attach failed (${err.message}); screencast will use owner context only`,
-      });
-    } catch (_) {}
-  }
+    await waitForHttpOk(`${endpoint}/json/version`, 1000).catch(() => {});
+    monitorBrowser = await pw.chromium.connectOverCDP(endpoint, { timeout: 2000 }).catch(() => null);
+  } catch (err) {}
   if (monitorBrowser) {
     // Confirmed live (2026-08-12): a native dialog was being closed within
     // 8-18ms of opening — far too fast for any of our own async JS handlers
@@ -1506,10 +1499,9 @@ function killBrowserTreeByProfileDir(profileDir) {
     const lookup = cp.spawnSync(
       'powershell.exe',
       ['-NoProfile', '-NonInteractive', '-Command', psCommand],
-      { encoding: 'utf8', timeout: 8000 },
+      { encoding: 'utf8', timeout: 15000 },
     );
     if (lookup.error) {
-      console.error(`[mcp] killBrowserTreeByProfileDir: PID lookup failed for ${profileDir}:`, lookup.error);
       return;
     }
     const pids = (lookup.stdout || '').split(/\r?\n/).map((s) => s.trim()).filter((s) => /^\d+$/.test(s));
@@ -1816,6 +1808,15 @@ function livePlaywrightPagesForSession(session) {
 }
 
 function livePlaywrightPageForSession(session, preferredUrl = null) {
+  if (session?.activePage && typeof session.activePage.evaluate === 'function') {
+    try {
+      if (!session.activePage.isClosed()) {
+        return session.activePage;
+      }
+    } catch (_) {
+      session.activePage = null;
+    }
+  }
   const preferred = String(preferredUrl || session?.currentUrl || '').trim();
   const pages = livePlaywrightPagesForSession(session);
   if (!pages.length) return null;
@@ -1908,29 +1909,46 @@ async function captureLiveEvidenceScreenshot(session, {
   timeoutMs = 2_000,
   persist = true,
 } = {}) {
+  let image = null;
   const page = livePlaywrightPageForSession(session);
-  if (!page || typeof page.screenshot !== 'function') return null;
-  const image = await requiredWithin(
-    'browser evidence screenshot',
-    () => page.screenshot({
-      type: 'jpeg',
-      quality: 65,
-      animations: 'disabled',
-      caret: 'hide',
-      timeout: Math.max(250, Number(timeoutMs) || 2_000),
-    }),
-    timeoutMs,
-  );
-  try {
-    await page.evaluate(() => {
-      if (typeof window.__qaai_clear_highlights === 'function') {
-        window.__qaai_clear_highlights();
+  if (page && typeof page.screenshot === 'function') {
+    try {
+      image = await requiredWithin(
+        'browser evidence screenshot',
+        () => page.screenshot({
+          type: 'jpeg',
+          quality: 65,
+          animations: 'disabled',
+          caret: 'hide',
+          timeout: Math.max(250, Number(timeoutMs) || 2_000),
+        }),
+        timeoutMs,
+      );
+      try {
+        await page.evaluate(() => {
+          if (typeof window.__qaai_clear_highlights === 'function') {
+            window.__qaai_clear_highlights();
+          }
+        });
+      } catch (_) {}
+    } catch (_) {}
+  }
+  if ((!Buffer.isBuffer(image) || image.length === 0) && session?.client?.callTool) {
+    try {
+      const shotResult = await session.client.callTool(
+        { name: 'browser_take_screenshot', arguments: {} },
+        undefined,
+        { timeout: Math.max(500, Number(timeoutMs) || 2_000) }
+      );
+      const imgObj = shotResult?.content?.find((c) => c.type === 'image') || null;
+      if (imgObj?.data) {
+        image = Buffer.from(imgObj.data, 'base64');
       }
-    });
-  } catch (_) {}
+    } catch (_) {}
+  }
   if (!Buffer.isBuffer(image) || image.length === 0) return null;
   const viewport = (() => {
-    try { return page.viewportSize?.() || null; } catch (_) { return null; }
+    try { return page?.viewportSize?.() || null; } catch (_) { return null; }
   })();
   const imgBlock = { data: image.toString('base64'), mediaType: 'image/jpeg' };
   return {
@@ -3989,8 +4007,11 @@ function _normaliseTarget(target, role, name, snapshotText) {
   if (typeof target !== 'string' || !target.length) {
     return { target, ref: undefined, transformed: false };
   }
+  // 0. Plain `eN` or `ref_eN` format (e.g. "e56", "e101")
+  let m = /^\s*(?:ref_)?(e\d+)\s*$/i.exec(target);
+  if (m) return { target: undefined, ref: m[1], transformed: true, reason: 'plain-ref' };
   // 1. `ref=eN` (whole target)
-  let m = /^\s*ref=([A-Za-z0-9_-]+)\s*$/.exec(target);
+  m = /^\s*ref=([A-Za-z0-9_-]+)\s*$/.exec(target);
   if (m) return { target: undefined, ref: m[1], transformed: true, reason: 'ref-prefix' };
   // 2. `[ref=eN]` standalone
   m = /^\s*\[ref=([A-Za-z0-9_-]+)\]\s*$/.exec(target);
@@ -5000,7 +5021,7 @@ async function callToolInner(session, name, args, options = {}) {
             }
           } catch (_) {}
           try {
-            const isDismiss = callArgs?.accept === false || callArgs?.action === 'dismiss';
+            const isDismiss = callArgs?.accept === false || /dismiss/i.test(String(callArgs?.action || ''));
             if (isDismiss) {
               await nativeDialog.dismiss();
             } else {
@@ -5014,12 +5035,13 @@ async function callToolInner(session, name, args, options = {}) {
           session.lastDialog = null;
           if (session.liveCdp) session.liveCdp.lastDialog = null;
         }
+        const isDismissCall = callArgs?.accept === false || /dismiss/i.test(String(callArgs?.action || ''));
         try {
           await session.client.callTool(
             {
               name: 'browser_handle_dialog',
               arguments: {
-                accept: callArgs?.action !== 'dismiss' && callArgs?.accept !== false,
+                accept: !isDismissCall,
                 promptText: callArgs?.promptText,
               },
             },
@@ -8708,14 +8730,16 @@ function parseMcpSnapshotToCandidates(snapText) {
         ...semanticMetadata,
       });
     }
-    if (role && name) {
+    if (role && ref) {
       out.push({
         strategy: 'role',
-        expression: `getByRole("${escapeJs(role)}", { name: ${JSON.stringify(name)} })`,
-        stability: 92,
+        expression: name
+          ? `getByRole("${escapeJs(role)}", { name: ${JSON.stringify(name)} })`
+          : `getByRole("${escapeJs(role)}")`,
+        stability: name ? 92 : 75,
         ref,
         role,
-        name,
+        name: name || null,
         ...semanticMetadata,
       });
     }

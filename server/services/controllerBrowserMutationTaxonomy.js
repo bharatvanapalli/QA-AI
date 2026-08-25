@@ -10,7 +10,7 @@ const OPERATION_CLASS = Object.freeze({
 
 const ALWAYS_MUTATING_TOOLS = new Set([
   'browser_navigate', 'browser_navigate_back', 'browser_navigate_forward', 'browser_reload',
-  'browser_go_back', 'browser_go_forward',
+  'browser_go_back', 'browser_go_forward', 'NavigateBack', 'GoBack',
   'browser_click', 'browser_double_click', 'browser_triple_click',
   'browser_mouse_click', 'browser_click_xy', 'browser_mouse_down', 'browser_mouse_up',
   'browser_type', 'browser_fill', 'browser_fill_form',
@@ -20,6 +20,7 @@ const ALWAYS_MUTATING_TOOLS = new Set([
   'browser_resize', 'browser_close', 'browser_install',
   'browser_evaluate', 'browser_run_code', 'browser_run_code_unsafe',
   'ClickAndHold', 'browser_click_and_hold', 'Print', 'Inspect', 'ReadAndPrint', 'PressKey',
+  'SwitchTab', 'CloseTab', 'NewTab', 'SwitchFrame', 'browser_switch_tab', 'browser_close_tab',
   'playwright_context_new_page', 'playwright_page_goto', 'playwright_page_bring_to_front',
   'playwright_frame_install_event_recorder',
   'playwright_locator_add_capture_marker', 'playwright_locator_remove_capture_marker',

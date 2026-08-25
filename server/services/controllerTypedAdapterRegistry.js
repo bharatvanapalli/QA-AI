@@ -177,7 +177,7 @@ function inferAdapterKind(operation = {}, resolution = {}, context = {}) {
   if (['Navigate', 'GoBack', 'NavigateBack', 'GoForward', 'NavigateForward', 'Refresh', 'Reload'].includes(type)) return ADAPTER_KIND.NAVIGATION;
   if (type === 'Scroll') return ADAPTER_KIND.REVEAL;
   if (type === 'Upload') return ADAPTER_KIND.UPLOAD;
-  if (['SwitchContext'].includes(type) || ['frame', 'browser_context'].includes(role)) return ADAPTER_KIND.CONTEXT;
+  if (['SwitchContext', 'SwitchFrame', 'SwitchTab', 'NewTab', 'CloseTab'].includes(type) || ['frame', 'browser_context'].includes(role)) return ADAPTER_KIND.CONTEXT;
   const targetLower = clean(
     identity.target ||
     identity.accessibleName ||
@@ -202,6 +202,7 @@ function inferAdapterKind(operation = {}, resolution = {}, context = {}) {
   if (['Time', 'DateTime'].includes(type)) return ADAPTER_KIND.TIME;
   if (['Select', 'SelectMultiple', 'MultiSelect'].includes(type)) {
     if (['searchbox'].includes(role) || /autocomplete|typeahead/.test(controlType)) return ADAPTER_KIND.AUTOCOMPLETE;
+    if (['checkbox', 'radio', 'switch'].includes(role) || ['checkbox', 'radio', 'switch'].includes(controlType)) return ADAPTER_KIND.BOOLEAN;
     return ADAPTER_KIND.NATIVE_SELECT;
   }
   if (['PressKey', 'KeyPress', 'Press'].includes(type) || ['browser_press_key'].includes(operation.mutationTool)) return ADAPTER_KIND.KEYBOARD;
@@ -560,7 +561,7 @@ function planBoolean(operation, resolution) {
   const expected = operation.type === 'Uncheck' ? false : true;
   return commonPlan(operation, ADAPTER_KIND.BOOLEAN, {
     mutation: mutation(
-      expected ? 'browser_check' : 'browser_uncheck',
+      'browser_click',
       { target: resolvedRef(resolution) },
     ),
     proofContract: proof(`${operation.operationId}:boolean`, [
@@ -607,10 +608,9 @@ function planNavigation(operation) {
 
   return commonPlan(operation, ADAPTER_KIND.NAVIGATION, {
     mutation: mutation(sdkToolName, { url: navUrl }),
-    proofContract: proof(`${operation.operationId}:navigation`, isDirectNavigate ? [
+    proofContract: proof(`${operation.operationId}:navigation`, [
       { id: 'exact-url', allOf: [CLAIM.EXACT_NAVIGATION_TARGET] },
       { id: 'authored-destination', allOf: [CLAIM.AUTHORED_DESTINATION] },
-    ] : [
       { id: 'next-required-control', allOf: [CLAIM.NEXT_REQUIRED_CONTROL_ACTIONABLE] },
     ]),
     requiredSources: [SNAPSHOT_SOURCE.BROWSER_SNAPSHOT, SNAPSHOT_SOURCE.DOM],
@@ -773,14 +773,30 @@ function createTypedAdapterPlan({ operation, resolution = {}, context = {} } = {
         recoveryOptions: ['REFRESH_SNAPSHOT'],
       });
     }
-    case ADAPTER_KIND.CONTEXT:
+    case ADAPTER_KIND.CONTEXT: {
+      let mutTool = 'browser_tabs';
+      let mutArgs = { action: 'select', target: resolvedRef(resolution) };
+      if (operation.type === 'SwitchTab') {
+        mutTool = 'SwitchTab';
+        mutArgs = { target: operation.element || operation.target || 'New Tab' };
+      } else if (operation.type === 'CloseTab') {
+        mutTool = 'CloseTab';
+        mutArgs = { target: operation.element || operation.target || 'Child Window' };
+      } else if (operation.type === 'NewTab') {
+        mutTool = 'NewTab';
+        mutArgs = { url: operation.value || operation.url || '' };
+      } else if (operation.type === 'SwitchFrame') {
+        mutTool = 'SwitchFrame';
+        mutArgs = { target: operation.element || operation.target || '' };
+      }
       return commonPlan(operation, kind, {
-        mutation: mutation('browser_tabs', { action: 'select', target: resolvedRef(resolution) }),
+        mutation: mutation(mutTool, mutArgs),
         proofContract: proof(`${operation.operationId}:context`, [
           { id: 'context-state', allOf: [CLAIM.CONTEXT_STATE] },
         ]),
         recoveryOptions: ['REFRESH_SNAPSHOT'],
       });
+    }
     default:
       return planGeneric(operation, resolution);
   }

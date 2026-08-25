@@ -444,17 +444,19 @@ function actionSelectionLabel(selectionCriteria) {
 }
 
 function canonicalActionText(type, target, semantics = {}) {
-  const label = actionTargetLabel(target) || 'the authored target';
-  const value = hasOwn(semantics, 'value') ? String(semantics.value) : clean(semantics.valueRef);
+  const rawLabel = actionTargetLabel(target) || 'the authored target';
+  const label = (rawLabel.startsWith('"') && rawLabel.endsWith('"')) || rawLabel === 'the authored target' ? rawLabel : `"${rawLabel}"`;
+  const rawValue = hasOwn(semantics, 'value') ? String(semantics.value) : clean(semantics.valueRef);
+  const value = rawValue ? ((rawValue.startsWith('"') && rawValue.endsWith('"')) ? rawValue : `"${rawValue}"`) : '';
   const selection = actionSelectionLabel(semantics.selectionCriteria);
   const displays = {
-    Navigate: `Navigate to ${label}`,
+    Navigate: type === 'Navigate' && (rawLabel.startsWith('http://') || rawLabel.startsWith('https://') || rawLabel.startsWith('/')) ? `Navigate to ${rawLabel}` : `Navigate to ${label}`,
     Click: `Click ${label}`,
     DoubleClick: `Double-click ${label}`,
     Fill: `Fill ${label}${value ? ` with ${value}` : ''}`,
     Type: `Type${value ? ` ${value}` : ''} in ${label}`,
     Clear: `Clear ${label}`,
-    Select: `Select ${selection || 'the authored option'} from ${label}`,
+    Select: `Select ${selection ? `"${selection}"` : 'the authored option'} from ${label}`,
     Check: `Check ${label}`,
     Uncheck: `Uncheck ${label}`,
     Radio: `Select ${label}`,

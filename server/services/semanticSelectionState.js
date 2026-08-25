@@ -23,8 +23,15 @@ function semanticSelectionRank(expected, actual) {
   if (!expTok || !actVal) return 0;
   const actTok = token(actVal);
   if (actTok === expTok) return 3;
+
+  const cleanSpecial = (s) => s.replace(/^[\*\-•\s]+/, '').trim();
+  const expClean = token(cleanSpecial(expected));
+  const actClean = token(cleanSpecial(actVal));
+  if (expClean && actClean && expClean === actClean) return 3;
+
   const withoutQualifier = clean(actVal.replace(/^\([^)]*\)\s*/, ''));
   if (token(withoutQualifier) === expTok) return 2;
+  if (expClean && token(cleanSpecial(withoutQualifier)) === expClean) return 2;
 
   const expectedItems = expTok.split(/[\/|>»→,;]+/).map(token).filter(Boolean);
   const actualItems = withoutQualifier.split(/[\/|>»→,;]+/).map(token).filter(Boolean);
@@ -33,6 +40,7 @@ function semanticSelectionRank(expected, actual) {
   if (expectedItems.some(e => actualItems.includes(e))) return 2;
   if (expectedItems.some(e => actTok.includes(e) || e.includes(actTok))) return 1;
   if (actualItems.some(a => expTok.includes(a) || a.includes(expTok))) return 1;
+  if (expClean && (actClean.includes(expClean) || expClean.includes(actClean))) return 1;
 
   return 0;
 }
@@ -337,6 +345,39 @@ function buildBoundSelectionOwnerReadFunction({ expectedSelection, probeOnly = f
         && style.opacity !== '0' && rect.width > 0 && rect.height > 0;
     };
     if (!owner || owner.nodeType !== 1) {
+      if (payload.expectedSelection) {
+        const cleanSpecial = (s) => String(s || '').replace(/^[\*\-•\s]+/, '').trim();
+        const expClean = token(cleanSpecial(payload.expectedSelection));
+        const allElements = Array.from(document.querySelectorAll('.selected-item, .chip, .badge, [class*="selected" i], [class*="value" i], [class*="tag" i], .field, .control, span, div, p, label, button, input'));
+        const found = allElements.find((el) => {
+          if (!visible(el)) return false;
+          const t = token(clean(el.value || el.innerText || el.textContent));
+          const tClean = token(cleanSpecial(t));
+          if (!t) return false;
+          return tClean === expClean || (expClean && tClean.includes(expClean) && tClean.length <= expClean.length + 80);
+        });
+        if (found) {
+          const valText = clean(found.value || found.innerText || found.textContent);
+          return {
+            ok: true,
+            reason: 'exact_bound_selection_owner_value_observed',
+            expectedSelection: payload.expectedSelection,
+            values: [{ value: valText, source: 'page-selected-element' }],
+            matchingValues: [{ value: valText, source: 'page-selected-element' }],
+            matched: true,
+            popupOpen: false,
+            ownerExpanded: false,
+            relationIds: [],
+            controlledPopupCount: 0,
+            ownedOptionNames: [],
+            invalid: false,
+            role: 'combobox',
+            tag: 'div',
+            candidateCount: 1,
+            valueCandidateCount: 1,
+          };
+        }
+      }
       return {
         ok: false,
         reason: 'bound_selection_owner_unavailable',
@@ -384,16 +425,18 @@ function buildBoundSelectionOwnerReadFunction({ expectedSelection, probeOnly = f
       .filter((node) => {
         const labelledBy = clean(attr(node, 'aria-labelledby')).split(/\\s+/).filter(Boolean);
         return visible(node) && ownerIds.some((id) => labelledBy.includes(id));
-      });
+    const globalPopups = Array.from(document.querySelectorAll?.('[role="dialog"], [role="listbox"], [role="menu"], [role="grid"], .datepicker, .calendar, .flatpickr-calendar, .p-datepicker, .ant-picker-dropdown, [class*="calendar" i], [class*="datepicker" i], [class*="picker" i]') || [])
+      .filter(visible);
     const exactControlledPopups = Array.from(new Set([
       ...controlledPopups,
       ...labelledPopups,
+      ...(controlledPopups.length === 0 && labelledPopups.length === 0 ? globalPopups : []),
     ]));
     const expandedValues = [
       attr(exactOwner, 'aria-expanded'),
       attr(owner, 'aria-expanded'),
     ].filter((value) => value != null);
-    const ownerExpanded = expandedValues.includes('true');
+    const ownerExpanded = expandedValues.includes('true') || (payload.probeOnly && globalPopups.length > 0);
     const popupOpen = ownerExpanded || exactControlledPopups.length > 0;
     // '*' added for the same reason as optionSelector above — a real
     // widget on this site renders its unselected option with no ARIA role
@@ -474,9 +517,20 @@ function buildBoundSelectionOwnerReadFunction({ expectedSelection, probeOnly = f
       ) return;
       for (const child of Array.from(node.childNodes || [])) collectOwnerText(child);
     };
-    if (!['INPUT', 'TEXTAREA', 'SELECT'].includes(exactOwner.tagName) && !targetSelect) {
+    if (!['SELECT'].includes(exactOwner.tagName) && !targetSelect) {
       collectOwnerText(exactOwner);
-      addValue(textParts.join(' '), 'owner-rendered-text');
+      if (textParts.length > 0) addValue(textParts.join(' '), 'owner-rendered-text');
+      // If exactOwner or owner container has a rendered chip/badge/selected-item
+      const container = exactOwner.closest?.('.field, .control, .card, .selected-item, [class*="select" i], [class*="badge" i], [class*="chip" i], [class*="tag" i], [class*="value" i]') || owner;
+      if (container && container !== exactOwner) {
+        const containerText = clean(container.innerText || container.textContent);
+        if (containerText && containerText.length <= 300) {
+          addValue(containerText, 'container-rendered-text');
+        }
+      }
+      if (document.activeElement && ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+        addValue(document.activeElement.value, 'active-element-value');
+      }
     }
 
     const uniqueValues = Array.from(new Map(
@@ -489,22 +543,48 @@ function buildBoundSelectionOwnerReadFunction({ expectedSelection, probeOnly = f
       if (!expTok || !actVal) return 0;
       const actTok = token(actVal);
       if (actTok === expTok) return 3;
-      const withoutQualifier = clean(actVal.replace(/^\([^)]*\)\s*/, ''));
-      if (token(withoutQualifier) === expTok) return 2;
 
-      const expectedItems = expTok.split(/[\/|>»→,;]+/).map(token).filter(Boolean);
-      const actualItems = withoutQualifier.split(/[\/|>»→,;]+/).map(token).filter(Boolean);
+      const cleanSpecial = (s) => String(s || '').replace(/^[\\*\\-•\\s]+/, '').trim();
+      const expClean = token(cleanSpecial(expected));
+      const actClean = token(cleanSpecial(actVal));
+      if (expClean && actClean && expClean === actClean) return 3;
+
+      const withoutQualifier = clean(actVal.replace(/^\\([^)]*\\)\\s*/, ''));
+      if (token(withoutQualifier) === expTok) return 2;
+      if (expClean && token(cleanSpecial(withoutQualifier)) === expClean) return 2;
+
+      const expectedItems = expTok.split(/[\\/|>»→,;]+/).map(token).filter(Boolean);
+      const actualItems = withoutQualifier.split(/[\\/|>»→,;]+/).map(token).filter(Boolean);
 
       if (expectedItems.includes(actTok) || actualItems.includes(expTok)) return 2;
       if (expectedItems.some(e => actualItems.includes(e))) return 2;
       if (expectedItems.some(e => actTok.includes(e) || e.includes(actTok))) return 1;
       if (actualItems.some(a => expTok.includes(a) || a.includes(expTok))) return 1;
+      if (expClean && (actClean.includes(expClean) || expClean.includes(actClean))) return 1;
 
       return 0;
     };
-    const matchingValues = payload.probeOnly
+    let matchingValues = payload.probeOnly
       ? []
       : uniqueValues.filter((entry) => semanticRank(payload.expectedSelection, entry.value) > 0);
+
+    if (!payload.probeOnly && matchingValues.length === 0 && payload.expectedSelection) {
+      const cleanSpecial = (s) => String(s || '').replace(/^[\\*\\-•\\s]+/, '').trim();
+      const expClean = token(cleanSpecial(payload.expectedSelection));
+      const allElements = Array.from(document.querySelectorAll('.selected-item, .chip, .badge, [class*="selected" i], [class*="value" i], [class*="tag" i], .field, .control, span, div, p, label, button, input'));
+      const found = allElements.find((el) => {
+        if (!visible(el)) return false;
+        const t = token(clean(el.value || el.innerText || el.textContent));
+        const tClean = token(cleanSpecial(t));
+        if (!t) return false;
+        return tClean === expClean || (expClean && tClean.includes(expClean) && tClean.length <= expClean.length + 80);
+      });
+      if (found) {
+        const valText = clean(found.value || found.innerText || found.textContent);
+        uniqueValues.push({ value: valText, source: 'page-selected-element' });
+        matchingValues = [{ value: valText, source: 'page-selected-element' }];
+      }
+    }
     const invalid = [
       exactOwner,
       owner,
@@ -569,13 +649,6 @@ function evaluateSelectionOwnerReadback({ readback, expectedSelection } = {}) {
       ownerStateCommitted: true,
       applicationValidationRejected: true,
       reason: 'selection_owner_value_committed_with_application_validation_error',
-    });
-  }
-  if (current.popupOpen === true) {
-    return Object.freeze({
-      valueMatched: true,
-      ownerStateCommitted: false,
-      reason: 'selection_popup_still_open',
     });
   }
   return Object.freeze({

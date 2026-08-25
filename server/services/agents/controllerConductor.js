@@ -103,16 +103,21 @@ function rootCaseId(testCaseId, casesById, seen = new Set()) {
 function buildDialogResolutionQueue(operations) {
   const queue = [];
   if (!Array.isArray(operations)) return queue;
-  for (const op of operations) {
+  for (let i = 0; i < operations.length; i++) {
+    const op = operations[i];
     const type = op?.type;
-    if (type === 'TypeAlert') {
+    if (type === 'TypeAlert' || (type === 'Fill' && /\b(?:prompt|alert|dialog)\b/i.test(op?.targetIdentity?.label || op?.element || ''))) {
       const promptVal = op.value ?? op.targetIdentity?.value ?? null;
       queue.push({
         action: 'accept',
-        promptText: promptVal != null ? String(promptVal) : null,
+        promptText: promptVal != null ? String(promptVal) : '',
         sourceOperationId: op.operationId || null,
       });
-    } else if (type === 'AcceptAlert') {
+      // If the subsequent operation is AcceptAlert (the OK button for this prompt), coalesce it
+      if (operations[i + 1]?.type === 'AcceptAlert' || operations[i + 1]?.type === 'HandleAlert') {
+        i++;
+      }
+    } else if (type === 'AcceptAlert' || type === 'HandleAlert') {
       queue.push({ action: 'accept', promptText: null, sourceOperationId: op.operationId || null });
     } else if (type === 'DismissAlert') {
       queue.push({ action: 'dismiss', promptText: null, sourceOperationId: op.operationId || null });
@@ -163,49 +168,41 @@ function scaledAttempts(count) {
 function deadlineForOperation(operation) {
   switch (operation.type) {
     case 'Navigate':
-      return scaledMs(20_000);
+      return scaledMs(40_000);
     case 'Date':
     case 'DateTime':
-      return scaledMs(20_000);
+      return scaledMs(35_000);
     case 'Select':
     case 'Time':
-      return scaledMs(12_000);
+      return scaledMs(35_000);
     case 'Click':
     case 'Submit':
-      // There's no way to know in advance whether a given click triggers a
-      // full page load (e.g. clicking a nav link), so give every click the
-      // same generous budget Navigate itself gets — a click's own MCP round
-      // trip alone can eat several seconds, and a page_ready-flagged-only
-      // 10s budget starves post-click snapshot/reconciliation on any real
-      // page (reproduced live: LetCode's "Goto Home" link click used 3.4s
-      // just for the browser_click round trip, leaving too little of the
-      // 10s default for the destination page to load and verify).
-      return scaledMs(30_000);
+      return scaledMs(40_000);
     case 'WaitForState':
-      return scaledMs(20_000);
+      return scaledMs(30_000);
     case 'Fill':
     case 'Type':
     case 'Clear':
     case 'PressKey':
     case 'Hover':
     case 'Focus':
-      return scaledMs(20_000);
+      return scaledMs(30_000);
     default:
-      return scaledMs(15_000);
+      return scaledMs(25_000);
   }
 }
 
 function observationAttemptsForOperation(operation) {
   if (operation.type === 'WaitForState') return scaledAttempts(18);
-  if (['Click', 'Submit'].includes(operation.type)) return scaledAttempts(10);
-  return scaledAttempts(6);
+  if (['Click', 'Submit', 'Select', 'Date', 'DateTime', 'Time'].includes(operation.type)) return scaledAttempts(12);
+  return scaledAttempts(8);
 }
 
 function resolutionAttemptsForOperation(operation) {
-  if (operation.type === 'WaitForState') return scaledAttempts(2);
+  if (operation.type === 'WaitForState') return scaledAttempts(3);
   if (operation.type === 'Fill') return scaledAttempts(6);
-  if (['Date', 'DateTime', 'Select', 'Time'].includes(operation.type)) return scaledAttempts(4);
-  return scaledAttempts(3);
+  if (['Date', 'DateTime', 'Select', 'Time'].includes(operation.type)) return scaledAttempts(6);
+  return scaledAttempts(4);
 }
 
 function valueResolver(valueRef) {
@@ -652,8 +649,10 @@ async function run({
         steps: decodeJson(testCase.steps, []) || [],
         assertions: decodeJson(testCase.assertions, []) || [],
       });
+      const dialogQueue = buildDialogResolutionQueue(contract.operations);
+      browserSession.dialogResolutionQueue = dialogQueue;
       if (browserSession.liveCdp) {
-        browserSession.liveCdp.dialogResolutionQueue = buildDialogResolutionQueue(contract.operations);
+        browserSession.liveCdp.dialogResolutionQueue = dialogQueue;
       }
       send({
         type: 'step.start',

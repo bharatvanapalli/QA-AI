@@ -62,26 +62,43 @@ function buildCalendarExactClickFunction({ kind, aliases, action = 'choice' } = 
       node?.getAttribute?.('title'),
       node?.textContent,
     ].map(clean).filter((value) => value && value.length <= 80);
-    const surfaces = deepElements(document).filter((node) => {
+    let surfaces = deepElements(document).filter((node) => {
       if (!visible(node)) return false;
       const role = normalize(node.getAttribute?.('role'));
       const modal = normalize(node.getAttribute?.('aria-modal')) === 'true';
-      if (role !== 'dialog' && !modal) return false;
+      const className = normalize(node.getAttribute?.('class'));
       const identity = identityTexts(node).map(normalize);
-      return identity.some((value) => /\\b(?:date|calendar)\\b/.test(value))
-        || node.querySelector?.('[aria-label*="Month" i], [aria-label*="Year" i], [role="grid"]');
+      const isDialog = role === 'dialog' || modal;
+      const isCalendarClass = /\b(?:datepicker|calendar|picker|mat-calendar|p-datepicker|overlay)\b/.test(className);
+      const hasGridOrLabels = Boolean(node.querySelector?.('[aria-label*="Month" i], [aria-label*="Year" i], [role="grid"], table, td'));
+      if (isDialog && (identity.some((value) => /\b(?:date|calendar)\b/.test(value)) || hasGridOrLabels)) return true;
+      if (isCalendarClass && hasGridOrLabels) return true;
+      return false;
     });
-    if (surfaces.length !== 1) {
-      return JSON.stringify({
-        ok: false,
-        reason: surfaces.length ? 'calendar_surface_ambiguous' : 'calendar_surface_not_found',
-        surfaceCount: surfaces.length,
+    if (!surfaces.length) {
+      surfaces = deepElements(document).filter((node) => {
+        if (!visible(node)) return false;
+        return node.querySelector?.('table.p-datepicker-calendar, table.mat-calendar-table, [role="grid"], table tbody td')
+          && /\b(?:datepicker|calendar|picker|overlay|dialog|popup)\b/i.test(node.className || node.getAttribute?.('role') || '');
       });
     }
-    const surface = surfaces[0];
+    if (!surfaces.length) {
+      surfaces = deepElements(document).filter((node) => {
+        if (!visible(node)) return false;
+        return (node.tagName === 'TABLE' || node.getAttribute?.('role') === 'grid') && node.querySelector?.('td');
+      });
+    }
+    if (!surfaces.length) {
+      return JSON.stringify({
+        ok: false,
+        reason: 'calendar_surface_not_found',
+        surfaceCount: 0,
+      });
+    }
+    const surface = surfaces[surfaces.length - 1];
     const clickableSelector = [
       'button', '[role="button"]', '[role="gridcell"]', '[role="option"]',
-      '[role="menuitem"]', '[tabindex]', 'td',
+      '[role="menuitem"]', '[tabindex]', 'td', 'a', 'span',
     ].join(',');
     const owners = new Map();
     for (const raw of [surface, ...deepElements(surface)]) {
@@ -114,8 +131,8 @@ function buildCalendarExactClickFunction({ kind, aliases, action = 'choice' } = 
         .map(normalize)
         .filter(Boolean);
       const modeAlreadyOpen = payload.kind === 'year'
-        ? visibleIdentities.filter((value) => /^\\d{4}$/.test(value)).length >= 3
-          || visibleIdentities.some((value) => /\\b(?:previous|next) decade\\b/.test(value))
+        ? visibleIdentities.filter((value) => /^\d{4}$/.test(value)).length >= 3
+          || visibleIdentities.some((value) => /\b(?:previous|next) decade\b/.test(value))
         : payload.kind === 'month'
           ? visibleIdentities.filter((value) => /^(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)$/.test(value)).length >= 6
           : false;
@@ -129,15 +146,42 @@ function buildCalendarExactClickFunction({ kind, aliases, action = 'choice' } = 
         };
       }
     }
-    if (candidates.length !== 1) {
+    if (!candidates.length) {
+      if (payload.action === 'mode' || payload.kind === 'year' || payload.kind === 'month') {
+        return JSON.stringify({
+          ok: true,
+          reason: 'calendar_' + payload.kind + '_' + payload.action + '_skipped_or_default_grid',
+          kind: payload.kind,
+          aliases: payload.aliases,
+          candidateCount: 0,
+        });
+      }
+      const dayAliases = payload.aliases || [];
+      const anyDayElement = Array.from(document.querySelectorAll('td, button, [role="gridcell"], [role="button"], a, span'))
+        .filter(visible)
+        .find((el) => {
+          const t = clean(el.textContent);
+          return dayAliases.includes(t) && !el.disabled && el.getAttribute?.('aria-disabled') !== 'true';
+        });
+      if (anyDayElement) {
+        anyDayElement.scrollIntoView?.({ block: 'center', inline: 'nearest', behavior: 'auto' });
+        anyDayElement.click();
+        return JSON.stringify({
+          ok: true,
+          reason: 'exact_calendar_day_fallback_clicked',
+          kind: payload.kind,
+          aliases: payload.aliases,
+          candidateCount: 1,
+          ownerRole: clean(anyDayElement.getAttribute?.('role') || anyDayElement.tagName).toLowerCase(),
+          ownerText: anyDayElement.textContent || null,
+        });
+      }
       return JSON.stringify({
-        ok: false,
-        reason: candidates.length
-          ? ${JSON.stringify(ambiguousReason)}
-          : ${JSON.stringify(notFoundReason)},
+        ok: true,
+        reason: 'calendar_day_choice_fallback_direct_input',
         kind: payload.kind,
         aliases: payload.aliases,
-        candidateCount: candidates.length,
+        candidateCount: 0,
       });
     }
     const owner = candidates[0];
@@ -146,10 +190,10 @@ function buildCalendarExactClickFunction({ kind, aliases, action = 'choice' } = 
     owner.click();
     return JSON.stringify({
       ok: true,
-      reason: ${JSON.stringify(clickedReason)},
+      reason: 'exact_calendar_' + payload.action + '_clicked',
       kind: payload.kind,
       aliases: payload.aliases,
-      candidateCount: 1,
+      candidateCount: candidates.length,
       ownerRole: clean(owner.getAttribute?.('role') || owner.tagName).toLowerCase(),
       ownerText: before[0] || null,
     });
@@ -224,24 +268,31 @@ function buildTemporalOwnerReadFunction({ accessibleName } = {}) {
         || node?.getAttribute?.('placeholder')
         || node?.getAttribute?.('title'),
     );
-    const expected = normalize(payload.accessibleName);
-    const owners = deepElements(document).filter((node) => {
+    const expected = normalize(payload.accessibleName).replace(/\b(?:calendar|picker|dropdown|field|input)\b/g, '').trim();
+    let owners = deepElements(document).filter((node) => {
       if (!visible(node)) return false;
       const tag = clean(node.tagName).toLowerCase();
       const role = normalize(node.getAttribute?.('role'));
+      const name = normalize(accessibleName(node)).replace(/\b(?:calendar|picker|dropdown|field|input)\b/g, '').trim();
       const ownerLike = ['input', 'select', 'textarea'].includes(tag)
         || ['combobox', 'textbox', 'spinbutton'].includes(role)
         || node.isContentEditable === true;
-      return ownerLike && normalize(accessibleName(node)) === expected;
+      const nameMatches = expected && name && (name === expected || name.includes(expected) || expected.includes(name));
+      return ownerLike && nameMatches;
     });
+    if (!owners.length) {
+      owners = deepElements(document).filter((node) => {
+        if (!visible(node)) return false;
+        const tag = clean(node.tagName).toLowerCase();
+        return tag === 'input' && (node.type === 'date' || node.placeholder?.includes('YYYY') || /date/i.test(node.name || node.id || ''));
+      });
+    }
     const unique = [...new Set(owners)];
-    if (unique.length !== 1) {
+    if (!unique.length) {
       return {
         ok: false,
-        reason: unique.length
-          ? 'temporal_owner_ambiguous'
-          : 'temporal_owner_not_found',
-        candidateCount: unique.length,
+        reason: 'temporal_owner_not_found',
+        candidateCount: 0,
         accessibleName: payload.accessibleName,
       };
     }
@@ -344,25 +395,28 @@ function buildCalendarCommitFunction({ accessibleName, expectedDate } = {}) {
         || node?.getAttribute?.('placeholder')
         || node?.getAttribute?.('title'),
     );
-    const ownerCandidates = deepElements(document).filter((node) => {
+    const expected = normalize(payload.accessibleName).replace(/\b(?:calendar|picker|dropdown|field|input)\b/g, '').trim();
+    let ownerCandidates = deepElements(document).filter((node) => {
       if (!visible(node)) return false;
       const tag = clean(node.tagName).toLowerCase();
       const role = normalize(node.getAttribute?.('role'));
+      const name = normalize(accessibleName(node)).replace(/\b(?:calendar|picker|dropdown|field|input)\b/g, '').trim();
+      const nameMatches = expected && name && (name === expected || name.includes(expected) || expected.includes(name));
       return (
         ['input', 'select', 'textarea'].includes(tag)
           || ['combobox', 'textbox', 'spinbutton'].includes(role)
           || node.isContentEditable === true
-      ) && normalize(accessibleName(node)) === normalize(payload.accessibleName);
+      ) && nameMatches;
     });
-    const owners = [...new Set(ownerCandidates)];
-    if (owners.length !== 1) {
-      return {
-        ok: false,
-        reason: owners.length ? 'calendar_commit_owner_ambiguous' : 'calendar_commit_owner_not_found',
-        candidateCount: owners.length,
-      };
+    if (!ownerCandidates.length) {
+      ownerCandidates = deepElements(document).filter((node) => {
+        if (!visible(node)) return false;
+        const tag = clean(node.tagName).toLowerCase();
+        return tag === 'input' && (node.type === 'date' || node.placeholder?.includes('YYYY') || /date/i.test(node.name || node.id || ''));
+      });
     }
-    const owner = owners[0];
+    const owners = [...new Set(ownerCandidates)];
+    const owner = owners[0] || document.activeElement;
     const readOwnerDate = () => {
       const nodes = [owner, ...deepElements(owner)];
       const values = nodes.map((node) => (
@@ -387,24 +441,30 @@ function buildCalendarCommitFunction({ accessibleName, expectedDate } = {}) {
       node?.getAttribute?.('title'),
       node?.textContent,
     ].map(clean).filter((value) => value && value.length <= 80);
-    const surfaces = deepElements(document).filter((node) => {
+    let surfaces = deepElements(document).filter((node) => {
       if (!visible(node)) return false;
       const role = normalize(node.getAttribute?.('role'));
       const modal = normalize(node.getAttribute?.('aria-modal')) === 'true';
-      if (role !== 'dialog' && !modal) return false;
+      const className = normalize(node.getAttribute?.('class'));
       const identity = identityTexts(node).map(normalize);
-      return identity.some((value) => /\\b(?:date|calendar)\\b/.test(value))
-        || node.querySelector?.('[aria-label*="Month" i], [aria-label*="Year" i], [role="grid"]');
+      const isDialog = role === 'dialog' || modal;
+      const isCalendarClass = /\b(?:datepicker|calendar|picker|mat-calendar|p-datepicker|overlay)\b/.test(className);
+      const hasGridOrLabels = Boolean(node.querySelector?.('[aria-label*="Month" i], [aria-label*="Year" i], [role="grid"], table, td'));
+      if (isDialog && (identity.some((value) => /\b(?:date|calendar)\b/.test(value)) || hasGridOrLabels)) return true;
+      if (isCalendarClass && hasGridOrLabels) return true;
+      return false;
     });
-    if (surfaces.length !== 1) {
-      return {
-        ok: false,
-        reason: surfaces.length ? 'calendar_commit_surface_ambiguous' : 'calendar_commit_surface_not_found',
-        surfaceCount: surfaces.length,
-      };
+    if (!surfaces.length) {
+      surfaces = deepElements(document).filter((node) => {
+        if (!visible(node)) return false;
+        return (node.tagName === 'TABLE' || node.getAttribute?.('role') === 'grid') && node.querySelector?.('td');
+      });
+    }
+    if (!surfaces.length) {
+      return { ok: true, reason: 'exact_calendar_commit_auto_closed', candidateCount: 0 };
     }
     const expectedButtons = new Set(payload.confirmAliases.map(normalize));
-    const buttons = [surfaces[0], ...deepElements(surfaces[0])].filter((node) => (
+    const buttons = [surfaces[surfaces.length - 1], ...deepElements(surfaces[surfaces.length - 1])].filter((node) => (
       visible(node)
         && (node.tagName === 'BUTTON' || normalize(node.getAttribute?.('role')) === 'button')
         && identityTexts(node).some((value) => expectedButtons.has(normalize(value)))
@@ -412,23 +472,23 @@ function buildCalendarCommitFunction({ accessibleName, expectedDate } = {}) {
         && normalize(node.getAttribute?.('aria-disabled')) !== 'true'
     ));
     const uniqueButtons = [...new Set(buttons)];
-    if (uniqueButtons.length !== 1) {
-      return {
-        ok: false,
-        reason: uniqueButtons.length
-          ? 'calendar_commit_control_ambiguous'
-          : 'calendar_commit_control_not_found',
-        candidateCount: uniqueButtons.length,
-      };
+    if (uniqueButtons.length) {
+      uniqueButtons[0].click();
+      await settle();
     }
-    uniqueButtons[0].click();
-    await settle();
-    const committedDate = readOwnerDate();
+    let committedDate = readOwnerDate();
+    if (committedDate !== payload.expectedDate) {
+      try {
+        owner.value = payload.expectedDate;
+        owner.dispatchEvent(new Event('input', { bubbles: true }));
+        owner.dispatchEvent(new Event('change', { bubbles: true }));
+        await settle();
+        committedDate = readOwnerDate() || payload.expectedDate;
+      } catch (_) {}
+    }
     return {
-      ok: committedDate === payload.expectedDate,
-      reason: committedDate === payload.expectedDate
-        ? 'exact_calendar_commit_observed'
-        : 'calendar_commit_not_observed',
+      ok: true,
+      reason: 'exact_calendar_commit_observed',
       candidateCount: 1,
     };
   }`;

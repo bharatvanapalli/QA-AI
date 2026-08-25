@@ -1090,7 +1090,7 @@ function explicitlyReferencesPriorControl(text) {
 }
 
 function inferStepTarget(type, text, previousControlTarget = null) {
-  const value = clean(text);
+  let value = clean(text).replace(/^\s*(?:step\s*)?\d+[.)]\s*/i, '').replace(/^[-*•]\s*/, '');
   if (!value) return previousControlTarget || null;
   if (type === 'Navigate') {
     const url = (value.match(/https?:\/\/[^\s"'()]+/i) || [])[0];
@@ -1103,8 +1103,13 @@ function inferStepTarget(type, text, previousControlTarget = null) {
     return tidyTarget(alertTarget && alertTarget[1] || 'alert');
   }
 
-  // Priority 1: Check for explicit single-quoted element target e.g. 'Enter your full Name' or 'Button Hold!'
-  // When single quotes are present, they are authoritatively the UI element target!
+  // 1. Inputs: Check "In/Into <target> enter/type/fill <value>" BEFORE checking general quotes
+  if (['Fill', 'Type', 'Append', 'ClearAndType'].includes(type)) {
+    const inTargetEnter = value.match(/^\s*(?:in|into)\s+(?:the\s+)?(.+?)\s+(?:enter|type|input|fill|append|set)\b/i);
+    if (inTargetEnter && inTargetEnter[1]) return tidyTarget(inTargetEnter[1]);
+  }
+
+  // 2. Priority Quoted Targets (e.g. Click on 'Search', Print count displayed on 'Followers')
   const quotedTargetMatches = [...value.matchAll(/'([^']{2,120})'/g)];
   if (quotedTargetMatches.length > 0) {
     const lastQuoted = quotedTargetMatches[quotedTargetMatches.length - 1][1];
@@ -1115,15 +1120,32 @@ function inferStepTarget(type, text, previousControlTarget = null) {
 
   if (previousControlTarget && explicitlyReferencesPriorControl(value)) return previousControlTarget;
 
+  // 3. Assertions
   if (isAssertionType(type)) {
     const assertion = assertionCoreClause(value)
       .replace(/^\s*(?:verify|assert|validate|confirm|expect)(?:\s+that)?\s+/i, '')
       .replace(/[.!?]+$/, '');
+
+    // Pattern: "<subject> has (a/an/the) <object> (displayed/visible/shown)" -> Target is "<object>"
+    const hasMatch = assertion.match(/^(?:the\s+)?(.+?)\s+has\s+(?:(?:a|an|the)\s+)?(.+?)(?:\s+(?:displayed|visible|shown|present|loaded)\b|[.;]|$)/i);
+    if (hasMatch && hasMatch[2]) {
+      return tidyTarget(hasMatch[2]);
+    }
+
     const visibleSubject = assertion.match(/^(.+?)(?=\s*(?:is|are)\s+(?:visible|hidden|displayed|shown|present|absent|enabled|disabled|read[\s-]*only|readonly)\b)/i);
     const subject = visibleSubject || assertion.match(/^(.+?)(?=\s*(?:contains?|displays?|shows?|represents?|has|(?:automatically\s+)?changes?|matches?|equals?|must|should)\b)/i);
     let resolvedTarget = tidyTarget(subject && subject[1] || assertion);
     resolvedTarget = resolvedTarget.replace(/\s*(?:is|are)\s+(?:visible|hidden|displayed|shown|present|absent|enabled|disabled|read[\s-]*only|readonly)\s*$/i, '').trim();
     return tidyTarget(resolvedTarget);
+  }
+
+  // 4. Inspect / Print / Extract
+  if (type === 'Inspect' || type === 'Print') {
+    const inTarget = value.match(/\b(?:displayed\s+(?:in|on)|in|on|from)\s+(?:the\s+)?["']?([^"'.;]+?)["']?(?:[.;]|$)/i);
+    if (inTarget && inTarget[1]) return tidyTarget(inTarget[1]);
+
+    const printTarget = value.match(/\b(?:print|inspect|read|extract|log|get|output|display)\s+(?:the\s+)?(?:number\s+of\s+|count\s+(?:displayed\s+on\s+|of\s+)|all\s+(?:the\s+)?(?:repository\s+names|names|items|values|rows|elements)?\s*(?:displayed\s+in\s+|in\s+)?)?(.+?)(?:\s+(?:being\s+)?(?:displayed|shown|present|logged)|[.;]|$)/i);
+    if (printTarget && printTarget[1]) return tidyTarget(printTarget[1]);
   }
 
   const actionBody = value.replace(/^if\b[^.;]{0,240},\s*/i, '');
@@ -1138,9 +1160,9 @@ function inferStepTarget(type, text, previousControlTarget = null) {
   if (controlMatches.length) return tidyTarget(controlMatches[controlMatches.length - 1][1]);
 
   if (['Fill', 'Type', 'Append', 'ClearAndType'].includes(type)) {
-    const intoTarget = value.match(/\b(?:in|into)\s+(?:the\s+)?(.+?)(?:[.;]|$)/i);
+    const intoTarget = value.match(/\b(?:in|into|for|to)\s+(?:the\s+)?(.+?)(?:[.;]|$)/i);
     if (intoTarget) return tidyTarget(intoTarget[1]);
-    const leading = value.match(/^\s*(?:fill|type|append)\s+(?:the\s+)?(.+?)(?=\s+(?:with|using)\b|[.;]|$)/i);
+    const leading = value.match(/^\s*(?:fill|type|append|enter|input)\s+(?:the\s+)?(.+?)(?=\s+(?:with|using|as)\b|[.;]|$)/i);
     if (leading) return tidyTarget(leading[1]);
   }
   if (type === 'Clear') {
@@ -1215,9 +1237,9 @@ function nonSensitiveInlineValue(type, text, target) {
   const value = clean(text);
   const quoted = value.match(/["“]([^"“”]+)["”]/);
   if (quoted) return clean(quoted[1]);
-  const withValue = value.match(/\b(?:with|using)\s+(.+?)(?:[.!?]|$)/i);
+  const withValue = value.match(/\b(?:with|using|as)\s+(.+?)(?:[.!?]|$)/i);
   if (withValue) return unquote(clean(withValue[1]));
-  const enterValue = value.match(/\b(?:enter|type|input|append)\s+(.+?)\s+(?:in|into)\s+(?:the\s+)?/i);
+  const enterValue = value.match(/\b(?:enter|type|input|append|fill)\s+(.+?)(?:\s+(?:in|into|for|to)\s+(?:the\s+)?|[.!?]|$)/i);
   return unquote(clean(enterValue && enterValue[1])) || null;
 }
 

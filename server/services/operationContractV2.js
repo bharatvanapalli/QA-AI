@@ -25,7 +25,10 @@ const TARGET_OPTIONAL_ACTIONS = new Set([
 // real UI target (unlike e.g. Screenshot/PressKey/SwitchTab, which
 // sometimes legitimately scope to one). Any inherited targetIdentity on
 // these is noise, not signal.
-const NEVER_HAS_TARGET_ACTIONS = new Set(['Navigate', 'NavigateBack', 'NavigateForward', 'GoBack', 'GoForward', 'Refresh', 'Reload']);
+const NEVER_HAS_TARGET_ACTIONS = new Set([
+  'Navigate', 'NavigateBack', 'NavigateForward', 'GoBack', 'GoForward', 'Refresh', 'Reload',
+  'SwitchTab', 'CloseTab', 'NewTab', 'SwitchContext', 'Close',
+]);
 const VALUE_REQUIRED_ACTIONS = new Set([
   'Fill',
   'Type',

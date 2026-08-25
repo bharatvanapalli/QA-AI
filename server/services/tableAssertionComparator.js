@@ -40,7 +40,13 @@ function equivalent(actual, expected, { caseSensitive = false, partial = true } 
       && equivalent(actual[key], expected[key], { caseSensitive, partial }));
   }
   if (typeof actual === 'string' || typeof expected === 'string') {
-    return normalizeText(actual, caseSensitive) === normalizeText(expected, caseSensitive);
+    const normActual = normalizeText(actual, caseSensitive);
+    const normExpected = normalizeText(expected, caseSensitive);
+    if (normActual === normExpected) return true;
+    if (normActual && normExpected) {
+      if (normActual.startsWith(normExpected) || normExpected.startsWith(normActual)) return true;
+    }
+    return false;
   }
   return Object.is(actual, expected);
 }

@@ -13,8 +13,13 @@ router.get('/', async (req, res, next) => {
   try {
     let bridgeLive = false;
     try {
-      const probeRes = await fetch(`${BRIDGE_URL}/v1/models`, { method: 'GET', signal: AbortSignal.timeout(2000) }).catch(() => null);
-      if (probeRes) bridgeLive = true;
+      const probeRes = await fetch(`${BRIDGE_URL}/health`, { method: 'GET', signal: AbortSignal.timeout(2000) }).catch(() => null);
+      if (probeRes && probeRes.ok) {
+        bridgeLive = true;
+      } else {
+        const modelsRes = await fetch(`${BRIDGE_URL}/v1/models`, { method: 'GET', signal: AbortSignal.timeout(2000) }).catch(() => null);
+        if (modelsRes && modelsRes.ok) bridgeLive = true;
+      }
     } catch (_) {}
 
     res.json({

@@ -526,9 +526,15 @@ export function applyPipelineMessage(state, msg) {
         candidates: msg.candidates,
         ts: Date.now(),
       };
+      const nextTrail = [...state.actionTrail];
+      const existingIndex = [...nextTrail].reverse().findIndex((row) =>
+        row.tool === 'resolution_diagnostic' && row.operationId === msg.operationId
+      );
+      if (existingIndex >= 0) nextTrail[nextTrail.length - 1 - existingIndex] = entry;
+      else nextTrail.push(entry);
       return {
         ...state,
-        actionTrail: [...state.actionTrail, entry].slice(-500),
+        actionTrail: nextTrail.slice(-500),
       };
     }
     case 'controller.proof-diagnostic': {
@@ -549,9 +555,15 @@ export function applyPipelineMessage(state, msg) {
         observed: msg.observed || null,
         ts: Date.now(),
       };
+      const nextTrail = [...state.actionTrail];
+      const existingIndex = [...nextTrail].reverse().findIndex((row) =>
+        row.tool === 'proof_diagnostic' && row.operationId === msg.operationId
+      );
+      if (existingIndex >= 0) nextTrail[nextTrail.length - 1 - existingIndex] = entry;
+      else nextTrail.push(entry);
       return {
         ...state,
-        actionTrail: [...state.actionTrail, entry].slice(-500),
+        actionTrail: nextTrail.slice(-500),
       };
     }
     case 'run.cancelling': {
