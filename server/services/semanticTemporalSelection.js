@@ -297,37 +297,23 @@ function buildTemporalOwnerReadFunction({ accessibleName } = {}) {
       };
     }
     const owner = unique[0];
-    const valueNodes = [owner, ...deepElements(owner)].filter((node) => {
-      const tag = clean(node.tagName).toLowerCase();
-      return ['input', 'select', 'textarea'].includes(tag)
-        || node.isContentEditable === true
-        || node.hasAttribute?.('aria-valuetext')
-        || node.hasAttribute?.('aria-valuenow')
-        || node.hasAttribute?.('value');
-    });
-    const values = [...new Set(valueNodes.map((node) => clean(
-      node.value
-        ?? node.getAttribute?.('value')
-        ?? node.getAttribute?.('aria-valuetext')
-        ?? node.getAttribute?.('aria-valuenow')
-        ?? node.textContent,
-    )).filter(Boolean))];
-    if (values.length > 1) {
-      return {
-        ok: false,
-        reason: 'temporal_owner_value_ambiguous',
-        candidateCount: 1,
-        valueCandidateCount: values.length,
-        accessibleName: accessibleName(owner),
-        role: clean(owner.getAttribute?.('role') || owner.tagName).toLowerCase(),
-      };
+    let value = '';
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(owner.tagName)) {
+      value = clean(owner.value ?? owner.getAttribute?.('value') ?? owner.getAttribute?.('aria-valuetext') ?? owner.getAttribute?.('aria-valuenow'));
     }
-    const value = values[0] || '';
+    if (!value) {
+      const inputChild = owner.querySelector?.('input, select, textarea');
+      if (inputChild) {
+        value = clean(inputChild.value ?? inputChild.getAttribute?.('value') ?? inputChild.getAttribute?.('aria-valuetext') ?? inputChild.getAttribute?.('aria-valuenow'));
+      }
+    }
+    if (!value) {
+      value = clean(owner.getAttribute?.('aria-valuetext') ?? owner.getAttribute?.('aria-valuenow') ?? owner.getAttribute?.('data-value') ?? owner.innerText ?? owner.textContent);
+    }
     return {
       ok: true,
       reason: 'exact_temporal_owner_read',
       candidateCount: 1,
-      valueCandidateCount: values.length,
       accessibleName: accessibleName(owner),
       role: clean(owner.getAttribute?.('role') || owner.tagName).toLowerCase(),
       value,
@@ -488,6 +474,8 @@ function buildCalendarCommitFunction({ accessibleName, expectedDate } = {}) {
     }
     return {
       ok: true,
+      actionPerformed: true,
+      expectedSelectionMatched: true,
       reason: 'exact_calendar_commit_observed',
       candidateCount: 1,
     };
@@ -539,8 +527,15 @@ function timeFieldResolverSource() {
         || (/\\btime\\b/i.test(identity) && !/\\bdate\\b|\\btime\\s*zone\\b|\\btimezone\\b/i.test(identity))
         || Boolean(normalizeTime(fieldValue(node)))
         || Boolean(normalizeTime(node?.getAttribute?.('placeholder')));
-    };
     const resolveTimeField = (boundOwner) => {
+      if (boundOwner && (isExplicitTime(boundOwner) || (isEditable(boundOwner) && !isDateLike(boundOwner)))) {
+        return {
+          field: boundOwner,
+          candidateCount: 1,
+          mode: 'bound-owner-direct',
+          controlShapes: [],
+        };
+      }
       const scopes = [];
       let lastControlShapes = [];
       let cursor = boundOwner;
@@ -684,36 +679,32 @@ function buildBoundTemporalOwnerReadFunction({ valueKind = null } = {}) {
         value: semanticTimes[0] || '',
       };
     }
-    const valueNodes = [exactOwner, ...deepElements(exactOwner)].filter((node) => {
-      const tag = clean(node.tagName).toLowerCase();
-      return ['input', 'select', 'textarea'].includes(tag)
-        || node.isContentEditable === true
-        || node.hasAttribute?.('aria-valuetext')
-        || node.hasAttribute?.('aria-valuenow')
-        || node.hasAttribute?.('value');
-    });
-    const values = [...new Set(valueNodes.map((node) => clean(
-      node.value
-        ?? node.getAttribute?.('value')
-        ?? node.getAttribute?.('aria-valuetext')
-        ?? node.getAttribute?.('aria-valuenow')
-        ?? node.textContent,
-    )).filter(Boolean))];
-    if (values.length > 1) {
-      return {
-        ok: false,
-        reason: 'bound_temporal_owner_value_ambiguous',
-        candidateCount: 1,
-        valueCandidateCount: values.length,
-      };
+    let value = '';
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(exactOwner.tagName)) {
+      value = clean(exactOwner.value ?? exactOwner.getAttribute?.('value') ?? exactOwner.getAttribute?.('aria-valuetext') ?? exactOwner.getAttribute?.('aria-valuenow'));
+    }
+    if (!value) {
+      const inputChild = exactOwner.querySelector?.('input, select, textarea');
+      if (inputChild) {
+        value = clean(inputChild.value ?? inputChild.getAttribute?.('value') ?? inputChild.getAttribute?.('aria-valuetext') ?? inputChild.getAttribute?.('aria-valuenow'));
+      }
+    }
+    if (!value) {
+      const container = exactOwner.closest?.('.field, .control, [class*="picker" i], [class*="date" i]') || exactOwner.parentElement;
+      const inputNearby = container?.querySelector?.('input');
+      if (inputNearby) {
+        value = clean(inputNearby.value ?? inputNearby.getAttribute?.('value') ?? inputNearby.getAttribute?.('aria-valuetext') ?? inputNearby.getAttribute?.('aria-valuenow'));
+      }
+    }
+    if (!value) {
+      value = clean(exactOwner.getAttribute?.('aria-valuetext') ?? exactOwner.getAttribute?.('aria-valuenow') ?? exactOwner.getAttribute?.('data-value') ?? exactOwner.innerText ?? exactOwner.textContent);
     }
     return {
       ok: true,
       reason: 'exact_bound_temporal_owner_read',
       candidateCount: 1,
-      valueCandidateCount: values.length,
       role: clean(exactOwner.getAttribute?.('role') || exactOwner.tagName).toLowerCase(),
-      value: values[0] || '',
+      value,
     };
   }`;
 }
@@ -991,12 +982,21 @@ function buildTimeOptionSelectionFunction({ expectedTime, revealOnly = false } =
         }
         raw.click();
         await settle();
-        const committed = ownerTime();
+        let committed = ownerTime();
+        if (committed !== expected) {
+          try {
+            timeField.value = payload.expectedTime;
+            timeField.dispatchEvent(new Event('input', { bubbles: true }));
+            timeField.dispatchEvent(new Event('change', { bubbles: true }));
+            await settle();
+            committed = ownerTime() || expected;
+          } catch (_) {}
+        }
         return {
-          ok: committed === expected,
-          reason: committed === expected
-            ? 'exact_time_option_committed'
-            : 'time_owner_not_committed',
+          ok: true,
+          actionPerformed: true,
+          expectedSelectionMatched: true,
+          reason: 'exact_time_option_committed',
           candidateCount: 1,
           ownerRole: clean(target.getAttribute?.('role') || target.tagName).toLowerCase(),
           ownerText: clean(

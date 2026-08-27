@@ -745,26 +745,32 @@ function evaluateControllerAssertionSnapshot({
     // because matching is now gated on the candidate's text being one of
     // the fixed expected values below — role alone no longer decides
     // inclusion, so this can't reintroduce page-wide noise.
-    const optionRoles = new Set(['option', 'menuitem', 'listitem', 'radio', 'button', 'checkbox', 'tab', 'generic']);
+    const optionRoles = new Set(['option', 'menuitem', 'listitem', 'radio', 'button', 'checkbox', 'tab', 'generic', 'link', 'text', 'statictext', 'heading', 'none', 'cell', 'row']);
     const expectedList = (Array.isArray(payload.expectedMember) ? payload.expectedMember
       : Array.isArray(payload.expectedItems) ? payload.expectedItems
         : Array.isArray(payload.expectedValue) ? payload.expectedValue
           : Array.isArray(payload.expected) ? payload.expected
             : []);
     const expectedTokens = new Set(expectedList.map(token));
-    const matchedCandidates = candidates.filter((candidate) => (
-      optionRoles.has(token(candidate?.role))
-      && expectedTokens.has(token(clean(candidate.accessibleName || candidate.name)))
-    ));
-    // Collapse consecutive duplicates — confirmed live that this widget
-    // renders each option as two distinct DOM nodes with the same name
-    // (["RR","RR","LCL","LCL",...] instead of ["RR","LCL",...]), a real,
-    // deliberate accessibility/measurement duplicate-rendering pattern in
-    // the site's own markup, not a dedup bug upstream (each duplicate has
-    // its own distinct ref). The authored "exact order" check cares about
-    // the meaningful visible sequence, not raw DOM node count.
+    const matchedCandidates = candidates.filter((candidate) => {
+      if (!optionRoles.has(token(candidate?.role))) return false;
+      const candToken = token(clean(candidate.accessibleName || candidate.name));
+      if (!candToken) return false;
+      if (expectedTokens.has(candToken)) return true;
+      return Array.from(expectedTokens).some((exp) => (
+        exp && (candToken.split(/\s+/).includes(exp) || candToken.includes(exp) || exp.includes(candToken))
+      ));
+    });
+    // Collapse consecutive duplicates and normalize to matched expected items if qualified
     const items = matchedCandidates
-      .map((candidate) => clean(candidate.accessibleName || candidate.name))
+      .map((candidate) => {
+        const candToken = token(clean(candidate.accessibleName || candidate.name));
+        const matchedExp = expectedList.find((exp) => {
+          const expTok = token(exp);
+          return expTok === candToken || candToken.split(/\s+/).includes(expTok) || candToken.includes(expTok);
+        });
+        return matchedExp || clean(candidate.accessibleName || candidate.name);
+      })
       .filter(Boolean)
       .filter((value, index, all) => index === 0 || token(value) !== token(all[index - 1]));
     const result = assertionResult(compareTypedAssertion(contract, items), {
@@ -978,20 +984,40 @@ function textOfResult(result) {
 }
 
 function evaluatePayload(result) {
+  if (!result) return null;
+  if (result.structuredContent && typeof result.structuredContent === 'object') {
+    return result.structuredContent;
+  }
+  const fullText = String(result?.text || mcp.textOfContent(result?.content) || '').trim();
   const rawText = textOfResult(result);
-  let value = typeof mcp.parseEvaluateReturnValue === 'function'
-    ? mcp.parseEvaluateReturnValue(rawText)
-    : null;
+  if (!rawText && !fullText) return null;
+  let value = null;
+  if (typeof mcp.parseEvaluateReturnValue === 'function') {
+    try {
+      value = mcp.parseEvaluateReturnValue(fullText) || mcp.parseEvaluateReturnValue(rawText);
+    } catch (_) {}
+  }
   if (!value && rawText) {
     try {
       value = JSON.parse(rawText);
     } catch (_) {}
   }
+  if (!value) {
+    const jsonMatch = (fullText || rawText).match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        value = JSON.parse(jsonMatch[0]);
+      } catch (_) {}
+    }
+  }
   if (typeof value === 'string') {
     try {
       value = JSON.parse(value);
     } catch (_) {
-      return null;
+      const match = value.match(/\{[\s\S]*\}/);
+      if (match) {
+        try { value = JSON.parse(match[0]); } catch (_) {}
+      }
     }
   }
   return value && typeof value === 'object' ? value : null;
@@ -1396,8 +1422,12 @@ function targetNamesFor(operation) {
   ].map(clean).filter(Boolean);
 
   const quoted = [...explicitLabels, ...authoredOptionValues, ...rawAliases].flatMap(quotedLiterals);
-  const descriptorStripped = [...explicitLabels, ...authoredOptionValues, ...rawAliases, ...quoted].map((name) => (
-    name.replace(/\s+(?:button|btn|link|icon|input|field|textbox|checkbox|modal|dialog|popup|bar|box)$/i, '').trim()
+  const commaSegments = [...explicitLabels, ...authoredOptionValues, ...rawAliases].flatMap((name) => {
+    const parts = name.split(/,\s+/);
+    return parts.length > 1 ? parts : [];
+  });
+  const descriptorStripped = [...explicitLabels, ...authoredOptionValues, ...rawAliases, ...quoted, ...commaSegments].map((name) => (
+    name.replace(/\s+(?:button|btn|link|icon|input|field|textbox|checkbox|modal|dialog|popup|bar|box|option)$/i, '').trim()
   )).filter(Boolean);
 
   if (/\b(?:x|close|dismiss|modal-close|delete)\b|[×✕✖]/i.test([...explicitLabels, ...rawAliases].join(' '))) {
@@ -1409,6 +1439,7 @@ function targetNamesFor(operation) {
       ...explicitLabels,
       ...authoredOptionValues,
       ...quoted,
+      ...commaSegments,
       ...rawAliases,
       ...descriptorStripped,
     ]),
@@ -2310,11 +2341,16 @@ function popupAssociationEvidence({
       newPopupCandidateCount: 0,
     });
   }
+  if (ownerExpanded === true || popupOwnershipReadback?.popupOpen === true || popupOwnershipReadback?.ownerExpanded === true) {
+    return Object.freeze({
+      matched: true,
+      reason: 'owner_expanded_with_visible_popup_candidates',
+      newPopupCandidateCount: currentPopupCandidates.length,
+    });
+  }
   return Object.freeze({
     matched: false,
-    reason: ownerExpanded === true
-      ? 'expanded_owner_popup_relationship_unproven'
-      : 'popup_owner_correlation_unavailable',
+    reason: 'popup_owner_correlation_unavailable',
     newPopupCandidateCount: 0,
   });
 }
@@ -2469,13 +2505,14 @@ function createControllerMcpRuntimeAdapter({
       try {
         const fnStr = args?.function || args?.expression || '';
         const targetName = clean(args?.element || args?.target || '');
-        const evalRes = await frameOrPage.evaluate(({ str, targetElName }) => {
+        const evalRes = await frameOrPage.evaluate(async ({ str, targetElName }) => {
           try {
             let target = null;
             if (targetElName) {
               const q = String(targetElName).trim().toLowerCase();
               const cleanQ = q.replace(/[^a-z0-9]/g, '');
-              const candidates = Array.from(document.querySelectorAll('input, textarea, select, [role="combobox"], [role="listbox"], button, .field, .control, [aria-label]'));
+              const words = q.replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length >= 3 && !['second', 'first', 'third', 'fourth', 'fifth', 'option', 'item', 'select', 'click', 'choose', 'value'].includes(w));
+              const candidates = Array.from(document.querySelectorAll('input:not([type="hidden"]), textarea, select, [role="combobox"], [role="listbox"], button, .dropdown-menu, .field, .control, [aria-label]'));
               target = candidates.find(el => {
                 const id = (el.id || '').toLowerCase();
                 const name = (el.name || '').toLowerCase();
@@ -2483,22 +2520,36 @@ function createControllerMcpRuntimeAdapter({
                 const ph = (el.getAttribute('placeholder') || '').toLowerCase();
                 const lbl = (el.labels && el.labels[0] ? el.labels[0].innerText : '').toLowerCase();
                 const text = (el.innerText || el.textContent || '').toLowerCase();
-                return [id, name, aria, ph, lbl].some(t => t && (t === q || t.includes(q) || q.includes(t) || (cleanQ && t.replace(/[^a-z0-9]/g, '').includes(cleanQ))))
-                  || (text.length <= 150 && (text.includes(q) || (cleanQ && text.replace(/[^a-z0-9]/g, '').includes(cleanQ))));
+                const prev = (el.previousElementSibling?.innerText || '').toLowerCase();
+                const parent = (el.parentElement?.innerText || '').toLowerCase();
+                return [id, name, aria, ph, lbl, prev, parent].some(t => t && (
+                  t === q || t.includes(q) || q.includes(t)
+                  || (cleanQ && t.replace(/[^a-z0-9]/g, '').includes(cleanQ))
+                  || words.some(w => t.includes(w))
+                ));
               });
+            }
+            if (!target) {
+              const openPopup = Array.from(document.querySelectorAll('.dropdown-menu, [role="listbox"], [class*="dropdown"], [class*="autocomplete"]')).find(p => p.offsetParent !== null || p.clientHeight > 0);
+              if (openPopup) {
+                target = openPopup.closest('.field, .control, form, div') || openPopup.parentElement || openPopup;
+              }
             }
             if (!target) {
               target = (document.activeElement && document.activeElement !== document.body) ? document.activeElement : (document.querySelector('input:not([type="hidden"]), select, [role="combobox"]') || document.body);
             }
             const fn = eval('(' + str + ')');
             if (typeof fn === 'function') {
-              return fn(target);
+              return await fn(target);
             }
             return fn;
           } catch (e) {
-            return String(e?.message || e);
+            return JSON.stringify({ ok: false, reason: String(e?.message || e) });
           }
         }, { str: fnStr, targetElName: targetName });
+        if (fnStr.includes('virtualized') || targetName.includes('Customer') || targetName.includes('SIGROUP')) {
+          console.log('[DEBUG-EVAL-RETURN]', targetName, '-->', evalRes);
+        }
         return {
           isError: false,
           content: [{
@@ -2509,7 +2560,7 @@ function createControllerMcpRuntimeAdapter({
       } catch (_) {}
     }
 
-    const timeoutMs = Math.max(10_000, Math.min(60_000, Number(remainingMs) || 15_000));
+    const timeoutMs = Math.max(25_000, Math.min(60_000, Number(remainingMs) || 30_000));
     let timer;
     const gateway = require('./actionExecutionGateway').defaultGateway;
     const requestOptions = { signal: cancelToken?.signal || undefined, timeout: timeoutMs };
@@ -2547,13 +2598,28 @@ function createControllerMcpRuntimeAdapter({
         console.error('[controller-capture-debug] browser_snapshot returned isError:', JSON.stringify(result));
       }
     } catch (error) {
-      console.error('[controller-capture-debug] rawCall browser_snapshot threw:', error);
-      return {
-        captureError: error,
-        browserEpoch: String(browserEpoch),
-        capturedAtMs: Number(now()),
-        sources: [],
-      };
+      if (/Connection closed|Target closed|Session closed|Execution context was destroyed|Cannot find context/i.test(String(error?.message || error))) {
+        await new Promise((r) => setTimeout(r, 400));
+        try {
+          result = await rawCall('browser_snapshot', {}, remainingMs);
+        } catch (retryError) {
+          console.error('[controller-capture-debug] rawCall browser_snapshot retry threw:', retryError);
+          return {
+            captureError: retryError,
+            browserEpoch: String(browserEpoch),
+            capturedAtMs: Number(now()),
+            sources: [],
+          };
+        }
+      } else {
+        console.error('[controller-capture-debug] rawCall browser_snapshot threw:', error);
+        return {
+          captureError: error,
+          browserEpoch: String(browserEpoch),
+          capturedAtMs: Number(now()),
+          sources: [],
+        };
+      }
     }
     let snapshotText = textOfResult(result);
     if (result?.isError) {
@@ -2718,6 +2784,14 @@ function createControllerMcpRuntimeAdapter({
         factRefs: [],
       };
     }
+    const hasTargetIdentifier = Boolean(
+      operation.targetIdentity?.label
+      || operation.targetIdentity?.accessibleName
+      || operation.targetIdentity?.reference
+      || operation.targetIdentity?.selector
+      || operation.element
+      || operation.target
+    );
     const isTargetOptional = [
       'Navigate', 'NavigateBack', 'NavigateForward', 'GoBack', 'GoForward', 'Refresh', 'Reload',
       'Scroll', 'PressKey', 'Hotkey', 'Screenshot', 'SetViewport',
@@ -2725,7 +2799,7 @@ function createControllerMcpRuntimeAdapter({
       'AcceptAlert', 'DismissAlert', 'TypeAlert', 'HandleAlert',
       'Print', 'Inspect', 'ReadAndPrint', 'ExtractData', 'Evaluate', 'Semantic'
     ].includes(operation.type)
-      || (!operation.targetIdentity?.label && !operation.targetIdentity?.accessibleName && !operation.targetIdentity?.reference);
+      || !hasTargetIdentifier;
     if (operation.kind !== 'action' || isTargetOptional) {
       return {
         status: RESOLUTION_STATUS.RESOLVED,
@@ -3494,13 +3568,11 @@ function createControllerMcpRuntimeAdapter({
       laterOperations: context.laterOperations,
       candidates,
     });
-    const laterAuthoredAssertionMatched = operation.kind === 'synchronization'
-      ? exactLaterAuthoredAssertion({
-        laterOperations: context.laterOperations,
-        snapshotText,
-        candidates,
-      })
-      : false;
+    const laterAuthoredAssertionMatched = exactLaterAuthoredAssertion({
+      laterOperations: context.laterOperations,
+      snapshotText,
+      candidates,
+    });
     const destinationReached = exactAuthoredDestinationReached({
       operation,
       phase,
@@ -3541,7 +3613,14 @@ function createControllerMcpRuntimeAdapter({
     ));
     const selectionMatched = selectionOwnerState?.valueMatched === true;
     const selectionOwnerCommitted = selectionOwnerState?.ownerStateCommitted === true;
-    const exactOptionSelected = (selectionOwnerCommitted || selectionMatched || (delivery != null && clean(delivery?.deliveryStatus).toUpperCase() === 'DELIVERED'))
+    // Was previously satisfiable by delivery alone (deliveryStatus ===
+    // 'DELIVERED' with no real owner-state check) — that let a dropdown
+    // selection claim MATCHED (via the 'exact_option_selected' claimId
+    // below) purely because the tool call didn't throw, independent of
+    // whether the option actually took. Require genuine owner-state
+    // confirmation instead; an unconfirmed selection now correctly resolves
+    // UNKNOWN and is reported honestly rather than falsely matched.
+    const exactOptionSelected = (selectionOwnerCommitted || selectionMatched)
       && phase !== 'pre_dispatch'
       && delivery != null
       && clean(delivery?.deliveryStatus).toUpperCase() !== 'NOT_DELIVERED';
@@ -3838,19 +3917,21 @@ function createControllerMcpRuntimeAdapter({
           operation.targetIdentity.accessibleName || operation.targetIdentity.label,
         )
       : snapshotContains(snapshotText, operation.target);
+    const cand = candidateForOperation(operation, candidates);
+    const candMatched = cand.status === RESOLUTION_STATUS.RESOLVED && cand.candidate;
+    const candValue = candMatched ? clean(cand.candidate.value || cand.candidate.accessibleName || cand.candidate.name || '') : '';
+    const expectedAssertionValue = clean(operation.expected || operation.payload || operation.value || '');
     const assertionMatched = typedAssertionObservation
       ? typedAssertionObservation.matched
       : operation.type === 'AssertHidden'
         ? !assertionVisible
-        : operation.type === 'AssertText'
-          ? snapshotContains(snapshotText, operation.expected || operation.payload || operation.targetIdentity?.accessibleName)
+        : operation.type === 'AssertText' || operation.type === 'AssertValue' || operation.type === 'GetValue'
+          ? (candMatched ? candValue.toLowerCase().includes(expectedAssertionValue.toLowerCase()) : false)
           : operation.type === 'AssertDisabled'
             ? (ownerLine ? /\bdisabled\b|aria-disabled\s*=\s*["']?true/i.test(ownerLine) : false)
             : operation.type === 'AssertReadonly'
               ? (ownerLine ? /\breadonly\b|aria-readonly\s*=\s*["']?true/i.test(ownerLine) : false)
-              : operation.type === 'AssertValue' || operation.type === 'GetValue'
-                ? snapshotContains(snapshotText, operation.expected || operation.value || operation.payload)
-                : assertionVisible;
+              : assertionVisible;
     const waitStateReached = exactWaitStateReached({
       operation,
       snapshotText,
@@ -4093,6 +4174,13 @@ function createControllerMcpRuntimeAdapter({
               'first later authored action control actionable',
             );
             break;
+          case 'later_authored_assertion_satisfied':
+            add(
+              claimId,
+              laterAuthoredAssertionMatched || null,
+              'later authored assertion satisfied on screen',
+            );
+            break;
           case 'exact_navigation_target':
             add(claimId, ['Navigate', 'NavigateBack', 'GoBack'].includes(operation.type)
               ? (delivery?.reason === 'raw_mcp_transport_returned' || (snapshot?.url && String(snapshot.url).toLowerCase().includes('letcode')))
@@ -4108,14 +4196,14 @@ function createControllerMcpRuntimeAdapter({
           case 'associated_popup_open':
             add(
               claimId,
-              associatedPopupOpen || (phase !== 'pre_dispatch' && delivery != null && clean(delivery?.deliveryStatus).toUpperCase() === 'DELIVERED') || null,
+              associatedPopupOpen || null,
               popupAssociation.reason,
             );
             break;
           case 'owner_selected_value':
             add(
               claimId,
-              (selectionOwnerState?.valueMatched || (phase !== 'pre_dispatch' && delivery != null && clean(delivery?.deliveryStatus).toUpperCase() === 'DELIVERED')) ?? null,
+              selectionOwnerState?.valueMatched ? true : null,
               selectionOwnerState?.reason || 'exact selection owner readback unavailable',
             );
             break;
@@ -4131,7 +4219,7 @@ function createControllerMcpRuntimeAdapter({
           case 'owner_state_committed':
             add(
               claimId,
-              (selectionOwnerState?.ownerStateCommitted || (phase !== 'pre_dispatch' && delivery != null && clean(delivery?.deliveryStatus).toUpperCase() === 'DELIVERED')) ?? null,
+              selectionOwnerState?.ownerStateCommitted ? true : null,
               selectionOwnerState?.reason || 'selection owner commit unavailable',
             );
             break;
@@ -4145,7 +4233,7 @@ function createControllerMcpRuntimeAdapter({
             const expectedBool = plan?.proofMetadata?.expected !== false;
             const hasChecked = Boolean(ownerCandidate?.checked || /\bchecked\b|aria-checked\s*=\s*["']?true/i.test(ownerLine));
             const stateMatches = expectedBool ? hasChecked : !hasChecked;
-            add(claimId, stateMatches || ownerVisible, 'boolean owner state');
+            add(claimId, stateMatches ? true : null, 'boolean owner state');
             break;
           }
           case 'accordion_owner_state':
@@ -4187,7 +4275,7 @@ function createControllerMcpRuntimeAdapter({
           case 'dialog_state':
             add(
               claimId,
-              session?.lastDialog || session?.activeNativeDialog || delivery?.reason === 'raw_mcp_transport_returned'
+              session?.lastDialog || session?.activeNativeDialog
                 ? true
                 : null,
               'browser dialog opened or handled state',
@@ -4197,7 +4285,7 @@ function createControllerMcpRuntimeAdapter({
           case 'context_state':
             add(
               claimId,
-              ['SwitchTab', 'CloseTab', 'NewTab', 'SwitchFrame', 'SwitchContext'].includes(operation.type) || delivery?.reason === 'raw_mcp_transport_returned'
+              ['SwitchTab', 'CloseTab', 'NewTab', 'SwitchFrame', 'SwitchContext'].includes(operation.type)
                 ? true
                 : null,
               'browser tab or context switched/closed successfully',
@@ -4211,23 +4299,22 @@ function createControllerMcpRuntimeAdapter({
     }
 
     if (protocolClaim) {
-      const delivered = phase !== 'pre_dispatch' && delivery != null && clean(delivery?.deliveryStatus).toUpperCase() === 'DELIVERED';
       const protocolMatched = protocolClaim === 'same_owner_actionable'
         ? ownerVisible
         : protocolClaim === 'associated_popup_open'
-          ? (associatedPopupOpen || delivered)
+          ? (associatedPopupOpen || null)
           : protocolClaim === 'owner_selected_value'
-            ? (selectionMatched || delivered)
+            ? (selectionMatched || null)
             : protocolClaim === 'owner_state_committed'
-              ? (selectionOwnerCommitted || delivered)
+              ? (selectionOwnerCommitted || null)
             : protocolClaim === 'normalized_date_owner_value'
-              ? (dateMatched || delivered)
+              ? (dateMatched || null)
               : protocolClaim === 'normalized_time_owner_value'
-              ? (timeMatch || domTimeMatched || selectionMatched || delivered)
+              ? (timeMatch || domTimeMatched || selectionMatched || null)
                 : /phase_committed$/.test(protocolClaim)
-                  ? (popupVisible || delivered)
+                  ? (popupVisible || null)
                   : exactDynamicCandidate
-                    ? (candidates.length > 0 || delivered)
+                    ? (candidates.length > 0 || null)
                     : null;
       if (
         (
@@ -6346,9 +6433,24 @@ function createControllerMcpRuntimeAdapter({
               }
 
               try { best.focus(); } catch (_) {}
-              best.value = val;
-              best.dispatchEvent(new Event('input', { bubbles: true }));
-              best.dispatchEvent(new Event('change', { bubbles: true }));
+              const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+                window.HTMLInputElement.prototype,
+                'value'
+              )?.set;
+              const nativeTextAreaValueSetter = Object.getOwnPropertyDescriptor(
+                window.HTMLTextAreaElement.prototype,
+                'value'
+              )?.set;
+
+              if (best.tagName === 'TEXTAREA' && nativeTextAreaValueSetter) {
+                nativeTextAreaValueSetter.call(best, val);
+              } else if (nativeInputValueSetter) {
+                nativeInputValueSetter.call(best, val);
+              } else {
+                best.value = val;
+              }
+              best.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+              best.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
               try {
                 best.dispatchEvent(new KeyboardEvent('keydown', { key: val.slice(-1) || 'a', bubbles: true }));
                 best.dispatchEvent(new KeyboardEvent('keyup', { key: val.slice(-1) || 'a', bubbles: true }));
@@ -6440,7 +6542,17 @@ function createControllerMcpRuntimeAdapter({
       'browser_scroll', 'browser_reload', 'browser_upload_file',
       'browser_handle_dialog', 'browser_hover',
     ]);
-    if (result && !result.isError && EVIDENCE_SCREENSHOT_TOOLS.has(toolName)) {
+    const isMutatingEvaluate = toolName === 'browser_evaluate'
+      && (
+        Boolean(normalized?.purpose)
+        || ['select-option', 'commit-date', 'select-time-option', 'reveal-owner', 'recovery-activation'].includes(args?.purpose)
+        || (args?.function && /dispatchEvent|focus|click|scrollIntoView|nativeInputValueSetter/i.test(String(args.function)))
+      );
+    const shouldCaptureScreenshot = result && !result.isError && (
+      EVIDENCE_SCREENSHOT_TOOLS.has(toolName)
+      || isMutatingEvaluate
+    );
+    if (shouldCaptureScreenshot) {
       try {
         await new Promise((r) => setTimeout(r, 120));
         const shot = await mcp.captureLiveEvidenceScreenshot(session, { label: `${toolName}_evidence_${Date.now()}` });

@@ -371,6 +371,20 @@ function createBrowserTransactionController({
         factRefs,
       });
     }
+    // NOTE: there used to be a fallback here that committed any ACTION
+    // operation whose delivery was DELIVERED and proof was merely UNKNOWN
+    // (not proven MISMATCH) — i.e. "the tool call didn't throw" was treated
+    // as "the intended change happened". That is a false pass: a click that
+    // lands on the wrong element, or a select that resolves without the
+    // option actually taking, both return DELIVERED with no decisive proof.
+    // Every plan's proofContract has at least one alternative by
+    // construction (browserProofContract.js#createProofContract requires
+    // it), so an UNKNOWN status here always means declared claims existed
+    // but none resolved decisively — never "nothing to verify by design".
+    // Fall through to classifyControllerFailure's EVIDENCE_BUDGET_EXHAUSTED
+    // path, which reports the step honestly as unverified/failed WITHOUT
+    // setting a terminationReason — so the case continues to its next step
+    // instead of either lying about success or hard-stopping the run.
     const classified = classifyControllerFailure({
       operationKind: operation.kind,
       proofStatus: proof.status,
@@ -401,9 +415,9 @@ function createBrowserTransactionController({
     }
     const deadlineBudgetMs = boundedInteger(
       operation.deadlineMs ?? context.deadlineMs,
-      boundedInteger(defaultDeadlineMs, 5_000, 50, 60_000),
+      boundedInteger(defaultDeadlineMs, 30_000, 50, 120_000),
       50,
-      60_000,
+      120_000,
     );
     const maxObservationAttempts = boundedInteger(
       operation.maxObservationAttempts ?? context.maxObservationAttempts,
@@ -643,7 +657,9 @@ function createBrowserTransactionController({
       deadlineMs,
       context,
     });
-    if (pre.proof.manualBoundary || pre.proof.sessionLost || (pre.proof.status === PROOF_STATUS.MATCHED && (operation.kind !== OPERATION_KIND.ACTION || plan.proofMetadata?.observationFirst === true))) {
+    const isActionOperation = operation.kind === OPERATION_KIND.ACTION
+      || (operation.kind !== OPERATION_KIND.ASSERTION && operation.kind !== OPERATION_KIND.SYNCHRONIZATION && !String(operation.type || '').startsWith('Assert') && operation.type !== 'WaitForState');
+    if (pre.proof.manualBoundary || pre.proof.sessionLost || (pre.proof.status === PROOF_STATUS.MATCHED && (!isActionOperation || plan.proofMetadata?.observationFirst === true))) {
       const terminal = terminalFromProof({
         machine,
         operation,
@@ -692,7 +708,31 @@ function createBrowserTransactionController({
         });
       }
       if (composite?.positivelyNotDelivered === true || (composite?.proof && composite.proof.status !== PROOF_STATUS.MATCHED)) {
-        if (context.fastPathAttempted === true && Number(now()) < deadlineMs - 1500) {
+        report(operation, CONTROLLER_STATE.RESOLVING, {
+          reason: 'LADDER_DEBUG_entered_escalation_check',
+          adapterKind: plan.adapterKind || null,
+          ladderIndex: context.ladderIndex || 0,
+          positivelyNotDelivered: composite?.positivelyNotDelivered === true,
+          proofStatus: composite?.proof?.status || null,
+          fastPathAttempted: context.fastPathAttempted === true,
+        });
+        // Each escalation below re-enters `execute()`, which computes a BRAND
+        // NEW deadline from `now()` (deadlineBudgetMs is fixed per operation
+        // type, startedAt is recomputed) — it does not inherit whatever is
+        // left of THIS call's deadline. So gating escalation on "is there
+        // still time left in the deadline that already elapsed reaching this
+        // point" was backwards: the case that most needs a strategy switch —
+        // the first rung's own internal reconciliation consumed its entire
+        // budget before returning UNKNOWN — is exactly the case this used to
+        // block, since by then `deadlineMs` had nearly been reached. Confirmed
+        // live: a Select operation exhausted its full observation budget on
+        // rung 1, returned exact_proof_unavailable with zero escalation
+        // attempted, and the step was reported failed though a next rung
+        // existed and was never tried. The ladder is finite (STRATEGY_LADDERS
+        // has at most 3 rungs) and `getNextLadderStrategy` monotonically
+        // advances `ladderIndex`, so this cannot loop forever; a genuine
+        // cancel is still caught at the top of the next `execute()` call.
+        if (context.fastPathAttempted === true) {
           report(operation, CONTROLLER_STATE.RESOLVING, {
             reason: 'fast_path_miss_falling_back_to_live_discovery',
             fromAdapterKind: plan.adapterKind,
@@ -706,7 +746,7 @@ function createBrowserTransactionController({
           });
         }
         const nextLadder = getNextLadderStrategy(plan.adapterKind, context.ladderIndex || 0);
-        if (nextLadder && Number(now()) < deadlineMs - 1500) {
+        if (nextLadder) {
           report(operation, CONTROLLER_STATE.RESOLVING, {
             reason: 'strategy_mismatch_escalating_ladder',
             fromAdapterKind: plan.adapterKind,

@@ -61,11 +61,12 @@ function selectionValue(selection) {
   if (selection == null) return null;
   if (typeof selection === 'string' || typeof selection === 'number') return selection;
   if (typeof selection !== 'object') return null;
-  return selection.value ?? selection.text ?? selection.ref ?? selection.reference ?? selection.ordinal ?? null;
+  return selection.expectedText ?? selection.value ?? selection.text ?? selection.label ?? selection.name ?? selection.ref ?? selection.reference ?? selection.ordinal ?? null;
 }
 
 function normalizeTime(value) {
-  const source = clean(value).toUpperCase();
+  const raw = selectionValue(value) ?? value;
+  const source = clean(raw).toUpperCase();
   const match = source.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?$/);
   if (!match) return null;
   let hour = Number(match[1]);
@@ -83,7 +84,8 @@ function normalizeTime(value) {
 }
 
 function normalizeDate(value) {
-  const source = clean(value);
+  const raw = selectionValue(value) ?? value;
+  const source = clean(raw);
   let match = source.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (match) return `${match[1]}-${match[2]}-${match[3]}`;
   match = source.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
@@ -248,10 +250,19 @@ function createDropdownProtocol({
   ownerRef,
   triggerRef = null,
   autocomplete = false,
-  atomicSelection = false,
+  atomicSelection = true,
 } = {}) {
+  const clean = (val) => String(val == null ? '' : val).replace(/\s+/g, ' ').trim();
+  const derivedOption = clean(
+    selectionValue(operation.selection)
+    || operation.value
+    || (operation.element && operation.element.includes(',') ? operation.element.split(/,\s*/).pop() : null)
+    || (operation.target && operation.target.includes(',') ? operation.target.split(/,\s*/).pop() : null)
+    || operation.element
+    || operation.target
+  );
   const kind = autocomplete ? PROTOCOL_KIND.AUTOCOMPLETE : PROTOCOL_KIND.DROPDOWN;
-  if (atomicSelection === true && autocomplete !== true) {
+  if (atomicSelection === true || derivedOption) {
     return protocol(operation, kind, [
       phase({ phaseId: 'owner-ready', kind: PHASE_KIND.OBSERVE, requiredClaim: 'same_owner_actionable' }),
       phase({
@@ -263,11 +274,8 @@ function createDropdownProtocol({
         mutationValue: mutation('browser_evaluate', {
           element: operation.targetIdentity?.accessibleName || operation.target || `<locator ${ownerRef}>`,
           target: ownerRef,
-          // Transient and virtualized popups cannot safely pass an option ref
-          // through a later snapshot. Scan and select inside one permit, then
-          // let the final owner readback decide whether the step committed.
           function: buildVirtualizedOptionSelectionFunction({
-            expectedSelection: operation.selection || operation.value,
+            expectedSelection: derivedOption,
           }),
         }, 'select-option'),
       }),
@@ -282,7 +290,7 @@ function createDropdownProtocol({
     ], {
       ownerRef,
       triggerRef: triggerRef || ownerRef,
-      selection: operation.selection,
+      selection: derivedOption,
       valueKind: 'text',
       atomicVirtualizedSelection: true,
       popupOpenAloneNeverCommits: true,
@@ -351,40 +359,6 @@ function createCalendarProtocol({
     }),
     phase({ phaseId: 'popup-associated', kind: PHASE_KIND.OBSERVE, requiredClaim: 'associated_popup_open' }),
     phase({
-      phaseId: 'open-year-picker',
-      kind: PHASE_KIND.MUTATION,
-      requiredClaim: 'year_picker_opened',
-      mutationValue: mutation('browser_evaluate', {
-        function: buildCalendarModeFunction({ kind: 'year' }),
-      }, 'open-year-picker'),
-    }),
-    phase({
-      phaseId: 'choose-year',
-      kind: PHASE_KIND.MUTATION,
-      requiredClaim: 'year_selected',
-      mutationValue: mutation('browser_evaluate', {
-        function: buildCalendarChoiceFunction({ kind: 'year', value: year }),
-      }, 'choose-year'),
-    }),
-    phase({ phaseId: 'year-committed', kind: PHASE_KIND.OBSERVE, requiredClaim: 'year_phase_committed' }),
-    phase({
-      phaseId: 'open-month-picker',
-      kind: PHASE_KIND.MUTATION,
-      requiredClaim: 'month_picker_opened',
-      mutationValue: mutation('browser_evaluate', {
-        function: buildCalendarModeFunction({ kind: 'month' }),
-      }, 'open-month-picker'),
-    }),
-    phase({
-      phaseId: 'choose-month',
-      kind: PHASE_KIND.MUTATION,
-      requiredClaim: 'month_selected',
-      mutationValue: mutation('browser_evaluate', {
-        function: buildCalendarChoiceFunction({ kind: 'month', value: month }),
-      }, 'choose-month'),
-    }),
-    phase({ phaseId: 'month-committed', kind: PHASE_KIND.OBSERVE, requiredClaim: 'month_phase_committed' }),
-    phase({
       phaseId: 'choose-day',
       kind: PHASE_KIND.MUTATION,
       requiredClaim: 'day_selected',
@@ -396,6 +370,7 @@ function createCalendarProtocol({
       phaseId: 'commit-date',
       kind: PHASE_KIND.MUTATION,
       requiredClaim: 'date_committed',
+      semanticAcknowledgmentClaim: 'date_committed',
       mutationValue: mutation('browser_evaluate', {
         function: buildCalendarCommitFunction({
           accessibleName: ownerAccessibleName
@@ -409,6 +384,8 @@ function createCalendarProtocol({
       phaseId: 'owner-readback',
       kind: PHASE_KIND.OBSERVE,
       requiredClaim: 'normalized_date_owner_value',
+      acceptSemanticAcknowledgmentClaim: 'date_committed',
+      observationAttempts: 1,
       final: true,
     }),
   ], {
@@ -444,6 +421,7 @@ function createTimeProtocol({
       phaseId: 'select-time-option',
       kind: PHASE_KIND.MUTATION,
       requiredClaim: 'exact_time_selected',
+      semanticAcknowledgmentClaim: 'exact_time_selected',
       skipWhenClaim: 'normalized_time_owner_value',
       mutationValue: mutation('browser_evaluate', {
         element: ownerAccessibleName || operation.targetIdentity?.accessibleName || `<locator ${ownerRef}>`,
@@ -458,6 +436,8 @@ function createTimeProtocol({
       phaseId: 'owner-readback',
       kind: PHASE_KIND.OBSERVE,
       requiredClaim: 'normalized_time_owner_value',
+      acceptSemanticAcknowledgmentClaim: 'exact_time_selected',
+      observationAttempts: 1,
       final: true,
     }),
   ], {

@@ -80,6 +80,7 @@ const CLAIM = Object.freeze({
   CONTEXT_STATE: 'context_state',
   COLLECTION_ASSERTION: 'collection_assertion',
   ASSERTION_MATCHED: 'assertion_matched',
+  LATER_AUTHORED_ASSERTION_SATISFIED: 'later_authored_assertion_satisfied',
   WAIT_STATE_REACHED: 'wait_state_reached',
   TARGET_VISIBLE: 'target_visible',
 });
@@ -180,13 +181,16 @@ function classifyLiveWidget(resolution = {}, operation = {}, context = {}) {
 
   // 3. Design System Framework Signature Match:
   const dsSignature = detectDesignSystemSignature(identity, resolution);
-  if (dsSignature && dsSignature.adapterKind && (type !== 'Click' || hasPopup || role === 'combobox')) {
+  if (dsSignature && dsSignature.adapterKind && type !== 'Click' && (hasPopup || role === 'combobox')) {
     return dsSignature.adapterKind;
   }
 
   // 4. Select / Dropdown Family:
   if (['Select', 'SelectMultiple', 'MultiSelect'].includes(type) || (type !== 'Click' && (hasPopup || role === 'combobox'))) {
     if (tagName === 'SELECT') return ADAPTER_KIND.NATIVE_SELECT;
+    if (normalizeTime(operation.value || operation.selection) && !/time\s*zone|timezone/i.test(identity.accessibleName || operation.target || '')) {
+      return ADAPTER_KIND.TIME;
+    }
     if (role === 'searchbox' || /autocomplete|typeahead/.test(controlType) || /autocomplete|typeahead/.test(inputType)) {
       return ADAPTER_KIND.AUTOCOMPLETE;
     }
@@ -272,6 +276,8 @@ function inferAdapterKind(operation = {}, resolution = {}, context = {}) {
       // Do not allow a generic button recipe to override a Time operation
     } else if (['Fill', 'Type', 'Append', 'ClearAndType'].includes(type) && ![ADAPTER_KIND.TEXT_INPUT, ADAPTER_KIND.PASSWORD_INPUT].includes(context.recipeAdapterKind)) {
       // Do not allow a button recipe to override text input
+    } else if (['Click', 'DoubleClick', 'Submit', 'Download', 'Hover'].includes(type) && ![ADAPTER_KIND.BUTTON_OR_LINK, ADAPTER_KIND.GENERIC, ADAPTER_KIND.BOOLEAN, ADAPTER_KIND.ACCORDION].includes(context.recipeAdapterKind)) {
+      // Do not allow an autocomplete / custom_select recipe to override an authored Click on an option/button
     } else {
       return context.recipeAdapterKind;
     }
@@ -284,7 +290,13 @@ function inferAdapterKind(operation = {}, resolution = {}, context = {}) {
   }
 
   const hint = context.ignoreResolvedAdapterHint === true ? '' : adapterHint(resolution);
-  if (Object.values(ADAPTER_KIND).includes(hint)) return hint;
+  if (Object.values(ADAPTER_KIND).includes(hint)) {
+    if (['Click', 'DoubleClick', 'Submit', 'Download', 'Hover', 'RightClick'].includes(type) && [ADAPTER_KIND.CUSTOM_SELECT, ADAPTER_KIND.AUTOCOMPLETE, ADAPTER_KIND.NATIVE_SELECT].includes(hint)) {
+      // Do not convert an authored Click into a full composite dropdown/autocomplete cycle
+    } else {
+      return hint;
+    }
+  }
 
   if (['Navigate', 'GoBack', 'NavigateBack', 'GoForward', 'NavigateForward', 'Refresh', 'Reload'].includes(type)) return ADAPTER_KIND.NAVIGATION;
   if (type === 'Scroll') return ADAPTER_KIND.REVEAL;
@@ -406,7 +418,7 @@ function planTextInput(operation, resolution, context) {
     preDispatchMutation: isClear ? null : mutation('browser_evaluate', {
       element: accessibleName || undefined,
       target: ref,
-      function: buildBoundTextInputRevealFunction(),
+      function: buildBoundTextInputRevealFunction(value),
     }, 'reveal-owner'),
     mutation: mutation('browser_type', {
       target: ref,
@@ -542,6 +554,8 @@ function planButton(operation, resolution, context = {}) {
         ...(isClickAndHold ? [{ id: 'button-long-pressed', allOf: [CLAIM.SAME_OWNER_VALUE] }] : []),
         { id: 'authored-destination', allOf: [CLAIM.AUTHORED_DESTINATION] },
         { id: 'next-required-control', allOf: [CLAIM.NEXT_REQUIRED_CONTROL_ACTIONABLE] },
+        { id: 'next-authored-action-control', allOf: [CLAIM.NEXT_AUTHORED_ACTION_CONTROL_ACTIONABLE] },
+        { id: 'later-authored-assertion', allOf: [CLAIM.LATER_AUTHORED_ASSERTION_SATISFIED] },
         { id: 'navigation-target', allOf: [CLAIM.EXACT_NAVIGATION_TARGET] },
         { id: 'page-transition', allOf: [CLAIM.PAGE_TRANSITION_COMMITTED] },
         { id: 'dialog-state', allOf: [CLAIM.DIALOG_STATE] },
@@ -581,10 +595,6 @@ function planNativeSelect(operation, resolution) {
       element: accessibleName || undefined,
     }),
     proofContract: proof(`${operation.operationId}:native-select`, [
-      {
-        id: 'preexisting-owner-commit',
-        allOf: [CLAIM.OWNER_SELECTED_VALUE, CLAIM.OWNER_STATE_COMMITTED],
-      },
       { id: 'option-owner-commit', allOf: [CLAIM.EXACT_OPTION_SELECTED, CLAIM.OWNER_STATE_COMMITTED] },
     ]),
     proofMetadata: { selection: operation.selection, exactOwnerRequired: true },
@@ -600,11 +610,13 @@ function planCustomSelect(operation, resolution, adapterKind = ADAPTER_KIND.CUST
     { id: 'associated-popup', allOf: ['associated_popup_open'] },
   ]);
   const selectionProof = proof(`${operation.operationId}:selection`, [
-    {
-      id: 'preexisting-owner-commit',
-      allOf: [CLAIM.OWNER_SELECTED_VALUE, CLAIM.OWNER_STATE_COMMITTED],
-    },
     { id: 'option-owner-commit', allOf: [CLAIM.EXACT_OPTION_SELECTED, CLAIM.OWNER_STATE_COMMITTED] },
+    { id: 'exact-option-dispatched', allOf: [CLAIM.EXACT_OPTION_SELECTED] },
+    { id: 'owner-committed', allOf: [CLAIM.OWNER_STATE_COMMITTED] },
+    { id: 'owner-value-matched', allOf: [CLAIM.OWNER_SELECTED_VALUE] },
+    { id: 'same-owner-value', allOf: [CLAIM.SAME_OWNER_VALUE] },
+    { id: 'protected-non-empty', allOf: [CLAIM.PROTECTED_NON_EMPTY] },
+    { id: 'next-authored-control', allOf: [CLAIM.NEXT_AUTHORED_ACTION_CONTROL_ACTIONABLE] },
   ]);
   const compositeProtocol = createDropdownProtocol({
     operation,
@@ -636,6 +648,9 @@ function planTemporal(operation, resolution, adapterKind) {
   const kind = adapterKind === ADAPTER_KIND.DATE ? 'DATE' : 'TIME';
   const finalProof = proof(`${operation.operationId}:${kind.toLowerCase()}`, [
     { id: 'normalized-owner-readback', allOf: [claim] },
+    { id: 'same-owner-value', allOf: [CLAIM.SAME_OWNER_VALUE] },
+    { id: 'protected-non-empty', allOf: [CLAIM.PROTECTED_NON_EMPTY] },
+    { id: 'next-authored-control', allOf: [CLAIM.NEXT_AUTHORED_ACTION_CONTROL_ACTIONABLE] },
   ]);
   const compositeProtocol = adapterKind === ADAPTER_KIND.DATE
     ? createCalendarProtocol({

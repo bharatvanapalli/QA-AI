@@ -73,7 +73,7 @@ Output rules:
  * @param {function} [opts.onLog]
  * @returns {Promise<{revisedCase?, guidance?, contextNotes?, giveUp?}>}
  */
-async function run({ apiKey, model, attempts, originalCase, requirement = '', onLog = async () => {}, onRateLimit, extraGuidance, provider: providerName } = {}) {
+async function run({ apiKey, model, attempts, originalCase, requirement = '', onLog = async () => {}, onRateLimit, extraGuidance, provider: providerName, signal } = {}) {
   if (!apiKey) {
     const err = new Error('AI provider API key missing.');
     err.code = 'NO_API_KEY';
@@ -128,6 +128,7 @@ async function run({ apiKey, model, attempts, originalCase, requirement = '', on
       messages: [{ role: 'user', content: userMsg }],
       onRateLimit,
       responseFormat: 'json',
+      signal,
     });
   } catch (err) {
     await onLog('error', `supervisor call failed: ${err.message}`);

@@ -18,6 +18,8 @@ const planner = require('../services/agents/planner');
 const readinessCompiler = require('../services/readinessCompiler');
 const { resolveCaseDependencyClosure } = require('../services/caseDependencyClosure');
 const verifier = require('../services/agents/verifier');
+const critic = require('../services/agents/critic');
+const supervisor = require('../services/agents/supervisor');
 const mcp = require('../services/mcp');
 const sessionRegistry = require('../services/sessionRegistry');
 const cancelRegistry = require('../services/cancelRegistry');
@@ -731,6 +733,117 @@ async function maybeRecalibrateStaleAtlas({ project, execMode, userId, send, can
   return;
 }
 
+// Every conductor attempt after the first re-runs ONLY the cases that didn't
+// pass. Critic gets one shot at a snapshot-grounded rewrite; if a case still
+// hasn't passed after that, Supervisor gets one heavier rewrite (or gives
+// up with a reason). Total attempts capped so a genuinely broken page can't
+// loop forever burning tokens.
+const MAX_CONDUCTOR_ATTEMPTS = 3; // 1 initial + 1 critic-informed + 1 supervisor-informed
+
+// Builds Critic/Supervisor-shaped per-case history from what the deterministic
+// controller actually persisted — RunResult + the TestCase it ran against.
+// The legacy actionTrail/finalSnapshot fields these agents were written for
+// don't exist in the new architecture, but both read them defensively
+// (`h.actionTrail || []`, optional finalSnapshot), so a synthetic actionTrail
+// built from the per-operation stepResults (target, planned value, terminal
+// reason) is enough to ground a real rewrite instead of a blind guess.
+async function buildCriticCompatibleHistory(runId) {
+  const results = await prisma.runResult.findMany({
+    where: { runId },
+    include: { testCase: true },
+    orderBy: { createdAt: 'asc' },
+  });
+  return results.map((row) => {
+    const steps = decodeJson(row.stepResults, []) || [];
+    return {
+      testCaseId: row.testCaseId,
+      name: row.testCase?.name || '',
+      status: row.status,
+      error: row.error || '',
+      originalSteps: decodeJson(row.testCase?.steps, []) || [],
+      // TestCase.assertions is a plain descriptive string column (schema.prisma
+      // `assertions String`), NOT JSON — unlike `steps`. decodeJson on it would
+      // just fail to parse and silently fall back to [], feeding Critic/
+      // Supervisor a blank assertions field on every case.
+      assertions: row.testCase?.assertions || '',
+      actionTrail: steps.map((step, i) => ({
+        turn: i + 1,
+        tool: step.action,
+        args: { target: step.target, value: step.plannedText },
+        ok: step.status === 'pass',
+        error: step.reason || undefined,
+      })),
+    };
+  });
+}
+
+function findCaseInScenarios(scenarios, testCaseId) {
+  for (const scenario of (Array.isArray(scenarios) ? scenarios : [])) {
+    const found = (scenario?.cases || []).find((tc) => String(tc.id) === String(testCaseId));
+    if (found) return found;
+  }
+  return null;
+}
+
+// A case with a session dependency (e.g. "Create Order" depends on "Login"
+// for its authenticated browser context) can't be retried in isolation —
+// see scenariosForRetryClosure's comment. Re-running its FULL closure
+// instead is not always safe either: confirmed live that re-running a
+// Microsoft-login case a second time hits different page state ("already
+// authenticated") and fails for reasons that have nothing to do with the
+// original case's correctness, turning an honest 1-pass/1-fail into a
+// worse 0-pass/1-fail/1-skip. Until session state can be genuinely
+// preserved across a retry, don't attempt to retry/escalate a case with
+// unmet dependencies — leave its original, honest single-attempt result in
+// place rather than risk making it worse by redoing a non-idempotent flow.
+function hasUnretriableSessionDependency(testCase) {
+  return (decodeJson(testCase?.dependsOnIds, null) || decodeJson(testCase?.dependsOn, null) || []).length > 0;
+}
+
+// Produces an in-memory-only rewritten case for a single retry attempt — the
+// user's originally-approved TestCase row in the DB is never mutated by this
+// ladder, so approval-lifecycle semantics (CLAUDE.md's TestCase.status) stay
+// intact even though execution itself is fully automatic.
+function cloneCaseForRetry(originalCase, rewrite) {
+  // TestCase.assertions is a plain string column — Critic/Supervisor already
+  // emit it in that shape (a comma-separated description), so pass it through
+  // as-is rather than JSON-encoding it, which would corrupt what the case
+  // compiler (caseContractV1.js) expects to parse.
+  const assertions = rewrite?.assertions ? String(rewrite.assertions) : (originalCase.assertions || '');
+  return {
+    ...originalCase,
+    name: rewrite?.name || originalCase.name,
+    steps: encodeJson(rewrite?.steps?.length ? rewrite.steps : (decodeJson(originalCase.steps, []) || [])),
+    assertions,
+  };
+}
+
+// A retry batch can't just be the rewritten case(s) in isolation: if a case
+// depends on another for an authenticated browser-session continuation (e.g.
+// "Create Order" depends on "Login"), and this retry runs against an
+// existingRunId that a PRIOR runControllerConductorOnce call already marked
+// 'completed', the parked session from that prior pass is gone — retrying
+// only the dependent case hits `continuity_group_not_found` immediately.
+// Pull in the full dependency closure (via the same helper `/run-smoke`
+// itself uses) so a dependency like Login re-runs and re-establishes a
+// fresh session for the retry, exactly as a normal execution would.
+async function scenariosForRetryClosure(projectId, caseObjectsById) {
+  const closure = await resolveCaseDependencyClosure({
+    prisma,
+    projectId,
+    caseIds: [...caseObjectsById.keys()],
+  });
+  const cases = closure.cases.map((row) => (
+    caseObjectsById.get(String(row.id)) || { ...row, steps: decodeJson(row.steps, []) || [] }
+  ));
+  if (!cases.length) return [];
+  return [{
+    id: `__retry_closure_${cases[0].id}`,
+    name: 'Retry batch (dependency closure)',
+    cases,
+  }];
+}
+
 async function runConductorWithRetries({
   project, sprintId, sprintGuidance, scenarios, plan, apiKey, model, provider, send, userId, requirements, onLog, cancelToken,
   generationId = null,
@@ -814,7 +927,7 @@ async function runConductorWithRetries({
     }
   }
 
-  return runControllerConductorOnce({
+  let outcome = await runControllerConductorOnce({
     project,
     sprintId,
     scenarios,
@@ -828,6 +941,110 @@ async function runConductorWithRetries({
     generationId: executionGenerationId,
   });
 
+  const isCancelled = () => Boolean(cancelToken?.cancelled || cancelToken?.signal?.aborted);
+  const perCaseAttempts = new Map(); // testCaseId -> [{attempt, status, error, actionTrail, originalSteps, assertions}]
+  let attempt = 1;
+
+  // ── Critic-informed retries ────────────────────────────────────────────
+  // Re-run ONLY the cases that didn't pass, using a rewrite the Critic
+  // grounded in what the page actually showed (per-operation evidence from
+  // this same run's RunResult rows) — not a blind re-run of the same steps.
+  while (attempt < MAX_CONDUCTOR_ATTEMPTS - 1 && !outcome?.paused && !isCancelled()) {
+    const history = await buildCriticCompatibleHistory(outcome.runId);
+    const failing = history.filter((h) => h.status !== 'pass');
+    if (!failing.length) break;
+    for (const h of failing) {
+      if (!perCaseAttempts.has(h.testCaseId)) perCaseAttempts.set(h.testCaseId, []);
+      perCaseAttempts.get(h.testCaseId).push({
+        attempt, status: h.status, error: h.error, actionTrail: h.actionTrail,
+        originalSteps: h.originalSteps, assertions: h.assertions,
+      });
+    }
+    let criticResult;
+    try {
+      criticResult = await critic.run({
+        apiKey, model, provider,
+        runOutcome: { runId: outcome.runId, summary: outcome.summary, history },
+        onLog: onLog ? onLog('critic') : undefined,
+        signal: cancelToken?.signal,
+      });
+    } catch (err) {
+      send({ type: 'agent.phase.log', phase: 'conductor', level: 'warn', message: `Critic pass failed, keeping results as-is: ${err.message}` });
+      break;
+    }
+    const rewriteById = new Map(criticResult.rewrites.map((r) => [String(r.testCaseId), r]));
+    const retryCasesById = new Map();
+    for (const h of failing) {
+      const rewrite = rewriteById.get(String(h.testCaseId));
+      if (!rewrite) continue;
+      const originalCase = findCaseInScenarios(scenarios, h.testCaseId);
+      if (!originalCase) continue;
+      if (hasUnretriableSessionDependency(originalCase)) {
+        send({ type: 'agent.phase.log', phase: 'conductor', level: 'info', message: `Critic proposed a rewrite for "${originalCase.name}", but it depends on another case's authenticated session — not retrying it in isolation to avoid redoing a non-idempotent login. Keeping its original result.` });
+        continue;
+      }
+      retryCasesById.set(String(h.testCaseId), cloneCaseForRetry(originalCase, rewrite));
+    }
+    if (!retryCasesById.size) {
+      if (criticResult.notes) send({ type: 'agent.phase.log', phase: 'conductor', level: 'info', message: `Critic: ${criticResult.notes}` });
+      break;
+    }
+    send({ type: 'agent.phase.log', phase: 'conductor', level: 'info', message: `Critic produced ${retryCasesById.size} grounded rewrite(s); retrying (attempt ${attempt + 1}/${MAX_CONDUCTOR_ATTEMPTS}).` });
+    attempt += 1;
+    outcome = await runControllerConductorOnce({
+      project, sprintId, scenarios: await scenariosForRetryClosure(project.id, retryCasesById), plan, userId, send,
+      cancelToken, verifierMode, existingRunId: outcome.runId, resumeMode: false,
+      generationId: executionGenerationId,
+    });
+  }
+
+  // ── Supervisor escalation ───────────────────────────────────────────────
+  // Cases still failing after the Critic-informed retry get one heavier,
+  // full-history rewrite attempt before the ladder gives up on them.
+  if (!outcome?.paused && !isCancelled()) {
+    const finalHistory = await buildCriticCompatibleHistory(outcome.runId);
+    const stillFailing = finalHistory.filter((h) => h.status !== 'pass');
+    if (stillFailing.length) {
+      const supervisorCasesById = new Map();
+      for (const h of stillFailing) {
+        const originalCase = findCaseInScenarios(scenarios, h.testCaseId);
+        if (!originalCase) continue;
+        if (hasUnretriableSessionDependency(originalCase)) {
+          send({ type: 'agent.phase.log', phase: 'conductor', level: 'info', message: `"${originalCase.name}" depends on another case's authenticated session — not escalating it to Supervisor for retry, to avoid redoing a non-idempotent login. Keeping its original result.` });
+          continue;
+        }
+        const attempts = perCaseAttempts.get(h.testCaseId) || [];
+        attempts.push({ attempt, status: h.status, error: h.error, actionTrail: h.actionTrail, originalSteps: h.originalSteps, assertions: h.assertions });
+        let supervisorResult;
+        try {
+          supervisorResult = await supervisor.run({
+            apiKey, model, provider, attempts, originalCase,
+            requirement: (requirements || []).map((r) => r.text || r.content || '').join('\n\n').slice(0, 4000),
+            onLog: onLog ? onLog('supervisor') : undefined,
+            signal: cancelToken?.signal,
+          });
+        } catch (err) {
+          send({ type: 'agent.phase.log', phase: 'conductor', level: 'warn', message: `Supervisor escalation failed for "${originalCase.name}": ${err.message}` });
+          continue;
+        }
+        if (supervisorResult.giveUp) {
+          send({ type: 'agent.phase.log', phase: 'conductor', level: 'warn', message: `Supervisor gave up on "${originalCase.name}": ${supervisorResult.giveUp.reason}` });
+          continue;
+        }
+        send({ type: 'agent.phase.log', phase: 'conductor', level: 'info', message: `Supervisor revised "${originalCase.name}": ${supervisorResult.guidance || supervisorResult.contextNotes || 'revised steps/assertions'}` });
+        supervisorCasesById.set(String(h.testCaseId), cloneCaseForRetry(originalCase, supervisorResult.revisedCase));
+      }
+      if (supervisorCasesById.size) {
+        outcome = await runControllerConductorOnce({
+          project, sprintId, scenarios: await scenariosForRetryClosure(project.id, supervisorCasesById), plan, userId, send,
+          cancelToken, verifierMode, existingRunId: outcome.runId, resumeMode: false,
+          generationId: executionGenerationId,
+        });
+      }
+    }
+  }
+
+  return outcome;
 }
 
 async function autoAnalyseBlockersForRun({ projectId, runId, apiKey, model, provider, aiGuidance, send, cancelToken }) {

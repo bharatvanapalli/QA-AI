@@ -48,6 +48,11 @@ function buildBoundActivationRecoveryFunction() {
       });
     }
     try { owner.focus({ preventScroll: true }); } catch (_) { try { owner.focus(); } catch (_) {} }
+    const evtOpts = { bubbles: true, cancelable: true, view: window, composed: true };
+    try { owner.dispatchEvent(new PointerEvent('pointerdown', evtOpts)); } catch (_) {}
+    try { owner.dispatchEvent(new MouseEvent('mousedown', evtOpts)); } catch (_) {}
+    try { owner.dispatchEvent(new PointerEvent('pointerup', evtOpts)); } catch (_) {}
+    try { owner.dispatchEvent(new MouseEvent('mouseup', evtOpts)); } catch (_) {}
     owner.click();
     return JSON.stringify({
       ok: true,

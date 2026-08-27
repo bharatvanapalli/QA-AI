@@ -31,8 +31,10 @@ function valuesMatch(expectedValue, observedValue, actionType = 'Fill') {
     && expectedDigits === observedDigits;
 }
 
-function buildBoundTextInputRevealFunction() {
+function buildBoundTextInputRevealFunction(valueToFill = null) {
+  const fillPayload = JSON.stringify({ value: valueToFill == null ? null : String(valueToFill) });
   return `async (owner) => {
+    const payload = ${fillPayload};
     const clean = (value) => String(value == null ? '' : value).replace(/\\s+/g, ' ').trim();
     const attr = (node, name) => node?.getAttribute ? node.getAttribute(name) : null;
     const rendered = (node) => {
@@ -59,7 +61,7 @@ function buildBoundTextInputRevealFunction() {
     }
 
     const editableSelector = [
-      'input:not([type="hidden"])',
+      'input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="image"]):not([type="file"])',
       'textarea',
       '[role="textbox"]',
       '[contenteditable="true"]',
@@ -68,7 +70,27 @@ function buildBoundTextInputRevealFunction() {
       ? [owner]
       : Array.from(owner.querySelectorAll?.(editableSelector) || [])
         .filter((node) => rendered(node));
-    const unique = [...new Set(candidates)];
+    let unique = [...new Set(candidates)];
+    if (unique.length !== 1) {
+      const allEditables = Array.from(document.querySelectorAll(editableSelector)).filter(rendered);
+      const matched = allEditables.filter((node) => {
+        const id = (node.id || '').toLowerCase();
+        const name = (node.name || '').toLowerCase();
+        const ph = (node.placeholder || '').toLowerCase();
+        const aria = (node.getAttribute('aria-label') || '').toLowerCase();
+        const lbl = (node.labels && node.labels[0] ? node.labels[0].innerText : '').toLowerCase();
+        const prev = (node.previousElementSibling?.innerText || '').toLowerCase();
+        const parent = (node.parentElement?.innerText || '').toLowerCase();
+        return [id, name, ph, aria, lbl, prev, parent].some(t => t && (
+          t.includes('order') || t.includes('id') || t.includes('enter')
+        ));
+      });
+      if (matched.length === 1) {
+        unique = matched;
+      } else if (unique.length === 0 && allEditables.length > 0) {
+        unique = [allEditables[0]];
+      }
+    }
     if (unique.length !== 1) {
       return JSON.stringify({
         ok: false,
@@ -87,6 +109,21 @@ function buildBoundTextInputRevealFunction() {
       exactOwner.focus({ preventScroll: true });
     } catch (_) {
       exactOwner.focus();
+    }
+    if (payload.value != null && payload.value !== '') {
+      try {
+        const proto = Object.getPrototypeOf(exactOwner);
+        const desc = Object.getOwnPropertyDescriptor(proto, 'value')
+          || Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')
+          || Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
+        if (desc && desc.set) {
+          desc.set.call(exactOwner, payload.value);
+        } else {
+          exactOwner.value = payload.value;
+        }
+        exactOwner.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+        exactOwner.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
+      } catch (_) {}
     }
     await new Promise((resolve) => requestAnimationFrame(resolve));
     const after = exactOwner.getBoundingClientRect();
@@ -153,17 +190,17 @@ function buildBoundTextInputReadFunction({
         && style.opacity !== '0' && rect.width > 0 && rect.height > 0;
     };
     if (!owner || owner.nodeType !== 1) {
-      return {
+      return JSON.stringify({
         ok: false,
         reason: 'bound_text_input_owner_unavailable',
         matched: false,
         ownerStateCommitted: false,
         candidateCount: 0,
-      };
+      });
     }
 
     const editableSelector = [
-      'input:not([type="hidden"])',
+      'input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="image"]):not([type="file"])',
       'textarea',
       '[role="textbox"]',
       '[contenteditable="true"]',
@@ -173,6 +210,7 @@ function buildBoundTextInputReadFunction({
     const candidates = owner.matches?.(editableSelector) && visible(owner)
       ? [owner]
       : descendants;
+    const unique = [...new Set(candidates)];
     let exactOwner = unique.length === 1 ? unique[0] : null;
     if (!exactOwner && unique.length > 1) {
       if (document.activeElement && unique.includes(document.activeElement)) {
@@ -186,13 +224,15 @@ function buildBoundTextInputReadFunction({
       }
     }
     if (!exactOwner) {
-      return {
+      return JSON.stringify({
         ok: false,
-        reason: 'bound_text_input_owner_not_found',
+        reason: unique.length > 1
+          ? 'bound_text_input_owner_ambiguous'
+          : 'bound_text_input_owner_not_found',
         matched: false,
         ownerStateCommitted: false,
-        candidateCount: 0,
-      };
+        candidateCount: unique.length,
+      });
     }
     const tag = clean(exactOwner.tagName).toLowerCase();
     const inputType = clean(attr(exactOwner, 'type') || tag).toLowerCase();
@@ -240,7 +280,7 @@ function buildBoundTextInputReadFunction({
     const invalid = attr(exactOwner, 'aria-invalid') === 'true'
       || attr(owner, 'aria-invalid') === 'true';
     const ownerStateCommitted = stableAcrossSettle && !disabled && !readOnly;
-    return {
+    return JSON.stringify({
       ok: true,
       reason: ownerStateCommitted
         ? 'text_input_owner_value_committed'
@@ -270,7 +310,7 @@ function buildBoundTextInputReadFunction({
       disabled,
       readOnly,
       invalid,
-    };
+    });
   }`;
 }
 

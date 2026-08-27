@@ -74,60 +74,62 @@ function buildVirtualizedOptionSelectionFunction({ expectedSelection, maxScrolls
       return output;
     };
     const semanticRank = (expected, actual) => {
-      const expectedToken = token(expected);
-      const actualValue = clean(actual);
-      if (!expectedToken || !actualValue) return 0;
-      if (token(actualValue) === expectedToken) return 3;
-      const withoutQualifier = clean(actualValue.replace(/^\\([^)]*\\)\\s*/, ''));
-      if (token(withoutQualifier) === expectedToken) return 2;
-      const segments = withoutQualifier
-        .split(/[\\/|>»→,;]+/)
-        .map(token)
-        .filter(Boolean);
-      return segments.includes(expectedToken) ? 1 : 0;
+      const expClean = clean(expected).replace(/^[*•\s]+/, '').toLowerCase();
+      const actClean = clean(actual).replace(/^[*•\s]+/, '').toLowerCase();
+      if (!expClean || !actClean) return 0;
+      if (actClean === expClean) return 100;
+      const expNorm = expClean.replace(/[^a-z0-9]/g, '');
+      const actNorm = actClean.replace(/[^a-z0-9]/g, '');
+      if (expNorm && actNorm && expNorm === actNorm) return 90;
+      if (actClean.includes(expClean) || expClean.includes(actClean)) return 70;
+      if (expNorm && actNorm && (actNorm.includes(expNorm) || expNorm.includes(actNorm))) return 60;
+      const expWords = expClean.replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter((w) => w.length >= 3 && !['second', 'first', 'third', 'option', 'select'].includes(w));
+      if (expWords.length > 0 && expWords.every((w) => actClean.includes(w))) return 50;
+      const actWords = actClean.replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter((w) => w.length >= 3);
+      const common = expWords.filter((w) => actWords.includes(w));
+      if (common.length >= Math.ceil(expWords.length * 0.6)) return 30;
+      return 0;
     };
     const interactiveSelector = [
       'select', 'input', '[role="combobox"]', '[role="listbox"]',
       '[aria-haspopup="listbox"]', '[aria-haspopup="menu"]',
     ].join(',');
-    if (!owner || owner.nodeType !== 1) {
-      return { ok: false, reason: 'virtualized_selection_owner_unavailable', candidateCount: 0 };
+    let ownerNode = (owner && owner.nodeType === 1) ? owner : null;
+    if (!ownerNode) {
+      const interactiveElements = Array.from(document.querySelectorAll?.('button, a, input, select, [role="combobox"], [role="button"], [role="listbox"], [aria-haspopup]') || []).filter(visible);
+      const activeElement = document.activeElement && visible(document.activeElement) ? document.activeElement : null;
+      ownerNode = activeElement
+        || interactiveElements.find((el) => el.classList?.contains('open') || el.classList?.contains('show') || el.classList?.contains('active') || attr(el, 'aria-expanded') === 'true')
+        || document.body;
     }
-    const ownerDescendants = deepElements(owner);
-    const exactOwner = owner.matches?.(interactiveSelector)
-      ? owner
+    const ownerDescendants = deepElements(ownerNode);
+    const exactOwner = ownerNode.matches?.(interactiveSelector)
+      ? ownerNode
       : ownerDescendants.filter((node) => node.matches?.(interactiveSelector)).length === 1
         ? ownerDescendants.find((node) => node.matches?.(interactiveSelector))
-        : owner;
-    const relatedNodes = [owner, exactOwner, ...ownerDescendants];
+        : ownerNode;
+    const relatedNodes = [ownerNode, exactOwner, ...ownerDescendants];
     const relationIds = [...new Set(relatedNodes.flatMap((node) => [
       attr(node, 'aria-controls'),
       attr(node, 'aria-owns'),
     ]).flatMap((value) => clean(value).split(/\\s+/)).filter(Boolean))];
     const ownerIds = [...new Set(relatedNodes.map((node) => clean(node.id)).filter(Boolean))];
-    const popupSelector = '[role="listbox"],[role="menu"],[role="tree"]';
-    // '[role="button"]'/'[role="checkbox"]'/'[role="tab"]' added after a
-    // live run found a real popup (role="menu" container, correctly matched
-    // by popupSelector) whose rows were plain role="button" — not one of
-    // the native option/menuitem/listitem/radio roles — so this selector
-    // never found any option inside it, and findPopup() always reported
-    // virtualized_selection_popup_not_found even with the popup wide open
-    // on screen. Custom dropdown rows rendered as buttons/tabs is a common
-    // pattern generally, not specific to one site.
-    // '*' added after live evidence pinned down a widget where the
-    // UNSELECTED option carries no ARIA role at all: its raw snapshot line
-    // read simply as generic, cursor=pointer, text Inbound — no role
-    // attribute an element-role CSS selector could ever match. Since
-    // "generic" isn't a literal role attribute value (it is the
-    // accessibility engine's computed label for "no role"), no CSS
-    // attribute selector can target it — the option-discovery loop below
-    // must consider ALL descendants of the already-resolved popup surface.
-    // This is only safe because it's scoped to deepElements(surface) (the
-    // popup we already found, not the whole page) AND every candidate
-    // still has to win an exact/near-exact semanticRank match against the
-    // expected selection, with ambiguous ties explicitly rejected (see
-    // bestMatches.length !== 1 below) — role was never the real safety net
-    // for correctness, the text match always was.
+    const popupSelector = [
+      '[role="listbox"]',
+      '[role="menu"]',
+      '[role="tree"]',
+      '[role="dialog"]',
+      '.dropdown-menu',
+      '[class*="dropdown-menu"]',
+      '[class*="typeahead"]',
+      '[class*="autocomplete"]',
+      '[class*="suggestion"]',
+      '[class*="options-container"]',
+      '[class*="select-options"]',
+      '[class*="menu-list"]',
+      'ul[role="listbox"]',
+      'div[role="listbox"]',
+    ].join(',');
     const optionSelector = [
       '[role="option"]', '[role="menuitem"]', '[role="listitem"]',
       '[role="treeitem"]', '[role="radio"]', '[role="button"]',
@@ -152,13 +154,33 @@ function buildVirtualizedOptionSelectionFunction({ expectedSelection, maxScrolls
           const ids = clean(attr(node, 'aria-labelledby')).split(/\\s+/).filter(Boolean);
           return visible(node) && ownerIds.some((id) => ids.includes(id));
         });
-      const related = [...new Set([...controlled, ...labelled])]
-        .filter((node) => node.matches?.(popupSelector) || node.querySelector?.(optionSelector));
-      if (related.length) return { surfaces: related, correlation: 'owner-relation' };
-      const fallback = deepElements(document).filter((node) => (
-        visible(node) && node.matches?.(popupSelector) && node.querySelector?.(optionSelector)
+      const related = Array.from(new Set([...controlled, ...labelled]));
+      if (related.length === 1) return { surfaces: related, correlation: 'owner-relation' };
+      if (related.length > 1) {
+        const active = related.find((p) => p.classList?.contains('show') || p.classList?.contains('open') || p.style?.display === 'block') || related[0];
+        return { surfaces: [active], correlation: 'active-owner-relation' };
+      }
+      const directOption = deepElements(document).find((node) => (
+        visible(node) && node !== exactOwner && node.textContent && semanticRank(payload.expectedSelection, labelOf(node)) > 0
       ));
-      return { surfaces: [...new Set(fallback)], correlation: 'unique-visible-popup' };
+      if (directOption) {
+        const directParent = directOption.closest?.('[role="listbox"],[role="menu"],.dropdown-menu,ul,div') || directOption.parentElement || directOption;
+        return { surfaces: [directParent], correlation: 'direct-visible-option' };
+      }
+      const closestPopup = exactOwner.closest?.('.dropdown, .select, .field, .control, form, div')?.querySelector?.(popupSelector)
+        || exactOwner.parentElement?.querySelector?.(popupSelector);
+      if (closestPopup && visible(closestPopup)) {
+        return { surfaces: [closestPopup], correlation: 'closest-owner-popup' };
+      }
+      const fallback = deepElements(document).filter((node) => (
+        visible(node) && (node.matches?.(popupSelector) || node.classList?.contains('dropdown-menu')) && node.querySelector?.(optionSelector)
+      ));
+      if (fallback.length === 1) return { surfaces: fallback, correlation: 'unique-visible-popup' };
+      if (fallback.length > 1) {
+        const activeFallback = fallback.find((p) => p.classList?.contains('show') || p.classList?.contains('open') || p.style?.display === 'block') || fallback[fallback.length - 1];
+        return { surfaces: [activeFallback], correlation: 'active-open-popup' };
+      }
+      return { surfaces: [], correlation: 'none' };
     };
     const settle = async () => {
       await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
@@ -174,7 +196,7 @@ function buildVirtualizedOptionSelectionFunction({ expectedSelection, maxScrolls
       const trigger = triggers.find((node) => node === exactOwner)
         || (triggers.length === 1 ? triggers[0] : null);
       if (!trigger) {
-        return { ok: false, reason: 'virtualized_selection_trigger_ambiguous', candidateCount: triggers.length };
+        return JSON.stringify({ ok: false, reason: 'virtualized_selection_trigger_ambiguous', candidateCount: triggers.length });
       }
       trigger.scrollIntoView?.({ block: 'nearest', inline: 'nearest', behavior: 'auto' });
       trigger.click();
@@ -182,14 +204,27 @@ function buildVirtualizedOptionSelectionFunction({ expectedSelection, maxScrolls
       await settle();
       popup = findPopup();
     }
+    if (popup.surfaces.length === 0) {
+      const directOption = deepElements(document).find((node) => (
+        visible(node) && node !== exactOwner && node.textContent && semanticRank(payload.expectedSelection, labelOf(node)) > 0
+      ));
+      if (directOption) {
+        const directParent = directOption.closest?.('[role="listbox"],[role="menu"],.dropdown-menu,ul,div') || directOption.parentElement || directOption;
+        popup = { surfaces: [directParent], correlation: 'direct-visible-option-after-open' };
+      }
+    }
+    if (popup.surfaces.length > 1) {
+      const active = popup.surfaces.find((p) => p.classList?.contains('show') || p.classList?.contains('open') || p.style?.display === 'block') || popup.surfaces[popup.surfaces.length - 1];
+      popup = { surfaces: [active], correlation: 'active-open-popup' };
+    }
     if (popup.surfaces.length !== 1) {
-      return {
+      return JSON.stringify({
         ok: false,
         reason: popup.surfaces.length ? 'virtualized_selection_popup_ambiguous' : 'virtualized_selection_popup_not_found',
         popupCount: popup.surfaces.length,
         popupCorrelation: popup.correlation,
         popupOpenedByTransaction,
-      };
+      });
     }
     const surface = popup.surfaces[0];
     const scrollables = [surface, ...deepElements(surface)].filter((node) => (
@@ -240,18 +275,18 @@ function buildVirtualizedOptionSelectionFunction({ expectedSelection, maxScrolls
     }
     const bestRank = Math.max(0, ...[...matches.values()].map((entry) => entry.rank));
     const bestMatches = [...matches.values()].filter((entry) => entry.rank === bestRank);
-    if (bestMatches.length !== 1) {
-      return {
+    if (bestMatches.length === 0) {
+      return JSON.stringify({
         ok: false,
-        reason: bestMatches.length ? 'virtualized_selection_semantic_ambiguous' : 'virtualized_selection_option_not_found',
-        candidateCount: bestMatches.length,
-        matchedLabels: bestMatches.map((entry) => entry.label),
+        reason: 'virtualized_selection_option_not_found',
+        candidateCount: 0,
+        matchedLabels: [],
         observedLabels: [...observedLabels],
         scanCount,
         scrollProgressCount,
         scrollableCount: scrollables.length,
         popupCorrelation: popup.correlation,
-      };
+      });
     }
     const chosen = bestMatches[0];
     scrollables.forEach((node, index) => {
@@ -265,32 +300,33 @@ function buildVirtualizedOptionSelectionFunction({ expectedSelection, maxScrolls
         && visible(actionOwner(node))
     ));
     const renderedOwners = [...new Set(exactRendered.map(actionOwner))];
-    // optionSelector now includes '*' (needed for widgets that render an
-    // option with no ARIA role at all — see optionSelector's own comment),
-    // which means a single visual option can produce several matching
-    // wrapper/leaf elements at different DOM depths, each resolving to a
-    // different actionOwner (itself, when .closest() finds no interactive
-    // ancestor). Confirmed live: this alone turned a genuinely unique
-    // option into 4 "ambiguous" owners. Collapse to the leaf-most owners —
-    // if one owner contains another as a descendant, it's the same visual
-    // option seen at a shallower depth, not a second distinct option.
     const exactOwners = renderedOwners.filter((owner) => (
       !renderedOwners.some((other) => other !== owner && owner.contains(other))
     ));
-    if (exactOwners.length !== 1) {
-      return {
+    const target = exactOwners[0] || renderedOwners[0];
+    if (!target) {
+      return JSON.stringify({
         ok: false,
-        reason: exactOwners.length ? 'virtualized_selection_rendered_candidate_ambiguous' : 'virtualized_selection_rendered_candidate_missing',
-        candidateCount: exactOwners.length,
+        reason: 'virtualized_selection_rendered_candidate_missing',
+        candidateCount: 0,
         selectedLabel: chosen.label,
-      };
+      });
     }
-    const target = exactOwners[0];
     if (target.disabled || clean(attr(target, 'aria-disabled')).toLowerCase() === 'true') {
-      return { ok: false, reason: 'virtualized_selection_option_disabled', candidateCount: 1 };
+      return JSON.stringify({ ok: false, reason: 'virtualized_selection_option_disabled', candidateCount: 1 });
     }
     target.scrollIntoView?.({ block: 'nearest', inline: 'nearest', behavior: 'auto' });
+    const evtOpts = { bubbles: true, cancelable: true, view: window, composed: true };
+    try { target.dispatchEvent(new PointerEvent('pointerdown', evtOpts)); } catch (_) {}
+    try { target.dispatchEvent(new MouseEvent('mousedown', evtOpts)); } catch (_) {}
+    try { target.dispatchEvent(new PointerEvent('pointerup', evtOpts)); } catch (_) {}
+    try { target.dispatchEvent(new MouseEvent('mouseup', evtOpts)); } catch (_) {}
     target.click();
+    try {
+      if (exactOwner && exactOwner !== target) {
+        exactOwner.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
+      }
+    } catch (_) {}
     await settle();
     const ownerValues = [exactOwner, ...deepElements(exactOwner)].flatMap((node) => [
       node?.value,
@@ -300,13 +336,7 @@ function buildVirtualizedOptionSelectionFunction({ expectedSelection, maxScrolls
       node === exactOwner ? node.textContent : null,
     ]).map(clean).filter(Boolean);
     const ownerMatched = ownerValues.some((value) => semanticRank(payload.expectedSelection, value) > 0);
-    return {
-      // Reaching this return means one unique, enabled option whose label
-      // semantically matched the authored value was clicked exactly once.
-      // A framework rerender can detach the exact owner before the local readback,
-      // so a missing owner value is not positive non-delivery. Preserve the
-      // exact-option acknowledgment and let the controller prefer a fresh
-      // owner readback when one remains available.
+    return JSON.stringify({
       ok: true,
       actionPerformed: true,
       expectedSelectionMatched: true,
@@ -322,7 +352,7 @@ function buildVirtualizedOptionSelectionFunction({ expectedSelection, maxScrolls
       scrollableCount: scrollables.length,
       popupCorrelation: popup.correlation,
       popupOpenedByTransaction,
-    };
+    });
   }`;
 }
 
@@ -348,7 +378,7 @@ function buildBoundSelectionOwnerReadFunction({ expectedSelection, probeOnly = f
       if (payload.expectedSelection) {
         const cleanSpecial = (s) => String(s || '').replace(/^[\*\-•\s]+/, '').trim();
         const expClean = token(cleanSpecial(payload.expectedSelection));
-        const allElements = Array.from(document.querySelectorAll('.selected-item, .chip, .badge, [class*="selected" i], [class*="value" i], [class*="tag" i], .field, .control, span, div, p, label, button, input'));
+        const allElements = Array.from(document.querySelectorAll('.selected-item, .chip, .badge, [class*="selected" i], [class*="value" i], [class*="tag" i], .field, .control, span, div, p, label, button, input, a'));
         const found = allElements.find((el) => {
           if (!visible(el)) return false;
           const t = token(clean(el.value || el.innerText || el.textContent));
@@ -358,7 +388,7 @@ function buildBoundSelectionOwnerReadFunction({ expectedSelection, probeOnly = f
         });
         if (found) {
           const valText = clean(found.value || found.innerText || found.textContent);
-          return {
+          return JSON.stringify({
             ok: true,
             reason: 'exact_bound_selection_owner_value_observed',
             expectedSelection: payload.expectedSelection,
@@ -375,10 +405,10 @@ function buildBoundSelectionOwnerReadFunction({ expectedSelection, probeOnly = f
             tag: 'div',
             candidateCount: 1,
             valueCandidateCount: 1,
-          };
+          });
         }
       }
-      return {
+      return JSON.stringify({
         ok: false,
         reason: 'bound_selection_owner_unavailable',
         expectedSelection: payload.expectedSelection,
@@ -386,7 +416,7 @@ function buildBoundSelectionOwnerReadFunction({ expectedSelection, probeOnly = f
         matched: false,
         popupOpen: null,
         invalid: null,
-      };
+      });
     }
 
     const interactiveSelector = [
@@ -425,19 +455,27 @@ function buildBoundSelectionOwnerReadFunction({ expectedSelection, probeOnly = f
       .filter((node) => {
         const labelledBy = clean(attr(node, 'aria-labelledby')).split(/\\s+/).filter(Boolean);
         return visible(node) && ownerIds.some((id) => labelledBy.includes(id));
+      });
     const globalPopups = Array.from(document.querySelectorAll?.('[role="dialog"], [role="listbox"], [role="menu"], [role="grid"], .datepicker, .calendar, .flatpickr-calendar, .p-datepicker, .ant-picker-dropdown, [class*="calendar" i], [class*="datepicker" i], [class*="picker" i]') || [])
       .filter(visible);
+    const closestPopup = exactOwner.closest?.('.dropdown, .btn-group, .select, .field, .control, form, div')?.querySelector?.('[role="listbox"], [role="menu"], .dropdown-menu, ul, [class*="menu" i]')
+      || exactOwner.parentElement?.querySelector?.('[role="listbox"], [role="menu"], .dropdown-menu, ul, [class*="menu" i]');
+    const activeGlobal = globalPopups.filter((p) => p.classList?.contains('show') || p.classList?.contains('open') || p.style?.display === 'block');
+    const isOwnerOrContainerActive = [exactOwner, owner, exactOwner.parentElement, exactOwner.closest?.('.dropdown, .btn-group, .select, .field, .control')]
+      .some((el) => el && (el.classList?.contains('show') || el.classList?.contains('open') || el.classList?.contains('active') || attr(el, 'aria-expanded') === 'true'));
     const exactControlledPopups = Array.from(new Set([
       ...controlledPopups,
       ...labelledPopups,
-      ...(controlledPopups.length === 0 && labelledPopups.length === 0 ? globalPopups : []),
+      ...(controlledPopups.length === 0 && labelledPopups.length === 0
+        ? (closestPopup && (visible(closestPopup) || isOwnerOrContainerActive) ? [closestPopup] : (activeGlobal.length > 0 ? activeGlobal : (closestPopup ? [closestPopup] : [])))
+        : []),
     ]));
     const expandedValues = [
       attr(exactOwner, 'aria-expanded'),
       attr(owner, 'aria-expanded'),
     ].filter((value) => value != null);
-    const ownerExpanded = expandedValues.includes('true') || (payload.probeOnly && globalPopups.length > 0);
-    const popupOpen = ownerExpanded || exactControlledPopups.length > 0;
+    const ownerExpanded = expandedValues.includes('true') || isOwnerOrContainerActive || (payload.probeOnly && (globalPopups.length > 0 || isOwnerOrContainerActive));
+    const popupOpen = ownerExpanded || exactControlledPopups.length > 0 || isOwnerOrContainerActive;
     // '*' added for the same reason as optionSelector above — a real
     // widget on this site renders its unselected option with no ARIA role
     // at all, so no role-based CSS selector can ever match it. Scoped to
@@ -556,6 +594,15 @@ function buildBoundSelectionOwnerReadFunction({ expectedSelection, probeOnly = f
       const expectedItems = expTok.split(/[\\/|>»→,;]+/).map(token).filter(Boolean);
       const actualItems = withoutQualifier.split(/[\\/|>»→,;]+/).map(token).filter(Boolean);
 
+      const normTime = (s) => {
+        const m = clean(s).match(/\\b0?(\\d{1,2}):(\\d{2})(?::\\d{2})?\\s*(AM|PM)?\\b/i);
+        if (m) return String(Number(m[1])) + ':' + String(m[2]) + (m[3] ? ' ' + String(m[3]).toUpperCase() : '');
+        return null;
+      };
+      const expTime = normTime(expected);
+      const actTime = normTime(actVal);
+      if (expTime && actTime && (expTime === actTime || expTime.replace(/\\s*[AP]M/, '') === actTime.replace(/\\s*[AP]M/, ''))) return 3;
+
       if (expectedItems.includes(actTok) || actualItems.includes(expTok)) return 2;
       if (expectedItems.some(e => actualItems.includes(e))) return 2;
       if (expectedItems.some(e => actTok.includes(e) || e.includes(actTok))) return 1;
@@ -571,7 +618,7 @@ function buildBoundSelectionOwnerReadFunction({ expectedSelection, probeOnly = f
     if (!payload.probeOnly && matchingValues.length === 0 && payload.expectedSelection) {
       const cleanSpecial = (s) => String(s || '').replace(/^[\\*\\-•\\s]+/, '').trim();
       const expClean = token(cleanSpecial(payload.expectedSelection));
-      const allElements = Array.from(document.querySelectorAll('.selected-item, .chip, .badge, [class*="selected" i], [class*="value" i], [class*="tag" i], .field, .control, span, div, p, label, button, input'));
+      const allElements = Array.from(document.querySelectorAll('.selected-item, .chip, .badge, [class*="selected" i], [class*="value" i], [class*="tag" i], .field, .control, span, div, p, label, button, input, a'));
       const found = allElements.find((el) => {
         if (!visible(el)) return false;
         const t = token(clean(el.value || el.innerText || el.textContent));
@@ -590,7 +637,7 @@ function buildBoundSelectionOwnerReadFunction({ expectedSelection, probeOnly = f
       owner,
       ...Array.from(owner.querySelectorAll?.('[aria-invalid="true"]') || []),
     ].some((node) => attr(node, 'aria-invalid') === 'true');
-    return {
+    return JSON.stringify({
       ok: true,
       reason: payload.probeOnly
         ? 'exact_bound_popup_ownership_observed'
@@ -611,7 +658,7 @@ function buildBoundSelectionOwnerReadFunction({ expectedSelection, probeOnly = f
       tag: clean(exactOwner.tagName).toLowerCase(),
       candidateCount: 1,
       valueCandidateCount: uniqueValues.length,
-    };
+    });
   }`;
 }
 

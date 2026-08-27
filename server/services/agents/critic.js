@@ -104,7 +104,7 @@ Rules:
  * @param {function} [opts.onLog]
  * @returns {Promise<{ rewrites: Array, notes: string }>}
  */
-async function run({ apiKey, model, runOutcome, onLog = async () => {}, onRateLimit, extraGuidance, provider: providerName } = {}) {
+async function run({ apiKey, model, runOutcome, onLog = async () => {}, onRateLimit, extraGuidance, provider: providerName, signal } = {}) {
   if (!apiKey) {
     const err = new Error('AI provider API key missing.');
     err.code = 'NO_API_KEY';
@@ -165,6 +165,7 @@ async function run({ apiKey, model, runOutcome, onLog = async () => {}, onRateLi
       ],
       onRateLimit,
       responseFormat: 'json',
+      signal,
     });
   } catch (err) {
     await onLog('error', `Critic call failed: ${err.message}`);

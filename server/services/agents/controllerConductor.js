@@ -644,6 +644,8 @@ async function run({
         tcId: testCase.id,
       });
 
+      const caseStartScreenshotIndex = Array.isArray(browserSession?.screenshots) ? browserSession.screenshots.length : 0;
+
       const contract = compileOperationContractV2({
         ...testCase,
         steps: decodeJson(testCase.steps, []) || [],
@@ -738,7 +740,7 @@ async function run({
           gateway,
           compositeExecutor,
           recoveryCoordinator,
-          defaultDeadlineMs: 7_000,
+          defaultDeadlineMs: 35_000,
           defaultObservationAttempts: 6,
           defaultResolutionAttempts: 3,
         },
@@ -810,6 +812,7 @@ async function run({
             screenshots: encodeJson(
               Array.isArray(browserSession?.screenshots)
                 ? browserSession.screenshots
+                    .slice(caseStartScreenshotIndex)
                     .map((s, idx) => ({
                       url: s.path || s.artifactRef || (typeof s === 'string' ? s : s.url),
                       stepIndex: Number.isFinite(Number(s.stepIndex)) ? Number(s.stepIndex) : (idx + 1),
@@ -900,12 +903,14 @@ async function run({
             blockedReason: 'controller_internal_error',
             screenshots: encodeJson(
               Array.isArray(browserSession?.screenshots)
-                ? browserSession.screenshots.map((s, idx) => ({
-                    url: s.path || s.artifactRef || (typeof s === 'string' ? s : s.url),
-                    stepIndex: s.stepIndex ?? (idx + 1),
-                    action: s.action || s.label || 'Action evidence',
-                    ts: s.capturedAt || s.ts || Date.now(),
-                  })).filter((s) => s.url)
+                ? browserSession.screenshots
+                    .slice(caseStartScreenshotIndex)
+                    .map((s, idx) => ({
+                      url: s.path || s.artifactRef || (typeof s === 'string' ? s : s.url),
+                      stepIndex: s.stepIndex ?? (idx + 1),
+                      action: s.action || s.label || 'Action evidence',
+                      ts: s.capturedAt || s.ts || Date.now(),
+                    })).filter((s) => s.url)
                 : []
             ),
             stepResults: encodeJson([]),
