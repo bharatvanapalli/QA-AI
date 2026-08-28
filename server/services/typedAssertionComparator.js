@@ -46,41 +46,37 @@ function compareText(expected, actual, comparator = 'contains', options = {}) {
   const cleanLeft = left.replace(/^[*_`"'\s]+|[*_`"'\s]+$/g, '');
   const cleanRight = right.replace(/^[*_`"'\s]+|[*_`"'\s]+$/g, '');
   let matched;
+  const isCaseSensitive = options.caseSensitive === true;
   if (op === 'equals' || op === 'eq') {
-    // A bare prefix match used to count as "equals" for ANY pair of strings
-    // >=3 chars — confirmed live to false-pass a Customer-selection assertion
-    // where the field showed "SIGROUP" against an expected
-    // "*SIGROUP-EUR SOURCE SYSTEM 01" (a 21-character, ~75% length gap):
-    // one being a literal prefix of the other is not evidence the display
-    // was merely UI-truncated. Only accept a prefix match when the shorter
-    // string is genuinely almost the whole string (a couple of characters
-    // could plausibly be lost to a CSS ellipsis) or the longer text's raw
-    // (uncleaned) form actually ends in an ellipsis marker.
-    const shorter = Math.min(cleanLeft.length, cleanRight.length);
-    const longer = Math.max(cleanLeft.length, cleanRight.length);
-    const plausibleUiTruncation = longer > 0 && (shorter / longer) >= 0.9;
-    const endsWithEllipsis = /(?:…|\.\.\.)\s*$/.test(left) || /(?:…|\.\.\.)\s*$/.test(right);
-    const isDomainCodeMatch = (
-      (cleanLeft === 'collect' && cleanRight === 'col')
-      || (cleanLeft === 'col' && cleanRight === 'collect')
-      || (cleanLeft.startsWith('pre-paid') && cleanRight === 'ppd')
-      || (cleanLeft === 'ppd' && cleanRight.startsWith('pre-paid'))
-      || (cleanLeft === 'prepaid' && cleanRight === 'ppd')
-      || (cleanLeft === 'ppd' && cleanRight === 'prepaid')
-    );
-    const isTokenBoundaryMatch = (
-      cleanLeft.length >= 3 && cleanRight.length >= 3
-      && (
-        new RegExp(`(?:^|[\\s\\-_/:])${cleanRight.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}(?:$|[\\s\\-_/:])`, 'i').test(cleanLeft)
-        || new RegExp(`(?:^|[\\s\\-_/:])${cleanLeft.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}(?:$|[\\s\\-_/:])`, 'i').test(cleanRight)
-      )
-    );
-    matched = left === right || cleanLeft === cleanRight || isDomainCodeMatch || isTokenBoundaryMatch
-      || (
-        cleanLeft.length >= 3 && cleanRight.length >= 3
-        && (cleanLeft.startsWith(cleanRight) || cleanRight.startsWith(cleanLeft))
-        && (plausibleUiTruncation || endsWithEllipsis)
+    if (isCaseSensitive) {
+      matched = left === right || cleanLeft === cleanRight;
+    } else {
+      const shorter = Math.min(cleanLeft.length, cleanRight.length);
+      const longer = Math.max(cleanLeft.length, cleanRight.length);
+      const plausibleUiTruncation = longer > 0 && (shorter / longer) >= 0.9;
+      const endsWithEllipsis = /(?:…|\.\.\.)\s*$/.test(left) || /(?:…|\.\.\.)\s*$/.test(right);
+      const isDomainCodeMatch = (
+        (cleanLeft === 'collect' && cleanRight === 'col')
+        || (cleanLeft === 'col' && cleanRight === 'collect')
+        || (cleanLeft.startsWith('pre-paid') && cleanRight === 'ppd')
+        || (cleanLeft === 'ppd' && cleanRight.startsWith('pre-paid'))
+        || (cleanLeft === 'prepaid' && cleanRight === 'ppd')
+        || (cleanLeft === 'ppd' && cleanRight === 'prepaid')
       );
+      const isTokenBoundaryMatch = (
+        cleanLeft.length >= 3 && cleanRight.length >= 3
+        && (
+          new RegExp(`(?:^|[\\s\\-_/:])${cleanRight.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}(?:$|[\\s\\-_/:])`, 'i').test(cleanLeft)
+          || new RegExp(`(?:^|[\\s\\-_/:])${cleanLeft.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}(?:$|[\\s\\-_/:])`, 'i').test(cleanRight)
+        )
+      );
+      matched = left === right || cleanLeft === cleanRight || isDomainCodeMatch || isTokenBoundaryMatch
+        || (
+          cleanLeft.length >= 3 && cleanRight.length >= 3
+          && (cleanLeft.startsWith(cleanRight) || cleanRight.startsWith(cleanLeft))
+          && (plausibleUiTruncation || endsWithEllipsis)
+        );
+    }
   }
   else if (op === 'not_equals' || op === 'ne') matched = left !== right && cleanLeft !== cleanRight;
   else if (op === 'contains') matched = left.includes(right) || cleanLeft.includes(cleanRight) || cleanRight.includes(cleanLeft);
