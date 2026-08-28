@@ -220,8 +220,8 @@ function createBrowserTransactionController({
 
   const waitBeforeReconciliationObservation = async (operation, attempt, deadlineMs) => {
     const requestedMs = attempt <= 1
-      ? (operation.kind === 'assertion' ? 80 : 50)
-      : Math.min(300, 80 * attempt);
+      ? (operation.kind === 'assertion' ? 20 : 10)
+      : Math.min(80, 20 * attempt);
     const remainingMs = deadlineMs - Number(now());
     const waitMs = Math.max(0, Math.min(requestedMs, remainingMs - 1));
     if (waitMs <= 0) return;

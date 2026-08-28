@@ -1057,7 +1057,7 @@ function createConductorUniversalRuntime({
           && semanticResolution?.ambiguous !== true
           && Number(semanticResolution?.candidateCount || 0) === 0
           && semanticTarget?.optionalAssist !== true
-          && typeof hooks.revealTarget === 'function'
+          && kind === 'scroll'
           && !revealedPhaseIds.has(phase.id)
         ) {
           revealedPhaseIds.add(phase.id);

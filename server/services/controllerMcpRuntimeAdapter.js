@@ -2807,7 +2807,11 @@ function createControllerMcpRuntimeAdapter({
                   }
                 } catch (_) {}
               }
-              await page.waitForTimeout(250).catch(() => {});
+              // Cleanly dismiss any open floating overlays/popups so subsequent fields are not obstructed
+              try {
+                await page.keyboard.press('Escape').catch(() => {});
+                await page.waitForTimeout(50).catch(() => {});
+              } catch (_) {}
             }
           }
         } catch (_) {}
