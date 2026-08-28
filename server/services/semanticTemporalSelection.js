@@ -465,7 +465,9 @@ function buildCalendarCommitFunction({ accessibleName, expectedDate } = {}) {
     let committedDate = readOwnerDate();
     if (committedDate !== payload.expectedDate) {
       try {
-        owner.value = payload.expectedDate;
+        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, \'value\')?.set || Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, \'value\')?.set;
+          if (setter) setter.call(owner, payload.expectedDate);
+          else owner.value = payload.expectedDate;
         owner.dispatchEvent(new Event('input', { bubbles: true }));
         owner.dispatchEvent(new Event('change', { bubbles: true }));
         await settle();
@@ -527,6 +529,7 @@ function timeFieldResolverSource() {
         || (/\\btime\\b/i.test(identity) && !/\\bdate\\b|\\btime\\s*zone\\b|\\btimezone\\b/i.test(identity))
         || Boolean(normalizeTime(fieldValue(node)))
         || Boolean(normalizeTime(node?.getAttribute?.('placeholder')));
+    };
     const resolveTimeField = (boundOwner) => {
       if (boundOwner && (isExplicitTime(boundOwner) || (isEditable(boundOwner) && !isDateLike(boundOwner)))) {
         return {
@@ -985,7 +988,9 @@ function buildTimeOptionSelectionFunction({ expectedTime, revealOnly = false } =
         let committed = ownerTime();
         if (committed !== expected) {
           try {
-            timeField.value = payload.expectedTime;
+            const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, \'value\')?.set || Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, \'value\')?.set;
+            if (setter) setter.call(timeField, payload.expectedTime);
+            else timeField.value = payload.expectedTime;
             timeField.dispatchEvent(new Event('input', { bubbles: true }));
             timeField.dispatchEvent(new Event('change', { bubbles: true }));
             await settle();

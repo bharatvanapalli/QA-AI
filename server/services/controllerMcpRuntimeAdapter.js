@@ -4945,22 +4945,7 @@ function createControllerMcpRuntimeAdapter({
           
           try {
             await page.waitForTimeout(150);
-            const stepNum = operation?.ordinal || (operations.findIndex((o) => o.operationId === operationId) + 1) || 8;
-            const shot = await mcp.captureLiveEvidenceScreenshot(session, {
-              label: `click_and_hold_evidence_${Date.now()}`,
-            });
-            if (shot) {
-              if (!session.screenshots) session.screenshots = [];
-              session.screenshots.push({
-                ...shot,
-                path: shot.artifactRef,
-                stepIndex: stepNum,
-                action: 'ClickAndHold',
-                target: elementLabel || targetRef || 'Button Hold!',
-                label: `click_and_hold_evidence_${Date.now()}`,
-              });
-            }
-          } catch (_) {}
+            const stepNum = operation?.ordinal || (operations.findIndex((o) => o.operationId === operationId) + 1) || 8;} catch (_) {}
         } else {
           result = { isError: true, content: [{ type: 'text', text: 'No page available for click and hold' }] };
         }
@@ -5042,24 +5027,7 @@ function createControllerMcpRuntimeAdapter({
             });
 
             try {
-              await page.waitForTimeout(150);
-              const shot = await mcp.captureLiveEvidenceScreenshot(session, {
-                label: `print_inspect_evidence_${Date.now()}`,
-                timeoutMs: 4_000,
-              });
-              if (shot) {
-                if (!session.screenshots) session.screenshots = [];
-                session.screenshots.push({
-                  ...shot,
-                  url: shot.artifactRef || shot.path || shot.url,
-                  path: shot.artifactRef || shot.path || shot.url,
-                  stepIndex: stepNum,
-                  action: 'Print',
-                  target: targetSearch || 'All window titles',
-                  label: `print_inspect_evidence_${Date.now()}`,
-                });
-              }
-            } catch (_) {}
+              await page.waitForTimeout(150);} catch (_) {}
 
             result = { isError: false, content: [{ type: 'text', text: `[PRINT] "${targetSearch || 'All window titles'}": ${printedText}` }] };
             return result;
@@ -5370,24 +5338,7 @@ function createControllerMcpRuntimeAdapter({
           result = { isError: false, content: [{ type: 'text', text: `[PRINT] "${elementLabel || targetRef || 'element'}": ${printedText}` }] };
 
           try {
-            await page.waitForTimeout(150);
-            const shot = await mcp.captureLiveEvidenceScreenshot(session, {
-              label: `print_inspect_evidence_${Date.now()}`,
-              timeoutMs: 4_000,
-            });
-            if (shot) {
-              if (!session.screenshots) session.screenshots = [];
-              session.screenshots.push({
-                ...shot,
-                url: shot.artifactRef || shot.path || shot.url,
-                path: shot.artifactRef || shot.path || shot.url,
-                stepIndex: stepNum,
-                action: 'Print',
-                target: elementLabel || targetRef || 'element',
-                label: `print_inspect_evidence_${Date.now()}`,
-              });
-            }
-          } catch (shotErr) {
+            await page.waitForTimeout(150);} catch (shotErr) {
             console.error('[isInspectOp] Screenshot capture error:', shotErr?.message || shotErr);
           }
         } else {
@@ -5511,24 +5462,7 @@ function createControllerMcpRuntimeAdapter({
           });
 
           try {
-            await targetPage.waitForTimeout(200);
-            const shot = await mcp.captureLiveEvidenceScreenshot(session, {
-              label: `switch_tab_evidence_${Date.now()}`,
-              timeoutMs: 4_000,
-            });
-            if (shot) {
-              if (!session.screenshots) session.screenshots = [];
-              session.screenshots.push({
-                ...shot,
-                url: shot.artifactRef || shot.path || shot.url,
-                path: shot.artifactRef || shot.path || shot.url,
-                stepIndex: stepNum,
-                action: 'SwitchTab',
-                target: rawTarget,
-                label: `switch_tab_evidence_${Date.now()}`,
-              });
-            }
-          } catch (_) {}
+            await targetPage.waitForTimeout(200);} catch (_) {}
 
           result = { isError: false, content: [{ type: 'text', text: `Switched to tab: "${targetTitle}" (${targetPage.url()})` }] };
         } else {
@@ -5597,24 +5531,7 @@ function createControllerMcpRuntimeAdapter({
           });
 
           try {
-            await (session.activePage || pages[0]).waitForTimeout(150);
-            const shot = await mcp.captureLiveEvidenceScreenshot(session, {
-              label: `close_tab_evidence_${Date.now()}`,
-              timeoutMs: 4_000,
-            });
-            if (shot) {
-              if (!session.screenshots) session.screenshots = [];
-              session.screenshots.push({
-                ...shot,
-                url: shot.artifactRef || shot.path || shot.url,
-                path: shot.artifactRef || shot.path || shot.url,
-                stepIndex: stepNum,
-                action: 'CloseTab',
-                target: rawTarget,
-                label: `close_tab_evidence_${Date.now()}`,
-              });
-            }
-          } catch (_) {}
+            await (session.activePage || pages[0]).waitForTimeout(150);} catch (_) {}
 
           result = { isError: false, content: [{ type: 'text', text: `Closed ${closedCount} child window(s)` }] };
         } else {
@@ -5667,24 +5584,7 @@ function createControllerMcpRuntimeAdapter({
 
             try {
               if (parentPage) {
-                await parentPage.waitForTimeout(150);
-                const shot = await mcp.captureLiveEvidenceScreenshot(session, {
-                  label: `close_tab_evidence_${Date.now()}`,
-                  timeoutMs: 4_000,
-                });
-                if (shot) {
-                  if (!session.screenshots) session.screenshots = [];
-                  session.screenshots.push({
-                    ...shot,
-                    url: shot.artifactRef || shot.path || shot.url,
-                    path: shot.artifactRef || shot.path || shot.url,
-                    stepIndex: stepNum,
-                    action: 'CloseTab',
-                    target: rawTarget,
-                    label: `close_tab_evidence_${Date.now()}`,
-                  });
-                }
-              }
+                await parentPage.waitForTimeout(150);}
             } catch (_) {}
 
             result = { isError: false, content: [{ type: 'text', text: `Closed tab: ${closedUrl}` }] };
@@ -5730,24 +5630,7 @@ function createControllerMcpRuntimeAdapter({
           });
 
           try {
-            await page.waitForTimeout(150);
-            const shot = await mcp.captureLiveEvidenceScreenshot(session, {
-              label: `navigate_back_evidence_${Date.now()}`,
-              timeoutMs: 4_000,
-            });
-            if (shot) {
-              if (!session.screenshots) session.screenshots = [];
-              session.screenshots.push({
-                ...shot,
-                url: shot.artifactRef || shot.path || shot.url,
-                path: shot.artifactRef || shot.path || shot.url,
-                stepIndex: stepNum,
-                action: 'NavigateBack',
-                target: 'Browser History',
-                label: `navigate_back_evidence_${Date.now()}`,
-              });
-            }
-          } catch (_) {}
+            await page.waitForTimeout(150);} catch (_) {}
 
           result = { isError: false, content: [{ type: 'text', text: `Navigated back to ${page.url()}` }] };
         } else {
@@ -5825,7 +5708,7 @@ function createControllerMcpRuntimeAdapter({
                 el = selects.find(s => !s.multiple && Array.from(s.options).some(o => {
                   const t = (o.text || '').trim().toLowerCase();
                   const v = (o.value || '').trim().toLowerCase();
-                  return t.includes(valLower) || valLower.includes(t);
+                  return (valLower && t.includes(valLower)) || (t && valLower.includes(t));
                 }));
               }
             }
@@ -5921,7 +5804,7 @@ function createControllerMcpRuntimeAdapter({
                   if (!isVis) return false;
                   const t = (opt.innerText || opt.textContent || '').trim().toLowerCase();
                   const tClean = cleanSpecial(t);
-                  return t === targetVal || tClean === targetClean || (targetClean && (tClean.includes(targetClean) || targetClean.includes(tClean)));
+                  return t === targetVal || (tClean && tClean === targetClean) || (targetClean && tClean.includes(targetClean)) || (tClean && targetClean.includes(tClean));
                 });
                 
                 // If not found and input exists, click/focus the input to open suggestion list
@@ -5945,7 +5828,7 @@ function createControllerMcpRuntimeAdapter({
                       if (!isVis) return false;
                       const t = (opt.innerText || opt.textContent || '').trim().toLowerCase();
                       const tClean = cleanSpecial(t);
-                      return t === targetVal || tClean === targetClean || (targetClean && (tClean.includes(targetClean) || targetClean.includes(tClean)));
+                      return t === targetVal || (tClean && tClean === targetClean) || (targetClean && tClean.includes(targetClean)) || (tClean && targetClean.includes(tClean));
                     });
                   }
                 }
@@ -5976,7 +5859,7 @@ function createControllerMcpRuntimeAdapter({
               matchedOpt = Array.from(el.options).find(opt => {
                 const optText = (opt.text || '').trim().toLowerCase();
                 const optVal = (opt.value || '').trim().toLowerCase();
-                return optText === targetVal || optVal === targetVal || optText.includes(targetVal) || targetVal.includes(optText);
+                return optText === targetVal || optVal === targetVal || (targetVal && optText.includes(targetVal)) || (optText && targetVal.includes(optText));
               });
             }
             if (matchedOpt) {
@@ -6030,20 +5913,7 @@ function createControllerMcpRuntimeAdapter({
                   if (el && window.__qaai_highlight) window.__qaai_highlight(el);
                 }, selectResult.id).catch(() => {});
               }
-              const stepNum = operation?.ordinal || (operations.findIndex((o) => o.operationId === operationId) + 1) || 2;
-              const shot = await takePageEvidenceScreenshot(session, `select_evidence_${Date.now()}`);
-              if (shot) {
-                if (!session.screenshots) session.screenshots = [];
-                session.screenshots.push({
-                  ...shot,
-                  path: shot.artifactRef,
-                  stepIndex: stepNum,
-                  action: 'Select',
-                  target: targetSearch || 'dropdown',
-                  label: `select_evidence_${Date.now()}`,
-                });
-              }
-            } catch (_) {}
+              const stepNum = operation?.ordinal || (operations.findIndex((o) => o.operationId === operationId) + 1) || 2;} catch (_) {}
           } else {
             result = { isError: true, content: [{ type: 'text', text: `Select failed: ${selectResult.error}` }] };
           }
@@ -6156,22 +6026,7 @@ function createControllerMcpRuntimeAdapter({
 
             try {
               await page.waitForTimeout(150);
-              const stepNum = operation?.ordinal || (operations.findIndex((o) => o.operationId === operationId) + 1) || 1;
-              const shot = await mcp.captureLiveEvidenceScreenshot(session, {
-                label: `select_multiple_evidence_${Date.now()}`,
-              });
-              if (shot) {
-                if (!session.screenshots) session.screenshots = [];
-                session.screenshots.push({
-                  ...shot,
-                  path: shot.artifactRef,
-                  stepIndex: stepNum,
-                  action: 'SelectMultiple',
-                  target: targetSearch || 'dropdown',
-                  label: `select_multiple_evidence_${Date.now()}`,
-                });
-              }
-            } catch (_) {}
+              const stepNum = operation?.ordinal || (operations.findIndex((o) => o.operationId === operationId) + 1) || 1;} catch (_) {}
           } else {
             result = { isError: true, content: [{ type: 'text', text: `Multi-select failed: ${selectResult.error}` }] };
           }
@@ -6548,12 +6403,30 @@ function createControllerMcpRuntimeAdapter({
         || ['select-option', 'commit-date', 'select-time-option', 'reveal-owner', 'recovery-activation'].includes(args?.purpose)
         || (args?.function && /dispatchEvent|focus|click|scrollIntoView|nativeInputValueSetter/i.test(String(args.function)))
       );
-    const shouldCaptureScreenshot = result && !result.isError && (
-      EVIDENCE_SCREENSHOT_TOOLS.has(toolName)
-      || isMutatingEvaluate
-    );
+    const isExcludedForScreenshot = ['browser_snapshot', 'browser_take_screenshot'].includes(toolName)
+      || (toolName === 'browser_evaluate' && !isMutatingEvaluate && !isClearOp && !isScrollOp && !isDragOp && !isHoldOp && !isSwitchTabOp && !isCloseTabOp && !isSelectMultipleOp && !isRightClickOp && !isPrintInspectOp);
+    const shouldCaptureScreenshot = result && !result.isError && !isExcludedForScreenshot;
+
     if (shouldCaptureScreenshot) {
       try {
+        const page = session?.activePage || session?.pages?.[0];
+        const targetSearch = clean(elementLabel || targetRef || normalized?.element || normalized?.label || normalized?.target || normalized?.url || '');
+        if (page && targetSearch) {
+          await page.evaluate((q) => {
+            if (typeof window.__qaai_highlight === 'function') {
+              const query = String(q || '').toLowerCase();
+              const el = Array.from(document.querySelectorAll('*')).find(e => {
+                const text = (e.innerText || e.textContent || '').trim().toLowerCase();
+                const aria = (e.getAttribute('aria-label') || '').toLowerCase();
+                const id = (e.id || '').toLowerCase();
+                const name = (e.name || '').toLowerCase();
+                const placeholder = (e.placeholder || '').toLowerCase();
+                return [text, aria, id, name, placeholder].some(t => t && (t === query || t.includes(query) || query.includes(t)));
+              });
+              if (el) window.__qaai_highlight(el);
+            }
+          }, targetSearch).catch(() => {});
+        }
         await new Promise((r) => setTimeout(r, 120));
         const shot = await mcp.captureLiveEvidenceScreenshot(session, { label: `${toolName}_evidence_${Date.now()}` });
         if (shot) {
@@ -6561,7 +6434,7 @@ function createControllerMcpRuntimeAdapter({
           const operation = operations.find((o) => o.operationId === operationId) || null;
           const stepIndex = operation?.ordinal || entry?.ordinal || (operations.findIndex((o) => o.operationId === operationId) + 1) || 1;
           const actionName = operation?.authoredType || operation?.type || entry?.toolName || toolName;
-          const stepTarget = elementLabel || clean(operation?.targetIdentity?.label || operation?.targetIdentity?.accessibleName || operation?.target || normalized?.element || normalized?.label || '');
+          const stepTarget = targetSearch;
           session.screenshots.push({
             ...shot,
             path: shot.artifactRef,
