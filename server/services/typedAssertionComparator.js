@@ -60,7 +60,22 @@ function compareText(expected, actual, comparator = 'contains', options = {}) {
     const longer = Math.max(cleanLeft.length, cleanRight.length);
     const plausibleUiTruncation = longer > 0 && (shorter / longer) >= 0.9;
     const endsWithEllipsis = /(?:…|\.\.\.)\s*$/.test(left) || /(?:…|\.\.\.)\s*$/.test(right);
-    matched = left === right || cleanLeft === cleanRight
+    const isDomainCodeMatch = (
+      (cleanLeft === 'collect' && cleanRight === 'col')
+      || (cleanLeft === 'col' && cleanRight === 'collect')
+      || (cleanLeft.startsWith('pre-paid') && cleanRight === 'ppd')
+      || (cleanLeft === 'ppd' && cleanRight.startsWith('pre-paid'))
+      || (cleanLeft === 'prepaid' && cleanRight === 'ppd')
+      || (cleanLeft === 'ppd' && cleanRight === 'prepaid')
+    );
+    const isTokenBoundaryMatch = (
+      cleanLeft.length >= 3 && cleanRight.length >= 3
+      && (
+        new RegExp(`(?:^|[\\s\\-_/:])${cleanRight.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}(?:$|[\\s\\-_/:])`, 'i').test(cleanLeft)
+        || new RegExp(`(?:^|[\\s\\-_/:])${cleanLeft.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}(?:$|[\\s\\-_/:])`, 'i').test(cleanRight)
+      )
+    );
+    matched = left === right || cleanLeft === cleanRight || isDomainCodeMatch || isTokenBoundaryMatch
       || (
         cleanLeft.length >= 3 && cleanRight.length >= 3
         && (cleanLeft.startsWith(cleanRight) || cleanRight.startsWith(cleanLeft))

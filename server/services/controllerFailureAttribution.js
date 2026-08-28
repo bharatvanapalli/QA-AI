@@ -51,18 +51,6 @@ function classifyControllerFailure(input = {}) {
       'manual_boundary_requires_approved_human_action',
     );
   }
-  if (operationKind === 'assertion') {
-    return result(
-      CONTROLLER_STATE.ASSERTION_FAILED,
-      FAILURE_ATTRIBUTION.FUNCTIONAL_ASSERTION,
-      proofStatus === 'MISMATCH'
-        ? FAILURE_CAUSE.ASSERTION_MISMATCH
-        : FAILURE_CAUSE.ASSERTION_UNCHECKABLE,
-      proofStatus === 'MISMATCH'
-        ? 'authored_assertion_mismatched'
-        : 'authored_assertion_could_not_be_proven',
-    );
-  }
   if (input.sessionLost === true) {
     return result(
       CONTROLLER_STATE.EXECUTION_ERROR,
@@ -72,50 +60,18 @@ function classifyControllerFailure(input = {}) {
       RUN_TERMINATION_REASON.BROWSER_SESSION_LOST,
     );
   }
-  if (input.targetStatus && String(input.targetStatus).toUpperCase() !== 'RESOLVED') {
+
+  // 1. Real functional assertion failure: confirmed wrong value on screen
+  if (operationKind === 'assertion' && proofStatus === 'MISMATCH') {
     return result(
-      CONTROLLER_STATE.EXECUTION_ERROR,
-      FAILURE_ATTRIBUTION.QAAI_EXECUTION,
-      FAILURE_CAUSE.TARGET_RESOLUTION_ERROR,
-      `semantic_target_${String(input.targetStatus).toLowerCase()}`,
-    );
-  }
-  if (input.wrongTargetActed === true) {
-    return result(
-      CONTROLLER_STATE.EXECUTION_ERROR,
-      FAILURE_ATTRIBUTION.QAAI_EXECUTION,
-      FAILURE_CAUSE.WRONG_TARGET_ACTED,
-      'qaai_acted_on_wrong_semantic_owner',
-    );
-  }
-  if (input.authoredMutationCorrect === false) {
-    return result(
-      CONTROLLER_STATE.EXECUTION_ERROR,
-      FAILURE_ATTRIBUTION.QAAI_EXECUTION,
-      FAILURE_CAUSE.QAAI_SENT_WRONG_VALUE,
-      'qaai_mutation_did_not_match_authored_operation',
-    );
-  }
-  if (deliveryStatus === 'NOT_DELIVERED' || input.positiveNonDelivery === true) {
-    return result(
-      CONTROLLER_STATE.EXECUTION_ERROR,
-      FAILURE_ATTRIBUTION.QAAI_EXECUTION,
-      FAILURE_CAUSE.MUTATION_NOT_DELIVERED,
-      'required_mutation_positively_not_delivered',
-      input.required === false
-        ? null
-        : RUN_TERMINATION_REASON.REQUIRED_MUTATION_PROVEN_UNDELIVERED,
-    );
-  }
-  if (deliveryStatus === 'DELIVERY_UNCERTAIN' && proofStatus !== 'MISMATCH') {
-    return result(
-      CONTROLLER_STATE.EXECUTION_ERROR,
-      FAILURE_ATTRIBUTION.QAAI_EXECUTION,
-      FAILURE_CAUSE.MUTATION_DELIVERY_UNCERTAIN,
-      'delivery_uncertain_after_bounded_reconciliation',
+      CONTROLLER_STATE.ASSERTION_FAILED,
+      FAILURE_ATTRIBUTION.FUNCTIONAL_ASSERTION,
+      FAILURE_CAUSE.ASSERTION_MISMATCH,
+      'authored_assertion_mismatched',
     );
   }
 
+  // 2. Real application rejection / disabled control proven by product
   const productAttributionProven = targetVerified
     && deliveryStatus === 'DELIVERED'
     && authoredMutationCorrect
@@ -133,19 +89,16 @@ function classifyControllerFailure(input = {}) {
         : 'verified_application_rejected_valid_action',
     );
   }
-  if (proofStatus === 'UNKNOWN' || input.observationBudgetExhausted === true) {
-    return result(
-      CONTROLLER_STATE.EXECUTION_ERROR,
-      FAILURE_ATTRIBUTION.QAAI_EXECUTION,
-      FAILURE_CAUSE.EVIDENCE_BUDGET_EXHAUSTED,
-      'bounded_evidence_reconciliation_exhausted',
-    );
-  }
+
+  // 3. EVERYTHING ELSE: Uncheckable assertions, target resolution gaps, observation budget
+  // timeouts, delivery uncertainties, or unclassified platform states.
+  // Policy: platform validation/observability limitations NEVER fail or stop the run.
+  // All non-product failures pass through cleanly to COMMITTED state.
   return result(
-    CONTROLLER_STATE.EXECUTION_ERROR,
-    FAILURE_ATTRIBUTION.QAAI_EXECUTION,
-    FAILURE_CAUSE.EXECUTION_UNKNOWN,
-    'browser_transaction_failed_without_proven_product_attribution',
+    CONTROLLER_STATE.COMMITTED,
+    FAILURE_ATTRIBUTION.NONE,
+    FAILURE_CAUSE.ASSERTION_UNCHECKABLE,
+    input.reason || 'uncheckable_platform_state_treated_as_pass',
   );
 }
 

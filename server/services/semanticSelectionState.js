@@ -74,15 +74,20 @@ function buildVirtualizedOptionSelectionFunction({ expectedSelection, maxScrolls
       return output;
     };
     const semanticRank = (expected, actual) => {
-      const expClean = clean(expected).replace(/^[*•\s]+/, '').toLowerCase();
-      const actClean = clean(actual).replace(/^[*•\s]+/, '').toLowerCase();
+      const cleanSpecial = (s) => String(s || '')
+        .replace(/^[*•\s]+/, '')
+        .replace(/^(?:first|second|third|fourth|fifth)\s+[^,]+,\s*/i, '')
+        .replace(/^[*•\s]+/, '')
+        .trim();
+      const expClean = cleanSpecial(expected).toLowerCase();
+      const actClean = cleanSpecial(actual).toLowerCase();
       if (!expClean || !actClean) return 0;
       if (actClean === expClean) return 100;
       const expNorm = expClean.replace(/[^a-z0-9]/g, '');
       const actNorm = actClean.replace(/[^a-z0-9]/g, '');
       if (expNorm && actNorm && expNorm === actNorm) return 90;
-      if (actClean.includes(expClean) || expClean.includes(actClean)) return 70;
-      if (expNorm && actNorm && (actNorm.includes(expNorm) || expNorm.includes(actNorm))) return 60;
+      if (actClean.includes(expClean)) return 70;
+      if (expNorm && actNorm && actNorm.includes(expNorm)) return 60;
       const expWords = expClean.replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter((w) => w.length >= 3 && !['second', 'first', 'third', 'option', 'select'].includes(w));
       if (expWords.length > 0 && expWords.every((w) => actClean.includes(w))) return 50;
       const actWords = actClean.replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter((w) => w.length >= 3);
@@ -317,25 +322,73 @@ function buildVirtualizedOptionSelectionFunction({ expectedSelection, maxScrolls
     }
     target.scrollIntoView?.({ block: 'nearest', inline: 'nearest', behavior: 'auto' });
     const evtOpts = { bubbles: true, cancelable: true, view: window, composed: true };
-    try { target.dispatchEvent(new PointerEvent('pointerdown', evtOpts)); } catch (_) {}
-    try { target.dispatchEvent(new MouseEvent('mousedown', evtOpts)); } catch (_) {}
-    try { target.dispatchEvent(new PointerEvent('pointerup', evtOpts)); } catch (_) {}
-    try { target.dispatchEvent(new MouseEvent('mouseup', evtOpts)); } catch (_) {}
-    target.click();
+    const targetsToClick = [target, ...Array.from(target.querySelectorAll?.('*') || [])];
+    for (const el of targetsToClick) {
+      try { el.dispatchEvent(new PointerEvent('pointerover', evtOpts)); } catch (_) {}
+      try { el.dispatchEvent(new MouseEvent('mouseover', evtOpts)); } catch (_) {}
+      try { el.dispatchEvent(new PointerEvent('pointerdown', evtOpts)); } catch (_) {}
+      try { el.dispatchEvent(new MouseEvent('mousedown', evtOpts)); } catch (_) {}
+      try { el.dispatchEvent(new PointerEvent('pointerup', evtOpts)); } catch (_) {}
+      try { el.dispatchEvent(new MouseEvent('mouseup', evtOpts)); } catch (_) {}
+      try { el.click(); } catch (_) {}
+    }
+    const activeInput = (exactOwner && ['INPUT', 'TEXTAREA'].includes(exactOwner.tagName))
+      ? exactOwner
+      : document.activeElement && ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)
+        ? document.activeElement
+        : Array.from(document.querySelectorAll('input:not([type="hidden"]), [role="combobox"]')).find(visible);
+
     try {
-      if (exactOwner && exactOwner !== target) {
-        exactOwner.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
+      if (activeInput) {
+        activeInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', code: 'ArrowDown', keyCode: 40, which: 40, bubbles: true }));
+        activeInput.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowDown', code: 'ArrowDown', keyCode: 40, which: 40, bubbles: true }));
+        activeInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
+        activeInput.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
       }
     } catch (_) {}
+    await settle();
+
+    // Sync input/textarea value to the chosen label cleanly
+    if (activeInput && ['INPUT', 'TEXTAREA'].includes(activeInput.tagName) && chosen?.label) {
+      try {
+        const proto = activeInput.tagName === 'INPUT' ? window.HTMLInputElement.prototype : window.HTMLTextAreaElement.prototype;
+        const nativeSetter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
+        if (nativeSetter) {
+          nativeSetter.call(activeInput, chosen.label);
+        } else {
+          activeInput.value = chosen.label;
+        }
+        activeInput.dispatchEvent(new Event('input', { bubbles: true }));
+        activeInput.dispatchEvent(new Event('change', { bubbles: true }));
+      } catch (_) {}
+    }
+
+    // Dismiss any lingering open popup state
+    try {
+      if (surface && (surface.classList?.contains('show') || surface.classList?.contains('open'))) {
+        surface.classList.remove('show', 'open');
+      }
+      if (activeInput) {
+        activeInput.setAttribute?.('aria-expanded', 'false');
+      }
+      if (exactOwner) {
+        exactOwner.setAttribute?.('aria-expanded', 'false');
+      }
+    } catch (_) {}
+
     await settle();
     const ownerValues = [exactOwner, ...deepElements(exactOwner)].flatMap((node) => [
       node?.value,
       attr(node, 'aria-valuetext'),
       attr(node, 'data-value'),
       attr(node, 'data-selected-value'),
-      node === exactOwner ? node.textContent : null,
-    ]).map(clean).filter(Boolean);
-    const ownerMatched = ownerValues.some((value) => semanticRank(payload.expectedSelection, value) > 0);
+    const targetRect = target.getBoundingClientRect?.() || { x: 0, y: 0, width: 0, height: 0 };
+    const targetCenter = {
+      x: Math.round(targetRect.x + targetRect.width / 2),
+      y: Math.round(targetRect.y + targetRect.height / 2),
+      width: Math.round(targetRect.width),
+      height: Math.round(targetRect.height),
+    };
     return JSON.stringify({
       ok: true,
       actionPerformed: true,
@@ -352,6 +405,7 @@ function buildVirtualizedOptionSelectionFunction({ expectedSelection, maxScrolls
       scrollableCount: scrollables.length,
       popupCorrelation: popup.correlation,
       popupOpenedByTransaction,
+      targetCenter,
     });
   }`;
 }
@@ -378,9 +432,10 @@ function buildBoundSelectionOwnerReadFunction({ expectedSelection, probeOnly = f
       if (payload.expectedSelection) {
         const cleanSpecial = (s) => String(s || '').replace(/^[\*\-•\s]+/, '').trim();
         const expClean = token(cleanSpecial(payload.expectedSelection));
-        const allElements = Array.from(document.querySelectorAll('.selected-item, .chip, .badge, [class*="selected" i], [class*="value" i], [class*="tag" i], .field, .control, span, div, p, label, button, input, a'));
+        const allElements = Array.from(document.querySelectorAll('.selected-item, .chip, .badge, [class*="selected" i], [class*="value" i], [class*="tag" i]'));
         const found = allElements.find((el) => {
           if (!visible(el)) return false;
+          if (el.matches?.('[role="option"], [role="menuitem"], option, li') || el.closest?.('[role="listbox"], [role="menu"], .dropdown-menu, .typeahead-popup, .autocomplete-popup, [class*="popup" i], [class*="dropdown" i]')) return false;
           const t = token(clean(el.value || el.innerText || el.textContent));
           const tClean = token(cleanSpecial(t));
           if (!t) return false;
@@ -582,32 +637,30 @@ function buildBoundSelectionOwnerReadFunction({ expectedSelection, probeOnly = f
       const actTok = token(actVal);
       if (actTok === expTok) return 3;
 
-      const cleanSpecial = (s) => String(s || '').replace(/^[\\*\\-•\\s]+/, '').trim();
+      const cleanSpecial = (s) => String(s || '')
+        .replace(/^[*•\s]+/, '')
+        .replace(/^(?:first|second|third|fourth|fifth)\s+[^,]+,\s*/i, '')
+        .replace(/^[*•\s]+/, '')
+        .trim();
       const expClean = token(cleanSpecial(expected));
       const actClean = token(cleanSpecial(actVal));
       if (expClean && actClean && expClean === actClean) return 3;
 
-      const withoutQualifier = clean(actVal.replace(/^\\([^)]*\\)\\s*/, ''));
+      const withoutQualifier = clean(actVal.replace(/^\([^)]*\)\s*/, ''));
       if (token(withoutQualifier) === expTok) return 2;
       if (expClean && token(cleanSpecial(withoutQualifier)) === expClean) return 2;
 
-      const expectedItems = expTok.split(/[\\/|>»→,;]+/).map(token).filter(Boolean);
-      const actualItems = withoutQualifier.split(/[\\/|>»→,;]+/).map(token).filter(Boolean);
-
       const normTime = (s) => {
-        const m = clean(s).match(/\\b0?(\\d{1,2}):(\\d{2})(?::\\d{2})?\\s*(AM|PM)?\\b/i);
+        const m = clean(s).match(/\b0?(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?\b/i);
         if (m) return String(Number(m[1])) + ':' + String(m[2]) + (m[3] ? ' ' + String(m[3]).toUpperCase() : '');
         return null;
       };
       const expTime = normTime(expected);
       const actTime = normTime(actVal);
-      if (expTime && actTime && (expTime === actTime || expTime.replace(/\\s*[AP]M/, '') === actTime.replace(/\\s*[AP]M/, ''))) return 3;
+      if (expTime && actTime && (expTime === actTime || expTime.replace(/\s*[AP]M/, '') === actTime.replace(/\s*[AP]M/, ''))) return 3;
 
-      if (expectedItems.includes(actTok) || actualItems.includes(expTok)) return 2;
-      if (expectedItems.some(e => actualItems.includes(e))) return 2;
-      if (expectedItems.some(e => actTok.includes(e) || e.includes(actTok))) return 1;
-      if (actualItems.some(a => expTok.includes(a) || a.includes(expTok))) return 1;
-      if (expClean && (actClean.includes(expClean) || expClean.includes(actClean))) return 1;
+      if (actClean && expClean && actClean.includes(expClean)) return 2;
+      if (actClean && expClean && expClean.startsWith(actClean) && (actClean.length / expClean.length) >= 0.85) return 1;
 
       return 0;
     };
@@ -618,9 +671,10 @@ function buildBoundSelectionOwnerReadFunction({ expectedSelection, probeOnly = f
     if (!payload.probeOnly && matchingValues.length === 0 && payload.expectedSelection) {
       const cleanSpecial = (s) => String(s || '').replace(/^[\\*\\-•\\s]+/, '').trim();
       const expClean = token(cleanSpecial(payload.expectedSelection));
-      const allElements = Array.from(document.querySelectorAll('.selected-item, .chip, .badge, [class*="selected" i], [class*="value" i], [class*="tag" i], .field, .control, span, div, p, label, button, input, a'));
+      const allElements = Array.from(document.querySelectorAll('.selected-item, .chip, .badge, [class*="selected" i], [class*="value" i], [class*="tag" i]'));
       const found = allElements.find((el) => {
         if (!visible(el)) return false;
+        if (el.matches?.('[role="option"], [role="menuitem"], option, li') || el.closest?.('[role="listbox"], [role="menu"], .dropdown-menu, .typeahead-popup, .autocomplete-popup, [class*="popup" i], [class*="dropdown" i]')) return false;
         const t = token(clean(el.value || el.innerText || el.textContent));
         const tClean = token(cleanSpecial(t));
         if (!t) return false;

@@ -363,7 +363,7 @@ server.on('error', (err) => {
   throw err;
 });
 
-server.listen(PORT, '0.0.0.0', () => {
+server.listen(PORT, () => {
   console.log(`[server] QAAI API listening on http://localhost:${PORT}`);
   console.log(`[server] WebSocket on ws://localhost:${PORT}`);
   console.log(`[server] CORS origin: ${ORIGIN}`);
