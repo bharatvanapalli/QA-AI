@@ -176,6 +176,30 @@ const UNIVERSAL_DOM_FUNCTION = function qaaiUniversalDomEngine() {
     return clean(el.innerText || el.textContent);
   }
 
+  const SECTION_QUALIFIERS = [
+    { name: 'early delivery', tokens: ['early', 'delivery'] },
+    { name: 'late delivery', tokens: ['late', 'delivery'] },
+    { name: 'early pickup', tokens: ['early', 'pickup'] },
+    { name: 'late pickup', tokens: ['late', 'pickup'] },
+    { name: 'pickup', tokens: ['pickup'] },
+    { name: 'delivery', tokens: ['delivery'] },
+    { name: 'customer', tokens: ['customer'] },
+    { name: 'order number', tokens: ['order', 'number'] },
+    { name: 'references', tokens: ['reference', 'references'] },
+    { name: 'equipment', tokens: ['equipment'] },
+    { name: 'freight term', tokens: ['freight', 'term'] },
+    { name: 'ship direction', tokens: ['ship', 'direction'] },
+  ];
+
+  function getEnclosingSectionText(el) {
+    if (!el || typeof el.closest !== 'function') return '';
+    const sectionContainer = el.closest('fieldset, section, [class*="section"], [class*="card"], [class*="panel"], [class*="field"], [class*="group"], tr, form, div');
+    if (!sectionContainer) return '';
+    const headers = sectionContainer.querySelectorAll('legend, h1, h2, h3, h4, h5, h6, label, [class*="header"], [class*="title"], [class*="label"]');
+    const headerTexts = Array.from(headers).map(h => clean(h.innerText || h.textContent)).filter(Boolean);
+    return clean(headerTexts.join(' '));
+  }
+
   function semanticDistanceScore(query, el) {
     const qTokens = tokenizeWords(query);
     if (!qTokens.length) return 0;
@@ -185,11 +209,14 @@ const UNIVERSAL_DOM_FUNCTION = function qaaiUniversalDomEngine() {
     const textContent = clean(el.innerText || el.textContent);
     const idAttr = el.id || '';
     const nameAttr = (el.getAttribute && el.getAttribute('name')) || '';
+    const phAttr = (el.getAttribute && el.getAttribute('placeholder')) || '';
+    const sectionText = getEnclosingSectionText(el).toLowerCase();
 
     const nameTokens = new Set([
       ...tokenizeWords(accessibleName),
       ...tokenizeWords(idAttr),
       ...tokenizeWords(nameAttr),
+      ...tokenizeWords(phAttr),
       ...tokenizeWords(textContent.slice(0, 100))
     ]);
 
@@ -210,6 +237,25 @@ const UNIVERSAL_DOM_FUNCTION = function qaaiUniversalDomEngine() {
     let score = (matched / qTokens.length) * 1000;
     if (isVisible(el)) score += 200;
     if (['textbox', 'combobox', 'button', 'checkbox', 'radio'].includes(role)) score += 100;
+
+    // ── Section-Scoped Grid & Block Disambiguation ──
+    const qLower = query.toLowerCase();
+    for (const qf of SECTION_QUALIFIERS) {
+      const queryHasQualifier = qf.tokens.every(t => qLower.includes(t));
+      if (queryHasQualifier) {
+        const sectionHasQualifier = qf.tokens.every(t => sectionText.includes(t));
+        if (sectionHasQualifier) {
+          score += 600; // Strong match for the correct grid section
+        } else {
+          // If the element is inside a rival conflicting section, heavily penalize it
+          const rival = SECTION_QUALIFIERS.find(r => r.name !== qf.name && r.tokens.every(t => sectionText.includes(t)));
+          if (rival) {
+            score -= 1200;
+          }
+        }
+      }
+    }
+
     return Math.round(score);
   }
 
@@ -265,6 +311,25 @@ const UNIVERSAL_DOM_FUNCTION = function qaaiUniversalDomEngine() {
     return true;
   }
 
+  function formatDateForInput(value, inputEl) {
+    const rawVal = String(value || '').trim();
+    const isoMatch = rawVal.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!isoMatch) return rawVal;
+
+    const [_, year, month, day] = isoMatch;
+    const ph = (inputEl.placeholder || inputEl.getAttribute('aria-label') || '').toLowerCase();
+    
+    // US Format MM/DD/YYYY
+    if (ph.includes('mm/dd/yyyy') || ph.includes('mm-dd-yyyy') || ph.includes('mm/dd/yy') || ph.includes('m/d/y')) {
+      return `${month}/${day}/${year}`;
+    }
+    // EU Format DD/MM/YYYY
+    if (ph.includes('dd/mm/yyyy') || ph.includes('dd-mm-yyyy')) {
+      return `${day}/${month}/${year}`;
+    }
+    return rawVal;
+  }
+
   function executeAtomicFill(el, value) {
     if (!el) return false;
     const tagName = (el.tagName || '').toUpperCase();
@@ -278,21 +343,41 @@ const UNIVERSAL_DOM_FUNCTION = function qaaiUniversalDomEngine() {
     }
     if (typeof targetInput.focus === 'function') targetInput.focus();
 
+    // Adapt value to masked date format if applicable
+    const formattedVal = formatDateForInput(value, targetInput);
+
+    // Clear existing value first
     if (typeof HTMLInputElement !== 'undefined' && typeof HTMLTextAreaElement !== 'undefined') {
       const prototype = targetInput.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
       const descriptor = Object.getOwnPropertyDescriptor(prototype, 'value');
       if (descriptor && descriptor.set) {
-        descriptor.set.call(targetInput, value);
+        descriptor.set.call(targetInput, '');
       } else {
-        targetInput.value = value;
+        targetInput.value = '';
+      }
+    }
+
+    // Set formatted target value
+    if (typeof HTMLInputElement !== 'undefined' && typeof HTMLTextAreaElement !== 'undefined') {
+      const prototype = targetInput.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+      const descriptor = Object.getOwnPropertyDescriptor(prototype, 'value');
+      if (descriptor && descriptor.set) {
+        descriptor.set.call(targetInput, formattedVal);
+      } else {
+        targetInput.value = formattedVal;
       }
     } else {
-      targetInput.value = value;
+      targetInput.value = formattedVal;
     }
 
     if (typeof Event === 'function') {
-      targetInput.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
-      targetInput.dispatchEvent(new Event('change', { bubbles: true, cancelable: true }));
+      targetInput.dispatchEvent(new Event('input', { bubbles: true, cancelable: true, composed: true }));
+      targetInput.dispatchEvent(new Event('change', { bubbles: true, cancelable: true, composed: true }));
+      try {
+        targetInput.dispatchEvent(new KeyboardEvent('keydown', { key: formattedVal.slice(-1) || 'a', bubbles: true }));
+        targetInput.dispatchEvent(new KeyboardEvent('keyup', { key: formattedVal.slice(-1) || 'a', bubbles: true }));
+      } catch (_) {}
+      targetInput.dispatchEvent(new Event('blur', { bubbles: true, cancelable: true }));
     }
     return true;
   }

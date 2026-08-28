@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -61,4 +61,10 @@ test('compareTypedAssertion rejects inverted temporal ordering', () => {
   const result = compareTypedAssertion(contract, actual);
   assert.equal(result.matched, false);
   assert.equal(result.outcome, 'not_matched');
+});
+
+test('UNIVERSAL_DOM_SCRIPT includes section-scoped qualifiers and date formatting', () => {
+  assert.ok(UNIVERSAL_DOM_SCRIPT.includes('SECTION_QUALIFIERS'));
+  assert.ok(UNIVERSAL_DOM_SCRIPT.includes('formatDateForInput'));
+  assert.ok(UNIVERSAL_DOM_SCRIPT.includes('getEnclosingSectionText'));
 });

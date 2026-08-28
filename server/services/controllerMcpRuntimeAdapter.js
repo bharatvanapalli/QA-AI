@@ -448,8 +448,17 @@ function temporalRelationshipActual({ operation, contract, snapshotText, candida
     // 2. Try qualifier-based coordinate candidate scan (e.g. matching 'early' + 'pickup')
     if (!normalizedDate || !normalizedTime) {
       const qualifiers = temporalQualifierWords(opName || datePartName);
+      const isDelivery = qualifiers.includes('delivery');
+      const isPickup = qualifiers.includes('pickup');
+      const isEarly = qualifiers.includes('early');
+      const isLate = qualifiers.includes('late');
+
       const matchingCands = candidates.filter((c) => {
         const coord = candidateTemporalCoordinate(c);
+        if (isDelivery && coord.includes('pickup')) return false;
+        if (isPickup && coord.includes('delivery')) return false;
+        if (isEarly && coord.includes('late')) return false;
+        if (isLate && coord.includes('early')) return false;
         return qualifiers.every((q) => coord.includes(q));
       });
 
@@ -5927,7 +5936,31 @@ function createControllerMcpRuntimeAdapter({
         const page = session.liveCdp.context.pages()[0] || null;
         if (page) {
           const text = String(normalized.text || normalized.value || args?.text || args?.value || '');
-          await page.keyboard.type(text, { delay: 50 });
+          const targetName = clean(normalized.element || normalized.target || args?.element || args?.target || operation?.element || operation?.target || '');
+          
+          if (targetName) {
+            // Find and focus the exact target element in the page first
+            await page.evaluate(({ q, val }) => {
+              const eng = (window.__qaai_universal_dom_engine__) || (typeof qaaiUniversalDomEngine === 'function' ? qaaiUniversalDomEngine() : null);
+              if (eng && typeof eng.findSemanticElements === 'function') {
+                const candidates = eng.findSemanticElements(q, 'textbox');
+                if (candidates.length > 0) {
+                  eng.executeAtomicFill(candidates[0].element, val);
+                  return;
+                }
+              }
+              const inps = Array.from(document.querySelectorAll('input:not([type="hidden"]), textarea'));
+              const target = inps.find(i => (i.placeholder || i.name || i.id || '').toLowerCase().includes(q.toLowerCase()));
+              if (target) {
+                target.focus();
+                target.value = val;
+                target.dispatchEvent(new Event('input', { bubbles: true }));
+                target.dispatchEvent(new Event('change', { bubbles: true }));
+              }
+            }, { q: targetName, val: text }).catch(() => {});
+          } else {
+            await page.keyboard.type(text, { delay: 50 });
+          }
           result = { isError: false, content: [{ type: 'text', text: `Typed sequentially: "${text}"` }] };
         } else {
           result = { isError: true, content: [{ type: 'text', text: 'No page available for sequential typing' }] };
@@ -6504,6 +6537,7 @@ function createControllerMcpRuntimeAdapter({
         if (frameOrPage) {
           const doFillInContext = async (targetCtx) => {
             return await targetCtx.evaluate(({ q, val }) => {
+              const clean = (s) => String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
               const rawQ = String(q || '').trim().toLowerCase()
                 .replace(/^(?:append|fill|type|clear|enter)\s+(?:a\s+text\s+and\s+press\s+keyboard\s+tab|the\s+text|text|your\s+full\s+name)?/i, '')
                 .trim();
@@ -6511,6 +6545,25 @@ function createControllerMcpRuntimeAdapter({
               const cleanQuery = targetQuery.replace(/[^a-z0-9]/g, '');
               const inputs = Array.from(document.querySelectorAll('input:not([type="hidden"]), textarea, [contenteditable="true"]'));
               
+              // Section Qualifiers for multi-block disambiguation
+              const SECTION_QUALIFIERS = [
+                { name: 'early delivery', tokens: ['early', 'delivery'] },
+                { name: 'late delivery', tokens: ['late', 'delivery'] },
+                { name: 'early pickup', tokens: ['early', 'pickup'] },
+                { name: 'late pickup', tokens: ['late', 'pickup'] },
+                { name: 'pickup number', tokens: ['pickup', 'number'] },
+                { name: 'po number', tokens: ['po', 'number'] },
+                { name: 'order number', tokens: ['order', 'number'] },
+                { name: 'customer', tokens: ['customer'] },
+              ];
+
+              const getEnclosingSection = (inp) => {
+                const sec = inp.closest('fieldset, section, [class*="section"], [class*="card"], [class*="panel"], [class*="field"], [class*="group"], tr, form, div');
+                if (!sec) return '';
+                const headers = sec.querySelectorAll('legend, h1, h2, h3, h4, h5, h6, label, [class*="header"], [class*="title"], [class*="label"]');
+                return clean(Array.from(headers).map(h => h.innerText || h.textContent).join(' ')).toLowerCase();
+              };
+
               // Compute domain-agnostic aliases
               const aliases = [targetQuery, rawQ];
               if (targetQuery.includes('order') || targetQuery.includes('number')) {
@@ -6522,7 +6575,7 @@ function createControllerMcpRuntimeAdapter({
               if (targetQuery.includes('customer')) {
                 aliases.push('customer', 'customer name', 'client', 'account');
               }
-              if (targetQuery.includes('pickup')) {
+              if (targetQuery.includes('pickup') && !targetQuery.includes('delivery')) {
                 aliases.push('pickup', 'pickup number', 'pickup #');
               }
               if (targetQuery.includes('search')) {
@@ -6537,37 +6590,54 @@ function createControllerMcpRuntimeAdapter({
                 const explicitLbl = (inp.labels && inp.labels[0] ? inp.labels[0].innerText : (prevSiblingText || '')).toLowerCase().replace(/\s+/g, ' ').trim();
                 const containerText = (inp.parentElement?.innerText || '').toLowerCase().replace(/\s+/g, ' ').trim();
                 const aria = (inp.getAttribute('aria-label') || '').toLowerCase().trim();
+                const sectionText = getEnclosingSection(inp);
                 
+                let baseScore = 0;
                 // 1. Label or aria match (primary source of truth)
                 for (const a of aliases) {
-                  if (explicitLbl === a || aria === a) return 1000;
-                  if (explicitLbl && (explicitLbl.startsWith(a) || a.startsWith(explicitLbl))) return 900;
-                  if (explicitLbl && (explicitLbl.includes(a) || a.includes(explicitLbl))) return 850;
+                  if (explicitLbl === a || aria === a) { baseScore = Math.max(baseScore, 1000); break; }
+                  if (explicitLbl && (explicitLbl.startsWith(a) || a.startsWith(explicitLbl))) { baseScore = Math.max(baseScore, 900); }
+                  if (explicitLbl && (explicitLbl.includes(a) || a.includes(explicitLbl))) { baseScore = Math.max(baseScore, 850); }
                 }
 
                 // 2. Exact or strong placeholder match
                 for (const a of aliases) {
-                  if (ph && (ph === a || ph.includes(a) || a.includes(ph))) return 800;
+                  if (ph && (ph === a || ph.includes(a) || a.includes(ph))) { baseScore = Math.max(baseScore, 800); }
                 }
 
                 // 3. Name or ID attribute match
                 for (const a of aliases) {
-                  if (name === a || id === a) return 700;
-                  if (name.includes(a) || id.includes(a)) return 600;
+                  if (name === a || id === a) { baseScore = Math.max(baseScore, 700); }
+                  if (name.includes(a) || id.includes(a)) { baseScore = Math.max(baseScore, 600); }
                 }
 
                 // 4. Container text / sibling label match
                 for (const a of aliases) {
-                  if (containerText && (containerText.includes(a) || a.includes(containerText))) return 650;
+                  if (containerText && (containerText.includes(a) || a.includes(containerText))) { baseScore = Math.max(baseScore, 650); }
                 }
 
                 // 5. Clean alphanumeric match
-                if (cleanQuery && [id, name, explicitLbl, aria, ph, containerText].some(t => t.replace(/[^a-z0-9]/g, '').includes(cleanQuery))) return 500;
+                if (cleanQuery && [id, name, explicitLbl, aria, ph, containerText].some(t => t.replace(/[^a-z0-9]/g, '').includes(cleanQuery))) {
+                  baseScore = Math.max(baseScore, 500);
+                }
 
-                // 6. Single input fallback
-                if (inputs.length === 1) return 400;
+                // 6. Section-Scoped Grid & Block Disambiguation
+                for (const qf of SECTION_QUALIFIERS) {
+                  const queryHasQualifier = qf.tokens.every(t => targetQuery.includes(t));
+                  if (queryHasQualifier) {
+                    const sectionHasQualifier = qf.tokens.every(t => sectionText.includes(t));
+                    if (sectionHasQualifier) {
+                      baseScore += 500;
+                    } else {
+                      const rival = SECTION_QUALIFIERS.find(r => r.name !== qf.name && r.tokens.every(t => sectionText.includes(t)));
+                      if (rival) {
+                        baseScore -= 1000;
+                      }
+                    }
+                  }
+                }
 
-                return 0;
+                return baseScore;
               };
 
               let best = null;
@@ -6585,6 +6655,20 @@ function createControllerMcpRuntimeAdapter({
               }
 
               try { best.focus(); } catch (_) {}
+
+              // Format date value for input mask if applicable
+              let targetVal = String(val == null ? '' : val);
+              const isoMatch = targetVal.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+              if (isoMatch) {
+                const [_, y, m, d] = isoMatch;
+                const ph = (best.placeholder || best.getAttribute('aria-label') || '').toLowerCase();
+                if (ph.includes('mm/dd/yyyy') || ph.includes('mm-dd-yyyy') || ph.includes('mm/dd/yy') || ph.includes('m/d/y')) {
+                  targetVal = `${m}/${d}/${y}`;
+                } else if (ph.includes('dd/mm/yyyy') || ph.includes('dd-mm-yyyy')) {
+                  targetVal = `${d}/${m}/${y}`;
+                }
+              }
+
               const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
                 window.HTMLInputElement.prototype,
                 'value'
@@ -6594,19 +6678,32 @@ function createControllerMcpRuntimeAdapter({
                 'value'
               )?.set;
 
+              // Clear first
               if (best.tagName === 'TEXTAREA' && nativeTextAreaValueSetter) {
-                nativeTextAreaValueSetter.call(best, val);
+                nativeTextAreaValueSetter.call(best, '');
               } else if (nativeInputValueSetter) {
-                nativeInputValueSetter.call(best, val);
+                nativeInputValueSetter.call(best, '');
               } else {
-                best.value = val;
+                best.value = '';
               }
+
+              // Set formatted value
+              if (best.tagName === 'TEXTAREA' && nativeTextAreaValueSetter) {
+                nativeTextAreaValueSetter.call(best, targetVal);
+              } else if (nativeInputValueSetter) {
+                nativeInputValueSetter.call(best, targetVal);
+              } else {
+                best.value = targetVal;
+              }
+
               best.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
               best.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
               try {
-                best.dispatchEvent(new KeyboardEvent('keydown', { key: val.slice(-1) || 'a', bubbles: true }));
-                best.dispatchEvent(new KeyboardEvent('keyup', { key: val.slice(-1) || 'a', bubbles: true }));
+                best.dispatchEvent(new KeyboardEvent('keydown', { key: targetVal.slice(-1) || 'a', bubbles: true }));
+                best.dispatchEvent(new KeyboardEvent('keyup', { key: targetVal.slice(-1) || 'a', bubbles: true }));
               } catch (_) {}
+              best.dispatchEvent(new Event('blur', { bubbles: true }));
+
               return { ok: true, name: best.name, placeholder: best.placeholder, value: best.value };
             }, { q: targetQ, val: textVal });
           };
