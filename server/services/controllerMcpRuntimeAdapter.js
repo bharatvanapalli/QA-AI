@@ -2725,12 +2725,11 @@ function createControllerMcpRuntimeAdapter({
                 } catch (_) {}
               }
 
-              // 2. Universal Option Resolution (Role listbox/menu/option, semantic elements)
+              // 2. Universal Option Resolution (Strictly scoped to options and listbox panels)
               let clicked = false;
               const optionLocators = [
-                page.locator('[role="listbox"] [role="option"], [role="menu"] [role="menuitem"], [role="option"]').filter({ hasText: cleanExpected }).last(),
-                page.locator('li, [class*="option"], [class*="item"], .dropdown-item, [role="treeitem"]').filter({ hasText: cleanExpected }).last(),
-                page.getByText(cleanExpected, { exact: false }).last(),
+                page.locator('[role="listbox"] [role="option"], [role="menu"] [role="menuitem"], .p-dropdown-items [role="option"], .p-dropdown-item, .dropdown-menu .dropdown-item, [role="option"]').filter({ hasText: cleanExpected }).first(),
+                page.locator('.p-dropdown-panel li, .p-select-panel li, [class*="panel"] [role="option"], [class*="overlay"] [role="option"]').filter({ hasText: cleanExpected }).first(),
               ];
 
               for (const loc of optionLocators) {
@@ -2745,7 +2744,7 @@ function createControllerMcpRuntimeAdapter({
 
               if (!clicked) {
                 try {
-                  // Universal Trigger Lookup: lexical container walkup & form scoping
+                  // Universal Trigger Lookup: strictly scoped container walkup
                   let dropBtn = null;
                   if (cleanTarget) {
                     const labeledContainers = page.locator('label, legend, fieldset, tr, div, section, p').filter({ hasText: cleanTarget });
@@ -2763,11 +2762,6 @@ function createControllerMcpRuntimeAdapter({
                         dropBtn = directControl;
                       }
                     }
-                  }
-
-                  if (!dropBtn) {
-                    const formContainer = page.locator('form, main, [role="main"], section').first();
-                    dropBtn = (await formContainer.count() > 0 ? formContainer.locator('select, [role="combobox"], [class*="dropdown"]').last() : page.locator('select, [role="combobox"], [class*="dropdown"]').last());
                   }
 
                   if (dropBtn && await dropBtn.count() > 0 && await dropBtn.isVisible().catch(() => false)) {
@@ -6818,9 +6812,8 @@ function createControllerMcpRuntimeAdapter({
                 .replace(/^[*•\s]+/, '')
                 .trim();
               const optionLocators = [
-                page.locator('[role="option"]').filter({ hasText: cleanExpected }).last(),
-                page.locator('li, .dropdown-item, .suggestion-item, .option, [class*="option"]').filter({ hasText: cleanExpected }).last(),
-                page.getByText(cleanExpected, { exact: false }).last(),
+                page.locator('[role="listbox"] [role="option"], [role="menu"] [role="menuitem"], .p-dropdown-items [role="option"], .p-dropdown-item, .dropdown-item, [role="option"]').filter({ hasText: cleanExpected }).first(),
+                page.locator('.p-dropdown-panel li, .p-select-panel li, [class*="panel"] [role="option"], [class*="overlay"] [role="option"]').filter({ hasText: cleanExpected }).first(),
               ];
               for (const loc of optionLocators) {
                 if (await loc.count() > 0 && await loc.isVisible().catch(() => false)) {
@@ -6828,8 +6821,6 @@ function createControllerMcpRuntimeAdapter({
                   break;
                 }
               }
-              await page.keyboard.press('ArrowDown').catch(() => {});
-              await page.keyboard.press('Enter').catch(() => {});
             }
           }
         } catch (_) {}
