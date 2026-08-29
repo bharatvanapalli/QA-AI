@@ -60,7 +60,10 @@ Run these exact commands in your terminal:
 # 1. Initialize local SQLite Database schema
 npx prisma db push
 
-# 2. Start Backend API & Frontend UI together
+# 2. Seed Default User, Organization, and "New_Odyssey" Project Test Suite
+npm run db:seed
+
+# 3. Start Backend API & Frontend UI together
 # Backend API: http://localhost:5000 | Frontend UI: http://localhost:5173
 npm run dev:full
 ```

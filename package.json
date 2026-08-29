@@ -29,7 +29,8 @@
     "db:reset": "docker compose down -v && docker compose up -d postgres mailhog",
     "prisma:generate": "prisma generate && node scripts/sync-server-prisma.cjs",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "db:seed": "node prisma/seeds/seed_new_odyssey.cjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.97.0",
