@@ -588,11 +588,14 @@ function createBrowserTransactionController({
       }
     }
     if (!resolution) {
-      const terminal = machine.transition(CONTROLLER_STATE.COMMITTED, {
-        commitDisposition: COMMIT_DISPOSITION.EXECUTED,
-        attribution: FAILURE_ATTRIBUTION.NONE,
-        reason: clean(resolutionError?.code || resolutionError?.name)
-          || 'target_resolution_uncheckable_treated_as_pass',
+      const isOptional = operation.optional === true;
+      const targetState = isOptional ? CONTROLLER_STATE.COMMITTED : CONTROLLER_STATE.EXECUTION_ERROR;
+      const disposition = isOptional ? COMMIT_DISPOSITION.OPTIONAL_ABSENT : undefined;
+      const attribution = isOptional ? FAILURE_ATTRIBUTION.NONE : FAILURE_ATTRIBUTION.ENVIRONMENT;
+      const terminal = machine.transition(targetState, {
+        commitDisposition: disposition,
+        attribution,
+        reason: clean(resolutionError?.code || resolutionError?.name) || 'target_resolution_failed',
         factRefs: factRefsOf(resolutionError),
       });
       return Object.freeze({ ...terminal, snapshot: machine.snapshot() });
@@ -622,10 +625,14 @@ function createBrowserTransactionController({
       return Object.freeze({ ...terminal, snapshot: machine.snapshot() });
     }
     if (resolution.status !== RESOLUTION_STATUS.RESOLVED) {
-      const terminal = machine.transition(CONTROLLER_STATE.COMMITTED, {
-        commitDisposition: COMMIT_DISPOSITION.EXECUTED,
-        attribution: FAILURE_ATTRIBUTION.NONE,
-        reason: resolution.reason || `target_${resolution.status.toLowerCase()}_treated_as_pass`,
+      const isOptional = operation.optional === true;
+      const targetState = isOptional ? CONTROLLER_STATE.COMMITTED : CONTROLLER_STATE.FAILED;
+      const disposition = isOptional ? COMMIT_DISPOSITION.OPTIONAL_ABSENT : undefined;
+      const attribution = isOptional ? FAILURE_ATTRIBUTION.NONE : FAILURE_ATTRIBUTION.ENVIRONMENT;
+      const terminal = machine.transition(targetState, {
+        commitDisposition: disposition,
+        attribution,
+        reason: resolution.reason || `target_${resolution.status.toLowerCase()}`,
         factRefs: resolution.factRefs,
       });
       return Object.freeze({ ...terminal, snapshot: machine.snapshot() });
@@ -650,10 +657,9 @@ function createBrowserTransactionController({
         autonomousRecoveryCycle: Number(context.autonomousRecoveryCycle || 0),
       });
     } catch (error) {
-      const terminal = machine.transition(CONTROLLER_STATE.COMMITTED, {
-        commitDisposition: COMMIT_DISPOSITION.EXECUTED,
-        attribution: FAILURE_ATTRIBUTION.NONE,
-        reason: clean(error?.code || error?.name) || 'typed_adapter_plan_uncheckable_treated_as_pass',
+      const terminal = machine.transition(CONTROLLER_STATE.EXECUTION_ERROR, {
+        attribution: FAILURE_ATTRIBUTION.FRAMEWORK,
+        reason: clean(error?.code || error?.name) || 'typed_adapter_plan_failed',
         factRefs: resolution.factRefs,
       });
       return Object.freeze({ ...terminal, snapshot: machine.snapshot() });
@@ -967,19 +973,22 @@ function createBrowserTransactionController({
             'BROWSER_TRANSACTION_POST_REVEAL_RESOLVER_DEADLINE',
           ));
         } catch (error) {
-          const terminal = machine.transition(CONTROLLER_STATE.COMMITTED, {
-            commitDisposition: COMMIT_DISPOSITION.EXECUTED,
-            attribution: FAILURE_ATTRIBUTION.NONE,
-            reason: clean(error?.code || error?.name) || 'post_reveal_target_resolution_uncheckable_treated_as_pass',
+          const terminal = machine.transition(CONTROLLER_STATE.EXECUTION_ERROR, {
+            attribution: FAILURE_ATTRIBUTION.ENVIRONMENT,
+            reason: clean(error?.code || error?.name) || 'post_reveal_target_resolution_failed',
             factRefs: factRefsOf({ factRefs: preDispatchFactRefs }, error),
           });
           return Object.freeze({ ...terminal, snapshot: machine.snapshot() });
         }
         if (resolution.status !== RESOLUTION_STATUS.RESOLVED) {
-          const terminal = machine.transition(CONTROLLER_STATE.COMMITTED, {
-            commitDisposition: COMMIT_DISPOSITION.EXECUTED,
-            attribution: FAILURE_ATTRIBUTION.NONE,
-            reason: resolution.reason || 'post_reveal_target_uncheckable_treated_as_pass',
+          const isOptional = operation.optional === true;
+          const targetState = isOptional ? CONTROLLER_STATE.COMMITTED : CONTROLLER_STATE.FAILED;
+          const disposition = isOptional ? COMMIT_DISPOSITION.OPTIONAL_ABSENT : undefined;
+          const attribution = isOptional ? FAILURE_ATTRIBUTION.NONE : FAILURE_ATTRIBUTION.ENVIRONMENT;
+          const terminal = machine.transition(targetState, {
+            commitDisposition: disposition,
+            attribution,
+            reason: resolution.reason || 'post_reveal_target_not_resolved',
             factRefs: factRefsOf({ factRefs: preDispatchFactRefs }, resolution),
           });
           return Object.freeze({ ...terminal, snapshot: machine.snapshot() });
@@ -993,10 +1002,9 @@ function createBrowserTransactionController({
             );
           }
         } catch (error) {
-          const terminal = machine.transition(CONTROLLER_STATE.COMMITTED, {
-            commitDisposition: COMMIT_DISPOSITION.EXECUTED,
-            attribution: FAILURE_ATTRIBUTION.NONE,
-            reason: clean(error?.code || error?.name) || 'post_reveal_typed_adapter_plan_uncheckable_treated_as_pass',
+          const terminal = machine.transition(CONTROLLER_STATE.EXECUTION_ERROR, {
+            attribution: FAILURE_ATTRIBUTION.FRAMEWORK,
+            reason: clean(error?.code || error?.name) || 'post_reveal_typed_adapter_plan_failed',
             factRefs: factRefsOf({ factRefs: preDispatchFactRefs }, resolution),
           });
           return Object.freeze({ ...terminal, snapshot: machine.snapshot() });
@@ -1076,16 +1084,20 @@ function createBrowserTransactionController({
     });
 
     if (delivery.deliveryStatus === DELIVERY_STATUS.NOT_DELIVERED) {
-      const terminal = machine.transition(CONTROLLER_STATE.COMMITTED, {
-        commitDisposition: COMMIT_DISPOSITION.EXECUTED,
-        attribution: FAILURE_ATTRIBUTION.NONE,
-        reason: delivery.reason || 'mutation_dispatch_uncheckable_treated_as_pass',
+      const isOptional = operation.optional === true;
+      const targetState = isOptional ? CONTROLLER_STATE.COMMITTED : CONTROLLER_STATE.FAILED;
+      const disposition = isOptional ? COMMIT_DISPOSITION.OPTIONAL_ABSENT : undefined;
+      const attribution = isOptional ? FAILURE_ATTRIBUTION.NONE : FAILURE_ATTRIBUTION.ENVIRONMENT;
+      const terminal = machine.transition(targetState, {
+        commitDisposition: disposition,
+        attribution,
+        reason: delivery.reason || 'mutation_dispatch_failed',
         factRefs: delivery.factRefs,
       });
       return Object.freeze({
         ...terminal,
         snapshot: machine.snapshot(),
-        authoredMutationDispatched: true,
+        authoredMutationDispatched: false,
       });
     }
 

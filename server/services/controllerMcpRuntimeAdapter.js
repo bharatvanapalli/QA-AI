@@ -3128,9 +3128,92 @@ function createControllerMcpRuntimeAdapter({
     }
     const resolved = candidateForOperation(operation, snapshot.snapshot.candidates);
     if (resolved.status !== RESOLUTION_STATUS.RESOLVED) {
-      const page = activePageOf(session);
-      const targetLabel = clean(operation?.targetIdentity?.accessibleName || operation?.targetIdentity?.label || operation?.target);
-      const visualCoords = (page && targetLabel) ? await resolveVisualTargetCoordinates(page, {
+      const frameOrPage = session?.activeFrame || activePageOf(session);
+      const targetLabel = clean(operation?.targetIdentity?.accessibleName || operation?.targetIdentity?.label || operation?.target || operation?.element);
+      if (frameOrPage && targetLabel) {
+        try {
+          const domMatch = await frameOrPage.evaluate((q) => {
+            const rawQ = String(q || '').trim().toLowerCase();
+            const targetQ = rawQ.replace(/^(?:click|fill|type|select|choose|enter|verify|assert)\s+/i, '').replace(/\s+(?:field|input|button|control|dropdown|picker)$/i, '').trim();
+            const cleanQ = targetQ.replace(/[^a-z0-9]/g, '');
+            const elements = Array.from(document.querySelectorAll('input:not([type="hidden"]), select, textarea, button, [role="button"], [role="combobox"], [role="listbox"], [role="option"], [role="tab"], a, [tabindex="0"]'));
+            
+            let best = null;
+            let bestScore = 0;
+            for (const el of elements) {
+              const text = (el.innerText || el.textContent || '').trim().toLowerCase();
+              const aria = (el.getAttribute('aria-label') || '').toLowerCase();
+              const ph = (el.getAttribute('placeholder') || '').toLowerCase();
+              const name = (el.name || '').toLowerCase();
+              const id = (el.id || '').toLowerCase();
+              const fcn = (el.getAttribute('formcontrolname') || '').toLowerCase();
+              const parentText = (el.parentElement?.innerText || '').toLowerCase();
+              const prevText = (el.previousElementSibling?.innerText || '').toLowerCase();
+              
+              let score = 0;
+              if (aria === targetQ || ph === targetQ || name === targetQ || id === targetQ || fcn === targetQ || text === targetQ) {
+                score = 1000;
+              } else if (text.startsWith(targetQ) || aria.startsWith(targetQ) || ph.startsWith(targetQ)) {
+                score = 900;
+              } else if (text.includes(targetQ) || aria.includes(targetQ) || ph.includes(targetQ) || name.includes(targetQ) || id.includes(targetQ) || fcn.includes(targetQ)) {
+                score = 800;
+              } else if (prevText.includes(targetQ) || parentText.includes(targetQ)) {
+                score = 700;
+              } else if (cleanQ && [text, aria, ph, name, id, fcn].some(t => t.replace(/[^a-z0-9]/g, '').includes(cleanQ))) {
+                score = 600;
+              }
+              if (score > bestScore) {
+                const rect = el.getBoundingClientRect();
+                if (rect.width > 0 && rect.height > 0) {
+                  bestScore = score;
+                  best = {
+                    centerX: Math.round(rect.left + rect.width / 2),
+                    centerY: Math.round(rect.top + rect.height / 2),
+                    tagName: el.tagName,
+                    role: el.getAttribute('role') || el.tagName.toLowerCase(),
+                    id: el.id || null,
+                    name: el.name || null,
+                    score,
+                  };
+                }
+              }
+            }
+            return best;
+          }, targetLabel).catch(() => null);
+
+          if (domMatch && domMatch.centerX > 0 && domMatch.centerY > 0 && domMatch.score >= 600) {
+            const liveDomCandidate = {
+              ref: `live_dom:${domMatch.centerX}:${domMatch.centerY}`,
+              interactionRef: `live_dom:${domMatch.centerX}:${domMatch.centerY}`,
+              accessibleName: targetLabel,
+              role: domMatch.role || operation?.targetIdentity?.role || 'button',
+              factRef: `fact:live_dom:${domMatch.centerX}:${domMatch.centerY}`,
+              visualCoords: { centerX: domMatch.centerX, centerY: domMatch.centerY },
+              isDomFallback: true,
+            };
+            return {
+              status: RESOLUTION_STATUS.RESOLVED,
+              target: {
+                ref: liveDomCandidate.ref,
+                interactionRef: liveDomCandidate.interactionRef,
+                identity: {
+                  accessibleName: targetLabel,
+                  role: liveDomCandidate.role,
+                  form: null,
+                  section: null,
+                  framePath: [],
+                  backendNodeId: null,
+                },
+                candidate: liveDomCandidate,
+                visualCoords: liveDomCandidate.visualCoords,
+              },
+              factRefs: Object.freeze([...snapshot.factRefs, liveDomCandidate.factRef]),
+            };
+          }
+        } catch (_) {}
+      }
+
+      const visualCoords = (frameOrPage && targetLabel) ? await resolveVisualTargetCoordinates(frameOrPage, {
         targetText: targetLabel,
         targetRole: operation?.targetIdentity?.role,
         selector: operation?.selector,
@@ -6702,7 +6785,13 @@ function createControllerMcpRuntimeAdapter({
               } catch (_) {}
               best.dispatchEvent(new Event('blur', { bubbles: true }));
 
-              return { ok: true, name: best.name, placeholder: best.placeholder, value: best.value };
+              return {
+                ok: true,
+                id: best.id || null,
+                name: best.name || null,
+                placeholder: best.placeholder || null,
+                value: best.value,
+              };
             }, { q: targetQ, val: textVal });
           };
 
@@ -6725,6 +6814,18 @@ function createControllerMcpRuntimeAdapter({
           }
 
           if (fillRes && fillRes.ok) {
+            try {
+              const page = activePageOf(session);
+              if (page) {
+                if (fillRes.id) {
+                  await page.locator(`#${fillRes.id}`).fill(textVal).catch(() => {});
+                } else if (fillRes.name) {
+                  await page.locator(`[name="${fillRes.name}"]`).fill(textVal).catch(() => {});
+                } else if (fillRes.placeholder) {
+                  await page.locator(`[placeholder="${fillRes.placeholder}"]`).fill(textVal).catch(() => {});
+                }
+              }
+            } catch (_) {}
             result = { isError: false, content: [{ type: 'text', text: `Typed "${textVal}" into "${fillRes.name || fillRes.placeholder || targetQ}"` }] };
           } else {
             result = await rawCall(sdkToolName, normalized, remainingMs, authorization);
